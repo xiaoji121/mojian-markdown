@@ -20,6 +20,10 @@ jobs:
           node-version: 24
           cache: npm
 
+      # Node 24 自带的 npm 在本项目 lockfile 上会挂起，固定到已验证的版本
+      - name: Use stable npm
+        run: npm install -g npm@11.12.1
+
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
