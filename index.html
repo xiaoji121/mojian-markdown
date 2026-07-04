@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="墨笺 Markdown 是面向阅读、学习和评注的静态 Markdown 编辑器，支持实时预览、划线批注、本地缓存和导入导出。">
+<meta name="description" content="墨笺 Markdown 是开源的 Markdown 阅读与评注工作台：实时预览、划线批注、本地缓存与导入导出；本地完整版还包含最近阅读列表与 AI 问答。本站为线上体验版。">
 <meta name="robots" content="index, follow">
 <meta name="author" content="墨笺 Markdown">
 <meta name="application-name" content="墨笺 Markdown">
@@ -14,7 +14,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:site_name" content="墨笺 Markdown">
 <meta property="og:title" content="墨笺 Markdown｜阅读、批注与本地保存">
-<meta property="og:description" content="面向阅读、学习和评注的静态 Markdown 编辑器，支持实时预览、划线批注、本地缓存和导入导出。">
+<meta property="og:description" content="开源的 Markdown 阅读与评注工作台：实时预览、划线批注、本地缓存；本地完整版含最近阅读列表与 AI 问答。">
 <meta property="og:image" content="/og-image.png">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
@@ -31,15 +31,19 @@
   "name": "墨笺 Markdown",
   "applicationCategory": "ProductivityApplication",
   "operatingSystem": "Web",
-  "description": "墨笺 Markdown 是面向阅读、学习和评注的静态 Markdown 编辑器，支持实时预览、划线批注、本地缓存和导入导出。",
+  "description": "墨笺 Markdown 是开源的 Markdown 阅读与评注工作台，支持实时预览、划线批注、本地缓存与导入导出；本地完整版包含最近阅读列表与 AI 问答。",
   "inLanguage": "zh-CN",
   "isAccessibleForFree": true,
+  "license": "https://opensource.org/licenses/MIT",
+  "sameAs": ["https://github.com/xiaoji121/mojian-markdown"],
   "featureList": [
     "Markdown 实时编辑与预览",
     "预览区划线批注",
     "浏览器本地缓存",
     "Markdown 文件导入导出",
-    "全文与批注复制"
+    "全文与批注复制",
+    "最近阅读列表（本地完整版）",
+    "AI 问答（本地完整版）"
   ]
 }
 </script>
@@ -73,11 +77,11 @@
   <section class="landing-hero" aria-label="墨笺 Markdown 产品介绍">
     <div class="hero-product" aria-hidden="true">
       <div class="hero-sidebar">
-        <span class="sidebar-title">本地草稿</span>
-        <span class="doc active">产品方案.md<small>3 批注 · 已缓存</small></span>
-        <span class="child">└ 想法：补充目标用户</span>
-        <span class="doc">学习笔记.md<small>8 批注 · 已缓存</small></span>
-        <span class="doc">接口设计.md<small>5 批注 · 已缓存</small></span>
+        <span class="sidebar-title">最近阅读</span>
+        <span class="doc active">产品方案.md<small>3 批注 · 2 问答</small></span>
+        <span class="child">└ 问答：目标用户是谁？</span>
+        <span class="doc">学习笔记.md<small>8 批注 · 已归档</small></span>
+        <span class="doc">接口设计.md<small>5 批注 · 1 问答</small></span>
       </div>
       <div class="hero-source">
         <span class="pane-label">Markdown 原文</span>
@@ -100,23 +104,27 @@
         </div>
       </div>
       <div class="hero-ai">
-        <span class="pane-label">批注面板</span>
+        <span class="pane-label">AI 阅读助手</span>
         <p class="quote">“重点不是写完，而是读懂、评注、沉淀。”</p>
-        <p class="answer">这段可以作为章节结论。批注和当前文章会自动缓存在浏览器本地。</p>
+        <p class="answer">这句话强调阅读的产出是理解而不是文本。这次问答会和批注一起归档进阅读工作区，之后可以随时回看。</p>
       </div>
     </div>
 
     <div class="landing-copy">
-      <span class="landing-eyebrow">Static Markdown Reading Workspace</span>
+      <span class="landing-eyebrow">Open Source Markdown Reading Workspace</span>
       <h1>墨笺 Markdown</h1>
       <p class="landing-lead">
-        直接编辑、实时预览、划线批注。当前文章和评注会自动缓存在浏览器本地，也可以随时打开 Markdown 文件、保存到本机或复制全文与批注。
+        直接编辑、实时预览、划线批注；配合本地 Agent Bridge，还能把每篇文档的阅读记录和 AI 问答沉淀成自己的阅读工作区。
       </p>
       <div class="landing-actions">
-        <a class="landing-button primary" href="#editor">开始阅读与评注</a>
-        <a class="landing-button ghost" href="#workflow">查看工作流</a>
+        <a class="landing-button primary" href="#editor">在线体验编辑与批注</a>
+        <a class="landing-button ghost" href="https://github.com/xiaoji121/mojian-markdown" target="_blank" rel="noopener">GitHub 开源仓库 ↗</a>
       </div>
+      <p class="landing-demo-note">
+        当前站点是<strong>线上体验版</strong>：包含编辑、预览、批注和本地缓存；左侧最近阅读列表与 AI 问答依赖本地 Agent Bridge，需<a href="#editions">本地运行开源完整版</a>。
+      </p>
       <div class="landing-trust" aria-label="关键条件">
+        <span>MIT 开源</span>
         <span>无需安装</span>
         <span>浏览器本地缓存</span>
         <span>可导入导出</span>
@@ -151,6 +159,18 @@
           <h3>本地缓存，随时继续</h3>
           <p>当前文章、文件名、字号、主题和批注会保存在浏览器本地，下次打开页面可以继续阅读。</p>
         </article>
+        <article class="workflow-item">
+          <span>05</span>
+          <span class="full-tag">完整版</span>
+          <h3>选中即问 AI</h3>
+          <p>选中一段原文向 AI 提问，回答会结合整篇文档；每次问答自动归档为该文档的子节点。</p>
+        </article>
+        <article class="workflow-item">
+          <span>06</span>
+          <span class="full-tag">完整版</span>
+          <h3>最近阅读列表</h3>
+          <p>本地 Agent Bridge 维护阅读工作区：读过的文档和问答记录都在左侧列表里，随时重新打开。</p>
+        </article>
       </div>
     </div>
   </section>
@@ -170,20 +190,49 @@
     </div>
   </section>
 
-  <section class="landing-section setup-section">
-    <div class="landing-wrap setup-box">
-      <div>
-        <span class="landing-eyebrow">Open In Browser</span>
-        <h2>打开网页就能用，内容留在你的浏览器里。</h2>
-        <p>官网版是纯静态应用，不需要 Node、Agent Bridge 或 Claude。文章和批注会写入浏览器 <code>localStorage</code>，重要内容建议用“保存”或“复制全文+批注”导出备份。</p>
+  <section id="editions" class="landing-section editions-section">
+    <div class="landing-wrap">
+      <div class="landing-section-head">
+        <span class="landing-eyebrow">Editions · Open Source</span>
+        <h2>线上是体验版，完整能力在开源版里。</h2>
       </div>
-      <a class="landing-button primary" href="#editor">打开编辑器</a>
+      <div class="edition-grid">
+        <article class="edition-card">
+          <span class="edition-tag">线上体验版 · 当前站点</span>
+          <h3>打开网页就能用</h3>
+          <p>纯静态应用，不需要 Node、Agent Bridge 或 Claude。文章和批注写入浏览器 <code>localStorage</code>，重要内容建议用「保存」或「复制全文+批注」导出备份。</p>
+          <ul class="edition-list">
+            <li class="yes">直接编辑与实时预览</li>
+            <li class="yes">双击双向定位</li>
+            <li class="yes">划线批注与批注面板</li>
+            <li class="yes">本地缓存、导入导出</li>
+            <li class="no">最近阅读列表</li>
+            <li class="no">AI 问答</li>
+          </ul>
+          <a class="landing-button" href="#editor">打开体验版</a>
+        </article>
+        <article class="edition-card full">
+          <span class="edition-tag accent">开源完整版 · 本地运行</span>
+          <h3>体验版全部能力，加上你的阅读工作区</h3>
+          <p>克隆仓库在本地运行：Agent Bridge 会维护最近阅读列表，配合 <code>claude</code> CLI 获得 AI 问答。MIT 协议开源。</p>
+          <ul class="edition-list">
+            <li class="yes">体验版全部功能</li>
+            <li class="yes">最近阅读列表：文档与问答随时回看</li>
+            <li class="yes">AI 问答：结合选中原文与整篇文档回答</li>
+            <li class="yes">问答自动归档为文档子节点</li>
+          </ul>
+          <pre class="edition-code">git clone https://github.com/xiaoji121/mojian-markdown
+cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
+          <a class="landing-button primary" href="https://github.com/xiaoji121/mojian-markdown" target="_blank" rel="noopener">前往 GitHub ↗</a>
+        </article>
+      </div>
     </div>
   </section>
 
   <footer class="landing-wrap landing-footer">
-    <span>墨笺 Markdown</span>
+    <span>墨笺 Markdown · MIT License</span>
     <span>为认真阅读和评注 Markdown 的人而做。</span>
+    <a class="landing-footer-link" href="https://github.com/xiaoji121/mojian-markdown" target="_blank" rel="noopener">github.com/xiaoji121/mojian-markdown ↗</a>
   </footer>
 </main>
 
