@@ -20,9 +20,14 @@ jobs:
           node-version: 24
           cache: npm
 
-      # Node 24 自带的 npm 在本项目 lockfile 上会挂起，固定到已验证的版本
+      # 默认 registry + Node 24 自带 npm 在本项目 lockfile 上会触发
+      # "Exit handler never called!"（npm 自身 bug），固定 npm 版本并
+      # 切换 registry 是经过验证的组合修复
       - name: Use stable npm
-        run: npm install -g npm@11.12.1
+        run: |
+          npm install -g npm@11.12.1
+          npm config set registry https://registry.npmmirror.com
+          npm config set replace-registry-host always
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
