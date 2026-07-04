@@ -1,0 +1,35 @@
+{
+  "name": "mojian-markdown",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev-with-bridge.js",
+    "dev:web": "vite --mode bridge",
+    "dev:bridge": "node scripts/agent-bridge.js",
+    "start": "npm run dev",
+    "build": "vite build",
+    "build:bridge": "vite build --mode bridge",
+    "preview": "vite preview",
+    "check:size": "node scripts/check-code-size.js",
+    "test": "node --test \"tests/*.test.ts\"",
+    "check": "npm run check:size && tsc --noEmit && npm test && vite build",
+    "font:subset": "node scripts/subset-font.mjs",
+    "font:fetch": "node scripts/fetch-font.mjs && npm run font:subset"
+  },
+  "dependencies": {
+    "marked": "^18.0.5",
+    "mermaid": "^11.15.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "turndown": "^7.2.4"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/turndown": "^5.0.5",
+    "subset-font": "^2.5.0",
+    "typescript": "^5.8.0",
+    "vite": "^8.0.16"
+  }
+}

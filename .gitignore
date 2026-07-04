@@ -1,0 +1,12 @@
+.DS_Store
+.thumbnail
+node_modules/
+dist/
+.npm-cache/
+.reading-workspace/
+*.log
+
+# 字体不随仓库分发（版权归字体所有者），用 npm run font:fetch 获取
+fonts-src/**/*.woff
+fonts-src/**/*.woff2
+public/fonts/
