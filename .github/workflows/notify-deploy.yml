@@ -1,0 +1,33 @@
+name: Notify deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      # 通知私有部署仓库拉取本仓库 main 构建并部署。
+      # DEPLOY_DISPATCH_TOKEN 是只授予 mojian-markdown-deploy 仓库
+      # Contents: Read and write 权限的 fine-grained PAT。
+      # 未配置该 secret 时静默跳过（fork 中也不会报错）。
+      - name: Send repository_dispatch to deploy repo
+        env:
+          TOKEN: ${{ secrets.DEPLOY_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "DEPLOY_DISPATCH_TOKEN not configured; skipping deploy notification."
+            exit 0
+          fi
+          curl -sS --fail-with-body -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/xiaoji121/mojian-markdown-deploy/dispatches \
+            -d '{"event_type":"deploy"}'
+          echo "Deploy notification sent."
