@@ -2,6 +2,7 @@ import './popup.css';
 import { capturePageSnapshot, type PageSnapshot } from './pageCapture.ts';
 import { extractArticle, parseFragment, parseSnapshotDocument } from './extract.ts';
 import { composeClipMarkdown, createTurndown, suggestFileName, type ClipMeta } from './convert.ts';
+import { storeReaderDoc } from './readerDoc.ts';
 
 type ClipMode = 'article' | 'full' | 'selection';
 
@@ -14,12 +15,14 @@ const messageEl = byId<HTMLElement>('message');
 const pageTitleEl = byId<HTMLElement>('page-title');
 const copyButton = byId<HTMLButtonElement>('copy');
 const downloadButton = byId<HTMLButtonElement>('download');
+const readButton = byId<HTMLButtonElement>('read');
 const metaToggle = byId<HTMLInputElement>('front-matter');
 const modeInputs = Array.from(document.querySelectorAll<HTMLInputElement>('input[name="mode"]'));
 
 let snapshot: PageSnapshot | null = null;
 let markdown = '';
 let fileName = '未命名网页.md';
+let lastResult: { body: string; meta: ClipMeta } | null = null;
 
 void init();
 
@@ -59,12 +62,14 @@ async function init(): Promise<void> {
 function render(): void {
   if (!snapshot) return;
   const { body, meta, note } = convertSnapshot(snapshot, currentMode());
+  lastResult = { body, meta };
   markdown = composeClipMarkdown(meta, body, metaToggle.checked);
   fileName = suggestFileName(meta.title);
   previewEl.value = markdown;
   const ready = markdown.trim().length > 0;
   copyButton.disabled = !ready;
   downloadButton.disabled = !ready;
+  readButton.disabled = !ready;
   const stats = `${markdown.length} 字符 · ${markdown.split('\n').length} 行`;
   statusEl.textContent = note ? `${stats} · ${note}` : stats;
 }
@@ -122,6 +127,21 @@ function bindEvents(): void {
     setTimeout(() => URL.revokeObjectURL(url), 3000);
     flash(downloadButton, '已下载 ✓');
   });
+  readButton.addEventListener('click', () => {
+    if (!lastResult) return;
+    const stored = storeReaderDoc({
+      title: lastResult.meta.title,
+      url: lastResult.meta.url,
+      capturedAt: lastResult.meta.capturedAt.toISOString(),
+      markdown: lastResult.body
+    });
+    if (!stored) {
+      statusEl.textContent = '内容过大，无法打开阅读页';
+      return;
+    }
+    void chrome.tabs.create({ url: chrome.runtime.getURL('reader.html') });
+    window.close();
+  });
 }
 
 function restorePreferences(): void {
@@ -154,6 +174,7 @@ function showFatal(text: string): void {
   statusEl.textContent = '';
   copyButton.disabled = true;
   downloadButton.disabled = true;
+  readButton.disabled = true;
 }
 
 function byId<T extends HTMLElement>(id: string): T {

@@ -1,8 +1,21 @@
 # 墨笺剪藏（浏览器插件）
 
-把当前网页转换成 Markdown 的浏览器插件（Chrome / Edge，Manifest V3）。点击工具栏图标即可预览、复制或下载 `.md` 文件。
+把当前网页转换成 Markdown 的浏览器插件（Chrome / Edge，Manifest V3）。点击工具栏图标即可预览、复制、下载 `.md`，或进入「墨笺阅读」页获得纯净的双栏阅读体验。
 
 ## 功能
+
+### 墨笺阅读（阅读模式）
+
+弹窗中点「阅读」进入独立阅读页：左栏是网页转出的 Markdown 源（可直接编辑，实时生效），右栏是渲染后的文章预览，排版沿用墨笺编辑器的楷体阅读风格。顶栏支持：
+
+- **暗色 / 亮色主题**：墨色暗主题与宣纸亮主题一键切换；
+- **字号调整**：A− / A+（14–26px）；
+- **源码栏开关**：隐藏左栏即为纯阅读视图；
+- 复制与下载 `.md`。
+
+主题、字号、源码栏偏好会记住。出于安全考虑，剪藏内容里的原始 HTML 在预览中一律转义（仅保留表格内换行的 `<br>`），外链一律新标签页打开。
+
+### 剪藏
 
 - **三种转换范围**：
   - **正文**：用 [Readability](https://github.com/mozilla/readability)（Firefox 阅读模式同款）提取文章正文，去掉导航、侧栏、页脚等噪音；
@@ -46,6 +59,9 @@ npm run build:ext   # 产物输出到 dist-extension/
 | `src/extract.ts` | 快照解析：DOMParser 重建、地址绝对化、Readability 正文提取 |
 | `src/convert.ts` | Turndown 配置与 Markdown 组装（纯逻辑，被 `tests/extensionConvert.test.ts` 覆盖） |
 | `src/popup.ts` / `popup.html` / `src/popup.css` | 弹窗 UI |
+| `src/reader.ts` / `reader.html` / `src/reader.css` | 墨笺阅读页（双栏、主题、字号） |
+| `src/render.ts` | 阅读页 Markdown 渲染（marked + 原始 HTML 转义，被 `tests/extensionRender.test.ts` 覆盖） |
+| `src/readerDoc.ts` | 弹窗与阅读页之间的文档交接（扩展源 localStorage） |
 | `public/manifest.json` | MV3 清单 |
 | `../scripts/make-extension-icons.mjs` | 图标生成（构建时自动执行） |
 

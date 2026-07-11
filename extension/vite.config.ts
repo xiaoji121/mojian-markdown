@@ -10,7 +10,7 @@ export default defineConfig({
     outDir: here('../dist-extension'),
     emptyOutDir: true,
     rollupOptions: {
-      input: here('popup.html')
+      input: [here('popup.html'), here('reader.html')]
     }
   }
 });

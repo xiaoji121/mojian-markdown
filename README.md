@@ -77,7 +77,7 @@ AGENT_BRIDGE_WORKSPACE=/path/to/reading npm run dev
 
 ## 浏览器插件：墨笺剪藏
 
-仓库还附带一个浏览器插件（Chrome / Edge，MV3），把任意网页的正文、整页或选中内容转换成 Markdown，可预览、复制或下载 `.md`，方便配合编辑器阅读和批注。
+仓库还附带一个浏览器插件（Chrome / Edge，MV3），把任意网页的正文、整页或选中内容转换成 Markdown，可预览、复制或下载 `.md`；也可以进入「墨笺阅读」页——左栏 Markdown 源、右栏实时预览，支持暗色/亮色主题与字号调整，给网页文章一个纯净的阅读体验。
 
 ```bash
 npm run build:ext   # 构建到 dist-extension/，然后在 chrome://extensions 加载已解压的扩展程序

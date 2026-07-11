@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>墨笺阅读</title>
+  </head>
+  <body>
+    <header class="bar">
+      <h1 class="brand">墨笺阅读</h1>
+      <span id="doc-title" class="bar-title"></span>
+      <div class="tools">
+        <button id="toggle-source" type="button" title="显示或隐藏 Markdown 源">源码</button>
+        <span class="font-size">
+          <button id="font-minus" type="button" title="减小字号">A−</button>
+          <span id="font-value">17</span>
+          <button id="font-plus" type="button" title="增大字号">A+</button>
+        </span>
+        <button id="toggle-theme" type="button" title="切换暗色 / 亮色主题">亮色</button>
+        <button id="copy" type="button">复制</button>
+        <button id="download" type="button">下载 .md</button>
+      </div>
+    </header>
+    <main class="panes" id="panes">
+      <section class="source-pane">
+        <textarea id="source" spellcheck="false" placeholder="Markdown 源"></textarea>
+      </section>
+      <section class="preview-pane">
+        <article class="doc">
+          <header class="doc-head" id="doc-head"></header>
+          <div class="doc-body" id="doc-body"></div>
+        </article>
+      </section>
+    </main>
+    <p id="empty" class="empty" hidden>
+      没有找到剪藏内容。请先在网页上点击「墨笺剪藏」图标，再从弹窗进入「阅读」。
+    </p>
+    <script type="module" src="./src/reader.ts"></script>
+  </body>
+</html>
