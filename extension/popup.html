@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>墨笺剪藏</title>
+  </head>
+  <body>
+    <header class="top">
+      <h1>墨笺剪藏</h1>
+      <span id="page-title" class="page-title"></span>
+    </header>
+    <div class="controls">
+      <fieldset class="modes">
+        <label><input type="radio" name="mode" value="article" checked /><span>正文</span></label>
+        <label><input type="radio" name="mode" value="full" /><span>整页</span></label>
+        <label><input type="radio" name="mode" value="selection" /><span>选中内容</span></label>
+      </fieldset>
+      <label class="meta-toggle"><input type="checkbox" id="front-matter" checked /><span>元信息</span></label>
+    </div>
+    <p id="message" class="message" hidden></p>
+    <textarea id="preview" spellcheck="false" placeholder="正在读取页面…"></textarea>
+    <footer class="bottom">
+      <span id="status" class="status"></span>
+      <div class="actions">
+        <button id="download" type="button">下载 .md</button>
+        <button id="copy" type="button" class="primary">复制</button>
+      </div>
+    </footer>
+    <script type="module" src="./src/popup.ts"></script>
+  </body>
+</html>

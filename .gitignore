@@ -2,6 +2,7 @@
 .thumbnail
 node_modules/
 dist/
+dist-extension/
 .npm-cache/
 .reading-workspace/
 *.log

@@ -75,10 +75,20 @@ claude --version
 AGENT_BRIDGE_WORKSPACE=/path/to/reading npm run dev
 ```
 
+## 浏览器插件：墨笺剪藏
+
+仓库还附带一个浏览器插件（Chrome / Edge，MV3），把任意网页的正文、整页或选中内容转换成 Markdown，可预览、复制或下载 `.md`，方便配合编辑器阅读和批注。
+
+```bash
+npm run build:ext   # 构建到 dist-extension/，然后在 chrome://extensions 加载已解压的扩展程序
+```
+
+详见 [`extension/README.md`](./extension/README.md)。
+
 ## 开发
 
 ```bash
-npm run check   # 代码体积约束 + 类型检查 + 测试 + 构建
+npm run check   # 代码体积约束 + 类型检查 + 测试 + 构建（含插件）
 npm test        # 只跑测试
 ```
 
