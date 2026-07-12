@@ -6,6 +6,7 @@ import { suggestFileName } from './convert.ts';
 const THEME_KEY = 'mojian-reader-theme';
 const SIZE_KEY = 'mojian-reader-size';
 const SOURCE_KEY = 'mojian-reader-source';
+const IMMERSIVE_KEY = 'mojian-reader-immersive';
 const MIN_SIZE = 14;
 const MAX_SIZE = 26;
 const DEFAULT_SIZE = 17;
@@ -19,9 +20,13 @@ const emptyEl = byId<HTMLElement>('empty');
 const fontValueEl = byId<HTMLElement>('font-value');
 const themeButton = byId<HTMLButtonElement>('toggle-theme');
 const sourceButton = byId<HTMLButtonElement>('toggle-source');
+const immersiveButton = byId<HTMLButtonElement>('immersive');
+const barEl = document.querySelector('.bar') as HTMLElement;
+const hintEl = byId<HTMLElement>('hint');
 
 let doc: ReaderDoc | null = null;
 let renderTimer: number | undefined;
+let hintTimer: number | undefined;
 
 init();
 
@@ -30,6 +35,8 @@ function init(): void {
   applyFontSize(Number(localStorage.getItem(SIZE_KEY)) || DEFAULT_SIZE);
   applySourceVisible(localStorage.getItem(SOURCE_KEY) !== '0');
   bindToolbar();
+  bindImmersive();
+  applyImmersive(localStorage.getItem(IMMERSIVE_KEY) === '1');
 
   doc = loadReaderDoc();
   if (!doc) {
@@ -99,6 +106,47 @@ function bindToolbar(): void {
     anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 3000);
   });
+}
+
+function bindImmersive(): void {
+  immersiveButton.addEventListener('click', () => {
+    applyImmersive(!document.body.classList.contains('immersive'));
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && document.body.classList.contains('immersive')) {
+      applyImmersive(false);
+    }
+  });
+  document.addEventListener('mousemove', (event) => {
+    if (!document.body.classList.contains('immersive')) return;
+    if (event.clientY <= 40) {
+      document.body.classList.add('bar-peek');
+    } else if (event.clientY > 160 && !barEl.matches(':hover')) {
+      document.body.classList.remove('bar-peek');
+    }
+  });
+}
+
+function applyImmersive(on: boolean): void {
+  document.body.classList.toggle('immersive', on);
+  document.body.classList.remove('bar-peek');
+  immersiveButton.classList.toggle('active', on);
+  immersiveButton.textContent = on ? '退出沉浸' : '沉浸';
+  sourceButton.disabled = on; // the source pane is force-hidden while immersive
+  localStorage.setItem(IMMERSIVE_KEY, on ? '1' : '0');
+  if (on) showHint();
+}
+
+function showHint(): void {
+  hintEl.hidden = false;
+  hintEl.classList.add('show');
+  window.clearTimeout(hintTimer);
+  hintTimer = window.setTimeout(() => {
+    hintEl.classList.remove('show');
+    hintTimer = window.setTimeout(() => {
+      hintEl.hidden = true;
+    }, 400);
+  }, 2600);
 }
 
 function applyTheme(theme: 'dark' | 'light'): void {

@@ -288,3 +288,55 @@ body {
   color: var(--muted);
   text-align: center;
 }
+
+/* 沉浸阅读：源码栏与工具栏全部让位给正文 */
+body.immersive .source-pane {
+  display: none;
+}
+
+body.immersive .bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  transform: translateY(-105%);
+  transition: transform 0.25s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+body.immersive.bar-peek .bar {
+  transform: translateY(0);
+}
+
+body.immersive .doc {
+  padding-top: 64px;
+}
+
+.hint {
+  position: fixed;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%) translateY(8px);
+  padding: 8px 18px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.hint.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
