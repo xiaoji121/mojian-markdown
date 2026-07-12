@@ -10,7 +10,7 @@
     "start": "npm run dev",
     "build": "vite build",
     "build:bridge": "vite build --mode bridge",
-    "build:ext": "node scripts/make-extension-icons.mjs && vite build --config extension/vite.config.ts",
+    "build:ext": "node scripts/make-extension-icons.mjs && node scripts/copy-extension-font.mjs && vite build --config extension/vite.config.ts",
     "preview": "vite preview",
     "check:size": "node scripts/check-code-size.js",
     "test": "node --test \"tests/*.test.ts\"",

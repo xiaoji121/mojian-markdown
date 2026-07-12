@@ -9,7 +9,7 @@ const SOURCE_KEY = 'mojian-reader-source';
 const IMMERSIVE_KEY = 'mojian-reader-immersive';
 const MIN_SIZE = 14;
 const MAX_SIZE = 26;
-const DEFAULT_SIZE = 17;
+const DEFAULT_SIZE = 16; // 与编辑器 .md-preview 的默认字号一致
 
 const sourceEl = byId<HTMLTextAreaElement>('source');
 const docTitleEl = byId<HTMLElement>('doc-title');
