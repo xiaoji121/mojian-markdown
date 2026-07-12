@@ -26,7 +26,10 @@
 
 :root {
   --doc-size: 17px;
-  --serif: 'Kaiti SC', 'STKaiti', '楷体', 'Noto Serif SC', serif;
+  /* 书籍排版惯例：标题黑体、正文宋体、引文楷体 */
+  --font-kai: 'Kaiti SC', 'STKaiti', '楷体', serif;
+  --font-song: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif;
+  --font-hei: 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', system-ui, sans-serif;
   --sans: 'Noto Sans SC', system-ui, sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, monospace;
 }
@@ -60,7 +63,7 @@ body {
 
 .brand {
   margin: 0;
-  font: 600 17px/1.4 var(--serif);
+  font: 600 17px/1.4 var(--font-kai);
   color: var(--accent);
   white-space: nowrap;
 }
@@ -150,14 +153,14 @@ body {
 }
 
 .doc {
-  max-width: 760px;
+  max-width: 720px;
   margin: 0 auto;
   padding: 40px 32px 80px;
 }
 
 .doc-head h1 {
   margin: 0 0 8px;
-  font: 600 calc(var(--doc-size) * 1.7) / 1.4 var(--serif);
+  font: 700 calc(var(--doc-size) * 1.7) / 1.45 var(--font-kai);
 }
 
 .doc-meta {
@@ -174,7 +177,8 @@ body {
 }
 
 .doc-body {
-  font: var(--doc-size) / 1.9 var(--serif);
+  font: var(--doc-size) / 1.95 var(--font-song);
+  letter-spacing: 0.02em;
 }
 
 .doc-body h1,
@@ -183,27 +187,43 @@ body {
 .doc-body h4,
 .doc-body h5,
 .doc-body h6 {
-  font-family: var(--serif);
-  line-height: 1.5;
-  margin: 1.6em 0 0.6em;
+  font-family: var(--font-hei);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.45;
+  margin: 2em 0 0.7em;
 }
 
 .doc-body h1 {
-  font-size: 1.55em;
+  font-size: 1.5em;
 }
 
 .doc-body h2 {
-  font-size: 1.35em;
-  padding-bottom: 0.2em;
+  font-size: 1.3em;
+  padding-bottom: 0.25em;
   border-bottom: 1px solid var(--border);
 }
 
 .doc-body h3 {
-  font-size: 1.15em;
+  font-size: 1.12em;
+}
+
+.doc-body h4,
+.doc-body h5,
+.doc-body h6 {
+  font-size: 1em;
+  color: var(--muted);
 }
 
 .doc-body p {
-  margin: 0.9em 0;
+  margin: 1em 0;
+  text-align: justify;
+  overflow-wrap: break-word;
+}
+
+.doc-body em {
+  font-style: normal;
+  font-family: var(--font-kai);
 }
 
 .doc-body a {
@@ -218,11 +238,12 @@ body {
 }
 
 .doc-body blockquote {
-  margin: 1em 0;
-  padding: 0.2em 1em;
+  margin: 1.2em 0;
+  padding: 0.3em 1.1em;
   border-left: 3px solid var(--accent-2);
   background: var(--panel);
   color: var(--muted);
+  font-family: var(--font-kai);
 }
 
 .doc-body code {
@@ -275,7 +296,9 @@ body {
 }
 
 .doc-body li {
-  margin: 0.3em 0;
+  margin: 0.35em 0;
+  text-align: justify;
+  overflow-wrap: break-word;
 }
 
 .empty {
