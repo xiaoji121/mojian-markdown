@@ -1,0 +1,481 @@
+/* 阅读页样式：色板与排版逐项对齐主编辑器 src/editor/styles.css 的
+   墨笺「墨」主题（正文 text-2、行距 2.1、琥珀强调等签名细节）。 */
+
+/* GB2312 子集，构建时由 scripts/copy-extension-font.mjs 从 public/fonts 复制；
+   缺失时由字体栈的系统楷体 / 宋体兜底 */
+@font-face {
+  font-family: 'Canger JinKai 04';
+  src: url('/fonts/cejk-subset.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root[data-theme='dark'] {
+  --bg: #14110d;
+  --bg-2: #1c1814;
+  --bg-source: #191510;
+  --pre-bg: #0f0d0a;
+  --code-bg: #1c1814;
+  --th-bg: #251f19;
+  --border: #322a22;
+  --border-soft: #2a231c;
+  --text: #f4ebd9;
+  --text-2: #c8b89c;
+  --text-3: #8a7d68;
+  --text-4: #5a5142;
+  --accent: #f0a838;
+  --accent-2: #d18a18;
+  --accent-soft: rgba(240, 168, 56, 0.15);
+  --sel: rgba(240, 168, 56, 0.28);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+}
+
+:root[data-theme='light'] {
+  --bg: #faf6ef;
+  --bg-2: #f2ece1;
+  --bg-source: #f1ebdd;
+  --pre-bg: #f3ebda;
+  --code-bg: #f0e8d8;
+  --th-bg: #eee5d3;
+  --border: #e3d8c5;
+  --border-soft: #ece2d0;
+  --text: #2b2218;
+  --text-2: #4f4334;
+  --text-3: #8a7d68;
+  --text-4: #b3a591;
+  --accent: #bd7a0c;
+  --accent-2: #9c6408;
+  --accent-soft: rgba(189, 122, 12, 0.12);
+  --sel: rgba(189, 122, 12, 0.18);
+  --shadow: 0 10px 30px rgba(120, 100, 60, 0.2);
+}
+
+:root {
+  --doc-size: 16px;
+  /* 与编辑器一致的阅读衬线；正文兜底优先宋体，标题与引文兜底楷体 */
+  --read: 'Canger JinKai 04', 'Fraunces', 'Kaiti SC', 'STKaiti', 'KaiTi', '楷体', 'Noto Serif SC', serif;
+  --read-body: 'Canger JinKai 04', 'Fraunces', 'Noto Serif SC', 'Songti SC', 'Kaiti SC', 'STKaiti', serif;
+  --sans: 'Inter Tight', 'Noto Sans SC', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.6 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  transition: background 0.25s ease;
+}
+
+::selection {
+  background: var(--sel);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-4);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-2);
+}
+
+.brand {
+  margin: 0;
+  font: 600 17px/1.4 var(--read);
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.bar-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-3);
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tools button {
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tools button:hover {
+  border-color: var(--accent-2);
+}
+
+.tools button.active {
+  color: var(--accent);
+  border-color: var(--accent-2);
+}
+
+.font-size {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#font-value {
+  min-width: 2ch;
+  text-align: center;
+  color: var(--text-3);
+}
+
+.panes {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.source-pane {
+  width: 40%;
+  min-width: 280px;
+  border-right: 1px solid var(--border);
+  display: flex;
+}
+
+.panes.source-hidden .source-pane {
+  display: none;
+}
+
+#source {
+  flex: 1;
+  padding: 20px;
+  border: none;
+  resize: none;
+  background: var(--bg-source);
+  color: var(--text-2);
+  font: 13px/1.7 var(--mono);
+  caret-color: var(--accent);
+}
+
+#source:focus {
+  outline: none;
+}
+
+.preview-pane {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+.doc {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 46px 32px 80px;
+}
+
+/* ===== 文档头：标题 + 来源 ===== */
+.doc-head {
+  padding-bottom: 18px;
+  margin-bottom: 30px;
+  border-bottom: 1px solid var(--border);
+}
+
+.doc-head h1 {
+  margin: 0 0 10px;
+  font-family: var(--read);
+  font-weight: 700;
+  font-size: calc(var(--doc-size) * 2.1);
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.doc-meta {
+  margin: 0;
+  color: var(--text-4);
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.doc-meta a {
+  color: var(--text-3);
+}
+
+/* ===== 正文排版（对齐编辑器 .md-preview）===== */
+.doc-body {
+  font-family: var(--read-body);
+  font-size: var(--doc-size);
+  line-height: 2.1;
+  color: var(--text-2);
+}
+
+.doc-body > *:first-child {
+  margin-top: 0 !important;
+}
+
+.doc-body h1,
+.doc-body h2,
+.doc-body h3 {
+  font-family: var(--read);
+  color: var(--text);
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+.doc-body h1 {
+  font-size: 2.1em;
+  margin: 0.35em 0 0.9em;
+  padding-bottom: 0.55em;
+  border-bottom: 1px solid var(--border);
+}
+
+.doc-body h2 {
+  font-size: 1.6em;
+  margin: 2.1em 0 1em;
+}
+
+.doc-body h3 {
+  font-size: 1.28em;
+  margin: 2.15em 0 1.05em;
+}
+
+.doc-body h4,
+.doc-body h5,
+.doc-body h6 {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 1em;
+  margin: 2.25em 0 1.1em;
+  color: var(--text);
+}
+
+.doc-body h5,
+.doc-body h6 {
+  color: var(--text-3);
+}
+
+.doc-body p {
+  margin: 0 0 1.75em;
+  text-wrap: pretty;
+  overflow-wrap: break-word;
+}
+
+.doc-body a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px dashed var(--accent-soft);
+  padding-bottom: 1px;
+}
+
+.doc-body a:hover {
+  border-bottom: 1px solid var(--accent);
+}
+
+.doc-body strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.doc-body em {
+  color: var(--text-2);
+}
+
+.doc-body ul,
+.doc-body ol {
+  margin: 0 0 1.75em;
+  padding-left: 26px;
+}
+
+.doc-body li {
+  margin: 0.5em 0;
+  overflow-wrap: break-word;
+}
+
+.doc-body li::marker {
+  color: var(--accent);
+}
+
+.doc-body blockquote {
+  margin: 1.75em 0;
+  padding: 4px 0 4px 20px;
+  border-left: 3px solid var(--accent);
+  color: var(--text-3);
+  font-family: var(--read);
+  font-style: italic;
+  font-size: 1.04em;
+}
+
+.doc-body blockquote p {
+  margin: 0.25em 0;
+}
+
+.doc-body code {
+  font-family: var(--mono);
+  font-size: 0.84em;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  padding: 1px 6px;
+  border-radius: 3px;
+  color: var(--accent);
+}
+
+.doc-body pre {
+  background: var(--pre-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 20px 22px;
+  overflow-x: auto;
+  margin: 1.25em 0;
+}
+
+.doc-body pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text-2);
+  font-size: 0.8em;
+  line-height: 1.7;
+}
+
+.doc-body hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2.25em 0;
+}
+
+.doc-body table {
+  border-collapse: collapse;
+  margin: 1.25em 0;
+  font-size: 0.9em;
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.doc-body th,
+.doc-body td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.doc-body th {
+  background: var(--th-bg);
+  color: var(--text);
+  font-weight: 600;
+  font-family: var(--mono);
+  font-size: 0.78em;
+  letter-spacing: 0.04em;
+}
+
+.doc-body tr:hover td {
+  background: var(--bg-2);
+}
+
+.doc-body img {
+  max-width: 100%;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+.empty {
+  margin: 80px auto;
+  max-width: 420px;
+  padding: 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-2);
+  color: var(--text-3);
+  text-align: center;
+}
+
+/* ===== 沉浸阅读：源码栏与工具栏全部让位给正文 ===== */
+body.immersive .source-pane {
+  display: none;
+}
+
+body.immersive .bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  transform: translateY(-105%);
+  transition: transform 0.25s ease;
+  box-shadow: var(--shadow);
+}
+
+body.immersive.bar-peek .bar {
+  transform: translateY(0);
+}
+
+body.immersive .doc {
+  padding-top: 64px;
+}
+
+.hint {
+  position: fixed;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%) translateY(8px);
+  padding: 8px 18px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-2);
+  color: var(--text-3);
+  font-size: 13px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.hint.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

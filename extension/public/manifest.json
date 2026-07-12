@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "墨笺剪藏：网页转 Markdown",
+  "short_name": "墨笺剪藏",
+  "description": "把当前网页的正文、整页或选中内容转换成 Markdown，可预览、复制或下载为 .md 文件。",
+  "version": "0.1.0",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_title": "转换为 Markdown",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "permissions": ["activeTab", "scripting", "clipboardWrite"],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": { "default": "Alt+Shift+M" },
+      "description": "打开墨笺剪藏"
+    }
+  }
+}

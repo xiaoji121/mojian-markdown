@@ -2,6 +2,7 @@
 .thumbnail
 node_modules/
 dist/
+dist-extension/
 .npm-cache/
 .reading-workspace/
 *.log
@@ -10,3 +11,4 @@ dist/
 fonts-src/**/*.woff
 fonts-src/**/*.woff2
 public/fonts/
+extension/public/fonts/

@@ -5,7 +5,7 @@ const ROOT = process.cwd();
 const MAX_FILE_LINES = 800;
 const MAX_FUNCTION_LINES = 140;
 const INCLUDED = new Set(['.css', '.html', '.js', '.ts']);
-const IGNORED_DIRS = new Set(['.git', 'dist', 'node_modules', 'public/uploads']);
+const IGNORED_DIRS = new Set(['.git', 'dist', 'dist-extension', 'node_modules', 'public/uploads']);
 const IGNORED_FILES = new Set(['package-lock.json', 'src/dc-runtime.js']);
 
 function extension(filePath) {

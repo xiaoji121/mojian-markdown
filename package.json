@@ -10,14 +10,16 @@
     "start": "npm run dev",
     "build": "vite build",
     "build:bridge": "vite build --mode bridge",
+    "build:ext": "node scripts/make-extension-icons.mjs && node scripts/copy-extension-font.mjs && vite build --config extension/vite.config.ts",
     "preview": "vite preview",
     "check:size": "node scripts/check-code-size.js",
     "test": "node --test \"tests/*.test.ts\"",
-    "check": "npm run check:size && tsc --noEmit && npm test && vite build",
+    "check": "npm run check:size && tsc --noEmit && npm test && vite build && npm run build:ext",
     "font:subset": "node scripts/subset-font.mjs",
     "font:fetch": "node scripts/fetch-font.mjs && npm run font:subset"
   },
   "dependencies": {
+    "@mozilla/readability": "^0.6.0",
     "marked": "^18.0.5",
     "mermaid": "^11.15.0",
     "react": "^19.2.7",
@@ -25,6 +27,7 @@
     "turndown": "^7.2.4"
   },
   "devDependencies": {
+    "@types/chrome": "^0.2.2",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/turndown": "^5.0.5",
