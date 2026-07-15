@@ -1,13 +1,14 @@
-:root {
-  --bg: #14110d;
-  --panel: #1c1814;
-  --panel-2: #191510;
-  --border: #322a22;
-  --text: #f4ebd9;
-  --muted: #b6a78e;
-  --faint: #756958;
-  --accent: #f0a838;
-  --accent-2: #d18a18;
+/* 弹窗样式：色板/字体/圆角/阴影 token 统一来自 src/theme/tokens.css
+   （构建时由 vite 内联）；主题跟随阅读页设置，见 popup.ts。 */
+@import '../../src/theme/tokens.css';
+
+/* GB2312 子集，构建时由 scripts/copy-extension-font.mjs 从 public/fonts 复制 */
+@font-face {
+  font-family: 'Canger JinKai 04';
+  src: url('/fonts/cejk-subset.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
 }
 
 * {
@@ -23,7 +24,7 @@ body {
   gap: 10px;
   background: var(--bg);
   color: var(--text);
-  font: 13px/1.6 'Noto Sans SC', system-ui, sans-serif;
+  font: var(--fs-md)/1.6 var(--sans);
 }
 
 .top {
@@ -35,10 +36,10 @@ body {
 
 .top h1 {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--fs-xl);
   font-weight: 600;
   color: var(--accent);
-  font-family: 'Kaiti SC', 'STKaiti', '楷体', serif;
+  font-family: var(--read);
   white-space: nowrap;
 }
 
@@ -48,8 +49,8 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--muted);
-  font-size: 12px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
 }
 
 .controls {
@@ -65,8 +66,8 @@ body {
   margin: 0;
   padding: 2px;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--panel-2);
+  border-radius: var(--radius-surface);
+  background: var(--bg-source);
 }
 
 .modes label {
@@ -83,30 +84,30 @@ body {
 .modes span {
   display: inline-block;
   padding: 3px 10px;
-  border-radius: 6px;
-  color: var(--muted);
+  border-radius: var(--radius-control);
+  color: var(--text-2);
 }
 
 .modes input:checked + span {
-  background: var(--panel);
+  background: var(--bg-2);
   color: var(--accent);
 }
 
 .modes input:disabled + span {
-  color: var(--faint);
+  color: var(--text-3);
   opacity: 0.6;
 }
 
 .meta-toggle {
   cursor: pointer;
-  color: var(--muted);
+  color: var(--text-2);
 }
 
 .meta-toggle span {
   display: inline-block;
   padding: 3px 10px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-control);
 }
 
 .meta-toggle input:checked + span {
@@ -118,9 +119,9 @@ body {
   margin: 0;
   padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--panel);
-  color: var(--muted);
+  border-radius: var(--radius-surface);
+  background: var(--bg-2);
+  color: var(--text-2);
 }
 
 #preview {
@@ -129,10 +130,10 @@ body {
   padding: 10px;
   resize: vertical;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--panel);
+  border-radius: var(--radius-control);
+  background: var(--bg-2);
   color: var(--text);
-  font: 12px/1.6 'JetBrains Mono', ui-monospace, monospace;
+  font: var(--fs-sm)/1.6 var(--mono);
 }
 
 #preview:focus {
@@ -147,8 +148,8 @@ body {
 }
 
 .status {
-  color: var(--faint);
-  font-size: 12px;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
 }
 
 .actions {
@@ -159,8 +160,8 @@ body {
 button {
   padding: 5px 14px;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--panel);
+  border-radius: var(--radius-control);
+  background: var(--bg-2);
   color: var(--text);
   font: inherit;
   cursor: pointer;
@@ -173,7 +174,7 @@ button:hover:not(:disabled) {
 button.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #14110d;
+  color: var(--accent-ink);
   font-weight: 600;
 }
 

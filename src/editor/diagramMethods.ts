@@ -65,16 +65,18 @@ export class DiagramMethods {
   }
 
   _mermaidThemeVariables() {
-    const isLight = this.theme === 'light';
+    // 取自 src/theme/tokens.css 的当前主题值，避免复制第二份色板
+    const styles = getComputedStyle(document.body);
+    const token = (name, fallback) => (styles.getPropertyValue(name) || '').trim() || fallback;
     return {
-      background: isLight ? '#faf6ef' : '#14110d',
-      primaryColor: isLight ? '#f6f1e8' : '#1c1814',
-      primaryBorderColor: isLight ? '#e3d8c5' : '#322a22',
-      primaryTextColor: isLight ? '#2b2218' : '#f4ebd9',
-      lineColor: isLight ? '#bd7a0c' : '#f0a838',
-      secondaryColor: isLight ? '#f2ece1' : '#161310',
-      tertiaryColor: isLight ? '#fffdf9' : '#14110d',
-      fontFamily: 'Inter Tight, Noto Sans SC, sans-serif'
+      background: token('--bg', '#14110d'),
+      primaryColor: token('--bg-2', '#1c1814'),
+      primaryBorderColor: token('--border', '#322a22'),
+      primaryTextColor: token('--text', '#f4ebd9'),
+      lineColor: token('--accent', '#f0a838'),
+      secondaryColor: token('--bg-3', '#161310'),
+      tertiaryColor: token('--bg', '#14110d'),
+      fontFamily: token('--sans', 'Inter Tight, Noto Sans SC, sans-serif')
     };
   }
 }

@@ -31,7 +31,7 @@ let hintTimer: number | undefined;
 init();
 
 function init(): void {
-  applyTheme(localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark');
+  applyTheme(preferredTheme());
   applyFontSize(Number(localStorage.getItem(SIZE_KEY)) || DEFAULT_SIZE);
   applySourceVisible(localStorage.getItem(SOURCE_KEY) !== '0');
   bindToolbar();
@@ -131,6 +131,7 @@ function applyImmersive(on: boolean): void {
   document.body.classList.toggle('immersive', on);
   document.body.classList.remove('bar-peek');
   immersiveButton.classList.toggle('active', on);
+  immersiveButton.setAttribute('aria-pressed', String(on));
   immersiveButton.textContent = on ? '退出沉浸' : '沉浸';
   sourceButton.disabled = on; // the source pane is force-hidden while immersive
   localStorage.setItem(IMMERSIVE_KEY, on ? '1' : '0');
@@ -147,6 +148,12 @@ function showHint(): void {
       hintEl.hidden = true;
     }, 400);
   }, 2600);
+}
+
+function preferredTheme(): 'dark' | 'light' {
+  const stored = localStorage.getItem(THEME_KEY);
+  if (stored === 'light' || stored === 'dark') return stored;
+  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
 }
 
 function applyTheme(theme: 'dark' | 'light'): void {
@@ -173,6 +180,7 @@ function applyFontSize(size: number): void {
 function applySourceVisible(visible: boolean): void {
   panesEl.classList.toggle('source-hidden', !visible);
   sourceButton.classList.toggle('active', visible);
+  sourceButton.setAttribute('aria-pressed', String(visible));
   localStorage.setItem(SOURCE_KEY, visible ? '1' : '0');
 }
 
