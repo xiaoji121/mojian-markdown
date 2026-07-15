@@ -200,6 +200,7 @@ body {
   font-family: var(--read-body);
   font-size: var(--doc-size);
   line-height: 2.1;
+  letter-spacing: 0.04em; /* 与编辑器 .md-preview 一致的正文字距 */
   color: var(--text-2);
 }
 

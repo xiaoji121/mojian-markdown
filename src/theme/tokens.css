@@ -30,27 +30,29 @@
   --fs-xl: 16px;  /* 阅读正文基准 */
   --fs-2xl: 18px; /* 品牌标题 */
 
-  /* ----- 背景 ----- */
-  --bg: #14110d;
-  --bg-2: #1c1814;
-  --bg-3: #161310;
-  --bg-input: #14110d;
-  --bg-source: #191510;
-  --pre-bg: #0f0d0a;
-  --code-bg: #1c1814;
-  --quote-bg: #181410;
-  --th-bg: #251f19;
+  /* ----- 背景（暗色不用近黑：提亮到深灰级减少光晕眩光，
+     明度对齐微信读书暗色，保留微暖的墨色倾向）----- */
+  --bg: #1c1a17;
+  --bg-2: #24211d;
+  --bg-3: #1f1d19;
+  --bg-input: #1c1a17;
+  --bg-source: #211e1a;
+  --pre-bg: #171512;
+  --code-bg: #24211d;
+  --quote-bg: #201d19;
+  --th-bg: #2c2823;
 
   /* ----- 边框 ----- */
-  --border: #322a22;
-  --border-soft: #2a231c;
-  --border-faint: #241e18;
+  --border: #3a332a;
+  --border-soft: #322c24;
+  --border-faint: #2c2620;
 
-  /* ----- 文字（层级靠明度，不靠字号）----- */
-  --text: #f4ebd9;
-  --text-2: #c8b89c;
-  --text-3: #8a7d68;
-  --text-4: #5a5142;
+  /* ----- 文字（层级靠明度，不靠字号；正文低饱和暖白灰，
+     避免整屏茶色罩造成的视疲劳）----- */
+  --text: #f2ecdf;
+  --text-2: #cfc8b8;
+  --text-3: #958a76;
+  --text-4: #665c4c;
 
   /* ----- 琥珀强调 ----- */
   --accent: #f0a838;
@@ -72,11 +74,11 @@
   --code-type: var(--info);
 
   /* ----- 顶栏与划词工具条 ----- */
-  --header-bg: rgba(20, 17, 13, 0.92);
-  --tool-bg: rgba(40, 33, 26, 0.97);
-  --tool-border: #403526;
-  --tool-text: #ece0ca;
-  --tool-divider: #4a3f30;
+  --header-bg: rgba(28, 26, 23, 0.92);
+  --tool-bg: rgba(48, 44, 38, 0.97);
+  --tool-border: #463e32;
+  --tool-text: #eee4d2;
+  --tool-divider: #52483a;
   --tool-hover: rgba(240, 168, 56, 0.16);
 
   /* ----- 阴影（小=按钮 / 中=下拉、工具条 / 大=弹层），双层叠加 ----- */
@@ -88,24 +90,27 @@
 
 :root[data-theme='light'],
 body.editor-active[data-theme='light'] {
-  --bg: #faf6ef;
-  --bg-2: #f2ece1;
-  --bg-3: #f6f1e8;
-  --bg-input: #fffdf9;
-  --bg-source: #f1ebdd;
-  --pre-bg: #f3ebda;
-  --code-bg: #f0e8d8;
-  --quote-bg: #f5eee0;
-  --th-bg: #eee5d3;
+  /* 暖橙羊皮纸基调（参照微信读书浅色），比奶白更暖，
+     纸感更强、白光刺激更低 */
+  --bg: #f9ebcc;
+  --bg-2: #f1e2bd;
+  --bg-3: #f5e6c4;
+  --bg-input: #fdf3dc;
+  --bg-source: #f3e4c0;
+  --pre-bg: #f2e2bc;
+  --code-bg: #efdfb8;
+  --quote-bg: #f5e7c6;
+  --th-bg: #ecdbb2;
 
-  --border: #e3d8c5;
-  --border-soft: #ece2d0;
-  --border-faint: #eee5d4;
+  --border: #ddcda2;
+  --border-soft: #e4d5ae;
+  --border-faint: #e9dcb8;
 
+  /* text-3/text-4 较旧值加深：小字号次要文字达到可读对比度 */
   --text: #2b2218;
   --text-2: #4f4334;
-  --text-3: #8a7d68;
-  --text-4: #b3a591;
+  --text-3: #6e6249;
+  --text-4: #998b74;
 
   --accent: #bd7a0c;
   --accent-2: #9c6408;
@@ -121,11 +126,11 @@ body.editor-active[data-theme='light'] {
   --code-number: #b06f2e;
   --code-function: #8f6f28;
 
-  --header-bg: rgba(250, 246, 239, 0.92);
-  --tool-bg: rgba(255, 255, 255, 0.98);
-  --tool-border: #e3d8c5;
+  --header-bg: rgba(249, 235, 204, 0.92);
+  --tool-bg: rgba(253, 246, 228, 0.98);
+  --tool-border: #ddcda2;
   --tool-text: #3a3024;
-  --tool-divider: #e3d8c5;
+  --tool-divider: #ddcda2;
   --tool-hover: rgba(189, 122, 12, 0.1);
 
   --shadow-sm: 0 1px 2px rgba(120, 100, 60, 0.12), 0 2px 6px rgba(120, 100, 60, 0.08);
