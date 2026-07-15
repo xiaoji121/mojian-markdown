@@ -121,7 +121,9 @@ export function createMarkdownEditorComponent(DCLogic, React) {
 
     let initial = this.SAMPLE();
     let name = '未命名.md';
-    this.theme = this.props.theme || 'dark';
+    // 未持久化过主题时跟随系统外观
+    this.theme = this.props.theme
+      || (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
     const saved = loadEditorState();
     if (saved && typeof saved.content === 'string') {
       initial = this._cleanOpenedMarkdown(saved.content);

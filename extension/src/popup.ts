@@ -8,6 +8,7 @@ type ClipMode = 'article' | 'full' | 'selection';
 
 const MODE_KEY = 'mojian-clip-mode';
 const META_KEY = 'mojian-clip-meta';
+const THEME_KEY = 'mojian-reader-theme'; // 跟随阅读页的主题选择
 
 const previewEl = byId<HTMLTextAreaElement>('preview');
 const statusEl = byId<HTMLElement>('status');
@@ -27,6 +28,7 @@ let lastResult: { body: string; meta: ClipMeta } | null = null;
 void init();
 
 async function init(): Promise<void> {
+  applyTheme();
   restorePreferences();
   bindEvents();
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -142,6 +144,17 @@ function bindEvents(): void {
     void chrome.tabs.create({ url: chrome.runtime.getURL('reader.html') });
     window.close();
   });
+}
+
+function applyTheme(): void {
+  const stored = localStorage.getItem(THEME_KEY);
+  const theme =
+    stored === 'light' || stored === 'dark'
+      ? stored
+      : window.matchMedia('(prefers-color-scheme: light)').matches
+        ? 'light'
+        : 'dark';
+  document.documentElement.dataset.theme = theme;
 }
 
 function restorePreferences(): void {

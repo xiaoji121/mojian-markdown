@@ -47,6 +47,7 @@
   ]
 }
 </script>
+<link rel="stylesheet" href="/src/theme/tokens.css">
 <link rel="stylesheet" href="/src/landing.css">
 <script>
   function syncPageMode() {
@@ -275,14 +276,14 @@ cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
       </span>
     </div>
     <div class="header-actions" style="display:flex; align-items:center; gap:8px; flex:none;">
-      <button class="abtn document-toggle" onClick="{{ toggleDocumentSidebar }}" aria-label="最近阅读" title="最近阅读" style="display:none; align-items:center; justify-content:center; width:34px; height:33px; padding:0; background:transparent; border:1px solid var(--border); color:var(--text-2); font-family:var(--mono); font-size:15px; cursor:pointer; border-radius:3px;">☰</button>
-      <button ref="{{ viewModeButtonRef }}" class="abtn" onClick="{{ toggleViewMode }}" aria-label="进入预览模式" aria-pressed="false" title="隐藏原文，专注预览" style="display:flex; align-items:center; justify-content:center; gap:6px; height:33px; padding:0 11px; background:transparent; border:1px solid var(--border); color:var(--text-2); font-family:var(--mono); font-size:12px; cursor:pointer; border-radius:3px; transition:all .2s;"><span style="font-size:14px;">◫</span><span ref="{{ viewModeLabelRef }}" class="action-label">预览</span></button>
-      <button class="abtn" onClick="{{ toggleTheme }}" title="切换 亮色/暗黑" style="display:flex; align-items:center; justify-content:center; width:34px; background:transparent; border:1px solid var(--border); color:var(--text-2); height:33px; font-size:15px; cursor:pointer; border-radius:3px; transition:all .2s;"><span ref="{{ themeIconRef }}">☾</span></button>
-      <button class="abtn" onClick="{{ toggleComments }}" aria-label="批注" style="display:flex; align-items:center; gap:7px; background:transparent; border:1px solid var(--border); color:var(--text-2); padding:8px 13px; font-family:var(--mono); font-size:12px; letter-spacing:0.03em; cursor:pointer; border-radius:3px; transition:all .2s;"><span class="action-label">批注</span> <span ref="{{ commentCountRef }}" style="display:inline-flex; align-items:center; justify-content:center; min-width:16px; height:16px; padding:0 4px; background:var(--accent-soft); color:var(--accent); border-radius:8px; font-size:10px; font-weight:600;">0</span></button>
-      <button class="abtn ai-entry" onClick="{{ toggleAI }}" aria-label="AI 助手" title="打开 AI 阅读助手" style="display:flex; align-items:center; gap:7px; background:transparent; border:1px solid var(--border); color:var(--text-2); padding:8px 13px; font-family:var(--mono); font-size:12px; letter-spacing:0.03em; cursor:pointer; border-radius:3px; transition:all .2s;"><span class="action-label">AI 助手</span><span style="color:var(--accent); font-size:14px;">✦</span></button>
-      <button class="abtn" onClick="{{ onSave }}" aria-label="保存文档" style="background:transparent; border:1px solid var(--border); color:var(--text-2); padding:8px 14px; font-family:var(--mono); font-size:12px; letter-spacing:0.03em; cursor:pointer; border-radius:3px; transition:all .2s;">保存 <span class="save-shortcut">⌘S</span></button>
-      <button class="abtn" onClick="{{ onNew }}" aria-label="新建文档" style="background:transparent; border:1px solid var(--border); color:var(--text-2); padding:8px 14px; font-family:var(--mono); font-size:12px; letter-spacing:0.03em; cursor:pointer; border-radius:3px; transition:all .2s;">新建</button>
-      <button class="abtn primary" onClick="{{ onOpen }}" aria-label="打开文件" style="background:var(--accent); border:1px solid var(--accent); color:var(--accent-ink); padding:8px 18px; font-family:var(--mono); font-size:12px; font-weight:600; letter-spacing:0.03em; cursor:pointer; border-radius:3px; transition:all .2s;">打开</button>
+      <button class="abtn document-toggle" onClick="{{ toggleDocumentSidebar }}" aria-label="最近阅读" title="最近阅读" style="display:none; align-items:center; justify-content:center; width:34px; height:33px; padding:0; background:transparent; border:1px solid var(--border); color:var(--text-2); font-family:var(--mono); font-size:15px; cursor:pointer; border-radius:var(--radius-control);">☰</button>
+      <button ref="{{ viewModeButtonRef }}" class="abtn" onClick="{{ toggleViewMode }}" aria-label="进入预览模式" aria-pressed="false" title="隐藏原文，专注预览" style="display:flex; align-items:center; justify-content:center; gap:6px; height:33px; padding:0 11px; background:transparent; border:1px solid var(--border); color:var(--text-2); font-family:var(--mono); font-size:12px; cursor:pointer; border-radius:var(--radius-control); transition:all .2s;"><span style="font-size:14px;">◫</span><span ref="{{ viewModeLabelRef }}" class="action-label">预览</span></button>
+      <button class="abtn" onClick="{{ toggleTheme }}" title="切换 亮色/暗黑" style="display:flex; align-items:center; justify-content:center; width:34px; background:transparent; border:1px solid var(--border); color:var(--text-2); height:33px; font-size:15px; cursor:pointer; border-radius:var(--radius-control); transition:all .2s;"><span ref="{{ themeIconRef }}">☾</span></button>
+      <button class="abtn" onClick="{{ toggleComments }}" aria-label="批注" style="display:flex; align-items:center; gap:7px; background:transparent; border:1px solid var(--border); color:var(--text-2); padding:8px 13px; font-family:var(--mono); font-size:12px; letter-spacing:0.03em; cursor:pointer; border-radius:var(--radius-control); transition:all .2s;"><span class="action-label">批注</span> <span ref="{{ commentCountRef }}" style="display:inline-flex; align-items:center; justify-content:center; min-width:16px; height:16px; padding:0 4px; background:var(--accent-soft); color:var(--accent); border-radius:var(--radius-pill); font-size:10px; font-weight:600;">0</span></button>
+      <button class="abtn ai-entry" onClick="{{ toggleAI }}" aria-label="AI 助手" title="打开 AI 阅读助手" style="display:flex; align-items:center; gap:7px; background:transparent; border:1px solid var(--border); color:var(--text-2); padding:8px 13px; font-family:var(--mono); font-size:12px; letter-spacing:0.03em; cursor:pointer; border-radius:var(--radius-control); transition:all .2s;"><span class="action-label">AI 助手</span><span style="color:var(--accent); font-size:14px;">✦</span></button>
+      <button class="abtn" onClick="{{ onSave }}" aria-label="保存文档" style="background:transparent; border:1px solid var(--border); color:var(--text-2); padding:8px 14px; font-family:var(--mono); font-size:12px; letter-spacing:0.03em; cursor:pointer; border-radius:var(--radius-control); transition:all .2s;">保存 <span class="save-shortcut">⌘S</span></button>
+      <button class="abtn" onClick="{{ onNew }}" aria-label="新建文档" style="background:transparent; border:1px solid var(--border); color:var(--text-2); padding:8px 14px; font-family:var(--mono); font-size:12px; letter-spacing:0.03em; cursor:pointer; border-radius:var(--radius-control); transition:all .2s;">新建</button>
+      <button class="abtn primary" onClick="{{ onOpen }}" aria-label="打开文件" style="background:var(--accent); border:1px solid var(--accent); color:var(--accent-ink); padding:8px 18px; font-family:var(--mono); font-size:12px; font-weight:600; letter-spacing:0.03em; cursor:pointer; border-radius:var(--radius-control); transition:all .2s;">打开</button>
     </div>
   </header>
 
@@ -306,13 +307,13 @@ cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
       <div class="pane-toolbar" style="flex:none; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:0 16px; height:42px; border-bottom:1px solid var(--border); background:var(--bg-2);">
         <span style="font-family:var(--mono); font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:var(--text-3); flex:none;">Markdown 原文</span>
         <div class="source-toolbar-actions" style="display:flex; gap:5px; flex-wrap:nowrap;">
-          <button class="tbtn" onClick="{{ fmtH }}" title="标题" style="background:transparent; border:1px solid var(--border-soft); color:var(--text-3); width:30px; height:26px; font-family:var(--read); font-weight:700; font-size:14px; cursor:pointer; border-radius:3px; transition:all .15s;">H</button>
-          <button class="tbtn" onClick="{{ fmtB }}" title="加粗" style="background:transparent; border:1px solid var(--border-soft); color:var(--text-3); width:30px; height:26px; font-weight:700; font-size:13px; cursor:pointer; border-radius:3px; transition:all .15s;">B</button>
-          <button class="tbtn" onClick="{{ fmtI }}" title="斜体" style="background:transparent; border:1px solid var(--border-soft); color:var(--text-3); width:30px; height:26px; font-style:italic; font-family:var(--read); font-size:14px; cursor:pointer; border-radius:3px; transition:all .15s;">i</button>
-          <button class="tbtn" onClick="{{ fmtQuote }}" title="引用" style="background:transparent; border:1px solid var(--border-soft); color:var(--text-3); width:30px; height:26px; font-size:14px; cursor:pointer; border-radius:3px; transition:all .15s;">&rdquo;</button>
-          <button class="tbtn" onClick="{{ fmtList }}" title="列表" style="background:transparent; border:1px solid var(--border-soft); color:var(--text-3); width:30px; height:26px; font-size:14px; cursor:pointer; border-radius:3px; transition:all .15s;">•</button>
-          <button class="tbtn" onClick="{{ fmtCode }}" title="代码" style="background:transparent; border:1px solid var(--border-soft); color:var(--text-3); width:30px; height:26px; font-family:var(--mono); font-size:13px; cursor:pointer; border-radius:3px; transition:all .15s;">&lt;&gt;</button>
-          <button class="tbtn" onClick="{{ fmtLink }}" title="链接" style="background:transparent; border:1px solid var(--border-soft); color:var(--text-3); width:30px; height:26px; font-size:13px; cursor:pointer; border-radius:3px; transition:all .15s;">&#128279;</button>
+          <button class="tbtn" onClick="{{ fmtH }}" title="标题" style="background:transparent; border:1px solid var(--border-soft); color:var(--text-3); width:30px; height:26px; font-family:var(--read); font-weight:700; font-size:14px; cursor:pointer; border-radius:var(--radius-control); transition:all .15s;">H</button>
+          <button class="tbtn" onClick="{{ fmtB }}" title="加粗" style="background:transparent; border:1px solid var(--border-soft); color:var(--text-3); width:30px; height:26px; font-weight:700; font-size:13px; cursor:pointer; border-radius:var(--radius-control); transition:all .15s;">B</button>
+          <button class="tbtn" onClick="{{ fmtI }}" title="斜体" style="background:transparent; border:1px solid var(--border-soft); color:var(--text-3); width:30px; height:26px; font-style:italic; font-family:var(--read); font-size:14px; cursor:pointer; border-radius:var(--radius-control); transition:all .15s;">i</button>
+          <button class="tbtn" onClick="{{ fmtQuote }}" title="引用" style="background:transparent; border:1px solid var(--border-soft); color:var(--text-3); width:30px; height:26px; font-size:14px; cursor:pointer; border-radius:var(--radius-control); transition:all .15s;">&rdquo;</button>
+          <button class="tbtn" onClick="{{ fmtList }}" title="列表" style="background:transparent; border:1px solid var(--border-soft); color:var(--text-3); width:30px; height:26px; font-size:14px; cursor:pointer; border-radius:var(--radius-control); transition:all .15s;">•</button>
+          <button class="tbtn" onClick="{{ fmtCode }}" title="代码" style="background:transparent; border:1px solid var(--border-soft); color:var(--text-3); width:30px; height:26px; font-family:var(--mono); font-size:13px; cursor:pointer; border-radius:var(--radius-control); transition:all .15s;">&lt;&gt;</button>
+          <button class="tbtn" onClick="{{ fmtLink }}" title="链接" style="background:transparent; border:1px solid var(--border-soft); color:var(--text-3); width:30px; height:26px; font-size:13px; cursor:pointer; border-radius:var(--radius-control); transition:all .15s;">&#128279;</button>
         </div>
       </div>
       <textarea ref="{{ sourceRef }}" class="md-source" spellCheck="false" placeholder="# 在这里写 Markdown…"
@@ -334,23 +335,23 @@ cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
           </span>
           <span class="fullscreen-only-control" aria-label="调整预览字号" style="align-items:center; gap:5px;">
             <button class="tbtn" onClick="{{ fontDec }}" title="缩小字号" aria-label="缩小字号"
-              style="background:transparent; border:1px solid var(--border-soft); color:var(--text-3); width:27px; height:27px; font-family:var(--read); font-size:11px; cursor:pointer; border-radius:3px; transition:all .15s; line-height:1;">A−</button>
+              style="background:transparent; border:1px solid var(--border-soft); color:var(--text-3); width:27px; height:27px; font-family:var(--read); font-size:11px; cursor:pointer; border-radius:var(--radius-control); transition:all .15s; line-height:1;">A−</button>
             <span ref="{{ fullscreenFontSizeRef }}" class="fullscreen-font-value" style="color:var(--text-3); min-width:34px; text-align:center; font-family:var(--mono); font-size:10px;">16px</span>
             <button class="tbtn" onClick="{{ fontInc }}" title="放大字号" aria-label="放大字号"
-              style="background:transparent; border:1px solid var(--border-soft); color:var(--text-3); width:27px; height:27px; font-family:var(--read); font-size:14px; cursor:pointer; border-radius:3px; transition:all .15s; line-height:1;">A+</button>
+              style="background:transparent; border:1px solid var(--border-soft); color:var(--text-3); width:27px; height:27px; font-family:var(--read); font-size:14px; cursor:pointer; border-radius:var(--radius-control); transition:all .15s; line-height:1;">A+</button>
           </span>
           <button ref="{{ outlineButtonRef }}" class="tbtn outline-toggle" onClick="{{ toggleOutline }}"
             title="查看文章大纲" aria-label="查看文章大纲" aria-expanded="false"
-            style="display:flex; align-items:center; justify-content:center; gap:5px; height:27px; padding:0 8px; background:transparent; border:1px solid var(--border-soft); color:var(--text-3); font-family:var(--mono); font-size:11px; cursor:pointer; border-radius:3px; transition:all .15s;">
+            style="display:flex; align-items:center; justify-content:center; gap:5px; height:27px; padding:0 8px; background:transparent; border:1px solid var(--border-soft); color:var(--text-3); font-family:var(--mono); font-size:11px; cursor:pointer; border-radius:var(--radius-control); transition:all .15s;">
             <span>☷</span><span class="action-label">大纲</span><span ref="{{ outlineCountRef }}" class="outline-count">0</span>
           </button>
           <button class="tbtn fullscreen-only-control" onClick="{{ toggleComments }}" title="显示批注" aria-label="显示批注"
-            style="align-items:center; justify-content:center; gap:6px; height:27px; padding:0 9px; background:transparent; border:1px solid var(--border-soft); color:var(--text-3); font-family:var(--mono); font-size:11px; cursor:pointer; border-radius:3px; transition:all .15s;">
+            style="align-items:center; justify-content:center; gap:6px; height:27px; padding:0 9px; background:transparent; border:1px solid var(--border-soft); color:var(--text-3); font-family:var(--mono); font-size:11px; cursor:pointer; border-radius:var(--radius-control); transition:all .15s;">
             <span class="fullscreen-comments-label">批注</span>
-            <span ref="{{ previewCommentCountRef }}" style="display:inline-flex; align-items:center; justify-content:center; min-width:16px; height:16px; padding:0 4px; background:var(--accent-soft); color:var(--accent); border-radius:8px; font-size:10px; font-weight:600;">0</span>
+            <span ref="{{ previewCommentCountRef }}" style="display:inline-flex; align-items:center; justify-content:center; min-width:16px; height:16px; padding:0 4px; background:var(--accent-soft); color:var(--accent); border-radius:var(--radius-pill); font-size:10px; font-weight:600;">0</span>
           </button>
           <button class="tbtn" onClick="{{ togglePreviewFullscreen }}" title="沉浸式阅读（Esc 退出）" aria-label="沉浸式阅读"
-            style="display:flex; align-items:center; justify-content:center; gap:6px; height:27px; padding:0 9px; background:transparent; border:1px solid var(--border-soft); color:var(--text-3); font-family:var(--mono); font-size:11px; cursor:pointer; border-radius:3px; transition:all .15s;">
+            style="display:flex; align-items:center; justify-content:center; gap:6px; height:27px; padding:0 9px; background:transparent; border:1px solid var(--border-soft); color:var(--text-3); font-family:var(--mono); font-size:11px; cursor:pointer; border-radius:var(--radius-control); transition:all .15s;">
             <svg ref="{{ fullscreenIconRef }}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"></path></svg>
             <span ref="{{ fullscreenLabelRef }}" class="fullscreen-button-label">沉浸式阅读</span>
           </button>
@@ -374,8 +375,8 @@ cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
         <button onClick="{{ closePanel }}" title="收起" style="background:transparent; border:none; color:var(--text-3); cursor:pointer; font-size:20px; line-height:1; padding:2px 6px;">&times;</button>
       </div>
       <div style="flex:none; display:flex; gap:7px; padding:11px 14px; border-bottom:1px solid var(--border-soft);">
-        <button class="abtn" onClick="{{ copyAll }}" style="flex:1; background:transparent; border:1px solid var(--border); color:var(--text-2); padding:8px 6px; font-family:var(--mono); font-size:11px; letter-spacing:0.02em; cursor:pointer; border-radius:3px; transition:all .2s;">复制全部批注</button>
-        <button class="abtn primary" onClick="{{ copyFull }}" style="flex:1; background:var(--accent); border:1px solid var(--accent); color:var(--accent-ink); padding:8px 6px; font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:0.02em; cursor:pointer; border-radius:3px; transition:all .2s;">复制全文+批注</button>
+        <button class="abtn" onClick="{{ copyAll }}" style="flex:1; background:transparent; border:1px solid var(--border); color:var(--text-2); padding:8px 6px; font-family:var(--mono); font-size:11px; letter-spacing:0.02em; cursor:pointer; border-radius:var(--radius-control); transition:all .2s;">复制全部批注</button>
+        <button class="abtn primary" onClick="{{ copyFull }}" style="flex:1; background:var(--accent); border:1px solid var(--accent); color:var(--accent-ink); padding:8px 6px; font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:0.02em; cursor:pointer; border-radius:var(--radius-control); transition:all .2s;">复制全文+批注</button>
       </div>
       <div ref="{{ commentListRef }}" style="flex:1; min-height:0; overflow-y:auto; padding:12px 14px; display:flex; flex-direction:column; gap:12px;"></div>
     </aside>
@@ -386,7 +387,7 @@ cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
       <div style="flex:none; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:0 14px; height:42px; border-bottom:1px solid var(--border); background:var(--bg-2);">
         <span style="font-family:var(--mono); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-3);">AI 阅读助手</span>
         <span style="display:flex; align-items:center; gap:5px;">
-          <button onClick="{{ toggleAIHistory }}" title="本地对话历史" style="background:transparent; border:1px solid var(--border-soft); border-radius:3px; color:var(--text-3); cursor:pointer; font:10px/1 var(--mono); padding:6px 8px;">历史</button>
+          <button onClick="{{ toggleAIHistory }}" title="本地对话历史" style="background:transparent; border:1px solid var(--border-soft); border-radius:var(--radius-control); color:var(--text-3); cursor:pointer; font:10px/1 var(--mono); padding:6px 8px;">历史</button>
           <button onClick="{{ closeAI }}" title="收起" style="background:transparent; border:none; color:var(--text-3); cursor:pointer; font-size:20px; line-height:1; padding:2px 6px;">&times;</button>
         </span>
       </div>
@@ -402,17 +403,17 @@ cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
         <div style="color:var(--text-4); font:9px/1.5 var(--mono); letter-spacing:.1em; text-transform:uppercase; margin-bottom:6px;">当前引用</div>
         <div ref="{{ aiQuoteRef }}" class="ai-quote is-empty" style="max-height:104px; overflow:auto; padding:9px 10px; border-left:2px solid var(--accent); background:var(--bg-2); color:var(--text-2); font-family:var(--read); font-size:12px; line-height:1.7;">请先在预览中选中文字，再点击「问 AI」。</div>
         <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:9px;">
-          <button class="ai-quick" onClick="{{ askExplain }}" style="border:1px solid var(--border-soft); border-radius:12px; padding:4px 8px; background:transparent; color:var(--text-3); font:10px/1.2 var(--sans); cursor:pointer;">解释这段</button>
-          <button class="ai-quick" onClick="{{ askContext }}" style="border:1px solid var(--border-soft); border-radius:12px; padding:4px 8px; background:transparent; color:var(--text-3); font:10px/1.2 var(--sans); cursor:pointer;">联系上下文</button>
-          <button class="ai-quick" onClick="{{ askChallenge }}" style="border:1px solid var(--border-soft); border-radius:12px; padding:4px 8px; background:transparent; color:var(--text-3); font:10px/1.2 var(--sans); cursor:pointer;">质疑假设</button>
+          <button class="ai-quick" onClick="{{ askExplain }}" style="border:1px solid var(--border-soft); border-radius:var(--radius-pill); padding:4px 8px; background:transparent; color:var(--text-3); font:10px/1.2 var(--sans); cursor:pointer;">解释这段</button>
+          <button class="ai-quick" onClick="{{ askContext }}" style="border:1px solid var(--border-soft); border-radius:var(--radius-pill); padding:4px 8px; background:transparent; color:var(--text-3); font:10px/1.2 var(--sans); cursor:pointer;">联系上下文</button>
+          <button class="ai-quick" onClick="{{ askChallenge }}" style="border:1px solid var(--border-soft); border-radius:var(--radius-pill); padding:4px 8px; background:transparent; color:var(--text-3); font:10px/1.2 var(--sans); cursor:pointer;">质疑假设</button>
         </div>
       </div>
       <div ref="{{ aiMessagesRef }}" aria-live="polite" style="flex:1; min-height:0; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:12px;"></div>
       <div style="flex:none; padding:11px 12px 12px; border-top:1px solid var(--border); background:var(--bg-2);">
-        <textarea ref="{{ aiInputRef }}" rows="3" placeholder="针对这段原文提问…（Enter 发送，Shift+Enter 换行）" style="display:block; width:100%; resize:none; box-sizing:border-box; border:1px solid var(--border); border-radius:6px; outline:none; padding:9px 10px; background:var(--bg); color:var(--text-2); font-family:var(--sans); font-size:13px; line-height:1.55;"></textarea>
+        <textarea ref="{{ aiInputRef }}" rows="3" placeholder="针对这段原文提问…（Enter 发送，Shift+Enter 换行）" style="display:block; width:100%; resize:none; box-sizing:border-box; border:1px solid var(--border); border-radius:var(--radius-control); outline:none; padding:9px 10px; background:var(--bg); color:var(--text-2); font-family:var(--sans); font-size:13px; line-height:1.55;"></textarea>
         <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px;">
           <span style="color:var(--text-4); font:9px/1.4 var(--mono);">自动归档至 Brain OS</span>
-          <button ref="{{ aiSendRef }}" onClick="{{ sendAIQuestion }}" style="min-width:68px; border:1px solid var(--accent); border-radius:4px; padding:7px 12px; background:var(--accent); color:var(--accent-ink); font:600 11px/1 var(--mono); cursor:pointer;">发送</button>
+          <button ref="{{ aiSendRef }}" onClick="{{ sendAIQuestion }}" style="min-width:68px; border:1px solid var(--accent); border-radius:var(--radius-control); padding:7px 12px; background:var(--accent); color:var(--accent-ink); font:600 11px/1 var(--mono); cursor:pointer;">发送</button>
         </div>
       </div>
     </aside>
@@ -424,34 +425,34 @@ cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
     <span class="footer-stats" style="display:flex; align-items:center; gap:20px;">
       <span class="font-controls" style="display:flex; align-items:center; gap:7px;">
         <span style="color:var(--text-4); letter-spacing:0.1em;">字号</span>
-        <button class="tbtn" onClick="{{ fontDec }}" title="缩小" style="background:transparent; border:1px solid var(--border-soft); color:var(--text-3); width:24px; height:20px; font-family:var(--read); font-size:11px; cursor:pointer; border-radius:3px; transition:all .15s; line-height:1;">A−</button>
+        <button class="tbtn" onClick="{{ fontDec }}" title="缩小" style="background:transparent; border:1px solid var(--border-soft); color:var(--text-3); width:24px; height:20px; font-family:var(--read); font-size:11px; cursor:pointer; border-radius:var(--radius-control); transition:all .15s; line-height:1;">A−</button>
         <span ref="{{ fontSizeRef }}" style="color:var(--text-2); min-width:34px; text-align:center;">16px</span>
-        <button class="tbtn" onClick="{{ fontInc }}" title="放大" style="background:transparent; border:1px solid var(--border-soft); color:var(--text-3); width:24px; height:20px; font-family:var(--read); font-size:14px; cursor:pointer; border-radius:3px; transition:all .15s; line-height:1;">A+</button>
+        <button class="tbtn" onClick="{{ fontInc }}" title="放大" style="background:transparent; border:1px solid var(--border-soft); color:var(--text-3); width:24px; height:20px; font-family:var(--read); font-size:14px; cursor:pointer; border-radius:var(--radius-control); transition:all .15s; line-height:1;">A+</button>
       </span>
       <span ref="{{ countRef }}" style="color:var(--text-3);">0 字 · 0 行</span>
     </span>
   </footer>
 
   <!-- ===== SELECTION TOOLBAR ===== -->
-  <div ref="{{ selBarRef }}" class="selection-toolbar" onMouseDown="{{ noop }}" style="position:fixed; z-index:120; top:0; left:0; display:none; align-items:stretch; background:var(--tool-bg); border:1px solid var(--tool-border); border-radius:13px; box-shadow:var(--shadow); padding:6px; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);">
-    <button class="seltool" onClick="{{ copySel }}" title="复制选中文字" style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:52px; padding:6px 9px 5px; background:transparent; border:none; border-radius:8px; cursor:pointer; color:var(--tool-text); font-family:var(--sans); font-size:11px; line-height:1;">
+  <div ref="{{ selBarRef }}" class="selection-toolbar" onMouseDown="{{ noop }}" style="position:fixed; z-index:120; top:0; left:0; display:none; align-items:stretch; background:var(--tool-bg); border:1px solid var(--tool-border); border-radius:var(--radius-surface); box-shadow:var(--shadow); padding:6px; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);">
+    <button class="seltool" onClick="{{ copySel }}" title="复制选中文字" style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:52px; padding:6px 9px 5px; background:transparent; border:none; border-radius:var(--radius-control); cursor:pointer; color:var(--tool-text); font-family:var(--sans); font-size:11px; line-height:1;">
       <span style="height:20px; display:flex; align-items:center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h8"></path></svg></span>复制
     </button>
     <span style="width:1px; background:var(--tool-divider); margin:7px 3px;"></span>
-    <button class="seltool" onClick="{{ markMarker }}" title="马克笔高亮" style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:52px; padding:6px 9px 5px; background:transparent; border:none; border-radius:8px; cursor:pointer; color:var(--tool-text); font-family:var(--sans); font-size:11px; line-height:1;">
+    <button class="seltool" onClick="{{ markMarker }}" title="马克笔高亮" style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:52px; padding:6px 9px 5px; background:transparent; border:none; border-radius:var(--radius-control); cursor:pointer; color:var(--tool-text); font-family:var(--sans); font-size:11px; line-height:1;">
       <span style="height:20px; display:flex; align-items:center;"><span style="font-family:var(--read); font-size:17px; font-weight:600; line-height:1; box-shadow:inset 0 -7px 0 var(--mark-bg);">A</span></span>马克笔
     </button>
-    <button class="seltool" onClick="{{ markWavy }}" title="波浪线" style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:52px; padding:6px 9px 5px; background:transparent; border:none; border-radius:8px; cursor:pointer; color:var(--tool-text); font-family:var(--sans); font-size:11px; line-height:1;">
+    <button class="seltool" onClick="{{ markWavy }}" title="波浪线" style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:52px; padding:6px 9px 5px; background:transparent; border:none; border-radius:var(--radius-control); cursor:pointer; color:var(--tool-text); font-family:var(--sans); font-size:11px; line-height:1;">
       <span style="height:20px; display:flex; align-items:center;"><span style="font-family:var(--read); font-size:17px; font-weight:600; line-height:1; text-decoration:underline; text-decoration-style:wavy; text-decoration-color:var(--accent); text-underline-offset:2px;">A</span></span>波浪线
     </button>
-    <button class="seltool" onClick="{{ markStraight }}" title="直线" style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:52px; padding:6px 9px 5px; background:transparent; border:none; border-radius:8px; cursor:pointer; color:var(--tool-text); font-family:var(--sans); font-size:11px; line-height:1;">
+    <button class="seltool" onClick="{{ markStraight }}" title="直线" style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:52px; padding:6px 9px 5px; background:transparent; border:none; border-radius:var(--radius-control); cursor:pointer; color:var(--tool-text); font-family:var(--sans); font-size:11px; line-height:1;">
       <span style="height:20px; display:flex; align-items:center;"><span style="font-family:var(--read); font-size:17px; font-weight:600; line-height:1; text-decoration:underline; text-decoration-color:var(--accent); text-underline-offset:2px;">A</span></span>直线
     </button>
     <span style="width:1px; background:var(--tool-divider); margin:7px 3px;"></span>
-    <button class="seltool" onClick="{{ writeIdea }}" title="写想法（加批注）" style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:52px; padding:6px 9px 5px; background:transparent; border:none; border-radius:8px; cursor:pointer; color:var(--tool-text); font-family:var(--sans); font-size:11px; line-height:1;">
+    <button class="seltool" onClick="{{ writeIdea }}" title="写想法（加批注）" style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:52px; padding:6px 9px 5px; background:transparent; border:none; border-radius:var(--radius-control); cursor:pointer; color:var(--tool-text); font-family:var(--sans); font-size:11px; line-height:1;">
       <span style="height:20px; display:flex; align-items:center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M12 7v6M9 10h6" strokeWidth="1.6"></path></svg></span>写想法
     </button>
-    <button class="seltool ai-entry" onClick="{{ aiAsk }}" title="复制为 AI 提问" style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:52px; padding:6px 9px 5px; background:transparent; border:none; border-radius:8px; cursor:pointer; color:var(--tool-text); font-family:var(--sans); font-size:11px; line-height:1;">
+    <button class="seltool ai-entry" onClick="{{ aiAsk }}" title="复制为 AI 提问" style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:52px; padding:6px 9px 5px; background:transparent; border:none; border-radius:var(--radius-control); cursor:pointer; color:var(--tool-text); font-family:var(--sans); font-size:11px; line-height:1;">
       <span style="height:20px; display:flex; align-items:center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg></span>问 AI
     </button>
   </div>
