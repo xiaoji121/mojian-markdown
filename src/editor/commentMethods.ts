@@ -138,7 +138,7 @@ export class CommentMethods {
     const badge = document.createElement('sup');
     badge.setAttribute('data-comment-badge', id);
     badge.textContent = num;
-    badge.style.cssText = 'display:inline-block; min-width:14px; height:14px; line-height:14px; text-align:center; font-family:var(--mono); font-size:9px; font-weight:700; color:var(--accent-ink); background:var(--accent); border-radius:7px; padding:0 3px; margin:0 1px 0 2px; vertical-align:super; cursor:pointer; user-select:none;';
+    badge.style.cssText = 'display:inline-block; min-width:14px; height:14px; line-height:14px; text-align:center; font-family:var(--mono); font-size:var(--fs-2xs); font-weight:700; color:var(--accent-ink); background:var(--accent); border-radius:var(--radius-pill); padding:0 3px; margin:0 1px 0 2px; vertical-align:super; cursor:pointer; user-select:none;';
     span.parentNode.insertBefore(badge, span.nextSibling);
   }
 
@@ -264,7 +264,7 @@ export class CommentMethods {
     list.innerHTML = '';
     if (!this.comments.length) {
       const e = document.createElement('div');
-      e.style.cssText = 'padding:26px 12px; color:var(--text-4); font-size:12.5px; line-height:1.9; text-align:center; font-family:var(--sans);';
+      e.style.cssText = 'padding:26px 12px; color:var(--text-4); font-size:var(--fs-sm); line-height:1.9; text-align:center; font-family:var(--sans);';
       e.innerHTML = '在右侧预览中<span style="color:var(--text-3)">选中任意文字</span>，<br>用浮出的工具条<span style="color:var(--accent)">划线</span>或<span style="color:var(--accent)">写想法</span>，<br>都会收集到这里。';
       list.appendChild(e);
       return;
@@ -294,15 +294,15 @@ export class CommentMethods {
     left.style.cssText = 'display:flex; align-items:center; gap:7px;';
     const num = document.createElement('span');
     num.textContent = (i + 1);
-    num.style.cssText = 'display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 5px; background:var(--accent); color:var(--accent-ink); border-radius:9px; font-family:var(--mono); font-size:11px; font-weight:700;';
+    num.style.cssText = 'display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 5px; background:var(--accent); color:var(--accent-ink); border-radius:var(--radius-pill); font-family:var(--mono); font-size:var(--fs-xs); font-weight:700;';
     const tag = document.createElement('span');
     tag.textContent = this._typeLabel(c.type);
-    tag.style.cssText = 'font-family:var(--mono); font-size:9px; letter-spacing:0.06em; padding:2px 7px; border-radius:10px; background:var(--accent-soft); color:var(--accent); border:1px solid var(--border-soft);';
+    tag.style.cssText = 'font-family:var(--mono); font-size:var(--fs-2xs); letter-spacing:0.06em; padding:2px 7px; border-radius:var(--radius-pill); background:var(--accent-soft); color:var(--accent); border:1px solid var(--border-soft);';
     left.appendChild(num); left.appendChild(tag);
 
     const acts = document.createElement('div');
     acts.style.cssText = 'display:flex; gap:6px;';
-    const btnCss = 'background:transparent; border:1px solid var(--border); color:var(--text-3); padding:4px 9px; font-family:var(--mono); font-size:10px; cursor:pointer; border-radius:3px; transition:all .15s;';
+    const btnCss = 'background:transparent; border:1px solid var(--border); color:var(--text-3); padding:4px 9px; font-family:var(--mono); font-size:var(--fs-2xs); cursor:pointer; border-radius:var(--radius-control); transition:all .15s;';
     const copyBtn = document.createElement('button');
     copyBtn.textContent = '复制'; copyBtn.className = 'tbtn'; copyBtn.style.cssText = btnCss;
     copyBtn.addEventListener('click', () => this._copy(this._commentText(c, i), '已复制该批注'));

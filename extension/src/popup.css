@@ -24,7 +24,7 @@ body {
   gap: 10px;
   background: var(--bg);
   color: var(--text);
-  font: 13px/1.6 var(--sans);
+  font: var(--fs-md)/1.6 var(--sans);
 }
 
 .top {
@@ -36,7 +36,7 @@ body {
 
 .top h1 {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--fs-xl);
   font-weight: 600;
   color: var(--accent);
   font-family: var(--read);
@@ -50,7 +50,7 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--text-2);
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 
 .controls {
@@ -133,7 +133,7 @@ body {
   border-radius: var(--radius-control);
   background: var(--bg-2);
   color: var(--text);
-  font: 12px/1.6 var(--mono);
+  font: var(--fs-sm)/1.6 var(--mono);
 }
 
 #preview:focus {
@@ -149,7 +149,7 @@ body {
 
 .status {
   color: var(--text-3);
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 
 .actions {

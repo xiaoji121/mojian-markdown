@@ -33,7 +33,7 @@ body {
   flex-direction: column;
   background: var(--bg);
   color: var(--text);
-  font: 14px/1.6 var(--sans);
+  font: var(--fs-lg)/1.6 var(--sans);
   -webkit-font-smoothing: antialiased;
   transition: background 0.25s ease;
 }
@@ -71,7 +71,7 @@ body {
 
 .brand {
   margin: 0;
-  font: 600 17px/1.4 var(--read);
+  font: 600 var(--fs-2xl)/1.4 var(--read);
   color: var(--accent);
   white-space: nowrap;
 }
@@ -147,7 +147,7 @@ body {
   resize: none;
   background: var(--bg-source);
   color: var(--text-2);
-  font: 13px/1.7 var(--mono);
+  font: var(--fs-md)/1.7 var(--mono);
   caret-color: var(--accent);
 }
 
@@ -187,7 +187,7 @@ body {
 .doc-meta {
   margin: 0;
   color: var(--text-4);
-  font-size: 13px;
+  font-size: var(--fs-md);
   word-break: break-all;
 }
 
@@ -420,7 +420,7 @@ body.immersive .doc {
   border-radius: var(--radius-pill);
   background: var(--bg-2);
   color: var(--text-3);
-  font-size: 13px;
+  font-size: var(--fs-md);
   white-space: nowrap;
   opacity: 0;
   transition: opacity 0.4s ease, transform 0.4s ease;
