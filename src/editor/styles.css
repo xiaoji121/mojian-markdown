@@ -167,10 +167,7 @@
   .outline-level-6 { padding-left: 77px; font-size: 11px; }
   .outline-empty { padding: 24px 14px; color: var(--text-4); font: 11px/1.7 var(--sans); }
 
-  .tbtn:hover { border-color: var(--accent) !important; color: var(--accent) !important; }
-  .abtn:hover { border-color: var(--accent) !important; color: var(--accent) !important; }
-  .abtn.primary:hover { background: var(--accent-2) !important; border-color: var(--accent-2) !important; }
-  .seltool:hover { background: var(--tool-hover) !important; }
+  /* 按钮基础样式与 hover 见 shell.css */
   .ai-panel { position: relative; }
   .preview-pane-fullscreen {
     position: fixed !important;
@@ -346,7 +343,6 @@
     line-height: 1.7;
   }
   .ai-empty small { color: var(--text-4); font-size: 11px; }
-  .ai-quick:hover { border-color: var(--accent) !important; color: var(--accent) !important; }
   .ai-history-panel {
     position: absolute;
     z-index: 6;

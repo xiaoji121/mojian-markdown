@@ -1,4 +1,5 @@
 import './editor/styles.css';
+import './editor/shell.css';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import { marked } from 'marked';
