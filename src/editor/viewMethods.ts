@@ -63,8 +63,9 @@ export class ViewMethods {
   }
 
   _resolvedPaper() {
-    // 未显式选择时跟随框架主题：暗→墨、亮→羊皮纸
-    return this.paper || (this.theme === 'light' ? 'parchment' : 'ink');
+    // 纸色按主题分别记忆；未选择时暗→墨黑、亮→羊皮纸
+    const pref = this.theme === 'light' ? this.paperLight : this.paperDark;
+    return pref || (this.theme === 'light' ? 'parchment' : 'ink');
   }
 
   _applyPaper() {
@@ -80,7 +81,8 @@ export class ViewMethods {
   }
 
   setPaper(id) {
-    this.paper = id;
+    if (this.theme === 'light') this.paperLight = id;
+    else this.paperDark = id;
     this._applyPaper();
     this._persist();
     const item = this.PAPERS().find((p) => p.id === id);
@@ -99,10 +101,41 @@ export class ViewMethods {
       dot.title = '纸色：' + p.label;
       dot.setAttribute('aria-label', '纸色：' + p.label);
       dot.style.background = p.swatch;
-      dot.addEventListener('click', () => this.setPaper(p.id));
+      dot.addEventListener('click', () => {
+        // 小屏下色点收起为当前色：第一次点击先展开整排
+        const collapsed = window.matchMedia && window.matchMedia('(max-width: 760px)').matches;
+        if (collapsed && !picker.classList.contains('is-open')) {
+          picker.classList.add('is-open');
+          return;
+        }
+        this.setPaper(p.id);
+        picker.classList.remove('is-open');
+      });
       picker.appendChild(dot);
     });
     this._applyPaper();
+  }
+
+  // ===== 小屏顶栏溢出菜单（⋯） =====
+
+  toggleHeaderMenu(force) {
+    const menu = this.headerMenuRef.current;
+    const more = this.headerMoreRef.current;
+    if (!menu) return;
+    const open = typeof force === 'boolean' ? force : !menu.classList.contains('is-open');
+    menu.classList.toggle('is-open', open);
+    if (more) more.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open && !this._headerMenuDocH) {
+      this._headerMenuDocH = (e) => {
+        if (menu.contains(e.target)) return;
+        if (more && (e.target === more || more.contains(e.target))) return;
+        this.toggleHeaderMenu(false);
+      };
+      document.addEventListener('click', this._headerMenuDocH);
+    } else if (!open && this._headerMenuDocH) {
+      document.removeEventListener('click', this._headerMenuDocH);
+      this._headerMenuDocH = null;
+    }
   }
 
 
@@ -112,8 +145,11 @@ export class ViewMethods {
     const next = typeof force === 'boolean' ? force : !this.previewFullscreen;
     this.previewFullscreen = next;
     pane.classList.toggle('preview-pane-fullscreen', this.previewFullscreen);
+    pane.classList.toggle('immersive-wide', this.previewFullscreen && this.immersiveWide);
     this._syncFullscreenLayout();
     document.body.style.overflow = this.previewFullscreen ? 'hidden' : '';
+    if (this.previewFullscreen) this._bindImmersiveToolbar();
+    else this._unbindImmersiveToolbar();
     if (this.fullscreenLabelRef.current) {
       this.fullscreenLabelRef.current.textContent = this.previewFullscreen ? '退出阅读' : '沉浸式阅读';
     }
@@ -123,6 +159,63 @@ export class ViewMethods {
         : '<path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"></path>';
     }
     this._setStatus(this.previewFullscreen ? '已进入沉浸式阅读 · 按 Esc 退出' : '已退出沉浸式阅读');
+  }
+
+  // ===== 沉浸式：宽屏切换与工具条自动隐藏 =====
+
+  toggleImmersiveWide() {
+    this.immersiveWide = !this.immersiveWide;
+    const pane = this.previewPaneRef.current;
+    if (pane) pane.classList.toggle('immersive-wide', this.previewFullscreen && this.immersiveWide);
+    this._syncImmersiveWideButton();
+    this._persist();
+    this._setStatus(this.immersiveWide ? '已切换为宽屏阅读' : '已切换为标准宽度');
+  }
+
+  _syncImmersiveWideButton() {
+    const btn = this.immersiveWideRef.current;
+    if (!btn) return;
+    btn.textContent = this.immersiveWide ? '标准' : '宽屏';
+    btn.title = this.immersiveWide ? '切换为标准宽度' : '切换为宽屏阅读';
+    btn.setAttribute('aria-pressed', this.immersiveWide ? 'true' : 'false');
+  }
+
+  _bindImmersiveToolbar() {
+    if (this._immersiveScrollH) return;
+    const prev = this.previewRef.current;
+    if (!prev) return;
+    this._toolbarPeek = false;
+    this._immersiveScrollH = () => this._updateImmersiveToolbar();
+    this._immersiveMouseH = (e) => {
+      if (!this.previewFullscreen) return;
+      if (e.clientY <= 44) this._toolbarPeek = true;
+      else if (e.clientY > 160) this._toolbarPeek = false;
+      this._updateImmersiveToolbar();
+    };
+    prev.addEventListener('scroll', this._immersiveScrollH);
+    document.addEventListener('mousemove', this._immersiveMouseH);
+    this._updateImmersiveToolbar();
+  }
+
+  _unbindImmersiveToolbar() {
+    const prev = this.previewRef.current;
+    if (prev && this._immersiveScrollH) prev.removeEventListener('scroll', this._immersiveScrollH);
+    if (this._immersiveMouseH) document.removeEventListener('mousemove', this._immersiveMouseH);
+    this._immersiveScrollH = null;
+    this._immersiveMouseH = null;
+    const pane = this.previewPaneRef.current;
+    if (pane) pane.classList.remove('immersive-toolbar-hidden');
+  }
+
+  _updateImmersiveToolbar() {
+    const pane = this.previewPaneRef.current, prev = this.previewRef.current;
+    if (!pane || !prev) return;
+    if (!this.previewFullscreen) { pane.classList.remove('immersive-toolbar-hidden'); return; }
+    const toolbar = pane.querySelector('.pane-toolbar');
+    const keep = prev.scrollTop <= 8
+      || this._toolbarPeek
+      || (toolbar && toolbar.matches(':hover'));
+    pane.classList.toggle('immersive-toolbar-hidden', !keep);
   }
 
 

@@ -9,6 +9,9 @@
 
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; height: 100%; }
+  /* <x-dc> 内是供 DC 运行时解析的原始模板（React 挂载于其外），
+     首帧即隐藏，避免运行时就绪前闪现裸模板 */
+  x-dc { display: none !important; }
   /* 主题 token 统一定义在 src/theme/tokens.css（index.html <link> 引入） */
   body {
     background: var(--bg);
@@ -180,13 +183,29 @@
     height: 100vh;
     background: var(--paper-bg);
   }
+  /* 沉浸式下工具条为覆盖层：离开顶部滑出隐藏，鼠标到顶缘/滚回顶部唤出 */
+  .preview-pane-fullscreen .pane-toolbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 6;
+    transition: transform .25s ease;
+  }
+  .preview-pane-fullscreen.immersive-toolbar-hidden .pane-toolbar {
+    transform: translateY(-105%);
+  }
   .preview-pane-fullscreen .md-preview {
-    /* 中文舒适行长约 40+ 字/行（与阅读器 .doc 的 780px 对齐） */
-    width: min(100%, 820px);
-    margin: 0 auto;
-    padding: 46px 64px 80px !important;
+    /* 滚动容器铺满全屏（滚动条贴屏幕边缘），版心用左右内边距挤出：
+       中文舒适行长约 40+ 字/行（820px，与阅读器 .doc 的 780px 对齐）；
+       顶部内边距为覆盖层工具条让位 */
+    width: 100%;
+    padding: 88px max(64px, calc((100% - 820px) / 2)) 80px !important;
     scrollbar-width: thin;
     scrollbar-color: color-mix(in srgb, var(--text-4) 48%, transparent) transparent;
+  }
+  .preview-pane-fullscreen.immersive-wide .md-preview {
+    padding-inline: max(64px, calc((100% - 1240px) / 2)) !important;
   }
   .preview-pane-fullscreen .md-preview::-webkit-scrollbar { width: 5px; }
   .preview-pane-fullscreen .md-preview::-webkit-scrollbar-track { background: transparent; }
@@ -555,6 +574,17 @@
     .header-actions .save-shortcut { display: none; }
     .document-toggle { display: flex !important; }
     .header-actions .primary { padding: 0 12px !important; }
+    /* 低频动作收进 ⋯ 溢出菜单 */
+    .collapsible-action { display: none !important; }
+    .header-more { display: flex !important; }
+    /* 纸色点收起为当前色，点击展开整排（见 _buildPaperPicker） */
+    .paper-picker .paper-dot:not(.is-active) { display: none; }
+    .paper-picker.is-open .paper-dot { display: block; }
+    /* 沉浸式入口只留图标；宽屏切换在小屏无意义
+       （需压过 .preview-pane-fullscreen .fullscreen-only-control 的 flex !important） */
+    .fullscreen-button-label { display: none !important; }
+    .preview-pane-fullscreen .tbtn.immersive-wide-toggle,
+    .immersive-wide-toggle { display: none !important; }
     .editor-main { position: relative; overflow: hidden; }
     .document-sidebar {
       position: fixed;
@@ -564,10 +594,16 @@
       left: 0;
       width: min(82vw, 300px);
       transform: translateX(-102%);
-      box-shadow: 18px 0 48px rgba(0,0,0,.38);
-      transition: transform .2s ease;
+      /* 收起时不画阴影（否则会从屏幕外探回左缘）、对键盘/读屏不可达 */
+      box-shadow: none;
+      visibility: hidden;
+      transition: transform .2s ease, visibility .2s;
     }
-    .document-sidebar.is-mobile-open { transform: translateX(0); }
+    .document-sidebar.is-mobile-open {
+      transform: translateX(0);
+      visibility: visible;
+      box-shadow: 18px 0 48px rgba(0,0,0,.38);
+    }
     .document-sidebar-resize { display: none; }
     .document-sidebar-close {
       display: block;
@@ -665,7 +701,7 @@
       overscroll-behavior-x: contain;
     }
     .selection-toolbar .seltool { min-width: 48px !important; padding-inline: 7px !important; }
-    .preview-pane-fullscreen .md-preview { padding: 22px 20px calc(40px + env(safe-area-inset-bottom)) !important; }
+    .preview-pane-fullscreen .md-preview { padding: 66px 20px calc(40px + env(safe-area-inset-bottom)) !important; }
   }
 
   @media (max-width: 400px) {
@@ -675,7 +711,7 @@
   }
 
   @media (max-width: 720px) {
-    .preview-pane-fullscreen .md-preview { padding: 30px 24px 60px !important; }
+    .preview-pane-fullscreen .md-preview { padding: 70px 24px 60px !important; }
   }
 
   body:not(.agent-bridge-enabled) .document-sidebar,

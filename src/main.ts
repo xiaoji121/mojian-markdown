@@ -1,5 +1,4 @@
-import './editor/styles.css';
-import './editor/shell.css';
+// 编辑器 CSS 由 index.html 以 <link> 阻塞式引入（避免 JS 注入造成的无样式闪烁）
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import { marked } from 'marked';

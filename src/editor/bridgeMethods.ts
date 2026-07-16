@@ -213,7 +213,9 @@ export class BridgeMethods {
       fileName: this.fileName,
       fontSize: this.fontSize,
       theme: this.theme,
-      paper: this.paper || undefined,
+      paperDark: this.paperDark || undefined,
+      paperLight: this.paperLight || undefined,
+      immersiveWide: this.immersiveWide || undefined,
       comments: this.comments,
       bridgeDocumentId: this.bridgeDocumentId || undefined
     });

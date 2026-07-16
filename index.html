@@ -49,6 +49,8 @@
 </script>
 <link rel="stylesheet" href="/src/theme/tokens.css">
 <link rel="stylesheet" href="/src/landing.css">
+<link rel="stylesheet" href="/src/editor/styles.css">
+<link rel="stylesheet" href="/src/editor/shell.css">
 <script>
   function syncPageMode() {
     var editing = window.location.hash === '#editor';
@@ -64,7 +66,21 @@
 <script type="module" src="/src/main.ts"></script>
 </head>
 <body>
-<script>syncPageMode();</script>
+<script>
+  syncPageMode();
+  // 首帧前应用持久化的主题与纸色，避免"先暗后亮"闪变（编辑器 JS 就绪后会接管）
+  (function () {
+    try {
+      var saved = JSON.parse(localStorage.getItem('md-editor-warm-v1') || 'null');
+      var light = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+      var theme = (saved && saved.theme) || (light ? 'light' : 'dark');
+      document.body.setAttribute('data-theme', theme);
+      var paper = (saved && (theme === 'light' ? saved.paperLight : saved.paperDark))
+        || (theme === 'light' ? 'parchment' : 'ink');
+      document.body.setAttribute('data-paper', paper);
+    } catch (e) {}
+  })();
+</script>
 <main id="landing-page">
   <nav class="landing-nav" aria-label="首页导航">
     <a class="landing-brand" href="#" aria-label="墨笺首页">
@@ -278,12 +294,18 @@ cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
     <div class="header-actions">
       <button class="abtn document-toggle" onClick="{{ toggleDocumentSidebar }}" aria-label="最近阅读" title="最近阅读">☰</button>
       <button ref="{{ viewModeButtonRef }}" class="abtn" onClick="{{ toggleViewMode }}" aria-label="进入预览模式" aria-pressed="false" title="隐藏原文，专注预览"><span class="abtn-glyph">◫</span><span ref="{{ viewModeLabelRef }}" class="action-label">预览</span></button>
-      <button class="abtn icon" onClick="{{ toggleTheme }}" title="切换 亮色/暗黑" aria-label="切换亮色或暗黑主题"><span ref="{{ themeIconRef }}">☾</span></button>
+      <button class="abtn icon collapsible-action" onClick="{{ toggleTheme }}" title="切换 亮色/暗黑" aria-label="切换亮色或暗黑主题"><span ref="{{ themeIconRef }}">☾</span></button>
       <button class="abtn" onClick="{{ toggleComments }}" aria-label="批注"><span class="action-label">批注</span> <span ref="{{ commentCountRef }}" class="count-badge">0</span></button>
       <button class="abtn ai-entry" onClick="{{ toggleAI }}" aria-label="AI 助手" title="打开 AI 阅读助手"><span class="action-label">AI 助手</span><span class="accent-star">✦</span></button>
-      <button class="abtn secondary" onClick="{{ onSave }}" aria-label="保存文档">保存 <span class="save-shortcut">⌘S</span></button>
-      <button class="abtn" onClick="{{ onNew }}" aria-label="新建文档">新建</button>
+      <button class="abtn collapsible-action" onClick="{{ onNew }}" aria-label="新建文档">新建</button>
+      <button class="abtn secondary collapsible-action" onClick="{{ onSave }}" aria-label="保存文档">保存 <span class="save-shortcut">⌘S</span></button>
       <button class="abtn primary" onClick="{{ onOpen }}" aria-label="打开文件">打开</button>
+      <button ref="{{ headerMoreRef }}" class="abtn icon header-more" onClick="{{ toggleHeaderMenu }}" title="更多操作" aria-label="更多操作" aria-haspopup="menu" aria-expanded="false">⋯</button>
+      <div ref="{{ headerMenuRef }}" class="header-menu" role="menu" aria-label="更多操作">
+        <button class="header-menu-item" role="menuitem" onClick="{{ menuTheme }}">切换主题</button>
+        <button class="header-menu-item" role="menuitem" onClick="{{ menuSave }}">保存文档</button>
+        <button class="header-menu-item" role="menuitem" onClick="{{ menuNew }}">新建文档</button>
+      </div>
     </div>
   </header>
 
@@ -342,6 +364,7 @@ cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
             title="查看文章大纲" aria-label="查看文章大纲" aria-expanded="false">
             <span>☷</span><span class="action-label">大纲</span><span ref="{{ outlineCountRef }}" class="outline-count">0</span>
           </button>
+          <button ref="{{ immersiveWideRef }}" class="tbtn tool-pill fullscreen-only-control immersive-wide-toggle" onClick="{{ toggleImmersiveWide }}" title="切换为宽屏阅读" aria-pressed="false">宽屏</button>
           <button class="tbtn tool-pill fullscreen-only-control" onClick="{{ toggleComments }}" title="显示批注" aria-label="显示批注">
             <span class="fullscreen-comments-label">批注</span>
             <span ref="{{ previewCommentCountRef }}" class="count-badge">0</span>

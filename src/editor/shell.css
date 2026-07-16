@@ -61,7 +61,39 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.header-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+.header-actions { display: flex; align-items: center; gap: 8px; flex: none; position: relative; }
+
+/* 小屏溢出菜单（⋯）：桌面隐藏，≤760px 由 styles.css 媒体查询启用。
+   （.abtn.header-more 双类写法确保压过 .abtn 的 display:flex） */
+.abtn.header-more,
+.header-menu { display: none; }
+.header-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 130;
+  min-width: 136px;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-surface);
+  background: var(--bg-2);
+  box-shadow: var(--shadow-md);
+}
+.header-menu.is-open { display: flex; }
+.header-menu-item {
+  padding: 10px 12px;
+  border: none;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--text-2);
+  font-family: var(--sans);
+  font-size: var(--fs-md);
+  text-align: left;
+  cursor: pointer;
+}
+.header-menu-item:hover { background: var(--accent-soft); color: var(--accent); }
 
 /* ===== 动作按钮金字塔：primary（打开）/ secondary（保存）/ 默认三级 ===== */
 .abtn {

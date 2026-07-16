@@ -434,11 +434,12 @@ body.immersive .bar {
   z-index: 10;
   transform: translateY(-105%);
   transition: transform 0.25s ease;
-  box-shadow: var(--shadow);
+  box-shadow: none; /* 收起时不画阴影，避免从屏幕外探回顶缘 */
 }
 
 body.immersive.bar-peek .bar {
   transform: translateY(0);
+  box-shadow: var(--shadow);
 }
 
 body.immersive .doc {

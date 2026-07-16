@@ -24,8 +24,14 @@ export interface PersistedEditorState {
   fileName: string;
   fontSize: number;
   theme: EditorTheme;
-  /** 内容纸色；缺省表示跟随框架主题 */
+  /** 暗色主题下的纸色；缺省为墨黑 */
+  paperDark?: PaperTheme;
+  /** 亮色主题下的纸色；缺省为羊皮纸 */
+  paperLight?: PaperTheme;
+  /** @deprecated 旧的单份纸色记忆，读取时迁移到 paperDark/paperLight */
   paper?: PaperTheme;
+  /** 沉浸式阅读是否使用宽屏内容宽度 */
+  immersiveWide?: boolean;
   comments: Annotation[];
   bridgeDocumentId?: string;
 }

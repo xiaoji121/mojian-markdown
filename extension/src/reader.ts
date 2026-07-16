@@ -7,7 +7,9 @@ const THEME_KEY = 'mojian-reader-theme';
 const SIZE_KEY = 'mojian-reader-size';
 const SOURCE_KEY = 'mojian-reader-source';
 const IMMERSIVE_KEY = 'mojian-reader-immersive';
-const PAPER_KEY = 'mojian-reader-paper';
+const PAPER_KEY_DARK = 'mojian-reader-paper-dark';
+const PAPER_KEY_LIGHT = 'mojian-reader-paper-light';
+const LEGACY_PAPER_KEY = 'mojian-reader-paper';
 
 type PaperTheme = 'ink' | 'parchment' | 'cream' | 'snow' | 'green';
 const PAPERS: Array<{ id: PaperTheme; label: string; swatch: string }> = [
@@ -41,6 +43,7 @@ let hintTimer: number | undefined;
 init();
 
 function init(): void {
+  migrateLegacyPaper();
   applyTheme(preferredTheme());
   buildPaperPicker();
   applyPaper();
@@ -175,15 +178,35 @@ function applyTheme(theme: 'dark' | 'light'): void {
   applyPaper(); // 未显式选择纸色时跟随主题重新解析
 }
 
+function isLightTheme(): boolean {
+  return document.documentElement.dataset.theme === 'light';
+}
+
+function paperKey(): string {
+  return isLightTheme() ? PAPER_KEY_LIGHT : PAPER_KEY_DARK;
+}
+
 function storedPaper(): PaperTheme | null {
-  const value = localStorage.getItem(PAPER_KEY);
+  const value = localStorage.getItem(paperKey());
   return PAPERS.some((p) => p.id === value) ? (value as PaperTheme) : null;
 }
 
+function migrateLegacyPaper(): void {
+  const legacy = localStorage.getItem(LEGACY_PAPER_KEY);
+  if (!legacy) return;
+  // 旧的单份纸色记忆：墨黑归暗色，其余归亮色
+  if (PAPERS.some((p) => p.id === legacy)) {
+    const target = legacy === 'ink' ? PAPER_KEY_DARK : PAPER_KEY_LIGHT;
+    if (!localStorage.getItem(target)) localStorage.setItem(target, legacy);
+  }
+  localStorage.removeItem(LEGACY_PAPER_KEY);
+}
+
 function resolvedPaper(): PaperTheme {
-  // 未显式选择时跟随框架主题：暗→墨、亮→羊皮纸
-  if (storedPaper()) return storedPaper() as PaperTheme;
-  return document.documentElement.dataset.theme === 'light' ? 'parchment' : 'ink';
+  // 纸色按主题分别记忆；未选择时暗→墨黑、亮→羊皮纸
+  const stored = storedPaper();
+  if (stored) return stored;
+  return isLightTheme() ? 'parchment' : 'ink';
 }
 
 function applyPaper(): void {
@@ -207,7 +230,7 @@ function buildPaperPicker(): void {
     dot.setAttribute('aria-label', `纸色：${p.label}`);
     dot.style.background = p.swatch;
     dot.addEventListener('click', () => {
-      localStorage.setItem(PAPER_KEY, p.id);
+      localStorage.setItem(paperKey(), p.id);
       applyPaper();
     });
     picker.appendChild(dot);

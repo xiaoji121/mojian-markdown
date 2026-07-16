@@ -36,6 +36,9 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.fontSizeRef = React.createRef();
     this.fullscreenFontSizeRef = React.createRef();
     this.paperPickerRef = React.createRef();
+    this.immersiveWideRef = React.createRef();
+    this.headerMoreRef = React.createRef();
+    this.headerMenuRef = React.createRef();
     this.fontSize = 16;
     this.selBarRef = React.createRef();
     this.commentsRef = React.createRef();
@@ -76,7 +79,9 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.aiPanelWidth = 480;
     this.documentSidebarWidth = 236;
     this.theme = 'dark';
-    this.paper = ''; // 空 = 跟随主题
+    this.paperDark = ''; // 纸色按主题分别记忆；空 = 该主题默认
+    this.paperLight = '';
+    this.immersiveWide = false;
     this._themeTouched = false;
     this.panelOpen = false;
     this.previewFullscreen = false;
@@ -137,7 +142,14 @@ export function createMarkdownEditorComponent(DCLogic, React) {
         this.activeDocumentId = saved.bridgeDocumentId;
       }
       if (saved.theme) { this.theme = saved.theme; this._themeTouched = true; }
-      if (saved.paper) this.paper = saved.paper;
+      if (saved.paperDark) this.paperDark = saved.paperDark;
+      if (saved.paperLight) this.paperLight = saved.paperLight;
+      if (saved.immersiveWide) this.immersiveWide = true;
+      if (saved.paper) {
+        // 迁移旧的单份纸色记忆：墨黑归暗色，其余归亮色
+        if (saved.paper === 'ink') this.paperDark = this.paperDark || saved.paper;
+        else this.paperLight = this.paperLight || saved.paper;
+      }
     }
 
     src.value = initial;
@@ -145,6 +157,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     if (this.fileNameRef.current) this.fileNameRef.current.textContent = name;
     this._applyTheme();
     this._buildPaperPicker();
+    this._syncImmersiveWideButton();
     this._applyFont();
     this._renderPreview();
     this._updateCount();
@@ -230,6 +243,9 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       fontSizeRef: this.fontSizeRef,
       fullscreenFontSizeRef: this.fullscreenFontSizeRef,
       paperPickerRef: this.paperPickerRef,
+      immersiveWideRef: this.immersiveWideRef,
+      headerMoreRef: this.headerMoreRef,
+      headerMenuRef: this.headerMenuRef,
       themeIconRef: this.themeIconRef,
       selBarRef: this.selBarRef,
       commentsRef: this.commentsRef,
@@ -258,6 +274,11 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       fontDec: () => this._setFont(this.fontSize - 1),
       toggleTheme: () => this.toggleTheme(),
       togglePreviewFullscreen: () => this.togglePreviewFullscreen(),
+      toggleImmersiveWide: () => this.toggleImmersiveWide(),
+      toggleHeaderMenu: () => this.toggleHeaderMenu(),
+      menuTheme: () => { this.toggleTheme(); this.toggleHeaderMenu(false); },
+      menuSave: () => { this.toggleHeaderMenu(false); this.onSave(); },
+      menuNew: () => { this.toggleHeaderMenu(false); this.onNew(); },
       toggleOutline: () => this.toggleOutline(),
       toggleComments: () => this._openPanel(),
       closePanel: () => this._openPanel(false),
