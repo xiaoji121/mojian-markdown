@@ -46,12 +46,13 @@ export class DiagramMethods {
   async _loadMermaid() {
     if (!mermaidModulePromise) mermaidModulePromise = import('mermaid').then((mod) => mod.default);
     const mermaid = await mermaidModulePromise;
-    const themeKey = this.theme || 'dark';
+    const paperKey = document.body.getAttribute('data-paper') || 'ink';
+    const themeKey = (this.theme || 'dark') + ':' + paperKey;
     if (!mermaidReady || mermaidThemeKey !== themeKey) {
       mermaid.initialize({
         startOnLoad: false,
         securityLevel: 'strict',
-        theme: themeKey === 'light' ? 'base' : 'dark',
+        theme: paperKey === 'ink' ? 'dark' : 'base',
         themeVariables: this._mermaidThemeVariables()
       });
       mermaidReady = true;
@@ -65,17 +66,17 @@ export class DiagramMethods {
   }
 
   _mermaidThemeVariables() {
-    // 取自 src/theme/tokens.css 的当前主题值，避免复制第二份色板
+    // 图渲染在纸面上：取 tokens.css 的 --paper-* 当前值，避免复制第二份色板
     const styles = getComputedStyle(document.body);
     const token = (name, fallback) => (styles.getPropertyValue(name) || '').trim() || fallback;
     return {
-      background: token('--bg', '#14110d'),
-      primaryColor: token('--bg-2', '#1c1814'),
-      primaryBorderColor: token('--border', '#322a22'),
-      primaryTextColor: token('--text', '#f4ebd9'),
-      lineColor: token('--accent', '#f0a838'),
-      secondaryColor: token('--bg-3', '#161310'),
-      tertiaryColor: token('--bg', '#14110d'),
+      background: token('--paper-bg', '#1c1a17'),
+      primaryColor: token('--paper-code', '#24211d'),
+      primaryBorderColor: token('--paper-border', '#3a332a'),
+      primaryTextColor: token('--paper-text', '#f2ecdf'),
+      lineColor: token('--paper-accent', '#f0a838'),
+      secondaryColor: token('--paper-bg-soft', '#211e1a'),
+      tertiaryColor: token('--paper-bg', '#1c1a17'),
       fontFamily: token('--sans', 'Inter Tight, Noto Sans SC, sans-serif')
     };
   }

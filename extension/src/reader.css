@@ -16,6 +16,7 @@
   --doc-size: 16px;
   /* 阅读器专属：正文兜底优先宋体，标题与引文（--read）兜底楷体 */
   --read-body: 'Canger JinKai 04', 'Fraunces', 'Noto Serif SC', 'Songti SC', 'Kaiti SC', 'STKaiti', serif;
+  --paper-font-body: var(--read-body);
 }
 
 * {
@@ -111,6 +112,32 @@ body {
   border-color: var(--accent-2);
 }
 
+.paper-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 2px;
+}
+
+.paper-picker .paper-dot {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.paper-picker .paper-dot:hover {
+  border-color: var(--accent);
+}
+
+.paper-picker .paper-dot.is-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft), 0 0 0 1px var(--accent);
+}
+
 .font-size {
   display: inline-flex;
   align-items: center;
@@ -145,20 +172,27 @@ body {
   padding: 20px;
   border: none;
   resize: none;
-  background: var(--bg-source);
-  color: var(--text-2);
+  background: var(--paper-bg-soft);
+  color: var(--paper-text-2);
   font: var(--fs-md)/1.7 var(--mono);
-  caret-color: var(--accent);
+  caret-color: var(--paper-accent);
 }
 
 #source:focus {
   outline: none;
 }
 
+/* 内容渲染在"纸面"上（--paper-*），与框架配色解耦 */
 .preview-pane {
   flex: 1;
   min-width: 0;
   overflow-y: auto;
+  background: var(--paper-bg);
+}
+
+.preview-pane ::selection,
+#source::selection {
+  background: var(--paper-sel);
 }
 
 .doc {
@@ -171,37 +205,37 @@ body {
 .doc-head {
   padding-bottom: 18px;
   margin-bottom: 30px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--paper-border);
 }
 
 .doc-head h1 {
   margin: 0 0 10px;
-  font-family: var(--read);
+  font-family: var(--paper-font-heading);
   font-weight: 700;
   font-size: calc(var(--doc-size) * 2.1);
   letter-spacing: -0.01em;
   line-height: 1.3;
-  color: var(--text);
+  color: var(--paper-text);
 }
 
 .doc-meta {
   margin: 0;
-  color: var(--text-4);
+  color: var(--paper-text-3);
   font-size: var(--fs-md);
   word-break: break-all;
 }
 
 .doc-meta a {
-  color: var(--text-3);
+  color: var(--paper-text-3);
 }
 
 /* ===== 正文排版（对齐编辑器 .md-preview）===== */
 .doc-body {
-  font-family: var(--read-body);
+  font-family: var(--paper-font-body);
   font-size: var(--doc-size);
-  line-height: 2.1;
-  letter-spacing: 0.04em; /* 与编辑器 .md-preview 一致的正文字距 */
-  color: var(--text-2);
+  line-height: var(--paper-line-height);
+  letter-spacing: var(--paper-letter-spacing); /* 与编辑器 .md-preview 一致 */
+  color: var(--paper-text-2);
 }
 
 .doc-body > *:first-child {
@@ -211,8 +245,8 @@ body {
 .doc-body h1,
 .doc-body h2,
 .doc-body h3 {
-  font-family: var(--read);
-  color: var(--text);
+  font-family: var(--paper-font-heading);
+  color: var(--paper-text);
   letter-spacing: -0.01em;
   line-height: 1.3;
   font-weight: 700;
@@ -222,7 +256,7 @@ body {
   font-size: 2.1em;
   margin: 0.35em 0 0.9em;
   padding-bottom: 0.55em;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--paper-border);
 }
 
 .doc-body h2 {
@@ -242,12 +276,12 @@ body {
   font-weight: 600;
   font-size: 1em;
   margin: 2.25em 0 1.1em;
-  color: var(--text);
+  color: var(--paper-text);
 }
 
 .doc-body h5,
 .doc-body h6 {
-  color: var(--text-3);
+  color: var(--paper-text-3);
 }
 
 .doc-body p {
@@ -257,23 +291,23 @@ body {
 }
 
 .doc-body a {
-  color: var(--accent);
+  color: var(--paper-accent);
   text-decoration: none;
-  border-bottom: 1px dashed var(--accent-soft);
+  border-bottom: 1px dashed color-mix(in srgb, var(--paper-accent) 35%, transparent);
   padding-bottom: 1px;
 }
 
 .doc-body a:hover {
-  border-bottom: 1px solid var(--accent);
+  border-bottom: 1px solid var(--paper-accent);
 }
 
 .doc-body strong {
-  color: var(--text);
+  color: var(--paper-text);
   font-weight: 700;
 }
 
 .doc-body em {
-  color: var(--text-2);
+  color: var(--paper-text-2);
 }
 
 .doc-body ul,
@@ -288,15 +322,15 @@ body {
 }
 
 .doc-body li::marker {
-  color: var(--accent);
+  color: var(--paper-accent);
 }
 
 .doc-body blockquote {
   margin: 1.75em 0;
   padding: 4px 0 4px 20px;
-  border-left: 3px solid var(--accent);
-  color: var(--text-3);
-  font-family: var(--read);
+  border-left: 3px solid var(--paper-accent);
+  color: var(--paper-text-3);
+  font-family: var(--paper-font-heading);
   font-style: italic;
   font-size: 1.04em;
 }
@@ -308,16 +342,16 @@ body {
 .doc-body code {
   font-family: var(--mono);
   font-size: 0.84em;
-  background: var(--code-bg);
-  border: 1px solid var(--border);
+  background: var(--paper-code);
+  border: 1px solid var(--paper-border);
   padding: 1px 6px;
   border-radius: var(--radius-control);
-  color: var(--accent);
+  color: var(--paper-accent);
 }
 
 .doc-body pre {
-  background: var(--pre-bg);
-  border: 1px solid var(--border);
+  background: var(--paper-pre);
+  border: 1px solid var(--paper-border);
   border-radius: var(--radius-control);
   padding: 20px 22px;
   overflow-x: auto;
@@ -328,14 +362,14 @@ body {
   background: none;
   border: none;
   padding: 0;
-  color: var(--text-2);
+  color: var(--paper-text-2);
   font-size: 0.8em;
   line-height: 1.7;
 }
 
 .doc-body hr {
   border: none;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--paper-border);
   margin: 2.25em 0;
 }
 
@@ -350,7 +384,7 @@ body {
 
 .doc-body th,
 .doc-body td {
-  border: 1px solid var(--border);
+  border: 1px solid var(--paper-border);
   padding: 10px 14px;
   text-align: left;
   vertical-align: top;
@@ -358,8 +392,8 @@ body {
 }
 
 .doc-body th {
-  background: var(--th-bg);
-  color: var(--text);
+  background: var(--paper-code);
+  color: var(--paper-text);
   font-weight: 600;
   font-family: var(--mono);
   font-size: 0.78em;
@@ -367,13 +401,13 @@ body {
 }
 
 .doc-body tr:hover td {
-  background: var(--bg-2);
+  background: var(--paper-bg-soft);
 }
 
 .doc-body img {
   max-width: 100%;
   border-radius: var(--radius-control);
-  border: 1px solid var(--border);
+  border: 1px solid var(--paper-border);
 }
 
 .empty {

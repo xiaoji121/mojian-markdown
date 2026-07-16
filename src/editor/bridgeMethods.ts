@@ -213,6 +213,7 @@ export class BridgeMethods {
       fileName: this.fileName,
       fontSize: this.fontSize,
       theme: this.theme,
+      paper: this.paper || undefined,
       comments: this.comments,
       bridgeDocumentId: this.bridgeDocumentId || undefined
     });

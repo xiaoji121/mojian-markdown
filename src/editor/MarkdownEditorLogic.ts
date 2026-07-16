@@ -35,6 +35,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.countRef = React.createRef();
     this.fontSizeRef = React.createRef();
     this.fullscreenFontSizeRef = React.createRef();
+    this.paperPickerRef = React.createRef();
     this.fontSize = 16;
     this.selBarRef = React.createRef();
     this.commentsRef = React.createRef();
@@ -75,6 +76,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.aiPanelWidth = 480;
     this.documentSidebarWidth = 236;
     this.theme = 'dark';
+    this.paper = ''; // 空 = 跟随主题
     this._themeTouched = false;
     this.panelOpen = false;
     this.previewFullscreen = false;
@@ -135,12 +137,14 @@ export function createMarkdownEditorComponent(DCLogic, React) {
         this.activeDocumentId = saved.bridgeDocumentId;
       }
       if (saved.theme) { this.theme = saved.theme; this._themeTouched = true; }
+      if (saved.paper) this.paper = saved.paper;
     }
 
     src.value = initial;
     this.fileName = name;
     if (this.fileNameRef.current) this.fileNameRef.current.textContent = name;
     this._applyTheme();
+    this._buildPaperPicker();
     this._applyFont();
     this._renderPreview();
     this._updateCount();
@@ -225,6 +229,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       countRef: this.countRef,
       fontSizeRef: this.fontSizeRef,
       fullscreenFontSizeRef: this.fullscreenFontSizeRef,
+      paperPickerRef: this.paperPickerRef,
       themeIconRef: this.themeIconRef,
       selBarRef: this.selBarRef,
       commentsRef: this.commentsRef,

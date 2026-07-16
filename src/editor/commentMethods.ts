@@ -100,9 +100,9 @@ export class CommentMethods {
     let n, pos = 0;
     while ((n = walker.nextNode())) { const len = n.nodeValue.length; items.push({ node: n, start: pos, end: pos + len }); pos += len; }
     let css = 'cursor:pointer; border-radius:2px;';
-    if (c.type === 'wavy') css = 'cursor:pointer; text-decoration:underline; text-decoration-style:wavy; text-decoration-color:var(--accent); text-decoration-thickness:1.5px; text-underline-offset:3px;';
-    else if (c.type === 'straight') css = 'cursor:pointer; text-decoration:underline; text-decoration-style:solid; text-decoration-color:var(--accent); text-decoration-thickness:1.5px; text-underline-offset:3px;';
-    else css = 'cursor:pointer; border-radius:2px; background:var(--mark-bg);';
+    if (c.type === 'wavy') css = 'cursor:pointer; text-decoration:underline; text-decoration-style:wavy; text-decoration-color:var(--paper-accent); text-decoration-thickness:1.5px; text-underline-offset:3px;';
+    else if (c.type === 'straight') css = 'cursor:pointer; text-decoration:underline; text-decoration-style:solid; text-decoration-color:var(--paper-accent); text-decoration-thickness:1.5px; text-underline-offset:3px;';
+    else css = 'cursor:pointer; border-radius:2px; background:var(--paper-mark);';
     let first = null;
     for (const it of items) {
       if (it.end <= start || it.start >= end) continue;

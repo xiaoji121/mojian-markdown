@@ -165,8 +165,8 @@ textarea.md-source {
   border: none;
   outline: none;
   padding: 28px 32px;
-  background: var(--bg-source);
-  color: var(--text-2);
+  background: var(--paper-bg-soft);
+  color: var(--paper-text-2);
   font-family: var(--mono);
   font-size: var(--fs-lg);
   line-height: 1.85;
@@ -175,6 +175,21 @@ textarea.md-source {
 
 /* ===== 预览工具栏 ===== */
 .preview-toolbar-actions { display: flex; align-items: center; gap: 12px; }
+.paper-picker { display: flex; align-items: center; gap: 6px; }
+.paper-dot {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: box-shadow .15s, border-color .15s;
+}
+.paper-dot:hover { border-color: var(--accent); }
+.paper-dot.is-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft), 0 0 0 1px var(--accent);
+}
 .preview-toolbar-hint {
   display: flex;
   align-items: center;

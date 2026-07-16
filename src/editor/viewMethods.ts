@@ -38,6 +38,7 @@ export class ViewMethods {
   _applyTheme() {
     try { document.body.setAttribute('data-theme', this.theme); } catch (e) {}
     if (this.themeIconRef.current) this.themeIconRef.current.textContent = this.theme === 'dark' ? '☾' : '☀';
+    this._applyPaper();
   }
 
 
@@ -47,6 +48,61 @@ export class ViewMethods {
     this._applyTheme();
     this._persist();
     this._setStatus('已切换为' + (this.theme === 'dark' ? '暗黑' : '亮色') + '模式');
+  }
+
+  // ===== paper（内容纸色，与框架主题解耦） =====
+
+  PAPERS() {
+    return [
+      { id: 'ink', label: '墨黑', swatch: '#1c1a17' },
+      { id: 'parchment', label: '羊皮纸', swatch: '#f9ebcc' },
+      { id: 'cream', label: '米黄', swatch: '#f0e9d1' },
+      { id: 'snow', label: '清爽白', swatch: '#ffffff' },
+      { id: 'green', label: '豆沙绿', swatch: '#d5e4d0' }
+    ];
+  }
+
+  _resolvedPaper() {
+    // 未显式选择时跟随框架主题：暗→墨、亮→羊皮纸
+    return this.paper || (this.theme === 'light' ? 'parchment' : 'ink');
+  }
+
+  _applyPaper() {
+    const active = this._resolvedPaper();
+    try { document.body.setAttribute('data-paper', active); } catch (e) {}
+    const picker = this.paperPickerRef.current;
+    if (!picker) return;
+    picker.querySelectorAll('.paper-dot').forEach((dot) => {
+      const on = dot.dataset.paper === active;
+      dot.classList.toggle('is-active', on);
+      dot.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
+  setPaper(id) {
+    this.paper = id;
+    this._applyPaper();
+    this._persist();
+    const item = this.PAPERS().find((p) => p.id === id);
+    this._setStatus('纸色已切换为「' + (item ? item.label : id) + '」');
+  }
+
+  _buildPaperPicker() {
+    const picker = this.paperPickerRef.current;
+    if (!picker) return;
+    picker.innerHTML = '';
+    this.PAPERS().forEach((p) => {
+      const dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = 'paper-dot';
+      dot.dataset.paper = p.id;
+      dot.title = '纸色：' + p.label;
+      dot.setAttribute('aria-label', '纸色：' + p.label);
+      dot.style.background = p.swatch;
+      dot.addEventListener('click', () => this.setPaper(p.id));
+      picker.appendChild(dot);
+    });
+    this._applyPaper();
   }
 
 

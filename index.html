@@ -7,7 +7,7 @@
 <meta name="robots" content="index, follow">
 <meta name="author" content="墨笺 Markdown">
 <meta name="application-name" content="墨笺 Markdown">
-<meta name="theme-color" content="#1c1a17">
+<meta name="theme-color" content="#1a1b1d">
 <title>墨笺 Markdown｜阅读、批注与本地保存</title>
 <link rel="icon" href="/og-image.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
@@ -332,6 +332,7 @@ cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
           <span class="preview-toolbar-hint">
             <span class="hint-dot"></span>选中文字可划线
           </span>
+          <span ref="{{ paperPickerRef }}" class="paper-picker" role="group" aria-label="选择纸色"></span>
           <span class="fullscreen-only-control fullscreen-font-controls" aria-label="调整预览字号">
             <button class="tbtn font-btn font-dec" onClick="{{ fontDec }}" title="缩小字号" aria-label="缩小字号">A−</button>
             <span ref="{{ fullscreenFontSizeRef }}" class="fullscreen-font-value">16px</span>

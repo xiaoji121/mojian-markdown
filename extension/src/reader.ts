@@ -7,6 +7,16 @@ const THEME_KEY = 'mojian-reader-theme';
 const SIZE_KEY = 'mojian-reader-size';
 const SOURCE_KEY = 'mojian-reader-source';
 const IMMERSIVE_KEY = 'mojian-reader-immersive';
+const PAPER_KEY = 'mojian-reader-paper';
+
+type PaperTheme = 'ink' | 'parchment' | 'cream' | 'snow' | 'green';
+const PAPERS: Array<{ id: PaperTheme; label: string; swatch: string }> = [
+  { id: 'ink', label: '墨黑', swatch: '#1c1a17' },
+  { id: 'parchment', label: '羊皮纸', swatch: '#f9ebcc' },
+  { id: 'cream', label: '米黄', swatch: '#f0e9d1' },
+  { id: 'snow', label: '清爽白', swatch: '#ffffff' },
+  { id: 'green', label: '豆沙绿', swatch: '#d5e4d0' }
+];
 const MIN_SIZE = 14;
 const MAX_SIZE = 26;
 const DEFAULT_SIZE = 16; // 与编辑器 .md-preview 的默认字号一致
@@ -32,6 +42,8 @@ init();
 
 function init(): void {
   applyTheme(preferredTheme());
+  buildPaperPicker();
+  applyPaper();
   applyFontSize(Number(localStorage.getItem(SIZE_KEY)) || DEFAULT_SIZE);
   applySourceVisible(localStorage.getItem(SOURCE_KEY) !== '0');
   bindToolbar();
@@ -160,6 +172,46 @@ function applyTheme(theme: 'dark' | 'light'): void {
   document.documentElement.dataset.theme = theme;
   localStorage.setItem(THEME_KEY, theme);
   themeButton.textContent = theme === 'dark' ? '亮色' : '暗色';
+  applyPaper(); // 未显式选择纸色时跟随主题重新解析
+}
+
+function storedPaper(): PaperTheme | null {
+  const value = localStorage.getItem(PAPER_KEY);
+  return PAPERS.some((p) => p.id === value) ? (value as PaperTheme) : null;
+}
+
+function resolvedPaper(): PaperTheme {
+  // 未显式选择时跟随框架主题：暗→墨、亮→羊皮纸
+  if (storedPaper()) return storedPaper() as PaperTheme;
+  return document.documentElement.dataset.theme === 'light' ? 'parchment' : 'ink';
+}
+
+function applyPaper(): void {
+  const active = resolvedPaper();
+  document.documentElement.dataset.paper = active;
+  document.querySelectorAll<HTMLButtonElement>('.paper-dot').forEach((dot) => {
+    const on = dot.dataset.paper === active;
+    dot.classList.toggle('is-active', on);
+    dot.setAttribute('aria-pressed', String(on));
+  });
+}
+
+function buildPaperPicker(): void {
+  const picker = byId<HTMLElement>('paper-picker');
+  for (const p of PAPERS) {
+    const dot = document.createElement('button');
+    dot.type = 'button';
+    dot.className = 'paper-dot';
+    dot.dataset.paper = p.id;
+    dot.title = `纸色：${p.label}`;
+    dot.setAttribute('aria-label', `纸色：${p.label}`);
+    dot.style.background = p.swatch;
+    dot.addEventListener('click', () => {
+      localStorage.setItem(PAPER_KEY, p.id);
+      applyPaper();
+    });
+    picker.appendChild(dot);
+  }
 }
 
 function currentFontSize(): number {

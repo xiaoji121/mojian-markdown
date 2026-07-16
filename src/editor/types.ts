@@ -17,11 +17,15 @@ export interface Annotation {
   aiStatus?: 'pending' | 'answered' | 'error';
 }
 
+export type PaperTheme = 'ink' | 'parchment' | 'cream' | 'snow' | 'green';
+
 export interface PersistedEditorState {
   content: string;
   fileName: string;
   fontSize: number;
   theme: EditorTheme;
+  /** 内容纸色；缺省表示跟随框架主题 */
+  paper?: PaperTheme;
   comments: Annotation[];
   bridgeDocumentId?: string;
 }
