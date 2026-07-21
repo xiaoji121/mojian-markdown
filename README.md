@@ -4,6 +4,8 @@
 
 界面采用墨笺（Mojian）设计系统的「墨」暗色主题：暖棕墨色 + 单一琥珀强调色 + 楷体阅读衬线。
 
+**[在线体验墨笺 Markdown →](https://yuxizhai.com/md-editor/)**
+
 ![墨笺 Markdown 双栏编辑与实时预览](./docs/images/editor-split-view.jpg)
 
 左侧保留 Markdown 原文，右侧呈现可直接编辑的阅读视图；最近阅读、文章大纲、批注和 AI 问答都围绕当前文档组织。
@@ -12,7 +14,7 @@
 
 | 形态 | 构建/启动 | 能力 |
 | --- | --- | --- |
-| 静态版 | `npm run build` | 编辑、预览、批注、本地缓存、导入导出。纯静态文件，可部署到任意静态托管 |
+| 线上体验版 | [立即体验](https://yuxizhai.com/md-editor/) / `npm run build` | 编辑、预览、批注、本地缓存、导入导出。纯静态文件，可部署到任意静态托管 |
 | 完整版（本地） | `npm run dev` / `npm run build:bridge` | 静态版全部能力 + 最近阅读列表 + AI 问答（依赖本机 Agent Bridge 与 `claude` CLI） |
 
 功能开关由构建模式控制（`--mode bridge` 或环境变量 `VITE_ENABLE_AGENT_BRIDGE=true`），同一套代码。
