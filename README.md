@@ -4,6 +4,10 @@
 
 界面采用墨笺（Mojian）设计系统的「墨」暗色主题：暖棕墨色 + 单一琥珀强调色 + 楷体阅读衬线。
 
+![墨笺 Markdown 双栏编辑与实时预览](./docs/images/editor-split-view.jpg)
+
+左侧保留 Markdown 原文，右侧呈现可直接编辑的阅读视图；最近阅读、文章大纲、批注和 AI 问答都围绕当前文档组织。
+
 ## 两种形态
 
 | 形态 | 构建/启动 | 能力 |
@@ -63,9 +67,23 @@ claude --version
 
 在预览中选中文字，可添加马克笔、波浪线、直线或想法批注，集中展示在「我的批注」面板。静态版的批注随当前文章保存在浏览器 `localStorage`。
 
+![选中文字后出现划线、想法与 AI 工具条](./docs/images/selection-toolbar.jpg)
+
+![批注集中展示在侧边面板](./docs/images/annotation-panel.jpg)
+
+### 沉浸式阅读与纸张主题
+
+进入沉浸式阅读后，可以隐藏编辑区域与侧边列表，只保留文章内容；支持标准 / 宽屏阅读、字号调整，以及墨黑、羊皮纸、米黄、清爽白、豆沙绿五种纸张主题。
+
+| 羊皮纸 | 豆沙绿 |
+| --- | --- |
+| ![羊皮纸沉浸阅读](./docs/images/immersive-parchment.jpg) | ![豆沙绿沉浸阅读](./docs/images/immersive-green.jpg) |
+
 ### AI 问答（完整版）
 
 选中文字后「问 AI」，AI 结合选中原文和整篇文档回答。问答记录保存为当前文档的子节点，可在最近阅读列表中重新打开。
+
+![结合当前引用与全文回答的 AI 阅读助手](./docs/images/ai-reading-assistant.jpg)
 
 ### 最近阅读列表（完整版）
 
