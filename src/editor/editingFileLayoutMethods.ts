@@ -148,7 +148,7 @@ export class EditingFileLayoutMethods {
 
   onNew() {
     if (this.dirty && !window.confirm('当前内容尚未保存，确定新建空白文档？')) return;
-    if (this.viewMode === 'preview') this.toggleViewMode();
+    if (this.viewMode === 'preview') this.setViewMode('editor');
     this.sourceRef.current.value = '';
     this.fileHandle = null;
     this.activeDocumentId = null;

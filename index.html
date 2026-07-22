@@ -111,7 +111,7 @@
 > 而是读懂、评注、沉淀。</pre>
       </div>
       <div class="hero-preview">
-        <span class="pane-label">预览 · 可编辑</span>
+        <span class="pane-label">预览 · 仅阅读</span>
         <h2>产品愿景</h2>
         <p>通过阅读、划线和提问，把一篇 Markdown 变成可复用的学习资产。</p>
         <p><mark>重点不是写完，而是读懂、评注、沉淀。</mark></p>
@@ -293,7 +293,11 @@ cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
     </div>
     <div class="header-actions">
       <button class="abtn document-toggle" onClick="{{ toggleDocumentSidebar }}" aria-label="最近阅读" title="最近阅读">☰</button>
-      <button ref="{{ viewModeButtonRef }}" class="abtn" onClick="{{ toggleViewMode }}" aria-label="进入预览模式" aria-pressed="false" title="隐藏原文，专注预览"><span class="abtn-glyph">◫</span><span ref="{{ viewModeLabelRef }}" class="action-label">预览</span></button>
+      <span ref="{{ viewModeSwitcherRef }}" class="view-mode-switcher" role="group" aria-label="编辑器视图">
+        <button class="view-mode-option" data-mode="editor" onClick="{{ showEditorMode }}" aria-pressed="false" title="仅显示 Markdown 原文">编辑</button>
+        <button class="view-mode-option split-mode-option" data-mode="split" onClick="{{ showSplitMode }}" aria-pressed="true" title="同时显示原文和预览">分屏</button>
+        <button class="view-mode-option" data-mode="preview" onClick="{{ showPreviewMode }}" aria-pressed="false" title="仅显示只读预览">预览</button>
+      </span>
       <button class="abtn icon collapsible-action" onClick="{{ toggleTheme }}" title="切换 亮色/暗黑" aria-label="切换亮色或暗黑主题"><span ref="{{ themeIconRef }}">☾</span></button>
       <button class="abtn" onClick="{{ toggleComments }}" aria-label="批注"><span class="action-label">批注</span> <span ref="{{ commentCountRef }}" class="count-badge">0</span></button>
       <button class="abtn ai-entry" onClick="{{ toggleAI }}" aria-label="AI 助手" title="打开 AI 阅读助手"><span class="action-label">AI 助手</span><span class="accent-star">✦</span></button>
@@ -349,7 +353,7 @@ cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
     <!-- RIGHT: preview -->
     <section ref="{{ previewPaneRef }}" class="preview-pane">
       <div class="pane-toolbar">
-        <span class="pane-title">预览 · 可编辑</span>
+        <span ref="{{ previewTitleRef }}" class="pane-title">预览 · 仅阅读</span>
         <span class="preview-toolbar-actions">
           <span class="preview-toolbar-hint">
             <span class="hint-dot"></span>选中文字可划线
@@ -375,7 +379,7 @@ cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
           </button>
         </span>
       </div>
-      <div ref="{{ previewRef }}" class="md-preview" contentEditable="true" spellCheck="false"></div>
+      <div ref="{{ previewRef }}" class="md-preview" contentEditable="false" spellCheck="false"></div>
       <aside ref="{{ outlinePanelRef }}" class="outline-panel" aria-label="文章大纲">
         <div class="outline-header">
           <span>文章大纲</span>
@@ -475,7 +479,7 @@ cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
   </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;dark&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;tsType&quot;:&quot;'dark'|'light'&quot;},&quot;previewEditable&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;wrapSource&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;dark&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;tsType&quot;:&quot;'dark'|'light'&quot;},&quot;wrapSource&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
 const Component = window.createMarkdownEditorComponent(DCLogic, React);
 </script>
 </body>

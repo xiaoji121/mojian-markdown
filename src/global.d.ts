@@ -7,7 +7,6 @@ declare global {
     React: any;
     ReactDOM: any;
     marked: any;
-    TurndownService: any;
     createMarkdownEditorComponent: typeof createMarkdownEditorComponent;
   }
 }

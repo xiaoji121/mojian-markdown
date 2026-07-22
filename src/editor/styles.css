@@ -564,6 +564,8 @@
     .brand-title { font-size: var(--fs-xl) !important; }
     .file-meta { display: none !important; }
     .header-actions { gap: 6px !important; }
+    .view-mode-switcher { padding: 2px; }
+    .view-mode-option { height: 30px; padding-inline: 11px; }
     .header-actions .abtn {
       min-width: 36px;
       min-height: 36px;
@@ -621,8 +623,23 @@
       min-width: 100%;
     }
     .editor-main > .preview-pane { display: none !important; }
+    .editor-main.editor-mode-active > .source-pane { display: flex !important; }
+    .editor-main.editor-mode-active > .preview-pane { display: none !important; }
     .editor-main.preview-mode-active > .source-pane { display: none !important; }
     .editor-main.preview-mode-active > .preview-pane { display: flex !important; }
+    .editor-main:not(.editor-mode-active):not(.preview-mode-active) {
+      flex-direction: column;
+    }
+    .editor-main:not(.editor-mode-active):not(.preview-mode-active) > .source-pane,
+    .editor-main:not(.editor-mode-active):not(.preview-mode-active) > .preview-pane {
+      position: relative;
+      inset: auto;
+      width: 100%;
+      min-width: 100%;
+      min-height: 0;
+      display: flex !important;
+      flex: 1 1 50%;
+    }
     .editor-divider { display: none !important; }
     .pane-toolbar {
       height: 44px !important;

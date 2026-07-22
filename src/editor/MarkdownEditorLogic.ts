@@ -9,7 +9,6 @@ import { CommentMethods } from './commentMethods';
 import { DiagramMethods } from './diagramMethods';
 import { EditingFileLayoutMethods } from './editingFileLayoutMethods';
 import { ENABLE_AGENT_BRIDGE } from './featureFlags';
-import { addTableRules } from './markdownTableRules';
 import { NavigationMethods } from './navigationMethods';
 import { applyPrototypeMethods } from './prototypeMethods';
 import { ViewMethods } from './viewMethods';
@@ -20,6 +19,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     super(props);
     this.sourceRef = React.createRef();
     this.previewRef = React.createRef();
+    this.previewTitleRef = React.createRef();
     this.previewPaneRef = React.createRef();
     this.outlineButtonRef = React.createRef();
     this.outlinePanelRef = React.createRef();
@@ -55,8 +55,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.aiStatusRef = React.createRef();
     this.aiSendRef = React.createRef();
     this.themeIconRef = React.createRef();
-    this.viewModeButtonRef = React.createRef();
-    this.viewModeLabelRef = React.createRef();
+    this.viewModeSwitcherRef = React.createRef();
     this.documentSidebarRef = React.createRef();
     this.documentSidebarResizeRef = React.createRef();
     this.documentListRef = React.createRef();
@@ -86,7 +85,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.panelOpen = false;
     this.previewFullscreen = false;
     this.outlineOpen = false;
-    this.viewMode = 'preview';
+    this.viewMode = 'split';
     this._pending = null;
     this.fileHandle = null;
     this.dirty = false;
@@ -103,7 +102,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
   componentDidMount() { this._waitLibs(0); }
 
   _waitLibs(tries) {
-    if (window.marked && window.TurndownService) {
+    if (window.marked) {
       this._init();
     } else if (tries < 80) {
       setTimeout(() => this._waitLibs(tries + 1), 60);
@@ -119,13 +118,6 @@ export function createMarkdownEditorComponent(DCLogic, React) {
 
     if (window.marked.setOptions) window.marked.setOptions({ gfm: true, breaks: true });
     document.body.classList.toggle('agent-bridge-enabled', this.agentBridgeEnabled);
-    this.td = new window.TurndownService({
-      headingStyle: 'atx', codeBlockStyle: 'fenced',
-      bulletListMarker: '-', emDelimiter: '*', strongDelimiter: '**'
-    });
-    this.td.addRule('strikethrough', { filter: ['del', 's'], replacement: (c) => '~~' + c + '~~' });
-    addTableRules(this.td);
-
     let initial = this.SAMPLE();
     let name = '未命名.md';
     // 未持久化过主题时跟随系统外观
@@ -165,7 +157,6 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._applyProps();
 
     src.addEventListener('input', () => { this._renderPreview(); this._touch(); });
-    prev.addEventListener('input', () => { this._syncFromPreview(); this._touch(); });
     prev.addEventListener('click', (e) => this._openPreviewLink(e));
     prev.addEventListener('scroll', () => this._syncActiveOutlineItem());
     src.addEventListener('dblclick', () => this._onSourceDbl());
@@ -207,7 +198,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
   _applyProps() {
     const prev = this.previewRef.current, src = this.sourceRef.current;
     if (!prev || !src) return;
-    prev.setAttribute('contenteditable', (this.props.previewEditable ?? true) ? 'true' : 'false');
+    this._syncPreviewEditable();
     const wrap = this.props.wrapSource ?? true;
     src.style.whiteSpace = wrap ? 'pre-wrap' : 'pre';
     src.setAttribute('wrap', wrap ? 'soft' : 'off');
@@ -227,6 +218,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     return {
       sourceRef: this.sourceRef,
       previewRef: this.previewRef,
+      previewTitleRef: this.previewTitleRef,
       previewPaneRef: this.previewPaneRef,
       outlineButtonRef: this.outlineButtonRef,
       outlinePanelRef: this.outlinePanelRef,
@@ -261,13 +253,14 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       aiInputRef: this.aiInputRef,
       aiStatusRef: this.aiStatusRef,
       aiSendRef: this.aiSendRef,
-      viewModeButtonRef: this.viewModeButtonRef,
-      viewModeLabelRef: this.viewModeLabelRef,
+      viewModeSwitcherRef: this.viewModeSwitcherRef,
       documentSidebarRef: this.documentSidebarRef,
       documentSidebarResizeRef: this.documentSidebarResizeRef,
       documentListRef: this.documentListRef,
       documentCountRef: this.documentCountRef,
-      toggleViewMode: () => this.toggleViewMode(),
+      showEditorMode: () => this.setViewMode('editor'),
+      showSplitMode: () => this.setViewMode('split'),
+      showPreviewMode: () => this.setViewMode('preview'),
       toggleDocumentSidebar: () => this.toggleDocumentSidebar(),
       closeDocumentSidebar: () => this.closeDocumentSidebar(),
       fontInc: () => this._setFont(this.fontSize + 1),
