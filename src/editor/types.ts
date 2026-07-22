@@ -38,6 +38,5 @@ export interface PersistedEditorState {
 
 export interface EditorProps {
   theme?: EditorTheme;
-  previewEditable?: boolean;
   wrapSource?: boolean;
 }

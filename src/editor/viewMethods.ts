@@ -4,31 +4,27 @@ export class ViewMethods {
   _syncViewMode() {
     const split = this.splitRef.current;
     if (!split) return;
+    split.classList.toggle('editor-mode-active', this.viewMode === 'editor');
     split.classList.toggle('preview-mode-active', this.viewMode === 'preview');
-    if (this.viewModeButtonRef.current) {
-      this.viewModeButtonRef.current.setAttribute('aria-pressed', this.viewMode === 'preview' ? 'true' : 'false');
-      this.viewModeButtonRef.current.setAttribute(
-        'aria-label',
-        this.viewMode === 'preview' ? '返回编辑模式' : '进入预览模式'
-      );
-      this.viewModeButtonRef.current.title = this.viewMode === 'preview' ? '返回双栏编辑' : '隐藏原文，专注预览';
-    }
-    if (this.viewModeLabelRef.current) {
-      this.viewModeLabelRef.current.textContent = this.viewMode === 'preview' ? '返回编辑' : '预览';
-    }
+    const switcher = this.viewModeSwitcherRef.current;
+    if (!switcher) return;
+    switcher.querySelectorAll('[data-mode]').forEach((button) => {
+      button.setAttribute('aria-pressed', button.dataset.mode === this.viewMode ? 'true' : 'false');
+    });
   }
 
 
-  toggleViewMode() {
-    this.viewMode = this.viewMode === 'editor' ? 'preview' : 'editor';
-    if (this.viewMode === 'editor' && this.previewOverrideMarkdown) {
+  setViewMode(mode) {
+    if (!['editor', 'split', 'preview'].includes(mode)) return;
+    this.viewMode = mode;
+    if (mode !== 'preview' && this.previewOverrideMarkdown) {
       this.previewOverrideMarkdown = '';
       this.activeAnswerRequestId = null;
       this._renderRecentDocuments();
     }
-    if (this.viewMode === 'preview') this._renderPreview();
+    if (mode !== 'editor') this._renderPreview();
     this._syncViewMode();
-    if (this.viewMode === 'editor') {
+    if (mode !== 'preview') {
       setTimeout(() => this.sourceRef.current && this.sourceRef.current.focus(), 0);
     }
   }
@@ -144,6 +140,7 @@ export class ViewMethods {
     if (!pane) return;
     const next = typeof force === 'boolean' ? force : !this.previewFullscreen;
     this.previewFullscreen = next;
+    this._syncPreviewEditable();
     pane.classList.toggle('preview-pane-fullscreen', this.previewFullscreen);
     pane.classList.toggle('immersive-wide', this.previewFullscreen && this.immersiveWide);
     this._syncFullscreenLayout();
@@ -159,6 +156,15 @@ export class ViewMethods {
         : '<path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"></path>';
     }
     this._setStatus(this.previewFullscreen ? '已进入沉浸式阅读 · 按 Esc 退出' : '已退出沉浸式阅读');
+  }
+
+  _syncPreviewEditable() {
+    const prev = this.previewRef.current;
+    if (!prev) return;
+    prev.setAttribute('contenteditable', 'false');
+    if (this.previewTitleRef.current) {
+      this.previewTitleRef.current.textContent = '预览 · 仅阅读';
+    }
   }
 
   // ===== 沉浸式：宽屏切换与工具条自动隐藏 =====
@@ -223,10 +229,7 @@ export class ViewMethods {
     const src = this.sourceRef.current, prev = this.previewRef.current;
     if (!src || !prev || !window.marked) return;
     const markdown = this.previewOverrideMarkdown || src.value;
-    prev.setAttribute(
-      'contenteditable',
-      !this.previewOverrideMarkdown && (this.props.previewEditable ?? true) ? 'true' : 'false'
-    );
+    this._syncPreviewEditable();
     prev.innerHTML = window.marked.parse ? window.marked.parse(markdown) : window.marked(markdown);
     this._renderMermaidDiagrams(prev);
     this._highlightCodeBlocks(prev);
@@ -448,23 +451,6 @@ export class ViewMethods {
       button.setAttribute('aria-expanded', this.outlineOpen ? 'true' : 'false');
     }
     if (this.outlineOpen) this._syncActiveOutlineItem();
-  }
-
-
-  _syncFromPreview() {
-    const src = this.sourceRef.current, prev = this.previewRef.current;
-    if (!src || !prev || !this.td) return;
-    try { src.value = this.td.turndown(this._previewHTMLForSourceSync(prev)); } catch (e) {}
-    this._updateCount();
-  }
-
-  _previewHTMLForSourceSync(preview) {
-    const clone = preview.cloneNode(true);
-    clone.querySelectorAll('[data-comment-badge]').forEach((node) => node.remove());
-    clone.querySelectorAll('[data-comment-id]').forEach((node) => {
-      node.replaceWith(document.createTextNode(node.textContent || ''));
-    });
-    return clone.innerHTML;
   }
 
 
