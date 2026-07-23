@@ -25,6 +25,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.outlinePanelRef = React.createRef();
     this.outlineListRef = React.createRef();
     this.outlineCountRef = React.createRef();
+    this.undoButtonRef = React.createRef();
+    this.redoButtonRef = React.createRef();
     this.fullscreenIconRef = React.createRef();
     this.fullscreenLabelRef = React.createRef();
     this.dividerRef = React.createRef();
@@ -153,10 +155,16 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._applyFont();
     this._renderPreview();
     this._updateCount();
+    this._resetEditingHistory();
     this._setStatus('就绪 · 自动保存已开启');
     this._applyProps();
 
-    src.addEventListener('input', () => { this._renderPreview(); this._touch(); });
+    src.addEventListener('beforeinput', () => this._syncCurrentEditingState());
+    src.addEventListener('input', (e) => {
+      this._recordEditingHistory(e.inputType || '');
+      this._renderPreview();
+      this._touch();
+    });
     prev.addEventListener('click', (e) => this._openPreviewLink(e));
     prev.addEventListener('scroll', () => this._syncActiveOutlineItem());
     src.addEventListener('dblclick', () => this._onSourceDbl());
@@ -224,6 +232,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       outlinePanelRef: this.outlinePanelRef,
       outlineListRef: this.outlineListRef,
       outlineCountRef: this.outlineCountRef,
+      undoButtonRef: this.undoButtonRef,
+      redoButtonRef: this.redoButtonRef,
       fullscreenIconRef: this.fullscreenIconRef,
       fullscreenLabelRef: this.fullscreenLabelRef,
       dividerRef: this.dividerRef,
@@ -294,6 +304,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       onOpen: () => this.onOpen(),
       onSave: () => this.onSave(),
       onNew: () => this.onNew(),
+      undoEdit: () => this.undoEdit(),
+      redoEdit: () => this.redoEdit(),
       fmtH: () => this._linePrefix('## '),
       fmtB: () => this._wrapSel('**', '**', '粗体'),
       fmtI: () => this._wrapSel('*', '*', '斜体'),

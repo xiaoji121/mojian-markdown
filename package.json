@@ -13,7 +13,7 @@
     "build:ext": "node scripts/make-extension-icons.mjs && node scripts/copy-extension-font.mjs && vite build --config extension/vite.config.ts",
     "preview": "vite preview",
     "check:size": "node scripts/check-code-size.js",
-    "test": "node --test \"tests/*.test.ts\"",
+    "test": "node --experimental-strip-types --test \"tests/*.test.ts\"",
     "check": "npm run check:size && tsc --noEmit && npm test && vite build && npm run build:ext",
     "font:subset": "node scripts/subset-font.mjs",
     "font:fetch": "node scripts/fetch-font.mjs && npm run font:subset"

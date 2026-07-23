@@ -334,8 +334,14 @@ cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
     <!-- LEFT: source -->
     <section class="source-pane">
       <div class="pane-toolbar">
-        <span class="pane-title">Markdown 原文</span>
-        <div class="source-toolbar-actions">
+        <div class="source-toolbar-leading">
+          <span class="pane-title">Markdown 原文</span>
+          <div class="history-toolbar-actions" role="group" aria-label="编辑历史">
+          <button ref="{{ undoButtonRef }}" class="tbtn fmt history-action" onClick="{{ undoEdit }}" title="撤销（⌘Z / Ctrl+Z）" aria-label="撤销" disabled><svg class="history-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"></path><path d="M4 9h10.5a5.5 5.5 0 1 1 0 11H11"></path></svg></button>
+          <button ref="{{ redoButtonRef }}" class="tbtn fmt history-action" onClick="{{ redoEdit }}" title="重做（⌘⇧Z / Ctrl+Y）" aria-label="重做" disabled><svg class="history-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"></path><path d="M20 9H9.5a5.5 5.5 0 1 0 0 11H13"></path></svg></button>
+          </div>
+        </div>
+        <div class="source-toolbar-actions" role="group" aria-label="Markdown 格式">
           <button class="tbtn fmt fmt-h" onClick="{{ fmtH }}" title="标题">H</button>
           <button class="tbtn fmt fmt-b" onClick="{{ fmtB }}" title="加粗">B</button>
           <button class="tbtn fmt fmt-i" onClick="{{ fmtI }}" title="斜体">i</button>

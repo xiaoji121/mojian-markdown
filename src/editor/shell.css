@@ -217,8 +217,24 @@
   transition: all .15s;
 }
 .tbtn:hover { border-color: var(--accent); color: var(--accent); }
+.tbtn:disabled { cursor: not-allowed; opacity: .38; }
+.tbtn:disabled:hover { border-color: var(--border); color: var(--text-3); }
+.source-toolbar-leading { display: flex; flex: none; align-items: center; gap: 14px; }
+.history-toolbar-actions,
 .source-toolbar-actions { display: flex; gap: 5px; flex-wrap: nowrap; }
+.source-toolbar-actions { min-width: 0; }
 .tbtn.fmt { width: 30px; height: 26px; }
+.tbtn.history-action { display: inline-flex; align-items: center; justify-content: center; }
+.tbtn.history-action:not(:disabled) {
+  color: color-mix(in srgb, var(--text-2) 70%, var(--text-3));
+}
+.tbtn.history-action:not(:disabled):hover { color: var(--accent); }
+.history-action-icon { width: 17px; height: 17px; }
+.tbtn.history-action:disabled {
+  border-color: var(--border);
+  color: var(--text-2);
+  opacity: .58;
+}
 .fmt-h { font-family: var(--read); font-weight: 700; font-size: var(--fs-lg); }
 .fmt-b { font-weight: 700; }
 .fmt-i { font-style: italic; font-family: var(--read); font-size: var(--fs-lg); }

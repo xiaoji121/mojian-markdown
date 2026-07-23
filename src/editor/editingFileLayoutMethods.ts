@@ -1,6 +1,117 @@
 // @ts-nocheck
 
 export class EditingFileLayoutMethods {
+  _captureEditingState() {
+    const src = this.sourceRef.current;
+    if (!src) return null;
+    return {
+      value: src.value,
+      selectionStart: src.selectionStart,
+      selectionEnd: src.selectionEnd,
+      scrollTop: src.scrollTop,
+      scrollLeft: src.scrollLeft
+    };
+  }
+
+
+  _resetEditingHistory() {
+    const initial = this._captureEditingState();
+    this._editingHistory = initial ? [initial] : [];
+    this._editingHistoryIndex = initial ? 0 : -1;
+    this._lastHistoryInputType = '';
+    this._lastHistoryInputAt = 0;
+    this._syncEditingHistoryButtons();
+  }
+
+
+  _syncCurrentEditingState() {
+    const current = this._editingHistory?.[this._editingHistoryIndex];
+    const actual = this._captureEditingState();
+    if (!current || !actual || current.value !== actual.value) return;
+    if (current.selectionStart !== actual.selectionStart || current.selectionEnd !== actual.selectionEnd) {
+      this._lastHistoryInputType = '';
+    }
+    this._editingHistory[this._editingHistoryIndex] = actual;
+  }
+
+
+  _recordEditingHistory(inputType = '', forceNewEntry = false) {
+    const next = this._captureEditingState();
+    if (!next) return;
+    if (!Array.isArray(this._editingHistory) || this._editingHistoryIndex < 0) {
+      this._resetEditingHistory();
+      return;
+    }
+    const current = this._editingHistory[this._editingHistoryIndex];
+    if (current && current.value === next.value) return;
+    const now = Date.now();
+    const coalesce = !forceNewEntry
+      && inputType
+      && inputType === this._lastHistoryInputType
+      && now - this._lastHistoryInputAt < 800
+      && this._editingHistoryIndex === this._editingHistory.length - 1
+      && this._editingHistoryIndex > 0;
+    this._editingHistory.splice(this._editingHistoryIndex + 1);
+    if (coalesce) {
+      this._editingHistory[this._editingHistoryIndex] = next;
+    } else {
+      this._editingHistory.push(next);
+      this._editingHistoryIndex += 1;
+    }
+    if (this._editingHistory.length > 200) {
+      this._editingHistory.shift();
+      this._editingHistoryIndex -= 1;
+    }
+    this._lastHistoryInputType = inputType;
+    this._lastHistoryInputAt = now;
+    this._syncEditingHistoryButtons();
+  }
+
+
+  _syncEditingHistoryButtons() {
+    const canUndo = this._editingHistoryIndex > 0;
+    const canRedo = Array.isArray(this._editingHistory)
+      && this._editingHistoryIndex >= 0
+      && this._editingHistoryIndex < this._editingHistory.length - 1;
+    if (this.undoButtonRef?.current) this.undoButtonRef.current.disabled = !canUndo;
+    if (this.redoButtonRef?.current) this.redoButtonRef.current.disabled = !canRedo;
+  }
+
+
+  _applyEditingHistory(index) {
+    const state = this._editingHistory?.[index];
+    const src = this.sourceRef.current;
+    if (!state || !src) return;
+    this._editingHistoryIndex = index;
+    src.value = state.value;
+    this._restoreSourceView(
+      src,
+      state.selectionStart,
+      state.selectionEnd,
+      state.scrollTop,
+      state.scrollLeft
+    );
+    this._lastHistoryInputType = '';
+    this._renderPreview();
+    this._touch();
+    this._syncEditingHistoryButtons();
+  }
+
+
+  undoEdit() {
+    if (this._editingHistoryIndex > 0) {
+      this._applyEditingHistory(this._editingHistoryIndex - 1);
+    }
+  }
+
+
+  redoEdit() {
+    if (this._editingHistoryIndex < (this._editingHistory?.length || 0) - 1) {
+      this._applyEditingHistory(this._editingHistoryIndex + 1);
+    }
+  }
+
+
   _restoreSourceView(src, selectionStart, selectionEnd, scrollTop, scrollLeft) {
     src.selectionStart = selectionStart;
     src.selectionEnd = selectionEnd;
@@ -13,6 +124,7 @@ export class EditingFileLayoutMethods {
   _wrapSel(before, after, placeholder) {
     const src = this.sourceRef.current;
     if (!src) return;
+    this._syncCurrentEditingState();
     const s = src.selectionStart, e = src.selectionEnd, val = src.value;
     const scrollTop = src.scrollTop, scrollLeft = src.scrollLeft;
     const sel = val.slice(s, e) || placeholder || '';
@@ -24,6 +136,7 @@ export class EditingFileLayoutMethods {
       scrollTop,
       scrollLeft
     );
+    this._recordEditingHistory('', true);
     this._renderPreview();
     this._touch();
   }
@@ -32,6 +145,7 @@ export class EditingFileLayoutMethods {
   _linePrefix(prefix) {
     const src = this.sourceRef.current;
     if (!src) return;
+    this._syncCurrentEditingState();
     const val = src.value;
     let s = src.selectionStart, e = src.selectionEnd;
     let ls = val.lastIndexOf('\n', s - 1) + 1;
@@ -40,18 +154,36 @@ export class EditingFileLayoutMethods {
     const replaced = block.split('\n').map((l) => prefix + l).join('\n');
     src.value = val.slice(0, ls) + replaced + val.slice(e);
     this._restoreSourceView(src, ls, ls + replaced.length, scrollTop, scrollLeft);
+    this._recordEditingHistory('', true);
     this._renderPreview();
     this._touch();
   }
 
 
   _sourceKeydown(e) {
+    const modifier = e.metaKey || e.ctrlKey;
+    const key = e.key.toLowerCase();
+    if (modifier && !e.altKey && key === 'z') {
+      e.preventDefault();
+      if (e.shiftKey) this.redoEdit();
+      else this.undoEdit();
+      return;
+    }
+    if (modifier && !e.altKey && key === 'y') {
+      e.preventDefault();
+      this.redoEdit();
+      return;
+    }
     if (e.key === 'Tab') {
       e.preventDefault();
       const src = this.sourceRef.current;
+      this._syncCurrentEditingState();
       const s = src.selectionStart, en = src.selectionEnd;
       src.value = src.value.slice(0, s) + '  ' + src.value.slice(en);
       src.selectionStart = src.selectionEnd = s + 2;
+      this._recordEditingHistory('', true);
+      this._renderPreview();
+      this._touch();
     }
   }
 
@@ -82,6 +214,7 @@ export class EditingFileLayoutMethods {
         this.activeDocumentId = null;
         this._setFileName(file.name);
         this.sourceRef.current.value = text;
+        this._resetEditingHistory();
         this.comments = [];
         this._renderComments();
         this._renderPreview();
@@ -102,6 +235,7 @@ export class EditingFileLayoutMethods {
         const r = new FileReader();
         r.onload = () => {
           this.sourceRef.current.value = this._cleanOpenedMarkdown(r.result);
+          this._resetEditingHistory();
           this.bridgeDocumentId = null;
           this.activeDocumentId = null;
           this._setFileName(f.name);
@@ -163,6 +297,7 @@ export class EditingFileLayoutMethods {
     if (this.dirty && !window.confirm('当前内容尚未保存，确定新建空白文档？')) return;
     if (this.viewMode === 'preview') this.setViewMode('editor');
     this.sourceRef.current.value = '';
+    this._resetEditingHistory();
     this.fileHandle = null;
     this.activeDocumentId = null;
     this.bridgeDocumentId = null;
