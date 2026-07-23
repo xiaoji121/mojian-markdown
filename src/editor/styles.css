@@ -1,4 +1,4 @@
-  /* GB2312 子集（fonts-src 原字体经 npm run font:subset 裁剪），生僻字由字体栈的系统楷体兜底 */
+  /* GB2312 全字符子集，保证常用中文正文使用统一的仓耳今楷字形。 */
   @font-face {
     font-family: 'Canger JinKai 04';
     src: url('/fonts/canger-jinkai-04/cejk-subset.woff2') format('woff2');
@@ -9,9 +9,6 @@
 
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; height: 100%; }
-  /* <x-dc> 内是供 DC 运行时解析的原始模板（React 挂载于其外），
-     首帧即隐藏，避免运行时就绪前闪现裸模板 */
-  x-dc { display: none !important; }
   /* 主题 token 统一定义在 src/theme/tokens.css（index.html <link> 引入） */
   body {
     background: var(--bg);

@@ -17,6 +17,8 @@
   --landing-mono: var(--mono);
 }
 
+/* DC 原始模板在编辑器运行时挂载前必须始终隐藏，避免刷新时裸模板闪现。 */
+x-dc { display: none !important; }
 body:not(.editor-active) .app-shell { display: none !important; }
 body.editor-active #landing-page { display: none; }
 #landing-page, #landing-page * { box-sizing: border-box; }
