@@ -10,9 +10,10 @@
 
 :root {
   /* ----- 字体 ----- */
-  --read: 'Canger JinKai 04', 'Fraunces', 'Kaiti SC', 'STKaiti', 'KaiTi', '楷体', 'Noto Serif SC', serif;
-  --sans: 'Inter Tight', 'Noto Sans SC', system-ui, sans-serif;
-  --mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+  /* Web 与扩展均优先使用 GB2312 金楷完整子集，生僻字由系统字体兜底。 */
+  --read: 'Canger JinKai 04', 'Kaiti SC', 'STKaiti', 'KaiTi', '楷体', 'Songti SC', 'Noto Serif CJK SC', serif;
+  --sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --mono: ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
 
   /* ----- 圆角（控件 / 面板卡片 / 胶囊）----- */
   --radius-control: 4px;

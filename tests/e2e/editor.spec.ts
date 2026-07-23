@@ -1,5 +1,31 @@
 import { test, expect, openEditor, setSource } from './fixtures';
 
+test('editor uses the complete local Canger reading font without remote fonts', async ({ page }) => {
+  const remoteFontRequests: string[] = [];
+  const fontRequests: string[] = [];
+  page.on('request', (request) => {
+    const url = request.url();
+    if (request.resourceType() === 'font' || /cejk-subset\.woff2/.test(url)) fontRequests.push(url);
+    if (/fonts\.(googleapis|gstatic)\.com/.test(url)) {
+      remoteFontRequests.push(url);
+    }
+  });
+
+  // beforeEach opened the editor before the request listener existed; reload so
+  // this test observes the complete first-paint resource sequence.
+  await page.reload();
+  await expect(page.locator('.md-source')).toBeVisible();
+  await expect(page.locator('.md-preview h1').first()).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+
+  await expect(page.locator('link[href*="fonts.googleapis.com"], link[href*="fonts.gstatic.com"]')).toHaveCount(0);
+  expect(remoteFontRequests).toEqual([]);
+  expect(fontRequests).toHaveLength(1);
+  expect(fontRequests[0]).toContain('/cejk-subset.woff2');
+  expect(await page.locator('.md-preview').evaluate((element) => getComputedStyle(element).fontFamily))
+    .toContain('Canger JinKai 04');
+});
+
 test.beforeEach(async ({ page }) => {
   await openEditor(page);
 });

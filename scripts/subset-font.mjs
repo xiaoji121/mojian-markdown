@@ -1,9 +1,6 @@
 // 把 16MB 的仓耳今楷 woff 裁剪成 GB2312 全字符集的 woff2 子集。
-// 编辑器渲染的是用户任意输入，所以按固定字符集（GB2312 一、二级汉字
-// 6763 个 + 符号区 + ASCII）裁剪，覆盖日常中文 99.8%+；生僻字由字体栈
-// 里的系统楷体（Kaiti SC 等）逐字兜底。
-// 结果是确定的：只有换字体源文件时才需要重跑（npm run font:subset），
-// 生成的 public/fonts/**/cejk-subset.woff2 直接提交入库。
+// Web 编辑器与扩展阅读器共用这一版本，保证常用中文正文的字形统一；
+// GB2312 之外的生僻字由字体栈里的系统楷体逐字兜底。
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

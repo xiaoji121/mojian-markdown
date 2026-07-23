@@ -1,5 +1,27 @@
 import { test, expect } from './fixtures';
 
+test('落地页首屏不预加载编辑器运行时', async ({ page }) => {
+  const editorRequests: string[] = [];
+  page.on('request', (request) => {
+    if (/\/src\/editor\/|\/react(?:-dom)?(?:\.js|\/)|\/marked(?:\.js|\/)/.test(request.url())) {
+      editorRequests.push(request.url());
+    }
+  });
+
+  await page.goto('/');
+  await expect(page.locator('#landing-page')).toBeVisible();
+
+  expect(editorRequests).toEqual([]);
+});
+
+test('编辑器运行时尚未加载时不暴露原始模板和 favicon', async ({ page }) => {
+  await page.route('**/src/main.ts', (route) => route.abort());
+  await page.goto('/#editor');
+
+  await expect(page.locator('x-dc')).toBeHidden();
+  await expect(page.locator('x-dc img[src="/favicon.svg"]')).toBeHidden();
+});
+
 test('落地页加载后可以进入编辑器', async ({ page }) => {
   await page.goto('/');
 
