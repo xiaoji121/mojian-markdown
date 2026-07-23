@@ -1,18 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ViewMethods } from '../src/editor/viewMethods.ts';
+import { ViewMethods } from '../../src/editor/viewMethods.ts';
+import { createClassList, createRef, createStubElement } from '../helpers/dom.ts';
 
 function createContext() {
-  const attributes = new Map<string, string>();
-  const title = { textContent: '' };
-  const preview = {
-    setAttribute(name: string, value: string) { attributes.set(name, value); },
-    getAttribute(name: string) { return attributes.get(name); }
-  };
+  const title = createStubElement();
+  const preview = createStubElement();
   return {
     context: {
-      previewRef: { current: preview },
-      previewTitleRef: { current: title },
+      previewRef: createRef(preview),
+      previewTitleRef: createRef(title),
       previewFullscreen: false,
       previewOverrideMarkdown: ''
     },
@@ -50,14 +47,6 @@ test('preview remains read-only when override content is shown', () => {
   assert.equal(preview.getAttribute('contenteditable'), 'false');
 });
 
-function createClassList() {
-  const classes = new Set<string>();
-  return {
-    toggle(name: string, force: boolean) { force ? classes.add(name) : classes.delete(name); },
-    contains(name: string) { return classes.has(name); }
-  };
-}
-
 test('view modes map to editor-only, split, and preview-only layouts', () => {
   const classList = createClassList();
   const buttons = ['editor', 'split', 'preview'].map((mode) => ({
@@ -67,8 +56,8 @@ test('view modes map to editor-only, split, and preview-only layouts', () => {
   }));
   const context = {
     viewMode: 'split',
-    splitRef: { current: { classList } },
-    viewModeSwitcherRef: { current: { querySelectorAll: () => buttons } }
+    splitRef: createRef({ classList }),
+    viewModeSwitcherRef: createRef({ querySelectorAll: () => buttons })
   };
 
   ViewMethods.prototype._syncViewMode.call(context);

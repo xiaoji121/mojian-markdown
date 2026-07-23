@@ -20,8 +20,8 @@ This project keeps editor behavior grouped by feature. New code should go into t
 - Prefer feature-local modules over generic utility modules until behavior is reused in at least two places.
 - Keep DOM-manipulation helpers near the feature that owns the DOM they mutate.
 - Keep `MarkdownEditorLogic.ts` as orchestration only; avoid adding business logic there.
-- For behavior changes, write or update a focused test first when a test harness exists. If no test harness exists yet, either add the smallest useful test harness or document the manual verification in the change summary.
-- Run `npm run check` before committing.
+- For behavior changes, write the failing test first — see `docs/TESTING.md` for the two-layer harness (unit tests in `tests/unit/`, Playwright E2E in `tests/e2e/`) and templates.
+- Run `npm run check` before committing; add `npm run test:e2e` (or `npm run check:full`) when user-visible behavior changed.
 
 ## Community Baseline
 

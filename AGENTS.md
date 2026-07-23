@@ -10,8 +10,8 @@ These rules apply to coding agents working in this repository.
 
 ## Development Rules
 
-- Start with a failing or focused test for behavior changes when a test harness exists.
-- If no test harness exists, add the smallest useful harness for risky logic; otherwise include explicit manual verification in the final summary.
+- A two-layer test harness exists (see `docs/TESTING.md`): `node:test` unit tests in `tests/unit/` and Playwright E2E in `tests/e2e/`. For any behavior change, write the failing test FIRST, watch it fail, then implement.
+- Module-level logic goes in a unit test (use the stubs in `tests/helpers/dom.ts`). User-visible flows (editing, preview, layout, persistence) get an E2E spec via `tests/e2e/fixtures.ts` helpers.
 - Keep files under 800 lines and functions/methods under 140 lines. Aim for functions under 80 lines.
 - Split by feature ownership, not by vague buckets like `utils`, unless code is reused by at least two modules.
 - Keep `MarkdownEditorLogic.ts` limited to refs, lifecycle wiring, initialization, and template bindings.
@@ -21,5 +21,6 @@ These rules apply to coding agents working in this repository.
 ## Verification
 
 - Run `npm run check` before handing work back.
+- For changes to user-visible behavior, also run `npm run test:e2e` (or `npm run check:full`). First run needs `npx playwright install chromium`.
 - For UI changes, start the Vite dev server and verify the page loads locally.
 - If a check cannot be run, say exactly why and what risk remains.

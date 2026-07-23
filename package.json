@@ -13,8 +13,13 @@
     "build:ext": "node scripts/make-extension-icons.mjs && node scripts/copy-extension-font.mjs && vite build --config extension/vite.config.ts",
     "preview": "vite preview",
     "check:size": "node scripts/check-code-size.js",
-    "test": "node --experimental-strip-types --test \"tests/*.test.ts\"",
+    "test": "node --experimental-strip-types --test \"tests/unit/*.test.ts\"",
+    "test:watch": "node --experimental-strip-types --test --watch \"tests/unit/*.test.ts\"",
+    "test:coverage": "node --experimental-strip-types --experimental-test-coverage --test \"tests/unit/*.test.ts\"",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "check": "npm run check:size && tsc --noEmit && npm test && vite build && npm run build:ext",
+    "check:full": "npm run check && npm run test:e2e",
     "font:subset": "node scripts/subset-font.mjs",
     "font:fetch": "node scripts/fetch-font.mjs && npm run font:subset"
   },
@@ -27,6 +32,7 @@
     "turndown": "^7.2.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@types/chrome": "^0.2.2",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderMarkdown } from '../extension/src/render.ts';
+import { renderMarkdown } from '../../extension/src/render.ts';
 
 test('renders headings, lists, and gfm tables', () => {
   const html = renderMarkdown('## 标题\n\n- 甲\n- 乙\n\n| A | B |\n| --- | --- |\n| 1 | 2 |');

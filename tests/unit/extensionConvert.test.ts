@@ -6,7 +6,7 @@ import {
   resolveUrl,
   suggestFileName,
   type ClipMeta
-} from '../extension/src/convert.ts';
+} from '../../extension/src/convert.ts';
 
 const meta: ClipMeta = {
   title: '一篇“测试”文章',

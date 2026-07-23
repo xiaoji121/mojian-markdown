@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { marked } from 'marked';
 import TurndownService from 'turndown';
-import { addTableRules } from '../src/editor/markdownTableRules.ts';
+import { addTableRules } from '../../src/editor/markdownTableRules.ts';
 
 function createTurndown() {
   const td = new TurndownService({
