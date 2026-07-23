@@ -66,6 +66,32 @@ test('视图切换在编辑、分屏、预览三种布局间生效', async ({ pa
   await expect(preview).toBeVisible();
 });
 
+test('窄屏分屏模式下预览工具栏按钮不挤压换行', async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 800 });
+
+  const previewPane = page.locator('.preview-pane');
+  const toolbar = previewPane.locator('.pane-toolbar');
+  const outlineButton = page.getByRole('button', { name: '查看文章大纲' });
+  const immersiveButton = page.getByRole('button', { name: '沉浸式阅读' });
+
+  await expect(previewPane.locator('.preview-toolbar-hint')).toBeHidden();
+  await expect(outlineButton.locator('.action-label')).toBeHidden();
+  await expect(immersiveButton.locator('.fullscreen-button-label')).toBeHidden();
+
+  const [toolbarBox, outlineBox, immersiveBox] = await Promise.all([
+    toolbar.boundingBox(),
+    outlineButton.boundingBox(),
+    immersiveButton.boundingBox()
+  ]);
+  expect(toolbarBox).not.toBeNull();
+  expect(outlineBox).not.toBeNull();
+  expect(immersiveBox).not.toBeNull();
+  expect(outlineBox!.height).toBeLessThanOrEqual(30);
+  expect(immersiveBox!.height).toBeLessThanOrEqual(30);
+  expect(outlineBox!.x + outlineBox!.width).toBeLessThanOrEqual(toolbarBox!.x + toolbarBox!.width);
+  expect(immersiveBox!.x + immersiveBox!.width).toBeLessThanOrEqual(toolbarBox!.x + toolbarBox!.width);
+});
+
 test('主题切换写入 data-theme 并可来回切换', async ({ page }) => {
   const body = page.locator('body');
   const initial = await body.getAttribute('data-theme');

@@ -14,6 +14,34 @@ test('落地页首屏不预加载编辑器运行时', async ({ page }) => {
   expect(editorRequests).toEqual([]);
 });
 
+test('落地页使用本地 Canger JinKai 04 字体', async ({ page }) => {
+  const fontRequests: string[] = [];
+  page.on('request', (request) => {
+    if (/cejk-subset\.woff2/.test(request.url())) fontRequests.push(request.url());
+  });
+
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+
+  expect(await page.evaluate(() => document.fonts.check('16px "Canger JinKai 04"'))).toBe(true);
+  expect(await page.locator('#landing-page').evaluate((landing) => getComputedStyle(landing).fontFamily))
+    .toContain('Canger JinKai 04');
+  expect(fontRequests).toHaveLength(1);
+  expect(fontRequests[0]).toContain('/fonts/canger-jinkai-04/cejk-subset.woff2');
+});
+
+test('落地页背景贴合视口边缘，不出现浏览器默认白边', async ({ page }) => {
+  await page.goto('/');
+
+  const viewport = page.viewportSize();
+  const landingBox = await page.locator('#landing-page').boundingBox();
+  expect(viewport).not.toBeNull();
+  expect(landingBox).not.toBeNull();
+  expect(landingBox!.x).toBe(0);
+  expect(landingBox!.width).toBe(viewport!.width);
+  expect(await page.locator('body').evaluate((body) => getComputedStyle(body).margin)).toBe('0px');
+});
+
 test('编辑器运行时尚未加载时不暴露原始模板和 favicon', async ({ page }) => {
   await page.route('**/src/main.ts', (route) => route.abort());
   await page.goto('/#editor');
