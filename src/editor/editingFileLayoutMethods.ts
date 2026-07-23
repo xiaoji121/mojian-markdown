@@ -1,15 +1,29 @@
 // @ts-nocheck
 
 export class EditingFileLayoutMethods {
+  _restoreSourceView(src, selectionStart, selectionEnd, scrollTop, scrollLeft) {
+    src.selectionStart = selectionStart;
+    src.selectionEnd = selectionEnd;
+    src.focus({ preventScroll: true });
+    src.scrollTop = scrollTop;
+    src.scrollLeft = scrollLeft;
+  }
+
+
   _wrapSel(before, after, placeholder) {
     const src = this.sourceRef.current;
     if (!src) return;
     const s = src.selectionStart, e = src.selectionEnd, val = src.value;
+    const scrollTop = src.scrollTop, scrollLeft = src.scrollLeft;
     const sel = val.slice(s, e) || placeholder || '';
     src.value = val.slice(0, s) + before + sel + after + val.slice(e);
-    src.focus();
-    src.selectionStart = s + before.length;
-    src.selectionEnd = s + before.length + sel.length;
+    this._restoreSourceView(
+      src,
+      s + before.length,
+      s + before.length + sel.length,
+      scrollTop,
+      scrollLeft
+    );
     this._renderPreview();
     this._touch();
   }
@@ -21,12 +35,11 @@ export class EditingFileLayoutMethods {
     const val = src.value;
     let s = src.selectionStart, e = src.selectionEnd;
     let ls = val.lastIndexOf('\n', s - 1) + 1;
+    const scrollTop = src.scrollTop, scrollLeft = src.scrollLeft;
     const block = val.slice(ls, e);
     const replaced = block.split('\n').map((l) => prefix + l).join('\n');
     src.value = val.slice(0, ls) + replaced + val.slice(e);
-    src.focus();
-    src.selectionStart = ls;
-    src.selectionEnd = ls + replaced.length;
+    this._restoreSourceView(src, ls, ls + replaced.length, scrollTop, scrollLeft);
     this._renderPreview();
     this._touch();
   }
