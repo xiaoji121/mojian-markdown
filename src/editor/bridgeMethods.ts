@@ -116,6 +116,7 @@ export class BridgeMethods {
       this.previewOverrideMarkdown = '';
       this.fileHandle = null;
       this.sourceRef.current.value = this._cleanOpenedMarkdown(doc.content || '');
+      this._resetEditingHistory();
       this.comments = this._commentsFromBridge(doc.annotations || [], doc.messages || [], doc.documentId);
       this._setFileName(doc.fileName || doc.title || '未命名.md');
       this._showConversationMessages(doc.documentId, doc.messages || [], null, false);
