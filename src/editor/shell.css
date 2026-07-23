@@ -34,6 +34,13 @@
   background: var(--accent);
   box-shadow: 0 0 12px var(--accent-soft);
 }
+.brand-mark {
+  display: none;
+  width: 32px;
+  height: 32px;
+  flex: none;
+}
+.brand-mark img { display: block; width: 100%; height: 100%; }
 .brand-title {
   color: var(--text);
   font-family: var(--read);

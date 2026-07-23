@@ -284,7 +284,10 @@ cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
   <!-- ===== HEADER ===== -->
   <header class="app-header">
     <div class="header-brand">
-      <span class="brand-dot"></span>
+      <span class="brand-dot" aria-hidden="true"></span>
+      <a class="brand-mark" href="#" title="返回首页" aria-label="返回首页">
+        <img src="/favicon.svg" alt="">
+      </a>
       <a class="brand-title" href="#" title="返回首页" aria-label="返回首页">墨笺 Markdown</a>
       <span class="file-meta">
         <span ref="{{ dirtyDotRef }}" class="dirty-dot"></span>
