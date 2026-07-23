@@ -9,7 +9,7 @@
 <meta name="application-name" content="墨笺 Markdown">
 <meta name="theme-color" content="#1a1b1d">
 <title>墨笺 Markdown｜阅读、批注与本地保存</title>
-<link rel="icon" href="/og-image.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:site_name" content="墨笺 Markdown">
@@ -284,7 +284,10 @@ cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
   <!-- ===== HEADER ===== -->
   <header class="app-header">
     <div class="header-brand">
-      <span class="brand-dot"></span>
+      <span class="brand-dot" aria-hidden="true"></span>
+      <a class="brand-mark" href="#" title="返回首页" aria-label="返回首页">
+        <img src="/favicon.svg" alt="">
+      </a>
       <a class="brand-title" href="#" title="返回首页" aria-label="返回首页">墨笺 Markdown</a>
       <span class="file-meta">
         <span ref="{{ dirtyDotRef }}" class="dirty-dot"></span>

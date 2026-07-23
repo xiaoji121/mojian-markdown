@@ -722,6 +722,8 @@
   }
 
   @media (max-width: 400px) {
+    .brand-dot { display: none; }
+    .header-brand .brand-mark { display: block; }
     .brand-title { display: none !important; }
     .app-header { gap: 6px !important; }
     .header-actions .abtn { padding-inline: 8px !important; }
