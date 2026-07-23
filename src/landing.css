@@ -1,5 +1,14 @@
 /* 着陆页始终保持「墨」暗色；token 来自 src/theme/tokens.css（index.html 先行引入）。
    亮色覆盖限定在 body.editor-active，不会泄漏到这里。 */
+/* Web 首页与编辑器共用完整 GB2312 字符子集；扩展保留自己的资源路径。 */
+@font-face {
+  font-family: 'Canger JinKai 04';
+  src: url('/fonts/canger-jinkai-04/cejk-subset.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
   --landing-bg: var(--bg);
   --landing-panel: var(--bg-2);
@@ -13,8 +22,14 @@
   --landing-green: var(--good);
   --landing-blue: var(--info);
   --landing-serif: var(--read);
-  --landing-sans: var(--sans);
+  --landing-sans: var(--read);
   --landing-mono: var(--mono);
+}
+
+html, body {
+  min-height: 100%;
+  margin: 0;
+  background: var(--landing-bg);
 }
 
 /* DC 原始模板在编辑器运行时挂载前必须始终隐藏，避免刷新时裸模板闪现。 */

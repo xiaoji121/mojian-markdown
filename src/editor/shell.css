@@ -258,7 +258,8 @@ textarea.md-source {
 }
 
 /* ===== 预览工具栏 ===== */
-.preview-toolbar-actions { display: flex; align-items: center; gap: 12px; }
+.preview-toolbar-actions { display: flex; min-width: 0; align-items: center; gap: 12px; }
+.preview-toolbar-actions > * { flex: none; }
 .paper-picker { display: flex; align-items: center; gap: 6px; }
 .paper-dot {
   width: 16px;
@@ -276,6 +277,7 @@ textarea.md-source {
 }
 .preview-toolbar-hint {
   display: flex;
+  white-space: nowrap;
   align-items: center;
   gap: 7px;
   color: var(--text-4);
@@ -287,6 +289,7 @@ textarea.md-source {
 .fullscreen-only-control { align-items: center; }
 .fullscreen-font-controls { gap: 5px; }
 .tbtn.tool-pill {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -295,6 +298,7 @@ textarea.md-source {
   padding: 0 9px;
   font-family: var(--mono);
   font-size: var(--fs-xs);
+  white-space: nowrap;
 }
 .tbtn.font-btn { width: 27px; height: 27px; font-family: var(--read); line-height: 1; }
 .tbtn.font-btn-sm { width: 24px; height: 20px; font-family: var(--read); line-height: 1; }
