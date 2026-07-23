@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { EditingFileLayoutMethods } from '../src/editor/editingFileLayoutMethods.ts';
+import { EditingFileLayoutMethods } from '../../src/editor/editingFileLayoutMethods.ts';
 
 function createSource(value: string, selectionStart: number, selectionEnd = selectionStart) {
   let currentValue = value;

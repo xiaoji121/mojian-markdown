@@ -108,11 +108,13 @@ npm run build:ext   # 构建到 dist-extension/，然后在 chrome://extensions 
 ## 开发
 
 ```bash
-npm run check   # 代码体积约束 + 类型检查 + 测试 + 构建（含插件）
-npm test        # 只跑测试
+npm run check       # 代码体积约束 + 类型检查 + 单元测试 + 构建（含插件）
+npm test            # 单元测试（node:test，秒级）
+npm run test:e2e    # 端到端测试（Playwright，首次先 npx playwright install chromium）
+npm run check:full  # check + 端到端
 ```
 
-代码规范见 `docs/CODING_GUIDELINES.md`；使用编码 Agent 协作时请先读 `AGENTS.md`。
+代码规范见 `docs/CODING_GUIDELINES.md`，测试体系与 test-first 工作流见 `docs/TESTING.md`；使用编码 Agent 协作时请先读 `AGENTS.md`。
 
 ## 版权与许可
 
