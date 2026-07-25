@@ -303,9 +303,10 @@ cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
       <button class="abtn primary" onClick="{{ onOpen }}" aria-label="打开文件">打开</button>
       <button ref="{{ headerMoreRef }}" class="abtn icon header-more" onClick="{{ toggleHeaderMenu }}" title="更多操作" aria-label="更多操作" aria-haspopup="menu" aria-expanded="false">⋯</button>
       <div ref="{{ headerMenuRef }}" class="header-menu" role="menu" aria-label="更多操作">
-        <button class="header-menu-item" role="menuitem" onClick="{{ menuTheme }}">切换主题</button>
-        <button class="header-menu-item" role="menuitem" onClick="{{ menuSave }}">保存文档</button>
-        <button class="header-menu-item" role="menuitem" onClick="{{ menuNew }}">新建文档</button>
+        <button class="header-menu-item collapsible-menu-item" role="menuitem" onClick="{{ menuTheme }}">切换主题</button>
+        <button class="header-menu-item collapsible-menu-item" role="menuitem" onClick="{{ menuSave }}">保存文档</button>
+        <button class="header-menu-item collapsible-menu-item" role="menuitem" onClick="{{ menuNew }}">新建文档</button>
+        <button class="header-menu-item" role="menuitem" onClick="{{ menuFolder }}">关联本地文件夹</button>
       </div>
     </div>
   </header>

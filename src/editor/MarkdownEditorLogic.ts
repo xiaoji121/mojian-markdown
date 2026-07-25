@@ -9,6 +9,7 @@ import { CommentMethods } from './commentMethods';
 import { DiagramMethods } from './diagramMethods';
 import { EditingFileLayoutMethods } from './editingFileLayoutMethods';
 import { ENABLE_AGENT_BRIDGE } from './featureFlags';
+import { LocalFileSyncMethods } from './localFileSyncMethods';
 import { NavigationMethods } from './navigationMethods';
 import { applyPrototypeMethods } from './prototypeMethods';
 import { ViewMethods } from './viewMethods';
@@ -93,6 +94,14 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.dirty = false;
     this._saveT = null;
     this.agentBridgeEnabled = ENABLE_AGENT_BRIDGE;
+    this._localFileModifiedAt = 0;
+    this._localWriteBusy = false;
+    this._localFileConflict = false;
+    this._fileWatchT = null;
+    this._fileWatchFocus = null;
+    this._draftSavedAt = 0;
+    this.localFilePath = null;
+    this._folderHandles = null;
   }
 
   get LS_KEY() { return EDITOR_STORAGE_KEY; }
@@ -135,6 +144,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
         this.bridgeDocumentId = saved.bridgeDocumentId;
         this.activeDocumentId = saved.bridgeDocumentId;
       }
+      if (saved.savedAt) this._draftSavedAt = saved.savedAt;
       if (saved.theme) { this.theme = saved.theme; this._themeTouched = true; }
       if (saved.paperDark) this.paperDark = saved.paperDark;
       if (saved.paperLight) this.paperLight = saved.paperLight;
@@ -199,6 +209,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       this._refreshRecentDocuments();
     }
     this._syncViewMode();
+    // 上次会话打开过本地文件时，恢复与它的双向同步关联。
+    this._restoreLocalFileLink();
   }
 
   componentDidUpdate() { this._applyProps(); }
@@ -219,6 +231,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     if (this._keyHandler) window.removeEventListener('keydown', this._keyHandler);
     if (this._resizeHandler) window.removeEventListener('resize', this._resizeHandler);
     if (this._outlineJumpT) clearTimeout(this._outlineJumpT);
+    this._stopLocalFileWatcher();
     document.body.style.overflow = '';
   }
 
@@ -282,6 +295,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       menuTheme: () => { this.toggleTheme(); this.toggleHeaderMenu(false); },
       menuSave: () => { this.toggleHeaderMenu(false); this.onSave(); },
       menuNew: () => { this.toggleHeaderMenu(false); this.onNew(); },
+      menuFolder: () => { this.toggleHeaderMenu(false); this.associateLocalFolder(); },
       toggleOutline: () => this.toggleOutline(),
       toggleComments: () => this._openPanel(),
       closePanel: () => this._openPanel(false),
@@ -324,7 +338,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     CommentMethods,
     DiagramMethods,
     AIMethods,
-    EditingFileLayoutMethods
+    EditingFileLayoutMethods,
+    LocalFileSyncMethods
   );
   return Component;
 }

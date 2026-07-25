@@ -512,6 +512,13 @@
     white-space: nowrap;
   }
   .recent-document-body small { color: var(--text-4); font: var(--fs-2xs)/1 var(--mono); }
+  .recent-document-path {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    direction: rtl; /* 路径过长时保留结尾的文件名部分 */
+    text-align: left;
+  }
   .recent-document-children { margin: 1px 0 6px 17px; padding-left: 8px; }
   .recent-answer-item {
     width: 100%;
@@ -577,6 +584,7 @@
     /* 低频动作收进 ⋯ 溢出菜单 */
     .collapsible-action { display: none !important; }
     .header-more { display: flex !important; }
+    .header-menu-item.collapsible-menu-item { display: block; }
     /* 纸色点收起为当前色，点击展开整排（见 _buildPaperPicker） */
     .paper-picker .paper-dot:not(.is-active) { display: none; }
     .paper-picker.is-open .paper-dot { display: block; }

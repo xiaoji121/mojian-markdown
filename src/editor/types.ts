@@ -34,6 +34,8 @@ export interface PersistedEditorState {
   immersiveWide?: boolean;
   comments: Annotation[];
   bridgeDocumentId?: string;
+  /** 草稿最后一次持久化的时间戳，用于恢复本地文件关联时判断谁更新 */
+  savedAt?: number;
 }
 
 export interface EditorProps {

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { saveEditorState } from './storage';
+import { saveEditorState } from './storage.ts';
 
 export class BridgeMethods {
   _formatRecentTime(timestamp) {
@@ -47,6 +47,13 @@ export class BridgeMethods {
       time.textContent = this._formatRecentTime(doc.updatedAt) +
         ' · ' + (doc.annotationCount || 0) + ' 批注 · ' + (doc.questionCount || 0) + ' 问答';
       body.append(name, time);
+      if (doc.localPath) {
+        const path = document.createElement('small');
+        path.className = 'recent-document-path';
+        path.textContent = doc.localPath;
+        body.appendChild(path);
+        button.title = doc.localPath;
+      }
       button.append(icon, body);
       button.addEventListener('click', () => this.openRecentDocument(doc.documentId));
       group.appendChild(button);
@@ -88,8 +95,7 @@ export class BridgeMethods {
       const data = await response.json();
       this.recentDocuments = Array.isArray(data.documents) ? data.documents : [];
       if (!this.bridgeDocumentId && this.fileName && this.fileName !== '未命名.md') {
-        const sameName = this.recentDocuments.filter((doc) => doc.fileName === this.fileName);
-        const preferred = sameName.find((doc) => doc.questionCount > 0) || sameName[0];
+        const preferred = this._matchRecentDocumentByName(this.fileName);
         if (preferred) {
           this.bridgeDocumentId = preferred.documentId;
           this.activeDocumentId = preferred.documentId;
@@ -100,6 +106,37 @@ export class BridgeMethods {
       this.recentDocuments = [];
     }
     this._renderRecentDocuments();
+  }
+
+
+  _matchRecentDocumentByName(fileName) {
+    const sameName = this.recentDocuments.filter((doc) => doc.fileName === fileName);
+    return sameName.find((doc) => doc.questionCount > 0) || sameName[0] || null;
+  }
+
+
+  // 打开本地文件时认领 Reading Workspace 里的同名文档：复用其 documentId，
+  // 恢复批注与问答，避免每次打开都生成一份新副本。
+  async _adoptBridgeDocument(fileName) {
+    if (!this.agentBridgeEnabled || !fileName || fileName === '未命名.md') return null;
+    try {
+      const response = await fetch('http://127.0.0.1:4317/api/documents');
+      if (!response.ok) return null;
+      const data = await response.json();
+      this.recentDocuments = Array.isArray(data.documents) ? data.documents : [];
+      const preferred = this._matchRecentDocumentByName(fileName);
+      if (!preferred) return null;
+      const detail = await fetch('http://127.0.0.1:4317/api/documents/' + encodeURIComponent(preferred.documentId));
+      if (!detail.ok) return null;
+      const doc = (await detail.json()).document;
+      this.bridgeDocumentId = doc.documentId;
+      this.activeDocumentId = doc.documentId;
+      this.comments = this._commentsFromBridge(doc.annotations || [], doc.messages || [], doc.documentId);
+      this._renderRecentDocuments();
+      return doc;
+    } catch {
+      return null;
+    }
   }
 
 
@@ -114,7 +151,7 @@ export class BridgeMethods {
       this.activeDocumentId = doc.documentId;
       this.activeAnswerRequestId = null;
       this.previewOverrideMarkdown = '';
-      this.fileHandle = null;
+      this._detachLocalFile();
       this.sourceRef.current.value = this._cleanOpenedMarkdown(doc.content || '');
       this._resetEditingHistory();
       this.comments = this._commentsFromBridge(doc.annotations || [], doc.messages || [], doc.documentId);
@@ -127,6 +164,8 @@ export class BridgeMethods {
       this._renderRecentDocuments();
       this._setStatus('已从 Reading Workspace 打开 · ' + this.fileName);
       this.closeDocumentSidebar();
+      // 若之前打开过同名本地文件，重新接上句柄；本地文件内容优先于工作区副本。
+      await this._reattachLocalFileForDocument(doc);
     } catch (error) {
       this._setStatus(error.message || 'Reading Workspace 文档读取失败');
     }
@@ -209,6 +248,8 @@ export class BridgeMethods {
 
   _persist(syncBridge = true) {
     const src = this.sourceRef.current;
+    const savedAt = Date.now();
+    this._draftSavedAt = savedAt;
     saveEditorState({
       content: src ? src.value : '',
       fileName: this.fileName,
@@ -218,7 +259,8 @@ export class BridgeMethods {
       paperLight: this.paperLight || undefined,
       immersiveWide: this.immersiveWide || undefined,
       comments: this.comments,
-      bridgeDocumentId: this.bridgeDocumentId || undefined
+      bridgeDocumentId: this.bridgeDocumentId || undefined,
+      savedAt
     });
     if (syncBridge && this.agentBridgeEnabled) this._scheduleBridgeSync();
   }
@@ -256,6 +298,7 @@ export class BridgeMethods {
       sourceApp: 'markdown-editor',
       title: this.fileName || '未命名文档',
       fileName: this.fileName || '未命名.md',
+      localPath: this.localFilePath || undefined,
       content: src ? src.value : '',
       documentId: this.bridgeDocumentId || undefined
     };

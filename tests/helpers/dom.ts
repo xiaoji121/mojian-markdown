@@ -37,6 +37,7 @@ export function createStubElement() {
     getAttribute(name: string) { return attributes.has(name) ? attributes.get(name) : null; },
     removeAttribute(name: string) { attributes.delete(name); },
     appendChild(child: unknown) { this.children.push(child); return child; },
+    append(...nodes: unknown[]) { nodes.forEach((node) => this.children.push(node)); },
     querySelectorAll() { return [] as unknown[]; },
     querySelector() { return null; },
     addEventListener(type: string, listener: Listener) {

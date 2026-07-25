@@ -512,6 +512,8 @@ export class ViewMethods {
     const hh = String(t.getHours()).padStart(2, '0');
     const mm = String(t.getMinutes()).padStart(2, '0');
     this._setStatus('已自动保存草稿 · ' + hh + ':' + mm);
+    // 打开了本地文件时，草稿同时写穿回本地（异步，不阻塞输入）。
+    if (typeof this._maybeWriteThroughLocalFile === 'function') this._maybeWriteThroughLocalFile();
   }
 
 
@@ -539,6 +541,7 @@ export class ViewMethods {
   _setFileName(name) {
     this.fileName = name;
     if (this.fileNameRef.current) this.fileNameRef.current.textContent = name;
+    if (typeof this._syncFileNameTooltip === 'function') this._syncFileNameTooltip();
   }
 
 }

@@ -97,10 +97,10 @@
   font-weight: 600;
 }
 
-/* 小屏溢出菜单（⋯）：桌面隐藏，≤760px 由 styles.css 媒体查询启用。
-   （.abtn.header-more 双类写法确保压过 .abtn 的 display:flex） */
-.abtn.header-more,
+/* 顶栏溢出菜单（⋯）：全宽度可见。桌面只保留低频动作（如关联文件夹），
+   与头部按钮重复的条目标记 collapsible-menu-item，仅在 ≤760px 出现。 */
 .header-menu { display: none; }
+.header-menu-item.collapsible-menu-item { display: none; }
 .header-menu {
   position: absolute;
   top: calc(100% + 8px);

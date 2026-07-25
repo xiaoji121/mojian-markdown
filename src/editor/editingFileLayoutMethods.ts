@@ -209,13 +209,15 @@ export class EditingFileLayoutMethods {
         });
         const file = await handle.getFile();
         const text = this._cleanOpenedMarkdown(await file.text());
-        this.fileHandle = handle;
         this.bridgeDocumentId = null;
         this.activeDocumentId = null;
         this._setFileName(file.name);
         this.sourceRef.current.value = text;
         this._resetEditingHistory();
         this.comments = [];
+        // 接上双向同步（顺手请求写权限），并认领工作区里同名文档的批注与问答。
+        await this._attachLocalFile(handle, { requestWrite: true });
+        await this._adoptBridgeDocument(file.name);
         this._renderComments();
         this._renderPreview();
         this._setDirty(false);
@@ -233,14 +235,15 @@ export class EditingFileLayoutMethods {
         const f = inp.files[0];
         if (!f) return;
         const r = new FileReader();
-        r.onload = () => {
+        r.onload = async () => {
           this.sourceRef.current.value = this._cleanOpenedMarkdown(r.result);
           this._resetEditingHistory();
           this.bridgeDocumentId = null;
           this.activeDocumentId = null;
           this._setFileName(f.name);
-          this.fileHandle = null;
+          this._detachLocalFile();
           this.comments = [];
+          await this._adoptBridgeDocument(f.name);
           this._renderComments();
           this._renderPreview();
           this._setDirty(false);
@@ -262,6 +265,9 @@ export class EditingFileLayoutMethods {
       try {
         const w = await this.fileHandle.createWritable();
         await w.write(content); await w.close();
+        // 手动保存即用户显式决定以编辑器内容为准：更新基线并解除冲突状态。
+        await this._updateLocalFileBaseline();
+        this._localFileConflict = false;
         this._setDirty(false); this._autosave();
         this._setStatus('✓ 已保存到 ' + this.fileName);
         return;
@@ -275,8 +281,8 @@ export class EditingFileLayoutMethods {
         });
         const w = await handle.createWritable();
         await w.write(content); await w.close();
-        this.fileHandle = handle;
         this._setFileName(handle.name);
+        await this._attachLocalFile(handle);
         this._setDirty(false); this._autosave();
         this._setStatus('✓ 已保存到 ' + handle.name);
       } catch (e) {}
@@ -298,7 +304,7 @@ export class EditingFileLayoutMethods {
     if (this.viewMode === 'preview') this.setViewMode('editor');
     this.sourceRef.current.value = '';
     this._resetEditingHistory();
-    this.fileHandle = null;
+    this._detachLocalFile();
     this.activeDocumentId = null;
     this.bridgeDocumentId = null;
     this._setFileName('未命名.md');

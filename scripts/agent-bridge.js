@@ -1,13 +1,13 @@
 import { createServer } from 'node:http';
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
+import { createDocumentStore, normalizeAnnotation } from './agent-bridge-store.js';
 
 const PORT = Number(process.env.AGENT_BRIDGE_PORT || 4317);
 const ROOT = process.env.AGENT_BRIDGE_WORKSPACE || join(process.cwd(), '.reading-workspace');
-const DOCUMENT_DIR = join(ROOT, 'documents');
+const store = createDocumentStore(ROOT);
+const { readDocument, writeDocument, upsertDocument, listDocuments } = store;
 
 function sendJson(res, status, data) {
   res.writeHead(status, {
@@ -30,72 +30,6 @@ async function readBody(req) {
   return text ? JSON.parse(text) : {};
 }
 
-function documentPath(documentId) {
-  return join(DOCUMENT_DIR, `${documentId}.json`);
-}
-
-async function ensureStore() {
-  await mkdir(DOCUMENT_DIR, { recursive: true });
-}
-
-async function readDocument(documentId) {
-  const text = await readFile(documentPath(documentId), 'utf8');
-  return JSON.parse(text);
-}
-
-async function writeDocument(doc) {
-  await ensureStore();
-  doc.updatedAt = new Date().toISOString();
-  await writeFile(documentPath(doc.documentId), JSON.stringify(doc, null, 2));
-  return doc;
-}
-
-function normalizeAnnotation(item) {
-  const id = item.id || item.requestId || randomUUID();
-  return { ...item, id, ts: item.ts || Date.now() };
-}
-
-function normalizeDocument(input, existing = null) {
-  const now = new Date().toISOString();
-  return {
-    sourceApp: input.sourceApp || existing?.sourceApp || 'markdown-editor',
-    title: input.title || input.fileName || existing?.title || '未命名文档',
-    fileName: input.fileName || input.title || existing?.fileName || '未命名.md',
-    content: input.content ?? existing?.content ?? '',
-    documentId: input.documentId || existing?.documentId || randomUUID(),
-    createdAt: existing?.createdAt || now,
-    updatedAt: now,
-    annotations: existing?.annotations || [],
-    messages: existing?.messages || []
-  };
-}
-
-async function upsertDocument(input, annotations = null) {
-  const requestedId = input.documentId;
-  let existing = null;
-  if (requestedId && existsSync(documentPath(requestedId))) {
-    existing = await readDocument(requestedId);
-  }
-  const doc = normalizeDocument(input, existing);
-  if (Array.isArray(annotations)) doc.annotations = annotations.map(normalizeAnnotation);
-  return writeDocument(doc);
-}
-
-async function listDocuments() {
-  await ensureStore();
-  const names = await readdir(DOCUMENT_DIR);
-  const docs = await Promise.all(
-    names.filter((name) => name.endsWith('.json')).map(async (name) => {
-      try {
-        return JSON.parse(await readFile(join(DOCUMENT_DIR, name), 'utf8'));
-      } catch {
-        return null;
-      }
-    })
-  );
-  return docs.filter(Boolean).sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
-}
-
 function summarizeDocument(doc) {
   const messages = Array.isArray(doc.messages) ? doc.messages : [];
   const answers = messages
@@ -109,6 +43,7 @@ function summarizeDocument(doc) {
     documentId: doc.documentId,
     title: doc.title,
     fileName: doc.fileName,
+    localPath: doc.localPath,
     updatedAt: doc.updatedAt,
     annotationCount: Array.isArray(doc.annotations) ? doc.annotations.length : 0,
     questionCount: messages.length,

@@ -11,6 +11,7 @@ This project keeps editor behavior grouped by feature. New code should go into t
 - `src/editor/commentMethods.ts`: selection toolbar, annotations, comment panel rendering, and copy helpers.
 - `src/editor/aiMethods.ts`: AI panel, AI history, chat streaming, and AI message rendering.
 - `src/editor/editingFileLayoutMethods.ts`: Markdown formatting commands, local file operations, and resizable layout handles.
+- `src/editor/localFileSyncMethods.ts`: bidirectional sync with the opened local file (write-through autosave, external-change watcher, conflict handling). `src/editor/fileHandleStore.ts`: IndexedDB persistence of file/folder handles (folder handles power the "文件夹名/相对路径" display).
 - `src/editor/styles.css`: editor UI CSS. `src/landing.css`: landing-page CSS.
 
 ## Rules For New Work
