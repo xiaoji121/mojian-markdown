@@ -19,11 +19,23 @@ test('落地页使用本地 Canger JinKai 04 字体', async ({ page }) => {
   page.on('request', (request) => {
     if (/cejk-subset\.woff2/.test(request.url())) fontRequests.push(request.url());
   });
+  // 字体按版权约定不随仓库分发（npm run font:fetch 获取），缺失时界面回退系统楷体。
+  // 字体文件真实可用时才断言加载成功；声明与请求链路的断言不依赖文件存在。
+  // 注意 Vite dev server 对缺失路径会以 200 回退到 index.html，需校验 content-type。
+  const probe = await page.request.get('/fonts/canger-jinkai-04/cejk-subset.woff2');
+  const fontServed = probe.ok() && !(probe.headers()['content-type'] || '').includes('text/html');
 
   await page.goto('/');
   await page.evaluate(() => document.fonts.ready);
 
-  expect(await page.evaluate(() => document.fonts.check('16px "Canger JinKai 04"'))).toBe(true);
+  if (fontServed) {
+    expect(await page.evaluate(() => document.fonts.check('16px "Canger JinKai 04"'))).toBe(true);
+  } else {
+    test.info().annotations.push({
+      type: 'degraded',
+      description: '字体未获取（npm run font:fetch），跳过真实加载断言'
+    });
+  }
   expect(await page.locator('#landing-page').evaluate((landing) => getComputedStyle(landing).fontFamily))
     .toContain('Canger JinKai 04');
   expect(fontRequests).toHaveLength(1);

@@ -45,6 +45,23 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
+      # 字体按版权约定不随仓库分发；从官方 CDN 获取并缓存，
+      # 拉取失败时字体相关 E2E 自动降级（跳过真实加载断言），不阻塞 CI
+      - name: Cache Canger font
+        id: font-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            fonts-src/canger-jinkai-04
+            public/fonts
+            extension/public/fonts
+          key: canger-font-${{ hashFiles('scripts/fetch-font.mjs') }}
+
+      - name: Fetch Canger font
+        if: steps.font-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        run: npm run font:fetch
+
       - name: E2E tests
         run: npm run test:e2e
 
