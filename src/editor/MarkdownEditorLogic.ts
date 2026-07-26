@@ -57,6 +57,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.aiInputRef = React.createRef();
     this.aiStatusRef = React.createRef();
     this.aiSendRef = React.createRef();
+    this.aiEngineSwitchRef = React.createRef();
     this.themeIconRef = React.createRef();
     this.viewModeSwitcherRef = React.createRef();
     this.documentSidebarRef = React.createRef();
@@ -73,6 +74,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._mermaidBatch = 0;
     this.aiMessages = [];
     this.aiConversations = [];
+    this.aiEngine = 'claude';
     this.aiHistoryOpen = false;
     this.aiQuote = '';
     this.aiPanelOpen = false;
@@ -145,6 +147,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
         this.activeDocumentId = saved.bridgeDocumentId;
       }
       if (saved.savedAt) this._draftSavedAt = saved.savedAt;
+      if (saved.aiEngine === 'codex') this.aiEngine = 'codex';
       if (saved.theme) { this.theme = saved.theme; this._themeTouched = true; }
       if (saved.paperDark) this.paperDark = saved.paperDark;
       if (saved.paperLight) this.paperLight = saved.paperLight;
@@ -276,6 +279,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       aiInputRef: this.aiInputRef,
       aiStatusRef: this.aiStatusRef,
       aiSendRef: this.aiSendRef,
+      aiEngineSwitchRef: this.aiEngineSwitchRef,
       viewModeSwitcherRef: this.viewModeSwitcherRef,
       documentSidebarRef: this.documentSidebarRef,
       documentSidebarResizeRef: this.documentSidebarResizeRef,
@@ -303,6 +307,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       closeAI: () => this._openAIPanel(false),
       toggleAIHistory: () => this.toggleAIHistory(),
       sendAIQuestion: () => this.sendAIQuestion(),
+      engineClaude: () => this.setAIEngine('claude'),
+      engineCodex: () => this.setAIEngine('codex'),
       askExplain: () => this.askAIQuick('请用更容易理解的语言解释这段话。'),
       askContext: () => this.askAIQuick('这段话在全文上下文中起什么作用？'),
       askChallenge: () => this.askAIQuick('这段话有哪些隐含假设或值得质疑的地方？'),

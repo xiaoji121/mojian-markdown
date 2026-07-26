@@ -1,8 +1,8 @@
 import { createServer } from 'node:http';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { spawn } from 'node:child_process';
 import { createDocumentStore, normalizeAnnotation } from './agent-bridge-store.js';
+import { normalizeEngine, runEngine } from './agent-bridge-engines.js';
 
 const PORT = Number(process.env.AGENT_BRIDGE_PORT || 4317);
 const ROOT = process.env.AGENT_BRIDGE_WORKSPACE || join(process.cwd(), '.reading-workspace');
@@ -37,6 +37,7 @@ function summarizeDocument(doc) {
     .map((item) => ({
       requestId: item.requestId,
       question: item.question || '未命名问题',
+      engine: item.engine,
       updatedAt: item.answerAt || item.questionAt || doc.updatedAt
     }));
   return {
@@ -89,33 +90,14 @@ function bridgePrompt(body, doc) {
   ].join('\n');
 }
 
-function claudeArgs(prompt) {
-  const raw = process.env.AGENT_BRIDGE_CLAUDE_ARGS;
-  if (raw) return [...raw.split(' ').filter(Boolean), prompt];
-  return ['-p', prompt];
-}
-
-function streamClaude(prompt, onDelta) {
-  return new Promise((resolve, reject) => {
-    const command = process.env.AGENT_BRIDGE_CLAUDE_COMMAND || 'claude';
-    const child = spawn(command, claudeArgs(prompt), { stdio: ['ignore', 'pipe', 'pipe'] });
-    let stderr = '';
-    child.stdout.on('data', (chunk) => onDelta(chunk.toString('utf8')));
-    child.stderr.on('data', (chunk) => { stderr += chunk.toString('utf8'); });
-    child.on('error', (error) => reject(error));
-    child.on('close', (code) => {
-      if (code === 0) resolve();
-      else reject(new Error(stderr.trim() || `Claude CLI exited with code ${code}`));
-    });
-  });
-}
-
 async function handleChat(req, res) {
   const body = await readBody(req);
+  const engine = normalizeEngine(body.engine);
   const doc = await upsertDocument(body.document || {});
   const requestId = randomUUID();
   const message = {
     requestId,
+    engine,
     question: body.question || '',
     quote: body.selection?.quote || '',
     questionAt: new Date().toISOString(),
@@ -126,6 +108,7 @@ async function handleChat(req, res) {
     id: requestId,
     requestId,
     type: 'ai',
+    engine,
     quote: message.quote,
     note: message.question,
     question: message.question,
@@ -142,17 +125,16 @@ async function handleChat(req, res) {
   });
   writeSse(res, 'meta', {
     requestId,
+    engine,
     documentId: doc.documentId,
     documentChars: doc.content.length
   });
 
-  let answer = '';
   try {
-    await streamClaude(bridgePrompt(body, doc), (delta) => {
-      answer += delta;
+    const answer = await runEngine(engine, bridgePrompt(body, doc), (delta) => {
       writeSse(res, 'delta', { text: delta });
     });
-    message.answer = answer.trim();
+    message.answer = answer;
     message.answerAt = new Date().toISOString();
     const annotation = doc.annotations.find((item) => item.requestId === requestId);
     if (annotation) {
@@ -161,10 +143,7 @@ async function handleChat(req, res) {
     }
     await writeDocument(doc);
   } catch (error) {
-    const messageText = error?.code === 'ENOENT'
-      ? '未找到 Claude CLI。请先安装并登录 Claude Code，或设置 AGENT_BRIDGE_CLAUDE_COMMAND。'
-      : (error.message || String(error));
-    writeSse(res, 'error', { message: messageText });
+    writeSse(res, 'error', { message: error.message || String(error) });
   } finally {
     res.end();
   }

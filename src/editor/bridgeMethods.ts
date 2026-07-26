@@ -75,7 +75,7 @@ export class BridgeMethods {
           const childName = document.createElement('strong');
           childName.textContent = answer.question;
           const childMeta = document.createElement('small');
-          childMeta.textContent = 'AI 回答 · ' + this._formatRecentTime(answer.updatedAt);
+          childMeta.textContent = (answer.engine === 'codex' ? 'Codex' : 'AI') + ' 回答 · ' + this._formatRecentTime(answer.updatedAt);
           childBody.append(childName, childMeta);
           child.append(branch, childBody);
           child.addEventListener('click', () => this.openAnswerDocument(doc.documentId, answer.requestId));
@@ -260,6 +260,7 @@ export class BridgeMethods {
       immersiveWide: this.immersiveWide || undefined,
       comments: this.comments,
       bridgeDocumentId: this.bridgeDocumentId || undefined,
+      aiEngine: this.aiEngine === 'codex' ? 'codex' : undefined,
       savedAt
     });
     if (syncBridge && this.agentBridgeEnabled) this._scheduleBridgeSync();

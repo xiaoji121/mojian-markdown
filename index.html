@@ -412,6 +412,10 @@ cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
       <div class="panel-header">
         <span class="panel-title">AI 阅读助手</span>
         <span class="panel-header-tools">
+          <span ref="{{ aiEngineSwitchRef }}" class="ai-engine-switch" role="group" aria-label="选择 AI 引擎">
+            <button class="ai-engine-option is-active" data-engine="claude" onClick="{{ engineClaude }}" aria-pressed="true">Claude</button>
+            <button class="ai-engine-option" data-engine="codex" onClick="{{ engineCodex }}" aria-pressed="false">Codex</button>
+          </span>
           <button class="ai-history-toggle" onClick="{{ toggleAIHistory }}" title="本地对话历史">历史</button>
           <button class="panel-close" onClick="{{ closeAI }}" title="收起" aria-label="收起 AI 面板">&times;</button>
         </span>

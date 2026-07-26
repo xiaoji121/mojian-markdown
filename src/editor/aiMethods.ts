@@ -23,8 +23,49 @@ export class AIMethods {
   }
 
 
+  // ===== AI 引擎切换（Claude / Codex） =====
+
+  _aiEngineLabel(engine) {
+    return (engine || this.aiEngine) === 'codex' ? 'Codex' : 'Claude';
+  }
+
+
+  setAIEngine(engine) {
+    this.aiEngine = engine === 'codex' ? 'codex' : 'claude';
+    this._syncAIEngineSwitch();
+    this._persist(false);
+    this._setStatus('AI 引擎已切换为 ' + this._aiEngineLabel());
+  }
+
+
+  _syncAIEngineSwitch() {
+    const wrap = this.aiEngineSwitchRef?.current;
+    if (!wrap) return;
+    wrap.querySelectorAll('[data-engine]').forEach((button) => {
+      const active = button.dataset.engine === this.aiEngine;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  }
+
+
+  _aiChatRequestBody(question) {
+    return {
+      question,
+      engine: this.aiEngine === 'codex' ? 'codex' : 'claude',
+      document: this._documentPayload(),
+      selection: {
+        quote: this.aiQuote,
+        occurrence: this.aiOccurrence || 0,
+        surroundingText: this._selectionContext()
+      }
+    };
+  }
+
+
   _initAI() {
     if (!this.agentBridgeEnabled) return;
+    this._syncAIEngineSwitch();
     const input = this.aiInputRef.current;
     if (input) {
       input.addEventListener('keydown', (e) => {
@@ -90,7 +131,7 @@ export class AIMethods {
       });
       if (!response.ok) throw new Error('Bridge unavailable');
       this.aiBridgeOnline = true;
-      this._setAIStatus('Claude Code 已连接', 'online');
+      this._setAIStatus('本地 Agent 已连接', 'online');
       this._refreshAIConversations();
       this._refreshRecentDocuments();
     } catch (e) {
@@ -214,7 +255,7 @@ export class AIMethods {
       });
       if (item.answer) this.aiMessages.push({
         id: 'a-' + item.requestId, role: 'assistant', text: item.answer,
-        requestId: item.requestId, documentId,
+        requestId: item.requestId, documentId, engine: item.engine,
         meta: '本地历史 · 已归档至 Brain OS', pending: false
       });
     });
@@ -309,7 +350,7 @@ export class AIMethods {
     if (!this.aiMessages.length) {
       const empty = document.createElement('div');
       empty.className = 'ai-empty';
-      empty.innerHTML = '<span>选择一段原文，然后提出你的疑问。</span><small>回答会由本机 Claude Code 生成，并归档到 Brain OS。</small>';
+      empty.innerHTML = '<span>选择一段原文，然后提出你的疑问。</span><small>回答由本机 Claude Code 或 Codex 生成，并归档到 Brain OS。</small>';
       list.appendChild(empty);
       return;
     }
@@ -319,7 +360,7 @@ export class AIMethods {
       if (message.requestId) item.setAttribute('data-request-id', message.requestId);
       const label = document.createElement('div');
       label.className = 'ai-message-label';
-      label.textContent = message.role === 'user' ? '你' : 'Claude';
+      label.textContent = message.role === 'user' ? '你' : this._aiEngineLabel(message.engine);
       const body = document.createElement('div');
       body.className = 'ai-message-body';
       if (message.role === 'assistant' && message.text) this._renderSafeMarkdown(body, message.text);
@@ -412,26 +453,19 @@ export class AIMethods {
     this._persist();
     this._renderPreview();
     this._renderComments();
+    const engineLabel = this._aiEngineLabel();
     const userMessage = this._pushAIMessage('user', question, '', { quote: this.aiQuote });
-    const assistant = this._pushAIMessage('assistant', '');
+    const assistant = this._pushAIMessage('assistant', '', '', { engine: this.aiEngine });
     let bridgeReached = false;
     if (input) input.value = '';
     this._setAIBusy(true);
-    this._setAIStatus('Claude 正在阅读…', 'checking');
+    this._setAIStatus(engineLabel + ' 正在阅读…', 'checking');
 
     try {
       const response = await fetch('http://127.0.0.1:4317/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          question,
-          document: this._documentPayload(),
-          selection: {
-            quote: this.aiQuote,
-            occurrence: this.aiOccurrence || 0,
-            surroundingText: this._selectionContext()
-          }
-        })
+        body: JSON.stringify(this._aiChatRequestBody(question))
       });
       if (!response.ok || !response.body) throw new Error('本地 Agent Bridge 无响应');
       bridgeReached = true;
@@ -476,7 +510,7 @@ export class AIMethods {
             assistant.documentId = data.documentId || assistant.documentId;
             aiComment.documentId = data.documentId || aiComment.documentId;
             assistant.meta = (contextMeta ? contextMeta + ' · ' : '') + '历史会话已失效，已自动建立新会话';
-            this._setAIStatus('Claude Code 已连接 · 已重建会话', 'online');
+            this._setAIStatus('本地 Agent 已连接 · 已重建会话', 'online');
           } else if (event === 'error' && data) {
             throw new Error(data.message || 'Agent 回答失败');
           }
@@ -491,14 +525,14 @@ export class AIMethods {
       this._renderComments();
       this._refreshAIConversations();
       this._refreshRecentDocuments();
-      this._setAIStatus('Claude Code 已连接', 'online');
+      this._setAIStatus('本地 Agent 已连接', 'online');
       this._setStatus('AI 回答已保存到 Reading Workspace');
     } catch (error) {
       assistant.pending = false;
       const message = error && error.message ? error.message : String(error);
       assistant.text = (bridgeReached ? 'Agent 执行失败：' : '连接失败：') + message;
       assistant.meta = bridgeReached
-        ? 'Agent Bridge 已连接，请检查 Claude Code 的会话或运行环境'
+        ? 'Agent Bridge 已连接，请检查 ' + engineLabel + ' CLI 的会话或运行环境'
         : '请使用 npm run dev 同时启动前端与 Agent Bridge';
       aiComment.answer = assistant.text;
       aiComment.aiStatus = 'error';

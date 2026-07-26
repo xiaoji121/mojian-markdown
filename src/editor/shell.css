@@ -372,6 +372,27 @@ textarea.md-source {
 }
 
 /* ===== AI 面板 ===== */
+.ai-engine-switch {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-control);
+}
+.ai-engine-option {
+  padding: 4px 8px;
+  border: 0;
+  border-radius: calc(var(--radius-control) - 2px);
+  background: transparent;
+  color: var(--text-3);
+  font: var(--fs-2xs)/1 var(--mono);
+  cursor: pointer;
+}
+.ai-engine-option.is-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
 .ai-history-toggle {
   padding: 6px 8px;
   border: 1px solid var(--border-soft);
