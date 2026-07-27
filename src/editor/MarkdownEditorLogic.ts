@@ -58,6 +58,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.aiStatusRef = React.createRef();
     this.aiSendRef = React.createRef();
     this.aiEngineSwitchRef = React.createRef();
+    this.folderMenuItemRef = React.createRef();
     this.themeIconRef = React.createRef();
     this.viewModeSwitcherRef = React.createRef();
     this.documentSidebarRef = React.createRef();
@@ -282,6 +283,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       aiStatusRef: this.aiStatusRef,
       aiSendRef: this.aiSendRef,
       aiEngineSwitchRef: this.aiEngineSwitchRef,
+      folderMenuItemRef: this.folderMenuItemRef,
       viewModeSwitcherRef: this.viewModeSwitcherRef,
       documentSidebarRef: this.documentSidebarRef,
       documentSidebarResizeRef: this.documentSidebarResizeRef,

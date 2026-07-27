@@ -127,3 +127,22 @@ test('source shortcuts invoke undo and redo', () => {
   assert.equal(undoCount, 1);
   assert.equal(redoCount, 2);
 });
+
+test('桌面端 _initDesktop 隐藏网页版专属的「关联本地文件夹」菜单项', async () => {
+  (globalThis as { window?: unknown }).window = {
+    mojianDesktop: {
+      onMenu: () => {},
+      onOpenPath: () => {},
+      consumePendingOpen: async () => null
+    }
+  };
+  try {
+    const editor = new EditingFileLayoutMethods() as EditingFileLayoutMethods & Record<string, any>;
+    const folderItem = { style: {} as Record<string, string> };
+    editor.folderMenuItemRef = { current: folderItem };
+    editor._initDesktop();
+    assert.equal(folderItem.style.display, 'none');
+  } finally {
+    delete (globalThis as { window?: unknown }).window;
+  }
+});

@@ -34,6 +34,14 @@ test('桌面端启动并与本地文件双向同步', async () => {
     const health = await page.evaluate(() => fetch('/health').then((r) => r.json()));
     expect(health).toEqual({ ok: true });
 
+    // 网页版专属的「关联本地文件夹」菜单项在桌面端隐藏（桌面句柄自带绝对路径）。
+    const folderItemDisplay = await page.evaluate(() => {
+      const item = [...document.querySelectorAll('.header-menu-item')]
+        .find((el) => el.textContent?.includes('关联本地文件夹'));
+      return item ? getComputedStyle(item).display : 'missing';
+    });
+    expect(folderItemDisplay).toBe('none');
+
     // 主进程推送「外部打开」事件（等价于双击 .md / 打开方式）。
     const stat = await readFile(docPath, 'utf8');
     await app.evaluate(({ BrowserWindow }, payload) => {
