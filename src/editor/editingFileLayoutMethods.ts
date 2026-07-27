@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { createDesktopFileHandle } from './desktopFileHandle.ts';
 
 export class EditingFileLayoutMethods {
   _captureEditingState() {
@@ -201,7 +202,50 @@ export class EditingFileLayoutMethods {
   }
 
 
+  // ===== 桌面端（Electron）文件能力：原生对话框 + 真实路径，句柄接入既有同步逻辑 =====
+
+  _initDesktop() {
+    const desktop = window.mojianDesktop;
+    if (!desktop) return;
+    desktop.onMenu((action) => {
+      if (action === 'new') this.onNew();
+      else if (action === 'open') this.onOpen();
+      else if (action === 'save') this.onSave();
+    });
+    // 双击关联的 .md 文件 / 菜单打开：主进程读好内容推送过来。
+    desktop.onOpenPath((file) => { this._openDesktopFile(file); });
+    desktop.consumePendingOpen()
+      .then((file) => { if (file) this._openDesktopFile(file); })
+      .catch(() => {});
+  }
+
+
+  async _openDesktopFile(picked) {
+    const src = this.sourceRef.current;
+    if (!picked || !picked.path || !src) return;
+    const text = this._cleanOpenedMarkdown(picked.content);
+    this.bridgeDocumentId = null;
+    this.activeDocumentId = null;
+    this._setFileName(picked.name);
+    src.value = text;
+    this._resetEditingHistory();
+    this.comments = [];
+    await this._attachLocalFile(createDesktopFileHandle(picked.path, picked.name));
+    await this._adoptBridgeDocument(picked.name);
+    this._renderComments();
+    this._renderPreview();
+    this._setDirty(false);
+    this._autosave();
+    this._setStatus('已打开 · ' + picked.name);
+  }
+
+
   async onOpen() {
+    if (window.mojianDesktop) {
+      const picked = await window.mojianDesktop.openMarkdownFile();
+      if (picked) await this._openDesktopFile(picked);
+      return;
+    }
     if (window.showOpenFilePicker) {
       try {
         const [handle] = await window.showOpenFilePicker({
@@ -272,6 +316,17 @@ export class EditingFileLayoutMethods {
         this._setStatus('✓ 已保存到 ' + this.fileName);
         return;
       } catch (e) { this._setStatus('保存失败：' + (e.message || e)); return; }
+    }
+    if (window.mojianDesktop) {
+      const suggested = this.fileName && this.fileName !== '未命名.md' ? this.fileName : 'document.md';
+      const saved = await window.mojianDesktop.saveMarkdownFileAs(suggested, content);
+      if (!saved) return;
+      this._setFileName(saved.name);
+      await this._attachLocalFile(createDesktopFileHandle(saved.path, saved.name));
+      this._setDirty(false);
+      this._autosave();
+      this._setStatus('✓ 已保存到 ' + saved.name);
+      return;
     }
     if (window.showSaveFilePicker) {
       try {

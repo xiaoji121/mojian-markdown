@@ -7,6 +7,9 @@ dist-extension/
 .reading-workspace/
 *.log
 
+# 桌面端打包产物
+release/
+
 # Playwright 运行产物
 test-results/
 playwright-report/

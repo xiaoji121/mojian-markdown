@@ -1,7 +1,9 @@
 // 本地文件/文件夹句柄持久化。File System Access API 的句柄可结构化克隆，
 // 存进 IndexedDB 后，刷新页面或从最近文档列表重开时可以恢复与本地文件的关联；
 // 文件夹句柄用于把文件解析成「文件夹名/相对路径」展示。
+// 桌面端（Electron）句柄不可克隆，出入库时经 toStorable/fromStorable 转换为纯路径标记。
 // 环境不支持（无 indexedDB、句柄不可克隆）时静默降级为不持久化。
+import { fromStorable, toStorable } from './desktopFileHandle.ts';
 
 const DB_NAME = 'mojian-local-files';
 const DB_VERSION = 2;
@@ -56,12 +58,13 @@ async function listEntries(storeName: string): Promise<Array<{ name: string; han
 
 export async function saveFileHandle(fileName: string, handle: unknown): Promise<void> {
   if (!fileName) return;
-  await withStore(FILE_STORE, 'readwrite', (store) => store.put(handle, fileName));
+  await withStore(FILE_STORE, 'readwrite', (store) => store.put(toStorable(handle), fileName));
 }
 
 export async function loadFileHandle(fileName: string): Promise<unknown> {
   if (!fileName) return null;
-  return withStore(FILE_STORE, 'readonly', (store) => store.get(fileName));
+  const stored = await withStore(FILE_STORE, 'readonly', (store) => store.get(fileName));
+  return fromStorable(stored);
 }
 
 export async function deleteFileHandle(fileName: string): Promise<void> {
@@ -69,8 +72,9 @@ export async function deleteFileHandle(fileName: string): Promise<void> {
   await withStore(FILE_STORE, 'readwrite', (store) => store.delete(fileName));
 }
 
-export function listFileHandles(): Promise<Array<{ name: string; handle: unknown }>> {
-  return listEntries(FILE_STORE);
+export async function listFileHandles(): Promise<Array<{ name: string; handle: unknown }>> {
+  const entries = await listEntries(FILE_STORE);
+  return entries.map((entry) => ({ ...entry, handle: fromStorable(entry.handle) }));
 }
 
 export async function saveFolderHandle(name: string, handle: unknown): Promise<void> {

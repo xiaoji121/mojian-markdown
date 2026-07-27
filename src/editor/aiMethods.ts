@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { bridgeUrl } from './bridgeClient.ts';
 
 export class AIMethods {
   aiAsk() {
@@ -126,7 +127,7 @@ export class AIMethods {
   async _checkAIBridge() {
     this._setAIStatus('正在连接本地 Agent…', 'checking');
     try {
-      const response = await fetch('http://127.0.0.1:4317/health', {
+      const response = await fetch(bridgeUrl('/health'), {
         signal: AbortSignal.timeout ? AbortSignal.timeout(1800) : undefined
       });
       if (!response.ok) throw new Error('Bridge unavailable');
@@ -170,7 +171,7 @@ export class AIMethods {
 
   async _loadCurrentDocumentHistory() {
     try {
-      const response = await fetch('http://127.0.0.1:4317/api/history', {
+      const response = await fetch(bridgeUrl('/api/history'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ document: this._documentPayload() })
@@ -184,7 +185,7 @@ export class AIMethods {
 
   async _refreshAIConversations() {
     try {
-      const response = await fetch('http://127.0.0.1:4317/api/conversations');
+      const response = await fetch(bridgeUrl('/api/conversations'));
       if (!response.ok) return;
       const data = await response.json();
       this.aiConversations = Array.isArray(data.conversations) ? data.conversations : [];
@@ -233,7 +234,7 @@ export class AIMethods {
 
   async _loadAIConversation(documentId, focusRequestId) {
     try {
-      const response = await fetch('http://127.0.0.1:4317/api/conversations/' + encodeURIComponent(documentId));
+      const response = await fetch(bridgeUrl('/api/conversations/') + encodeURIComponent(documentId));
       if (!response.ok) throw new Error('历史读取失败');
       const data = await response.json();
       this._showConversationMessages(documentId, data.messages || [], focusRequestId);
@@ -462,7 +463,7 @@ export class AIMethods {
     this._setAIStatus(engineLabel + ' 正在阅读…', 'checking');
 
     try {
-      const response = await fetch('http://127.0.0.1:4317/api/chat', {
+      const response = await fetch(bridgeUrl('/api/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(this._aiChatRequestBody(question))
@@ -533,7 +534,7 @@ export class AIMethods {
       assistant.text = (bridgeReached ? 'Agent 执行失败：' : '连接失败：') + message;
       assistant.meta = bridgeReached
         ? 'Agent Bridge 已连接，请检查 ' + engineLabel + ' CLI 的会话或运行环境'
-        : '请使用 npm run dev 同时启动前端与 Agent Bridge';
+        : (window.mojianDesktop ? 'Agent Bridge 未就绪，请重启应用' : '请使用 npm run dev 同时启动前端与 Agent Bridge');
       aiComment.answer = assistant.text;
       aiComment.aiStatus = 'error';
       this._persist();

@@ -4,6 +4,7 @@
 //   本地 → 编辑器：轮询文件 lastModified，外部改动后自动重载；
 //     若编辑器还有未写回的改动则进入冲突状态，暂停写回，等用户 ⌘S 显式覆盖。
 // 句柄经 IndexedDB 持久化（见 fileHandleStore），刷新页面或从最近列表重开时自动恢复关联。
+import { bridgeUrl } from './bridgeClient.ts';
 import {
   listFileHandles,
   loadFileHandle,
@@ -77,8 +78,10 @@ export class LocalFileSyncMethods {
 
   // 浏览器拿不到文件的绝对路径；文件位于某个已关联文件夹内时，
   // 用 FileSystemDirectoryHandle.resolve 推导出「文件夹名/相对路径」。
+  // 桌面端句柄自带真实绝对路径，直接使用。
   async _resolveLocalFilePath(handle) {
     if (!handle) return null;
+    if (handle.desktopPath) return handle.desktopPath;
     for (const folder of await this._loadFolderHandles()) {
       try {
         if (!folder.handle || !folder.handle.resolve) continue;
@@ -128,7 +131,7 @@ export class LocalFileSyncMethods {
         if (this.fileHandle && entry.name === this.fileName) continue;
         const localPath = await this._resolveLocalFilePath(entry.handle);
         if (!localPath) continue;
-        await fetch('http://127.0.0.1:4317/api/documents', {
+        await fetch(bridgeUrl('/api/documents'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ document: { fileName: entry.name, localPath } })

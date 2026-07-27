@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { bridgeUrl } from './bridgeClient.ts';
 
 export class CommentMethods {
   _typeLabel(t) {
@@ -203,7 +204,7 @@ export class CommentMethods {
       try {
         const annotationId = comment.requestId || comment.id;
         const response = await fetch(
-          'http://127.0.0.1:4317/api/documents/' + encodeURIComponent(this.bridgeDocumentId) +
+          bridgeUrl('/api/documents/') + encodeURIComponent(this.bridgeDocumentId) +
           '/annotations/' + encodeURIComponent(annotationId),
           { method: 'DELETE' }
         );

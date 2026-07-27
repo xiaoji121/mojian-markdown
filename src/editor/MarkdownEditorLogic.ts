@@ -212,6 +212,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       this._refreshRecentDocuments();
     }
     this._syncViewMode();
+    // 桌面端：接上应用菜单与「双击 .md 打开」事件。
+    if (window.mojianDesktop) this._initDesktop();
     // 上次会话打开过本地文件时，恢复与它的双向同步关联。
     this._restoreLocalFileLink();
   }

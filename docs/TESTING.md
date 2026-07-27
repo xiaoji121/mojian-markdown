@@ -98,6 +98,8 @@ test('输入 Markdown 后预览实时渲染', async ({ page }) => {
 ## 基础设施位置
 
 - `playwright.config.ts` — E2E 配置；自动起 `vite --port 4650`，并已处理本机全局代理（NO_PROXY 豁免 localhost）。
+- `playwright.desktop.config.ts` — 桌面端（Electron）冒烟测试配置；`npm run test:desktop`，前置 `npm run build:bridge`。不进 CI 默认流程。
 - `tests/helpers/dom.ts` — 单测 DOM 替身。
 - `tests/e2e/fixtures.ts` — E2E fixture 与页面辅助函数。
+- `tests/desktop/` — Electron 冒烟测试（`_electron.launch` 驱动真实桌面应用）。
 - 测试目录不参与 `tsc --noEmit`（tsconfig 只含 `src`、`extension/src`），stub 可以写得宽松。

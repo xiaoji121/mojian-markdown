@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { saveEditorState } from './storage.ts';
+import { bridgeUrl } from './bridgeClient.ts';
 
 export class BridgeMethods {
   _formatRecentTime(timestamp) {
@@ -90,7 +91,7 @@ export class BridgeMethods {
 
   async _refreshRecentDocuments() {
     try {
-      const response = await fetch('http://127.0.0.1:4317/api/documents');
+      const response = await fetch(bridgeUrl('/api/documents'));
       if (!response.ok) throw new Error('Reading Workspace unavailable');
       const data = await response.json();
       this.recentDocuments = Array.isArray(data.documents) ? data.documents : [];
@@ -120,13 +121,13 @@ export class BridgeMethods {
   async _adoptBridgeDocument(fileName) {
     if (!this.agentBridgeEnabled || !fileName || fileName === '未命名.md') return null;
     try {
-      const response = await fetch('http://127.0.0.1:4317/api/documents');
+      const response = await fetch(bridgeUrl('/api/documents'));
       if (!response.ok) return null;
       const data = await response.json();
       this.recentDocuments = Array.isArray(data.documents) ? data.documents : [];
       const preferred = this._matchRecentDocumentByName(fileName);
       if (!preferred) return null;
-      const detail = await fetch('http://127.0.0.1:4317/api/documents/' + encodeURIComponent(preferred.documentId));
+      const detail = await fetch(bridgeUrl('/api/documents/') + encodeURIComponent(preferred.documentId));
       if (!detail.ok) return null;
       const doc = (await detail.json()).document;
       this.bridgeDocumentId = doc.documentId;
@@ -143,7 +144,7 @@ export class BridgeMethods {
   async openRecentDocument(documentId) {
     if (!this.sourceRef.current) return;
     try {
-      const response = await fetch('http://127.0.0.1:4317/api/documents/' + encodeURIComponent(documentId));
+      const response = await fetch(bridgeUrl('/api/documents/') + encodeURIComponent(documentId));
       if (!response.ok) throw new Error('文档读取失败');
       const data = await response.json();
       const doc = data.document;
@@ -174,7 +175,7 @@ export class BridgeMethods {
 
   async openAnswerDocument(documentId, requestId) {
     try {
-      const response = await fetch('http://127.0.0.1:4317/api/documents/' + encodeURIComponent(documentId));
+      const response = await fetch(bridgeUrl('/api/documents/') + encodeURIComponent(documentId));
       if (!response.ok) throw new Error('问答读取失败');
       const data = await response.json();
       const doc = data.document;
@@ -276,7 +277,7 @@ export class BridgeMethods {
 
   async _syncDocumentToBridge() {
     try {
-      const response = await fetch('http://127.0.0.1:4317/api/documents', {
+      const response = await fetch(bridgeUrl('/api/documents'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

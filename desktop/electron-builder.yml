@@ -1,0 +1,27 @@
+# 桌面端打包配置。运行时只依赖 Node 内建模块与 Electron，
+# node_modules 全部排除（前端依赖已打进 dist）。
+appId: com.yuxizhai.mojian-markdown
+productName: 墨笺 Markdown
+directories:
+  output: release
+files:
+  - desktop/**
+  - dist/**
+  - scripts/agent-bridge.js
+  - scripts/agent-bridge-store.js
+  - scripts/agent-bridge-engines.js
+  - package.json
+  - "!node_modules/**"
+npmRebuild: false
+fileAssociations:
+  - ext: md
+    name: Markdown
+    role: Editor
+  - ext: markdown
+    name: Markdown
+    role: Editor
+mac:
+  category: public.app-category.productivity
+  target:
+    - target: dmg
+      arch: [arm64]
