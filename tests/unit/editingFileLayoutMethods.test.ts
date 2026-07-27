@@ -128,7 +128,7 @@ test('source shortcuts invoke undo and redo', () => {
   assert.equal(redoCount, 2);
 });
 
-test('桌面端 _initDesktop 隐藏网页版专属的「关联本地文件夹」菜单项', async () => {
+test('桌面端 _initDesktop 给 body 打上 is-desktop-app 标记（CSS 据此隐藏网页版专属 UI）', async () => {
   (globalThis as { window?: unknown }).window = {
     mojianDesktop: {
       onMenu: () => {},
@@ -136,13 +136,16 @@ test('桌面端 _initDesktop 隐藏网页版专属的「关联本地文件夹」
       consumePendingOpen: async () => null
     }
   };
+  const classes = new Set<string>();
+  (globalThis as { document?: unknown }).document = {
+    body: { classList: { add: (name: string) => classes.add(name) } }
+  };
   try {
     const editor = new EditingFileLayoutMethods() as EditingFileLayoutMethods & Record<string, any>;
-    const folderItem = { style: {} as Record<string, string> };
-    editor.folderMenuItemRef = { current: folderItem };
     editor._initDesktop();
-    assert.equal(folderItem.style.display, 'none');
+    assert.ok(classes.has('is-desktop-app'));
   } finally {
     delete (globalThis as { window?: unknown }).window;
+    delete (globalThis as { document?: unknown }).document;
   }
 });

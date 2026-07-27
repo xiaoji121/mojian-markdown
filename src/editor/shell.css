@@ -129,6 +129,13 @@
 }
 .header-menu-item:hover { background: var(--accent-soft); color: var(--accent); }
 
+/* 桌面端（Electron，_initDesktop 打标记）：
+   关联文件夹是网页版拿不到绝对路径的变通，桌面端永久隐藏；
+   宽屏下 ⋯ 菜单因此为空，一并隐藏——窄屏规则用 !important 恢复 ⋯，
+   彼时它收纳的是 collapsible 条目（保存/新建/主题）。 */
+body.is-desktop-app .folder-menu-item { display: none; }
+body.is-desktop-app .header-more { display: none; }
+
 /* ===== 动作按钮金字塔：primary（打开）/ secondary（保存）/ 默认三级 ===== */
 .abtn {
   display: flex;

@@ -207,9 +207,8 @@ export class EditingFileLayoutMethods {
   _initDesktop() {
     const desktop = window.mojianDesktop;
     if (!desktop) return;
-    // 「关联本地文件夹」是网页版拿不到绝对路径时的变通；桌面端句柄自带真实路径，隐藏。
-    const folderItem = this.folderMenuItemRef?.current;
-    if (folderItem) folderItem.style.display = 'none';
+    // 网页版专属 UI（关联文件夹入口、宽屏下的 ⋯ 菜单）由 CSS 按此标记隐藏。
+    document.body.classList.add('is-desktop-app');
     desktop.onMenu((action) => {
       if (action === 'new') this.onNew();
       else if (action === 'open') this.onOpen();
