@@ -16,6 +16,7 @@
 | --- | --- | --- |
 | 线上体验版 | [立即体验](https://yuxizhai.com/md-editor/) / `npm run build` | 编辑、预览、批注、本地缓存、导入导出。纯静态文件，可部署到任意静态托管 |
 | 完整版（本地） | `npm run dev` / `npm run build:bridge` | 静态版全部能力 + 最近阅读列表 + AI 问答（依赖本机 Agent Bridge 与 `claude` CLI） |
+| 桌面端（Electron） | `npm run desktop` / `npm run build:desktop` | 完整版全部能力 + 内嵌 Agent Bridge（免手动启动）+ 原生文件对话框与真实路径 + 双击 `.md` 直接打开 |
 
 功能开关由构建模式控制（`--mode bridge` 或环境变量 `VITE_ENABLE_AGENT_BRIDGE=true`），同一套代码。
 
@@ -31,6 +32,26 @@ npm run dev
 ```bash
 npm run dev:web     # 只启动前端
 npm run dev:bridge  # 只启动本地 Agent Bridge
+```
+
+## 桌面端（Electron）
+
+```bash
+npm run desktop        # 构建前端并启动桌面应用
+npm run build:desktop  # 打包安装包（输出到 release/）
+npm run test:desktop   # 桌面端冒烟测试（需先 npm run build:bridge）
+```
+
+桌面端解决的是网页版做不到的部分：
+
+- **Agent Bridge 内嵌到主进程**——随机端口、同源托管前端，无需手动 `npm run dev`，也不再暴露带 CORS 的固定 4317 端口；
+- **原生文件对话框与真实绝对路径**——授权一次永久有效（授权清单持久化在用户数据目录），重启后本地文件双向同步自动恢复；
+- **系统集成**——在 Finder 中双击 `.md` / 「打开方式」直接进入编辑器（打包版含文件关联）。
+
+首次安装如 Electron 二进制下载失败（常见于网络代理环境），执行：
+
+```bash
+ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ node node_modules/electron/install.js
 ```
 
 ## 阅读字体（可选）

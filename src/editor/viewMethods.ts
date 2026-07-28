@@ -233,10 +233,35 @@ export class ViewMethods {
     prev.innerHTML = window.marked.parse ? window.marked.parse(markdown) : window.marked(markdown);
     this._renderMermaidDiagrams(prev);
     this._highlightCodeBlocks(prev);
+    this._hydrateLocalImages(prev);
     if (!this.previewOverrideMarkdown) this._applyHighlights();
     this._renderOutline();
     this._updateCount();
   }
+
+  // 桌面端：把预览里的相对路径图片换成 data URL（HTTP 页面拿不到磁盘文件）。
+  // 逐张异步替换并按「文档路径::原始 src」缓存，输入过程中的重复渲染不再重复读盘。
+  _hydrateLocalImages(root) {
+    if (!root || !root.querySelectorAll) return;
+    const desktop = typeof window !== 'undefined' && window.mojianDesktop;
+    if (!desktop || !desktop.readAsset || !this.localFilePath) return;
+    if (!this._localImageCache) this._localImageCache = new Map();
+    const docPath = this.localFilePath;
+    root.querySelectorAll('img[src]').forEach((img) => {
+      const src = img.getAttribute('src') || '';
+      if (!src || /^(https?:|data:|blob:|file:)/i.test(src)) return;
+      const key = docPath + '::' + src;
+      const cached = this._localImageCache.get(key);
+      if (cached) { img.src = cached; return; }
+      desktop.readAsset(docPath, src).then((asset) => {
+        if (asset && asset.dataUrl) {
+          this._localImageCache.set(key, asset.dataUrl);
+          img.src = asset.dataUrl;
+        }
+      }).catch(() => {});
+    });
+  }
+
 
   _highlightCodeBlocks(root) {
     root.querySelectorAll('pre code').forEach((code) => {

@@ -92,6 +92,24 @@ test('窄屏分屏模式下预览工具栏按钮不挤压换行', async ({ page 
   expect(immersiveBox!.x + immersiveBox!.width).toBeLessThanOrEqual(toolbarBox!.x + toolbarBox!.width);
 });
 
+test('打开批注面板后预览工具栏收纳，不与面板重叠', async ({ page }) => {
+  await page.getByRole('button', { name: /^批注/ }).click();
+  const panel = page.locator('.comments-panel');
+  await expect(panel).toBeVisible();
+
+  const immersiveButton = page.getByRole('button', { name: '沉浸式阅读' });
+  await expect(immersiveButton).toBeVisible();
+
+  const [panelBox, immersiveBox] = await Promise.all([
+    panel.boundingBox(),
+    immersiveButton.boundingBox()
+  ]);
+  expect(panelBox).not.toBeNull();
+  expect(immersiveBox).not.toBeNull();
+  // 工具栏内容完整留在预览栏内，不越过批注面板左缘
+  expect(immersiveBox!.x + immersiveBox!.width).toBeLessThanOrEqual(panelBox!.x + 1);
+});
+
 test('主题切换写入 data-theme 并可来回切换', async ({ page }) => {
   const body = page.locator('body');
   const initial = await body.getAttribute('data-theme');

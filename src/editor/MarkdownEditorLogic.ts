@@ -12,6 +12,7 @@ import { ENABLE_AGENT_BRIDGE } from './featureFlags';
 import { LocalFileSyncMethods } from './localFileSyncMethods';
 import { NavigationMethods } from './navigationMethods';
 import { applyPrototypeMethods } from './prototypeMethods';
+import { SearchReplaceMethods } from './searchReplaceMethods';
 import { ViewMethods } from './viewMethods';
 
 export function createMarkdownEditorComponent(DCLogic, React) {
@@ -33,6 +34,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.dividerRef = React.createRef();
     this.splitRef = React.createRef();
     this.fileNameRef = React.createRef();
+    this.fileMenuRef = React.createRef();
+    this.fileMenuButtonRef = React.createRef();
     this.dirtyDotRef = React.createRef();
     this.saveStatusRef = React.createRef();
     this.countRef = React.createRef();
@@ -43,6 +46,16 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.headerMoreRef = React.createRef();
     this.headerMenuRef = React.createRef();
     this.fontSize = 16;
+    this.searchBarRef = React.createRef();
+    this.searchInputRef = React.createRef();
+    this.replaceInputRef = React.createRef();
+    this.searchCountRef = React.createRef();
+    this.searchCaseRef = React.createRef();
+    this.searchOpen = false;
+    this.searchCaseSensitive = false;
+    this._searchMatches = [];
+    this._searchIndex = -1;
+    this._searchAnchor = 0;
     this.selBarRef = React.createRef();
     this.commentsRef = React.createRef();
     this.commentListRef = React.createRef();
@@ -104,6 +117,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._draftSavedAt = 0;
     this.localFilePath = null;
     this._folderHandles = null;
+    this._startedWithSample = false;
+    this._localImageCache = new Map();
   }
 
   get LS_KEY() { return EDITOR_STORAGE_KEY; }
@@ -137,6 +152,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.theme = this.props.theme
       || (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
     const saved = loadEditorState();
+    this._startedWithSample = !(saved && typeof saved.content === 'string');
     if (saved && typeof saved.content === 'string') {
       initial = this._cleanOpenedMarkdown(saved.content);
       if (saved.fileName) name = saved.fileName;
@@ -184,7 +200,12 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     prev.addEventListener('dblclick', (e) => this._onPreviewDbl(e));
     src.addEventListener('keydown', (e) => this._sourceKeydown(e));
     this._keyHandler = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') { e.preventDefault(); this.onSave(); }
+      if (this._handleSearchShortcut(e)) return;
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        if (e.shiftKey) this.onSaveAs();
+        else this.onSave();
+      }
       if (e.key === 'Escape' && this.previewFullscreen) {
         e.preventDefault();
         this.togglePreviewFullscreen(false);
@@ -204,14 +225,17 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     window.addEventListener('resize', this._resizeHandler);
 
     this._initDivider();
+    this._initSearchBar();
     this._initComments();
     this._renderComments();
     if (this.agentBridgeEnabled) {
       this._initDocumentSidebarResize();
       this._initAI();
-      this._refreshRecentDocuments();
+      this._refreshRecentDocuments().then(() => this._maybeOpenLatestRecentDocument());
     }
     this._syncViewMode();
+    // 桌面端：接上应用菜单与「双击 .md 打开」事件。
+    if (window.mojianDesktop) this._initDesktop();
     // 上次会话打开过本地文件时，恢复与它的双向同步关联。
     this._restoreLocalFileLink();
   }
@@ -234,6 +258,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     if (this._keyHandler) window.removeEventListener('keydown', this._keyHandler);
     if (this._resizeHandler) window.removeEventListener('resize', this._resizeHandler);
     if (this._outlineJumpT) clearTimeout(this._outlineJumpT);
+    this._disposePathTooltip();
     this._stopLocalFileWatcher();
     document.body.style.overflow = '';
   }
@@ -255,6 +280,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       dividerRef: this.dividerRef,
       splitRef: this.splitRef,
       fileNameRef: this.fileNameRef,
+      fileMenuRef: this.fileMenuRef,
+      fileMenuButtonRef: this.fileMenuButtonRef,
       dirtyDotRef: this.dirtyDotRef,
       saveStatusRef: this.saveStatusRef,
       countRef: this.countRef,
@@ -265,6 +292,11 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       headerMoreRef: this.headerMoreRef,
       headerMenuRef: this.headerMenuRef,
       themeIconRef: this.themeIconRef,
+      searchBarRef: this.searchBarRef,
+      searchInputRef: this.searchInputRef,
+      replaceInputRef: this.replaceInputRef,
+      searchCountRef: this.searchCountRef,
+      searchCaseRef: this.searchCaseRef,
       selBarRef: this.selBarRef,
       commentsRef: this.commentsRef,
       commentListRef: this.commentListRef,
@@ -297,10 +329,20 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       toggleImmersiveWide: () => this.toggleImmersiveWide(),
       toggleHeaderMenu: () => this.toggleHeaderMenu(),
       menuTheme: () => { this.toggleTheme(); this.toggleHeaderMenu(false); },
-      menuSave: () => { this.toggleHeaderMenu(false); this.onSave(); },
-      menuNew: () => { this.toggleHeaderMenu(false); this.onNew(); },
+      toggleFileMenu: () => this.toggleFileMenu(),
+      menuFileNew: () => { this.toggleFileMenu(false); this.onNew(); },
+      menuFileOpen: () => { this.toggleFileMenu(false); this.onOpen(); },
+      menuFileSave: () => { this.toggleFileMenu(false); this.onSave(); },
+      menuFileSaveAs: () => { this.toggleFileMenu(false); this.onSaveAs(); },
       menuFolder: () => { this.toggleHeaderMenu(false); this.associateLocalFolder(); },
       toggleOutline: () => this.toggleOutline(),
+      toggleSearch: () => this.toggleSearch(),
+      closeSearch: () => this.closeSearch(),
+      searchPrev: () => this.searchPrev(),
+      searchNext: () => this.searchNext(),
+      toggleSearchCase: () => this.toggleSearchCase(),
+      replaceCurrent: () => this.replaceCurrent(),
+      replaceAll: () => this.replaceAll(),
       toggleComments: () => this._openPanel(),
       closePanel: () => this._openPanel(false),
       toggleAI: () => this._openAIPanel(),
@@ -318,11 +360,12 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       markStraight: () => this.markStraight(),
       writeIdea: () => this.writeIdea(),
       aiAsk: () => this.aiAsk(),
-      copyAll: () => this.copyAll(),
-      copyFull: () => this.copyFull(),
+      copyAll: (e) => this.copyAll(e),
+      copyFull: (e) => this.copyFull(e),
       noop: (e) => { if (e && e.preventDefault) e.preventDefault(); },
       onOpen: () => this.onOpen(),
       onSave: () => this.onSave(),
+      onSaveAs: () => this.onSaveAs(),
       onNew: () => this.onNew(),
       undoEdit: () => this.undoEdit(),
       redoEdit: () => this.redoEdit(),
@@ -341,6 +384,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     ViewMethods,
     BridgeMethods,
     NavigationMethods,
+    SearchReplaceMethods,
     CommentMethods,
     DiagramMethods,
     AIMethods,

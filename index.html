@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="墨笺 Markdown 是源码开放的 Markdown 阅读与评注工作台：实时预览、划线批注、本地缓存与导入导出；本地完整版还包含最近阅读列表与 AI 问答。本站为线上体验版。">
+<meta name="description" content="墨笺 Markdown 是源码开放的 Markdown 阅读与评注工作台：实时预览、划线批注、本地缓存与导入导出；本地完整版还包含最近阅读列表与 AI 问答，另有 Electron 桌面端支持本地文件双向同步。本站为线上体验版。">
 <meta name="robots" content="index, follow">
 <meta name="author" content="墨笺 Markdown">
 <meta name="application-name" content="墨笺 Markdown">
@@ -30,7 +30,7 @@
   "@type": "SoftwareApplication",
   "name": "墨笺 Markdown",
   "applicationCategory": "ProductivityApplication",
-  "operatingSystem": "Web",
+  "operatingSystem": "Web, macOS",
   "description": "墨笺 Markdown 是源码开放的 Markdown 阅读与评注工作台，支持实时预览、划线批注、本地缓存与导入导出；本地完整版包含最近阅读列表与 AI 问答。",
   "inLanguage": "zh-CN",
   "isAccessibleForFree": true,
@@ -43,7 +43,8 @@
     "Markdown 文件导入导出",
     "全文与批注复制",
     "最近阅读列表（本地完整版）",
-    "AI 问答（本地完整版）"
+    "AI 问答（本地完整版）",
+    "桌面端应用：本地文件双向同步与文件关联（Electron，源码构建）"
   ]
 }
 </script>
@@ -52,11 +53,13 @@
 <script>
   function syncPageMode() {
     var editing = window.location.hash === '#editor';
+    var wasEditing = document.body.classList.contains('editor-active');
     document.body.classList.toggle('editor-active', editing);
     document.title = editing
       ? '墨笺 Markdown'
       : '墨笺 Markdown｜阅读、批注与本地保存';
-    window.scrollTo(0, 0);
+    // 只在进出编辑器时回到顶部；落地页内部锚点（#editions/#desktop）交给浏览器定位。
+    if (editing !== wasEditing) window.scrollTo(0, 0);
   }
   window.addEventListener('hashchange', syncPageMode);
   window.addEventListener('DOMContentLoaded', syncPageMode);
@@ -239,7 +242,57 @@
           <pre class="edition-code">git clone https://github.com/xiaoji121/mojian-markdown
 cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
           <a class="landing-button primary" href="https://github.com/xiaoji121/mojian-markdown" target="_blank" rel="noopener">前往 GitHub ↗</a>
+          <p class="edition-desktop-link">更喜欢独立应用？<a href="#desktop">看看桌面端 ↓</a></p>
         </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="desktop" class="landing-section desktop-section">
+    <div class="landing-wrap">
+      <div class="landing-section-head">
+        <span class="landing-eyebrow">Desktop · Electron</span>
+        <h2>装进桌面，和本地文件真正长在一起。</h2>
+        <p class="desktop-note">桌面端随源码仓库提供，能力与源码完整版一致，并补上浏览器给不了的本地体验（当前在 macOS 上构建与验证）。</p>
+      </div>
+      <div class="workflow-grid">
+        <article class="workflow-item">
+          <span>OPEN</span>
+          <h3>双击 .md 直接打开</h3>
+          <p>系统级文件关联与原生打开 / 保存对话框，拿到真实文件路径，不受浏览器沙箱限制。</p>
+        </article>
+        <article class="workflow-item">
+          <span>SYNC</span>
+          <h3>本地文件双向同步</h3>
+          <p>外部程序改动秒级自动重载，编辑自动写穿回文件；有冲突时以你的显式保存为准。</p>
+        </article>
+        <article class="workflow-item">
+          <span>RESUME</span>
+          <h3>重启接续上次阅读</h3>
+          <p>启动即恢复最近一篇文档，并重建与本地文件的同步关联，批注和问答一起回来。</p>
+        </article>
+        <article class="workflow-item">
+          <span>IMAGES</span>
+          <h3>本地图片直接预览</h3>
+          <p><code>../assets/图.png</code> 这类相对路径引用，按文档所在目录解析后直接在预览里显示。</p>
+        </article>
+        <article class="workflow-item">
+          <span>BRIDGE</span>
+          <h3>内嵌 Agent Bridge</h3>
+          <p>最近阅读列表与 AI 问答开箱即用，不需要再单独启动本地服务。</p>
+        </article>
+        <article class="workflow-item">
+          <span>NATIVE</span>
+          <h3>原生菜单与快捷键</h3>
+          <p>文件菜单（新建 / 打开 / 保存 / 另存为）与系统快捷键一致，文件授权一次永久有效。</p>
+        </article>
+      </div>
+      <div class="desktop-run">
+        <pre class="edition-code">git clone https://github.com/xiaoji121/mojian-markdown
+cd mojian-markdown &amp;&amp; npm install
+npm run desktop          # 构建并启动桌面端
+npm run build:desktop    # 打包安装程序（macOS）</pre>
+        <p class="desktop-run-note">暂未提供现成安装包——签名、Windows 构建与自动更新在<a href="https://github.com/xiaoji121/mojian-markdown/blob/main/docs/DESKTOP_ROADMAP.md" target="_blank" rel="noopener">公开路线图</a>中推进。</p>
       </div>
     </div>
   </section>
@@ -298,15 +351,20 @@ cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
       <button class="abtn icon collapsible-action" onClick="{{ toggleTheme }}" title="切换 亮色/暗黑" aria-label="切换亮色或暗黑主题"><span ref="{{ themeIconRef }}">☾</span></button>
       <button class="abtn" onClick="{{ toggleComments }}" aria-label="批注"><span class="action-label">批注</span> <span ref="{{ commentCountRef }}" class="count-badge">0</span></button>
       <button class="abtn ai-entry" onClick="{{ toggleAI }}" aria-label="AI 助手" title="打开 AI 阅读助手"><span class="action-label">AI 助手</span><span class="accent-star">✦</span></button>
-      <button class="abtn collapsible-action" onClick="{{ onNew }}" aria-label="新建文档">新建</button>
-      <button class="abtn secondary collapsible-action" onClick="{{ onSave }}" aria-label="保存文档">保存 <span class="save-shortcut">⌘S</span></button>
-      <button class="abtn primary" onClick="{{ onOpen }}" aria-label="打开文件">打开</button>
+      <span class="file-menu-wrap">
+        <button ref="{{ fileMenuButtonRef }}" class="abtn secondary file-menu-toggle" onClick="{{ toggleFileMenu }}" aria-label="文件菜单" aria-haspopup="menu" aria-expanded="false">文件 <span class="menu-caret" aria-hidden="true">▾</span></button>
+        <div ref="{{ fileMenuRef }}" class="header-menu file-menu" role="menu" aria-label="文件操作">
+          <button class="header-menu-item" role="menuitem" onClick="{{ menuFileNew }}">新建文档</button>
+          <button class="header-menu-item" role="menuitem" onClick="{{ menuFileOpen }}">打开…</button>
+          <div class="header-menu-separator" role="separator"></div>
+          <button class="header-menu-item" role="menuitem" onClick="{{ menuFileSave }}">保存<span class="menu-shortcut">⌘S</span></button>
+          <button class="header-menu-item" role="menuitem" onClick="{{ menuFileSaveAs }}">另存为…<span class="menu-shortcut">⌘⇧S</span></button>
+        </div>
+      </span>
       <button ref="{{ headerMoreRef }}" class="abtn icon header-more" onClick="{{ toggleHeaderMenu }}" title="更多操作" aria-label="更多操作" aria-haspopup="menu" aria-expanded="false">⋯</button>
       <div ref="{{ headerMenuRef }}" class="header-menu" role="menu" aria-label="更多操作">
         <button class="header-menu-item collapsible-menu-item" role="menuitem" onClick="{{ menuTheme }}">切换主题</button>
-        <button class="header-menu-item collapsible-menu-item" role="menuitem" onClick="{{ menuSave }}">保存文档</button>
-        <button class="header-menu-item collapsible-menu-item" role="menuitem" onClick="{{ menuNew }}">新建文档</button>
-        <button class="header-menu-item" role="menuitem" onClick="{{ menuFolder }}">关联本地文件夹</button>
+        <button class="header-menu-item folder-menu-item" role="menuitem" onClick="{{ menuFolder }}" title="选择一个存放 Markdown 的文件夹。此后从该文件夹打开的文档，会在最近阅读列表和顶部文件名提示里显示「文件夹名/相对路径」的本地路径，方便辨认同名文件">关联本地文件夹<small class="menu-item-hint">让文档显示本地路径</small></button>
       </div>
     </div>
   </header>
@@ -335,6 +393,7 @@ cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
           <button ref="{{ undoButtonRef }}" class="tbtn fmt history-action" onClick="{{ undoEdit }}" title="撤销（⌘Z / Ctrl+Z）" aria-label="撤销" disabled><svg class="history-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"></path><path d="M4 9h10.5a5.5 5.5 0 1 1 0 11H11"></path></svg></button>
           <button ref="{{ redoButtonRef }}" class="tbtn fmt history-action" onClick="{{ redoEdit }}" title="重做（⌘⇧Z / Ctrl+Y）" aria-label="重做" disabled><svg class="history-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"></path><path d="M20 9H9.5a5.5 5.5 0 1 0 0 11H13"></path></svg></button>
           </div>
+          <button class="tbtn fmt history-action search-toggle" onClick="{{ toggleSearch }}" title="搜索替换（⌘F）" aria-label="搜索替换"><svg class="history-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg></button>
         </div>
         <div class="source-toolbar-actions" role="group" aria-label="Markdown 格式">
           <button class="tbtn fmt fmt-h" onClick="{{ fmtH }}" title="标题">H</button>
@@ -344,6 +403,21 @@ cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
           <button class="tbtn fmt fmt-lg" onClick="{{ fmtList }}" title="列表">•</button>
           <button class="tbtn fmt fmt-code" onClick="{{ fmtCode }}" title="代码">&lt;&gt;</button>
           <button class="tbtn fmt" onClick="{{ fmtLink }}" title="链接">&#128279;</button>
+        </div>
+      </div>
+      <div ref="{{ searchBarRef }}" class="search-bar" role="search" aria-label="搜索与替换">
+        <div class="search-row">
+          <input ref="{{ searchInputRef }}" class="search-input" type="text" placeholder="搜索原文…" aria-label="搜索文本" spellCheck="false" />
+          <span ref="{{ searchCountRef }}" class="search-count" aria-live="polite"></span>
+          <button ref="{{ searchCaseRef }}" class="tbtn search-tool" onClick="{{ toggleSearchCase }}" title="区分大小写" aria-label="区分大小写" aria-pressed="false">Aa</button>
+          <button class="tbtn search-tool" onClick="{{ searchPrev }}" title="上一处（Shift+Enter）" aria-label="上一处">↑</button>
+          <button class="tbtn search-tool" onClick="{{ searchNext }}" title="下一处（Enter）" aria-label="下一处">↓</button>
+          <button class="tbtn search-tool search-close" onClick="{{ closeSearch }}" title="关闭（Esc）" aria-label="关闭搜索">&times;</button>
+        </div>
+        <div class="search-row">
+          <input ref="{{ replaceInputRef }}" class="search-input replace-input" type="text" placeholder="替换为…" aria-label="替换文本" spellCheck="false" />
+          <button class="tbtn search-tool search-replace-btn" onClick="{{ replaceCurrent }}" title="替换当前匹配" aria-label="替换当前匹配">替换</button>
+          <button class="tbtn search-tool search-replace-btn" onClick="{{ replaceAll }}" title="替换全部匹配" aria-label="替换全部匹配">全部</button>
         </div>
       </div>
       <textarea ref="{{ sourceRef }}" class="md-source" spellCheck="false" placeholder="# 在这里写 Markdown…"></textarea>

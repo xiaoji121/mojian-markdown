@@ -253,7 +253,7 @@ body.editor-active #landing-page { display: none; }
 }
 .landing-trust span::before { content: "✓"; margin-right: 7px; color: var(--landing-green); }
 
-.landing-section { padding: 100px 0; border-top: 1px solid rgba(58,60,65,.72); }
+.landing-section { padding: 100px 0; border-top: 1px solid rgba(58,60,65,.72); scroll-margin-top: 72px; }
 .landing-section-head { max-width: 720px; margin-bottom: 44px; }
 .landing-section h2 {
   margin: 18px 0 0;
@@ -378,6 +378,16 @@ body.editor-active #landing-page { display: none; }
   white-space: pre;
 }
 .edition-card .landing-button { margin-top: auto; align-self: flex-start; }
+.edition-desktop-link { margin: 14px 0 0; color: var(--landing-muted); font-size: var(--fs-sm); }
+.edition-desktop-link a { color: var(--landing-accent); text-decoration: underline; text-underline-offset: 3px; }
+
+/* ===== 桌面端介绍 ===== */
+.desktop-note { margin: 14px 0 0; color: var(--landing-muted); font-size: var(--fs-lg); line-height: 1.8; }
+.desktop-run { max-width: 720px; margin-top: 40px; }
+.desktop-run .edition-code { margin-bottom: 12px; }
+.desktop-run-note { margin: 0; color: var(--landing-faint); font-size: var(--fs-sm); line-height: 1.7; }
+.desktop-run-note a { color: var(--landing-muted); text-decoration: underline; text-underline-offset: 3px; }
+.desktop-run-note a:hover { color: var(--landing-accent); }
 .landing-footer {
   display: flex;
   flex-wrap: wrap;

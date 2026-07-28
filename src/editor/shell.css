@@ -128,6 +128,49 @@
   cursor: pointer;
 }
 .header-menu-item:hover { background: var(--accent-soft); color: var(--accent); }
+/* 菜单项副标题：不必悬停也能看懂用途 */
+.menu-item-hint {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-4);
+  font-size: var(--fs-2xs);
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.header-menu-item:hover .menu-item-hint { color: var(--text-3); }
+
+/* 顶栏「文件」下拉：复用 .header-menu 外观，锚定到自己的按钮下方。
+   按钮贴近窗口右缘，菜单右对齐按钮、向左展开，避免超出视口被裁切。 */
+.file-menu-wrap { position: relative; display: inline-flex; }
+.file-menu { min-width: 148px; }
+.header-menu-separator { height: 1px; margin: 4px 2px; background: var(--border-soft); }
+
+/* 复制成功后按钮原地闪现的确认态 */
+button.is-copied {
+  color: var(--good) !important;
+  border-color: var(--good) !important;
+}
+.abtn.primary.is-copied { background: var(--good); color: var(--accent-ink) !important; }
+.file-menu .header-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+.menu-shortcut {
+  color: var(--text-4);
+  font-family: var(--mono);
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.08em;
+}
+.menu-caret { font-size: 9px; opacity: .7; }
+
+/* 桌面端（Electron，_initDesktop 打标记）：
+   关联文件夹是网页版拿不到绝对路径的变通，桌面端永久隐藏；
+   宽屏下 ⋯ 菜单因此为空，一并隐藏——窄屏规则用 !important 恢复 ⋯，
+   彼时它收纳的是 collapsible 条目（保存/新建/主题）。 */
+body.is-desktop-app .folder-menu-item { display: none; }
+body.is-desktop-app .header-more { display: none; }
 
 /* ===== 动作按钮金字塔：primary（打开）/ secondary（保存）/ 默认三级 ===== */
 .abtn {
@@ -180,6 +223,9 @@
 .editor-main { flex: 1; display: flex; min-height: 0; }
 .source-pane,
 .preview-pane { flex: 1 1 50%; min-width: 0; display: flex; flex-direction: column; }
+/* 预览栏作为容器查询锚点：侧面板开合改变的是栏宽而非窗口宽，
+   工具栏的收纳规则（styles.css）按栏宽生效。 */
+.preview-pane { container-type: inline-size; }
 .editor-divider { flex: none; position: relative; width: 1px; background: var(--border); cursor: col-resize; }
 .editor-divider-hit { position: absolute; inset: 0 -5px; cursor: col-resize; }
 .editor-main.editor-mode-active > .preview-pane,
@@ -196,6 +242,7 @@
   padding: 0 16px;
   border-bottom: 1px solid var(--border);
   background: var(--bg-2);
+  overflow: hidden; /* 兜底：极窄时在本栏内裁切，不溢出叠到相邻面板 */
 }
 .pane-title {
   flex: none;
@@ -255,6 +302,53 @@ textarea.md-source {
   font-size: var(--fs-lg);
   line-height: 1.85;
   tab-size: 2;
+}
+
+/* ===== 原文搜索替换浮层 ===== */
+.source-pane { position: relative; }
+.search-bar {
+  display: none;
+  position: absolute;
+  top: 48px;
+  right: 12px;
+  z-index: 24;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--tool-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-surface);
+  box-shadow: var(--shadow-md);
+}
+.search-bar.is-open { display: flex; }
+.search-row { display: flex; align-items: center; gap: 6px; }
+.search-input {
+  flex: 1 1 auto;
+  width: 190px;
+  height: 26px;
+  padding: 0 8px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-control);
+  color: var(--text);
+  font-size: var(--fs-md);
+}
+.search-input:focus { outline: none; border-color: var(--accent); }
+.search-bar.search-no-match .search-input:not(.replace-input) { border-color: var(--danger); }
+.search-count {
+  flex: none;
+  min-width: 40px;
+  text-align: center;
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+}
+.search-tool { flex: none; height: 26px; min-width: 28px; padding: 0 6px; font-size: var(--fs-sm); }
+.search-tool.is-active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.search-replace-btn { min-width: 46px; }
+@media (max-width: 760px) {
+  .search-bar { left: 12px; right: 12px; }
+  .search-count { min-width: 34px; }
 }
 
 /* ===== 预览工具栏 ===== */

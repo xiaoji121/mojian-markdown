@@ -98,6 +98,24 @@ test('后续上报缺省路径时保留已知路径', async () => {
   });
 });
 
+test('删除文档后不再出现在列表中，删除不存在或非法 id 不报错', async () => {
+  await withStore(async (store) => {
+    const doc = await store.upsertDocument({ fileName: 'note.md', content: 'x' });
+    const kept = await store.upsertDocument({ fileName: 'other.md', content: 'y' });
+
+    await store.deleteDocument(doc.documentId);
+
+    const rest = await store.listDocuments();
+    assert.equal(rest.length, 1);
+    assert.equal(rest[0].documentId, kept.documentId);
+
+    await store.deleteDocument('missing-id');
+    await store.deleteDocument('../escape');
+    await store.deleteDocument('');
+    assert.equal((await store.listDocuments()).length, 1);
+  });
+});
+
 test('存在多份历史同名副本时，优先复用带问答记录的那份', async () => {
   await withStore(async (store) => {
     await store.writeDocument({

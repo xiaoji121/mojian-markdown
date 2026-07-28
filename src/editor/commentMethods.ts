@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { bridgeUrl } from './bridgeClient.ts';
 
 export class CommentMethods {
   _typeLabel(t) {
@@ -194,6 +195,9 @@ export class CommentMethods {
 
   async _deleteComment(id) {
     const comment = this.comments.find((c) => c.id === id);
+    if (!comment) return;
+    if (typeof window !== 'undefined' && window.confirm
+      && !window.confirm('删除这条「' + this._typeLabel(comment.type) + '」批注？此操作不可恢复。')) return;
     this.comments = this.comments.filter((c) => c.id !== id);
     this._persist();
     this._renderPreview();
@@ -203,7 +207,7 @@ export class CommentMethods {
       try {
         const annotationId = comment.requestId || comment.id;
         const response = await fetch(
-          'http://127.0.0.1:4317/api/documents/' + encodeURIComponent(this.bridgeDocumentId) +
+          bridgeUrl('/api/documents/') + encodeURIComponent(this.bridgeDocumentId) +
           '/annotations/' + encodeURIComponent(annotationId),
           { method: 'DELETE' }
         );
@@ -305,7 +309,7 @@ export class CommentMethods {
     const btnCss = 'background:transparent; border:1px solid var(--border); color:var(--text-3); padding:4px 9px; font-family:var(--mono); font-size:var(--fs-2xs); cursor:pointer; border-radius:var(--radius-control); transition:all .15s;';
     const copyBtn = document.createElement('button');
     copyBtn.textContent = '复制'; copyBtn.className = 'tbtn'; copyBtn.style.cssText = btnCss;
-    copyBtn.addEventListener('click', () => this._copy(this._commentText(c, i), '已复制该批注'));
+    copyBtn.addEventListener('click', () => this._copy(this._commentText(c, i), '已复制该批注', copyBtn));
     const delBtn = document.createElement('button');
     delBtn.textContent = '删除'; delBtn.className = 'tbtn'; delBtn.style.cssText = btnCss;
     delBtn.addEventListener('click', () => this._deleteComment(c.id));
@@ -409,8 +413,26 @@ export class CommentMethods {
   }
 
 
-  _copy(text, msg) {
-    const done = () => this._setStatus('✓ ' + (msg || '已复制'));
+  // 状态栏在窗口左下角、离点击位置太远，复制成功同时在被点的按钮上原地闪现反馈。
+  _flashButton(btn, label = '✓ 已复制') {
+    if (!btn || typeof btn.textContent !== 'string') return;
+    if (!btn.dataset.originalLabel) btn.dataset.originalLabel = btn.textContent;
+    btn.textContent = label;
+    btn.classList.add('is-copied');
+    clearTimeout(btn._copyFlashT);
+    btn._copyFlashT = setTimeout(() => {
+      btn.textContent = btn.dataset.originalLabel;
+      delete btn.dataset.originalLabel;
+      btn.classList.remove('is-copied');
+    }, 1200);
+  }
+
+
+  _copy(text, msg, btn) {
+    const done = () => {
+      this._setStatus('✓ ' + (msg || '已复制'));
+      this._flashButton(btn);
+    };
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(done).catch(() => this._copyFallback(text, done));
     } else this._copyFallback(text, done);
@@ -423,19 +445,27 @@ export class CommentMethods {
     ta.style.cssText = 'position:fixed; top:0; left:0; opacity:0;';
     document.body.appendChild(ta);
     ta.focus(); ta.select();
-    try { document.execCommand('copy'); } catch (e) {}
+    let copied = false;
+    try { copied = document.execCommand('copy'); } catch (e) {}
     document.body.removeChild(ta);
-    if (done) done();
+    if (copied && done) done();
+    else if (!copied) this._setStatus('复制失败 · 请手动选中后复制');
   }
 
 
-  copyAll() {
+  copyAll(event) {
     if (!this.comments.length) { this._openPanel(true); this._setStatus('暂无批注可复制'); return; }
-    this._copy(this._allCommentsText(), '已复制全部批注（' + this.comments.length + ' 条）');
+    this._copy(
+      this._allCommentsText(),
+      '已复制全部批注（' + this.comments.length + ' 条）',
+      event && event.currentTarget
+    );
   }
 
 
-  copyFull() { this._copy(this._fullWithComments(), '已复制全文 + 批注'); }
+  copyFull(event) {
+    this._copy(this._fullWithComments(), '已复制全文 + 批注', event && event.currentTarget);
+  }
 
   // ===== source toolbar formatting =====
 }

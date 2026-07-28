@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "main": "desktop/main.js",
   "scripts": {
     "dev": "node scripts/dev-with-bridge.js",
     "dev:web": "vite --mode bridge",
@@ -11,6 +12,10 @@
     "build": "vite build",
     "build:bridge": "vite build --mode bridge",
     "build:ext": "node scripts/make-extension-icons.mjs && node scripts/copy-extension-font.mjs && vite build --config extension/vite.config.ts",
+    "desktop": "npm run build:bridge && electron .",
+    "desktop:run": "electron .",
+    "build:desktop": "npm run build:bridge && electron-builder --config desktop/electron-builder.yml",
+    "test:desktop": "playwright test --config playwright.desktop.config.ts",
     "preview": "vite preview",
     "check:size": "node scripts/check-code-size.js",
     "test": "node --experimental-strip-types --test \"tests/unit/*.test.ts\"",
@@ -37,6 +42,8 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/turndown": "^5.0.5",
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3",
     "subset-font": "^2.5.0",
     "typescript": "^5.8.0",
     "vite": "^8.0.16"
