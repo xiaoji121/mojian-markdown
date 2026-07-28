@@ -213,6 +213,7 @@ export class EditingFileLayoutMethods {
       if (action === 'new') this.onNew();
       else if (action === 'open') this.onOpen();
       else if (action === 'save') this.onSave();
+      else if (action === 'save-as') this.onSaveAs();
     });
     // 双击关联的 .md 文件 / 菜单打开：主进程读好内容推送过来。
     desktop.onOpenPath((file) => { this._openDesktopFile(file); });
@@ -306,21 +307,30 @@ export class EditingFileLayoutMethods {
   async onSave() {
     const src = this.sourceRef.current;
     if (!src) return;
-    const content = src.value;
     if (this.fileHandle && this.fileHandle.createWritable) {
       try {
         const w = await this.fileHandle.createWritable();
-        await w.write(content); await w.close();
+        await w.write(src.value); await w.close();
         // 手动保存即用户显式决定以编辑器内容为准：更新基线并解除冲突状态。
         await this._updateLocalFileBaseline();
         this._localFileConflict = false;
         this._setDirty(false); this._autosave();
         this._setStatus('✓ 已保存到 ' + this.fileName);
-        return;
-      } catch (e) { this._setStatus('保存失败：' + (e.message || e)); return; }
+      } catch (e) { this._setStatus('保存失败：' + (e.message || e)); }
+      return;
     }
+    // 还没有落盘目标：保存即另存为。
+    await this.onSaveAs();
+  }
+
+
+  // 另存为：无视已关联的句柄，总是让用户挑一个新目标，保存后切换到新文件继续编辑。
+  async onSaveAs() {
+    const src = this.sourceRef.current;
+    if (!src) return;
+    const content = src.value;
+    const suggested = this.fileName && this.fileName !== '未命名.md' ? this.fileName : 'document.md';
     if (window.mojianDesktop) {
-      const suggested = this.fileName && this.fileName !== '未命名.md' ? this.fileName : 'document.md';
       const saved = await window.mojianDesktop.saveMarkdownFileAs(suggested, content);
       if (!saved) return;
       this._setFileName(saved.name);
@@ -333,7 +343,7 @@ export class EditingFileLayoutMethods {
     if (window.showSaveFilePicker) {
       try {
         const handle = await window.showSaveFilePicker({
-          suggestedName: this.fileName && this.fileName !== '未命名.md' ? this.fileName : 'document.md',
+          suggestedName: suggested,
           types: [{ description: 'Markdown', accept: { 'text/markdown': ['.md'] } }]
         });
         const w = await handle.createWritable();
@@ -343,15 +353,38 @@ export class EditingFileLayoutMethods {
         this._setDirty(false); this._autosave();
         this._setStatus('✓ 已保存到 ' + handle.name);
       } catch (e) {}
-    } else {
-      const blob = new Blob([content], { type: 'text/markdown' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = this.fileName && this.fileName !== '未命名.md' ? this.fileName : 'document.md';
-      a.click();
-      URL.revokeObjectURL(a.href);
-      this._setDirty(false);
-      this._setStatus('✓ 已下载 ' + a.download);
+      return;
+    }
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = suggested;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    this._setDirty(false);
+    this._setStatus('✓ 已下载 ' + a.download);
+  }
+
+
+  // ===== 顶栏「文件」下拉菜单 =====
+
+  toggleFileMenu(force) {
+    const menu = this.fileMenuRef.current;
+    const button = this.fileMenuButtonRef.current;
+    if (!menu) return;
+    const open = typeof force === 'boolean' ? force : !menu.classList.contains('is-open');
+    menu.classList.toggle('is-open', open);
+    if (button) button.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open && !this._fileMenuDocH) {
+      this._fileMenuDocH = (e) => {
+        if (menu.contains(e.target)) return;
+        if (button && (e.target === button || button.contains(e.target))) return;
+        this.toggleFileMenu(false);
+      };
+      document.addEventListener('click', this._fileMenuDocH);
+    } else if (!open && this._fileMenuDocH) {
+      document.removeEventListener('click', this._fileMenuDocH);
+      this._fileMenuDocH = null;
     }
   }
 

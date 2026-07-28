@@ -43,6 +43,24 @@ test('文档 API 在嵌入模式下可用', async () => {
   });
 });
 
+test('DELETE /api/documents/:id 删除文档', async () => {
+  await withBridge({}, async (bridge) => {
+    const created = await fetch(`${bridge.url}/api/documents`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ document: { fileName: 'note.md', content: '# hi' } })
+    });
+    const { documentId } = await created.json();
+
+    const deleted = await fetch(`${bridge.url}/api/documents/${documentId}`, { method: 'DELETE' });
+    assert.equal(deleted.ok, true);
+    assert.deepEqual(await deleted.json(), { ok: true });
+
+    const { documents } = await (await fetch(`${bridge.url}/api/documents`)).json();
+    assert.equal(documents.length, 0);
+  });
+});
+
 test('默认发送 CORS 头，cors:false 时不发送', async () => {
   await withBridge({}, async (bridge) => {
     const response = await fetch(`${bridge.url}/health`);

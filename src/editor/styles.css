@@ -483,7 +483,28 @@
   }
   .document-sidebar-close { display: none; }
   .recent-document-list { flex: 1; min-height: 0; overflow-y: auto; padding: 8px; }
-  .recent-document-group { margin-bottom: 2px; }
+  .recent-document-group { margin-bottom: 2px; position: relative; }
+  /* 删除按钮：悬停条目时出现在右上角 */
+  .recent-document-delete {
+    position: absolute;
+    top: 7px;
+    right: 7px;
+    width: 20px;
+    height: 20px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-control);
+    background: transparent;
+    color: var(--text-4);
+    font: var(--fs-lg)/1 var(--sans);
+    cursor: pointer;
+  }
+  .recent-document-group:hover .recent-document-delete,
+  .recent-document-delete:focus-visible { display: flex; }
+  .recent-document-delete:hover { background: var(--bg-2); color: var(--danger); }
   .recent-document-item {
     width: 100%;
     display: flex;
@@ -519,6 +540,22 @@
     direction: rtl; /* 路径过长时保留结尾的文件名部分 */
     text-align: left;
   }
+  /* 完整路径悬停浮层：fixed 定位挂 body，坐标由 JS 按锚点计算 */
+  .path-tooltip {
+    position: fixed;
+    z-index: 400;
+    display: none;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    background: var(--tool-bg);
+    color: var(--text-2);
+    font: var(--fs-2xs)/1.6 var(--mono);
+    word-break: break-all;
+    box-shadow: var(--shadow-md);
+    pointer-events: none;
+  }
+  .path-tooltip.is-visible { display: block; }
   .recent-document-children { margin: 1px 0 6px 17px; padding-left: 8px; }
   .recent-answer-item {
     width: 100%;
@@ -577,8 +614,7 @@
       padding: 0 10px !important;
       justify-content: center;
     }
-    .header-actions .action-label,
-    .header-actions .save-shortcut { display: none; }
+    .header-actions .action-label { display: none; }
     .document-toggle { display: flex !important; }
     .header-actions .primary { padding: 0 12px !important; }
     /* 低频动作收进 ⋯ 溢出菜单 */

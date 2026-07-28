@@ -95,7 +95,7 @@ function bridgePrompt(body, doc) {
 }
 
 function createRequestHandler({ store, staticDir, cors }) {
-  const { readDocument, writeDocument, upsertDocument, listDocuments } = store;
+  const { readDocument, writeDocument, deleteDocument, upsertDocument, listDocuments } = store;
   const corsHeaders = cors
     ? {
         'Access-Control-Allow-Origin': '*',
@@ -219,6 +219,10 @@ function createRequestHandler({ store, staticDir, cors }) {
       }
       if (parts[0] === 'api' && parts[1] === 'documents' && parts.length === 3 && req.method === 'GET') {
         return sendJson(res, 200, { document: await readDocument(parts[2]) });
+      }
+      if (parts[0] === 'api' && parts[1] === 'documents' && parts.length === 3 && req.method === 'DELETE') {
+        await deleteDocument(parts[2]);
+        return sendJson(res, 200, { ok: true });
       }
       if (parts[0] === 'api' && parts[1] === 'documents' && parts[3] === 'annotations' && req.method === 'DELETE') {
         const doc = await readDocument(parts[2]);

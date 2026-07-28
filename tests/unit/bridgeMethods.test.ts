@@ -127,6 +127,160 @@ test('最近文档列表展示每篇文档的本地路径', () => {
   }
 });
 
+function findByClass(
+  el: { className?: string; children?: unknown[] },
+  cls: string
+): { className?: string; dispatch?: (type: string) => void } | null {
+  if (el.className === cls) return el;
+  for (const child of el.children || []) {
+    const found = findByClass(child as typeof el, cls);
+    if (found) return found;
+  }
+  return null;
+}
+
+test('悬停本地路径时显示完整路径浮层，移开后隐藏', () => {
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'document');
+  const body = createStubElement();
+  Object.defineProperty(globalThis, 'document', {
+    value: { createElement: () => createStubElement(), body },
+    configurable: true
+  });
+  try {
+    const list = createStubElement();
+    const editor = Object.create(BridgeMethods.prototype);
+    Object.assign(editor, {
+      documentListRef: { current: list },
+      documentCountRef: { current: createStubElement() },
+      bridgeDocumentId: null,
+      activeAnswerRequestId: null,
+      recentDocuments: [{
+        documentId: 'doc-1', fileName: 'note.md', localPath: '/Users/me/writing/drafts/note.md',
+        updatedAt: '2026-07-25T08:00:00.000Z', annotationCount: 0, questionCount: 0, answerDocuments: []
+      }],
+      openRecentDocument() {},
+      openAnswerDocument() {}
+    });
+    editor._renderRecentDocuments();
+
+    const path = findByClass(list, 'recent-document-path');
+    assert.ok(path, '路径元素应该渲染');
+    path!.dispatch!('mouseenter');
+
+    const tip = body.children[0] as ReturnType<typeof createStubElement>;
+    assert.ok(tip, '浮层应挂到 document.body');
+    assert.equal(tip.textContent, '/Users/me/writing/drafts/note.md');
+    assert.ok(tip.classList.contains('is-visible'));
+
+    path!.dispatch!('mouseleave');
+    assert.equal(tip.classList.contains('is-visible'), false);
+
+    // 重新渲染（如切换文档）后浮层保持隐藏，不会悬空残留
+    path!.dispatch!('mouseenter');
+    editor._renderRecentDocuments();
+    assert.equal(tip.classList.contains('is-visible'), false);
+  } finally {
+    if (previous) Object.defineProperty(globalThis, 'document', previous);
+    else delete (globalThis as Record<string, unknown>).document;
+  }
+});
+
+test('列表项带删除按钮，点击按钮触发删除而不打开文档', () => {
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'document');
+  Object.defineProperty(globalThis, 'document', {
+    value: { createElement: () => createStubElement(), body: createStubElement() },
+    configurable: true
+  });
+  try {
+    const list = createStubElement();
+    const editor = Object.create(BridgeMethods.prototype);
+    let opened = 0;
+    const deleted: unknown[] = [];
+    Object.assign(editor, {
+      documentListRef: { current: list },
+      documentCountRef: { current: createStubElement() },
+      bridgeDocumentId: null,
+      activeAnswerRequestId: null,
+      recentDocuments: [{
+        documentId: 'doc-1', fileName: 'note.md',
+        updatedAt: '2026-07-25T08:00:00.000Z', annotationCount: 0, questionCount: 0, answerDocuments: []
+      }],
+      openRecentDocument() { opened += 1; },
+      openAnswerDocument() {},
+      deleteRecentDocument(doc: unknown) { deleted.push(doc); }
+    });
+    editor._renderRecentDocuments();
+
+    const remove = findByClass(list, 'recent-document-delete');
+    assert.ok(remove, '删除按钮应该渲染');
+    remove!.dispatch!('click');
+
+    assert.equal(deleted.length, 1);
+    assert.equal((deleted[0] as { documentId: string }).documentId, 'doc-1');
+    assert.equal(opened, 0);
+  } finally {
+    if (previous) Object.defineProperty(globalThis, 'document', previous);
+    else delete (globalThis as Record<string, unknown>).document;
+  }
+});
+
+test('确认删除后调用 DELETE 接口、清除当前关联并刷新列表', async () => {
+  const requests: Array<[string, string]> = [];
+  const previousFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: unknown, init?: { method?: string }) => {
+    requests.push([String(input), init?.method || 'GET']);
+    return { ok: true, json: async () => ({}) };
+  }) as typeof fetch;
+  const previousWindow = Object.getOwnPropertyDescriptor(globalThis, 'window');
+  Object.defineProperty(globalThis, 'window', { value: { confirm: () => true }, configurable: true });
+  try {
+    const editor = createEditor();
+    editor.bridgeDocumentId = 'doc-1';
+    editor.activeDocumentId = 'doc-1';
+    editor.previewOverrideMarkdown = '# 答案';
+    editor.activeAnswerRequestId = 'q-1';
+    let refreshed = 0;
+    let previewRendered = 0;
+    editor._refreshRecentDocuments = async () => { refreshed += 1; };
+    editor._renderPreview = () => { previewRendered += 1; };
+    editor._setStatus = () => {};
+
+    await editor.deleteRecentDocument({ documentId: 'doc-1', fileName: 'note.md' });
+
+    assert.deepEqual(requests, [['http://127.0.0.1:4317/api/documents/doc-1', 'DELETE']]);
+    assert.equal(editor.bridgeDocumentId, null);
+    assert.equal(editor.activeDocumentId, null);
+    assert.equal(editor.previewOverrideMarkdown, '');
+    assert.equal(editor.activeAnswerRequestId, null);
+    assert.equal(previewRendered, 1);
+    assert.equal(refreshed, 1);
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousWindow) Object.defineProperty(globalThis, 'window', previousWindow);
+    else delete (globalThis as Record<string, unknown>).window;
+  }
+});
+
+test('用户取消确认时不发起删除请求', async () => {
+  let fetchCount = 0;
+  const previousFetch = globalThis.fetch;
+  globalThis.fetch = (async () => { fetchCount += 1; return { ok: true, json: async () => ({}) }; }) as typeof fetch;
+  const previousWindow = Object.getOwnPropertyDescriptor(globalThis, 'window');
+  Object.defineProperty(globalThis, 'window', { value: { confirm: () => false }, configurable: true });
+  try {
+    const editor = createEditor();
+    editor._setStatus = () => {};
+
+    await editor.deleteRecentDocument({ documentId: 'doc-1', fileName: 'note.md' });
+
+    assert.equal(fetchCount, 0);
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousWindow) Object.defineProperty(globalThis, 'window', previousWindow);
+    else delete (globalThis as Record<string, unknown>).window;
+  }
+});
+
 test('Bridge 未启用或文件未命名时不发起认领请求', async () => {
   const previous = globalThis.fetch;
   let called = 0;

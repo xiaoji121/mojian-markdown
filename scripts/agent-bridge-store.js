@@ -1,6 +1,6 @@
 // Reading Workspace 文档存储。从 agent-bridge.js 中拆出，便于单测与 CLI 脚本复用。
 // 关键行为：同名文档视为同一篇，重复上报时复用既有文档，不再生成副本。
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -78,6 +78,12 @@ export function createDocumentStore(root) {
     return sameName.find((doc) => Array.isArray(doc.messages) && doc.messages.length) || sameName[0] || null;
   }
 
+  async function deleteDocument(documentId) {
+    // id 来自 URL，只接受安全字符，防止拼路径逃出存储目录。
+    if (!documentId || !/^[\w.-]+$/.test(documentId)) return;
+    await rm(documentPath(documentId), { force: true });
+  }
+
   async function upsertDocument(input, annotations = null) {
     let existing = null;
     if (input.documentId && existsSync(documentPath(input.documentId))) {
@@ -95,6 +101,7 @@ export function createDocumentStore(root) {
     ensureStore,
     readDocument,
     writeDocument,
+    deleteDocument,
     listDocuments,
     findDocumentByIdentity,
     upsertDocument

@@ -160,6 +160,7 @@ function buildMenu() {
         { label: '新建', accelerator: 'CmdOrCtrl+N', click: () => sendMenu('new') },
         { label: '打开…', accelerator: 'CmdOrCtrl+O', click: () => sendMenu('open') },
         { label: '保存', accelerator: 'CmdOrCtrl+S', click: () => sendMenu('save') },
+        { label: '另存为…', accelerator: 'CmdOrCtrl+Shift+S', click: () => sendMenu('save-as') },
         { type: 'separator' },
         isMac ? { role: 'close', label: '关闭窗口' } : { role: 'quit', label: '退出' }
       ]
