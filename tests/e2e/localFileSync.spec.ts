@@ -67,7 +67,11 @@ test('关联文件夹后显示文档的本地相对路径', async ({ page }) => 
   await openFakeLocalFile(page);
 
   await page.getByRole('button', { name: '更多操作' }).click();
-  await page.getByRole('menuitem', { name: '关联本地文件夹' }).click();
+  const folderItem = page.getByRole('menuitem', { name: /关联本地文件夹/ });
+  // 菜单项自带用途说明：hover 提示 + 常显副标题
+  await expect(folderItem).toHaveAttribute('title', /本地路径/);
+  await expect(folderItem.locator('.menu-item-hint')).toContainText('本地路径');
+  await folderItem.click();
 
   await expect(page.locator('.file-name')).toHaveAttribute('title', '我的笔记/阅读/本地笔记.md');
 });

@@ -128,6 +128,16 @@
   cursor: pointer;
 }
 .header-menu-item:hover { background: var(--accent-soft); color: var(--accent); }
+/* 菜单项副标题：不必悬停也能看懂用途 */
+.menu-item-hint {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-4);
+  font-size: var(--fs-2xs);
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.header-menu-item:hover .menu-item-hint { color: var(--text-3); }
 
 /* 顶栏「文件」下拉：复用 .header-menu 外观，锚定到自己的按钮下方。
    按钮贴近窗口右缘，菜单右对齐按钮、向左展开，避免超出视口被裁切。 */

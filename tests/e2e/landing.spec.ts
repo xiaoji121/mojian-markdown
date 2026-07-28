@@ -82,3 +82,24 @@ test('编辑器直链 #editor 可直接打开并渲染示例文档', async ({ pa
   await expect(page.locator('.md-source')).toHaveValue(/# 欢迎使用 Markdown 编辑器/);
   await expect(page.locator('.md-preview h1').first()).toHaveText('欢迎使用 Markdown 编辑器');
 });
+
+test('落地页包含桌面端介绍区块', async ({ page }) => {
+  await page.goto('/');
+
+  const desktop = page.locator('#desktop');
+  await expect(desktop).toBeVisible();
+  await expect(desktop.locator('h2')).toHaveText(/桌面/);
+  // 六项桌面端能力卡片
+  await expect(desktop.locator('.workflow-item')).toHaveCount(6);
+  await expect(desktop).toContainText('双向同步');
+  await expect(desktop).toContainText('npm run desktop');
+  // 完整版卡片提供跳转入口，且锚点真的落在桌面端区块（不被 hash 处理拉回顶部）
+  await page.locator('#editions a[href="#desktop"]').click();
+  await expect
+    .poll(async () => {
+      const box = await desktop.locator('h2').boundingBox();
+      const viewport = page.viewportSize()!;
+      return box !== null && box.y >= 0 && box.y < viewport.height;
+    })
+    .toBe(true);
+});
