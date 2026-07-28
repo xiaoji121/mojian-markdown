@@ -616,7 +616,6 @@
     }
     .header-actions .action-label { display: none; }
     .document-toggle { display: flex !important; }
-    .header-actions .primary { padding: 0 12px !important; }
     /* 低频动作收进 ⋯ 溢出菜单 */
     .collapsible-action { display: none !important; }
     .header-more { display: flex !important; }

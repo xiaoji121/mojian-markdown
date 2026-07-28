@@ -33,7 +33,8 @@ async function installFakeLocalFile(page: Page, content: string) {
 }
 
 async function openFakeLocalFile(page: Page) {
-  await page.getByRole('button', { name: '打开文件' }).click();
+  await page.getByRole('button', { name: '文件菜单' }).click();
+  await page.locator('.file-menu').getByRole('menuitem', { name: /^打开/ }).click();
   await expect(page.locator('.md-source')).toHaveValue(/原始内容/);
 }
 

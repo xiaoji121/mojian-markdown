@@ -204,6 +204,21 @@ export class BridgeMethods {
   }
 
 
+  // 桌面端由内嵌 bridge 托管、端口每次启动随机，localStorage 按源隔离，
+  // 重启后草稿状态必然为空、只能落到示例文档。此时若工作区已有最近阅读，
+  // 直接恢复最近更新的一篇；示例文档只留给还没有任何记录的全新用户。
+  async _maybeOpenLatestRecentDocument() {
+    if (!this._startedWithSample || this.dirty || this.fileHandle) return;
+    if (this.bridgeDocumentId || this.fileName !== '未命名.md') return;
+    if (!this.recentDocuments.length) return;
+    const latest = [...this.recentDocuments]
+      .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))[0];
+    this._startedWithSample = false;
+    await this.openRecentDocument(latest.documentId);
+    this._setStatus('已恢复最近阅读 · ' + this.fileName);
+  }
+
+
   _matchRecentDocumentByName(fileName) {
     const sameName = this.recentDocuments.filter((doc) => doc.fileName === fileName);
     return sameName.find((doc) => doc.questionCount > 0) || sameName[0] || null;

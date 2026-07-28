@@ -30,16 +30,41 @@ async function installFakeSavePicker(page: Page) {
   });
 }
 
-test('顶栏文件菜单包含保存与另存为，点击外部关闭', async ({ page }) => {
+test('顶栏文件菜单包含新建、打开、保存与另存为，点击外部关闭', async ({ page }) => {
   await openEditor(page);
 
   await page.getByRole('button', { name: '文件菜单' }).click();
   await expect(page.locator('.file-menu')).toHaveClass(/is-open/);
   const fileMenu = page.locator('.file-menu');
+  await expect(fileMenu.getByRole('menuitem', { name: '新建文档' })).toBeVisible();
+  await expect(fileMenu.getByRole('menuitem', { name: /^打开/ })).toBeVisible();
   await expect(fileMenu.getByRole('menuitem', { name: /^保存/ })).toBeVisible();
   await expect(fileMenu.getByRole('menuitem', { name: /另存为/ })).toBeVisible();
 
+  // 顶栏不再保留独立的新建/打开按钮
+  await expect(page.getByRole('button', { name: '新建文档' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '打开文件' })).toHaveCount(0);
+
+  // 菜单完整落在视口内，不被右缘裁切
+  const menuBox = await fileMenu.boundingBox();
+  const viewport = page.viewportSize();
+  expect(menuBox).not.toBeNull();
+  expect(menuBox!.x).toBeGreaterThanOrEqual(0);
+  expect(menuBox!.x + menuBox!.width).toBeLessThanOrEqual(viewport!.width);
+
   await page.locator('.md-source').click();
+  await expect(page.locator('.file-menu')).not.toHaveClass(/is-open/);
+});
+
+test('通过文件菜单新建空白文档', async ({ page }) => {
+  await openEditor(page);
+  await setSource(page, '# 旧内容');
+  page.on('dialog', (dialog) => dialog.accept());
+
+  await page.getByRole('button', { name: '文件菜单' }).click();
+  await page.locator('.file-menu').getByRole('menuitem', { name: '新建文档' }).click();
+
+  await expect(page.locator('.md-source')).toHaveValue('');
   await expect(page.locator('.file-menu')).not.toHaveClass(/is-open/);
 });
 

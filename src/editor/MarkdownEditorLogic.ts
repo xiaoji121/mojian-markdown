@@ -117,6 +117,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._draftSavedAt = 0;
     this.localFilePath = null;
     this._folderHandles = null;
+    this._startedWithSample = false;
   }
 
   get LS_KEY() { return EDITOR_STORAGE_KEY; }
@@ -150,6 +151,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.theme = this.props.theme
       || (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
     const saved = loadEditorState();
+    this._startedWithSample = !(saved && typeof saved.content === 'string');
     if (saved && typeof saved.content === 'string') {
       initial = this._cleanOpenedMarkdown(saved.content);
       if (saved.fileName) name = saved.fileName;
@@ -228,7 +230,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     if (this.agentBridgeEnabled) {
       this._initDocumentSidebarResize();
       this._initAI();
-      this._refreshRecentDocuments();
+      this._refreshRecentDocuments().then(() => this._maybeOpenLatestRecentDocument());
     }
     this._syncViewMode();
     // 桌面端：接上应用菜单与「双击 .md 打开」事件。
@@ -326,12 +328,11 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       toggleImmersiveWide: () => this.toggleImmersiveWide(),
       toggleHeaderMenu: () => this.toggleHeaderMenu(),
       menuTheme: () => { this.toggleTheme(); this.toggleHeaderMenu(false); },
-      menuSave: () => { this.toggleHeaderMenu(false); this.onSave(); },
-      menuSaveAs: () => { this.toggleHeaderMenu(false); this.onSaveAs(); },
       toggleFileMenu: () => this.toggleFileMenu(),
+      menuFileNew: () => { this.toggleFileMenu(false); this.onNew(); },
+      menuFileOpen: () => { this.toggleFileMenu(false); this.onOpen(); },
       menuFileSave: () => { this.toggleFileMenu(false); this.onSave(); },
       menuFileSaveAs: () => { this.toggleFileMenu(false); this.onSaveAs(); },
-      menuNew: () => { this.toggleHeaderMenu(false); this.onNew(); },
       menuFolder: () => { this.toggleHeaderMenu(false); this.associateLocalFolder(); },
       toggleOutline: () => this.toggleOutline(),
       toggleSearch: () => this.toggleSearch(),

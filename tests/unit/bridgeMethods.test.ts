@@ -281,6 +281,54 @@ test('用户取消确认时不发起删除请求', async () => {
   }
 });
 
+test('初始为示例文档且有最近阅读时，自动打开最近更新的一篇', async () => {
+  const editor = createEditor();
+  editor._startedWithSample = true;
+  editor.dirty = false;
+  editor.fileHandle = null;
+  editor.fileName = '未命名.md';
+  editor.recentDocuments = [
+    { documentId: 'doc-old', fileName: 'a.md', updatedAt: '2026-07-20T00:00:00.000Z' },
+    { documentId: 'doc-new', fileName: 'b.md', updatedAt: '2026-07-27T00:00:00.000Z' }
+  ];
+  const opened: string[] = [];
+  editor.openRecentDocument = async (id: string) => { opened.push(id); editor.fileName = 'b.md'; };
+  editor._setStatus = () => {};
+
+  await editor._maybeOpenLatestRecentDocument();
+
+  assert.deepEqual(opened, ['doc-new']);
+  assert.equal(editor._startedWithSample, false);
+});
+
+test('有草稿、已编辑、已开文件或列表为空时，不覆盖当前内容', async () => {
+  const scenarios = [
+    { _startedWithSample: false },
+    { dirty: true },
+    { fileHandle: {} },
+    { fileName: 'note.md' },
+    { recentDocuments: [] }
+  ];
+  for (const overrides of scenarios) {
+    const editor = createEditor();
+    editor._startedWithSample = true;
+    editor.dirty = false;
+    editor.fileHandle = null;
+    editor.fileName = '未命名.md';
+    editor.recentDocuments = [
+      { documentId: 'doc-1', fileName: 'a.md', updatedAt: '2026-07-20T00:00:00.000Z' }
+    ];
+    Object.assign(editor, overrides);
+    const opened: string[] = [];
+    editor.openRecentDocument = async (id: string) => { opened.push(id); };
+    editor._setStatus = () => {};
+
+    await editor._maybeOpenLatestRecentDocument();
+
+    assert.equal(opened.length, 0, '不应打开：' + JSON.stringify(overrides));
+  }
+});
+
 test('Bridge 未启用或文件未命名时不发起认领请求', async () => {
   const previous = globalThis.fetch;
   let called = 0;

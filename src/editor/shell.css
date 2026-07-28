@@ -129,9 +129,11 @@
 }
 .header-menu-item:hover { background: var(--accent-soft); color: var(--accent); }
 
-/* 顶栏「文件」下拉：复用 .header-menu 外观，锚定到自己的按钮下方 */
+/* 顶栏「文件」下拉：复用 .header-menu 外观，锚定到自己的按钮下方。
+   按钮贴近窗口右缘，菜单右对齐按钮、向左展开，避免超出视口被裁切。 */
 .file-menu-wrap { position: relative; display: inline-flex; }
-.file-menu { right: auto; left: 0; min-width: 148px; }
+.file-menu { min-width: 148px; }
+.header-menu-separator { height: 1px; margin: 4px 2px; background: var(--border-soft); }
 .file-menu .header-menu-item {
   display: flex;
   align-items: center;
