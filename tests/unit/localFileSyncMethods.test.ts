@@ -53,6 +53,52 @@ function createEditor(handle: ReturnType<typeof createFakeHandle> | null, value:
   });
 }
 
+test('桌面端重启后按工作区路径重建句柄，磁盘最新内容同步进编辑器', async () => {
+  // node 环境无 indexedDB，loadFileHandle 自然返回 null，正好模拟重启后句柄丢失。
+  (globalThis as { window?: unknown }).window = {
+    mojianDesktop: {
+      statFile: async (path: string) => (path === '/tmp/note.md' ? { lastModified: 2000 } : null),
+      readFile: async (path: string) => (path === '/tmp/note.md' ? { content: '# 磁盘上的新内容', lastModified: 2000 } : null)
+    }
+  };
+  try {
+    const editor = createEditor(null, '# 工作区旧副本');
+    let watcherStarted = 0;
+    editor._startLocalFileWatcher = () => { watcherStarted += 1; };
+
+    await editor._reattachLocalFileForDocument({ fileName: 'note.md', localPath: '/tmp/note.md' });
+
+    assert.ok(editor.fileHandle, '应按路径重建句柄');
+    assert.equal((editor.fileHandle as { desktopPath?: string }).desktopPath, '/tmp/note.md');
+    assert.equal(editor.sourceRef.current!.value, '# 磁盘上的新内容');
+    assert.equal(editor.localFilePath, '/tmp/note.md');
+    assert.equal(watcherStarted, 1);
+  } finally {
+    delete (globalThis as { window?: unknown }).window;
+  }
+});
+
+test('非桌面端或工作区无路径时不做句柄重建', async () => {
+  const editor = createEditor(null, '# 原内容');
+  let watcherStarted = 0;
+  editor._startLocalFileWatcher = () => { watcherStarted += 1; };
+
+  // 无 window.mojianDesktop（网页版）
+  await editor._reattachLocalFileForDocument({ fileName: 'note.md', localPath: '/tmp/note.md' });
+  assert.equal(editor.fileHandle, null);
+
+  // 桌面端但工作区没记录路径
+  (globalThis as { window?: unknown }).window = { mojianDesktop: { statFile: async () => null, readFile: async () => null } };
+  try {
+    await editor._reattachLocalFileForDocument({ fileName: 'note.md' });
+    assert.equal(editor.fileHandle, null);
+    assert.equal(editor.sourceRef.current!.value, '# 原内容');
+    assert.equal(watcherStarted, 0);
+  } finally {
+    delete (globalThis as { window?: unknown }).window;
+  }
+});
+
 test('编辑后自动写回本地文件并清除脏标记', async () => {
   const handle = createFakeHandle('旧内容', 1000);
   const editor = createEditor(handle, '编辑后的内容');

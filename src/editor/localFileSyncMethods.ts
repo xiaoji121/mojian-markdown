@@ -5,6 +5,7 @@
 //     若编辑器还有未写回的改动则进入冲突状态，暂停写回，等用户 ⌘S 显式覆盖。
 // 句柄经 IndexedDB 持久化（见 fileHandleStore），刷新页面或从最近列表重开时自动恢复关联。
 import { bridgeUrl } from './bridgeClient.ts';
+import { createDesktopFileHandle } from './desktopFileHandle.ts';
 import {
   listFileHandles,
   loadFileHandle,
@@ -285,7 +286,13 @@ export class LocalFileSyncMethods {
   async _reattachLocalFileForDocument(doc) {
     this._detachLocalFile();
     if (!doc || !doc.fileName || doc.fileName === '未命名.md') return;
-    const handle = await loadFileHandle(doc.fileName);
+    let handle = await loadFileHandle(doc.fileName);
+    // 桌面端 IndexedDB 随端口漂移，重启后句柄必然丢失；工作区记录了绝对路径，
+    // 主进程的路径授权持久化在 userData，按路径重建句柄即可恢复双向同步。
+    if ((!handle || !handle.getFile) && doc.localPath
+      && typeof window !== 'undefined' && window.mojianDesktop) {
+      handle = createDesktopFileHandle(doc.localPath, doc.fileName);
+    }
     if (!handle || !handle.getFile) return;
     try {
       let permission = handle.queryPermission

@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('mojianDesktop', {
   readFile: (path) => ipcRenderer.invoke('desktop:read-file', path),
   writeFile: (path, content) => ipcRenderer.invoke('desktop:write-file', path, content),
   statFile: (path) => ipcRenderer.invoke('desktop:stat-file', path),
+  readAsset: (docPath, src) => ipcRenderer.invoke('desktop:read-asset', docPath, src),
   consumePendingOpen: () => ipcRenderer.invoke('desktop:consume-pending-open'),
   onMenu: (callback) => {
     ipcRenderer.on('desktop:menu', (_event, action) => callback(action));

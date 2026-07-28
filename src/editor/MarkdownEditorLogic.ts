@@ -118,6 +118,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.localFilePath = null;
     this._folderHandles = null;
     this._startedWithSample = false;
+    this._localImageCache = new Map();
   }
 
   get LS_KEY() { return EDITOR_STORAGE_KEY; }

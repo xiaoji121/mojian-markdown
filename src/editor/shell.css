@@ -206,6 +206,9 @@ body.is-desktop-app .header-more { display: none; }
 .editor-main { flex: 1; display: flex; min-height: 0; }
 .source-pane,
 .preview-pane { flex: 1 1 50%; min-width: 0; display: flex; flex-direction: column; }
+/* 预览栏作为容器查询锚点：侧面板开合改变的是栏宽而非窗口宽，
+   工具栏的收纳规则（styles.css）按栏宽生效。 */
+.preview-pane { container-type: inline-size; }
 .editor-divider { flex: none; position: relative; width: 1px; background: var(--border); cursor: col-resize; }
 .editor-divider-hit { position: absolute; inset: 0 -5px; cursor: col-resize; }
 .editor-main.editor-mode-active > .preview-pane,
@@ -222,6 +225,7 @@ body.is-desktop-app .header-more { display: none; }
   padding: 0 16px;
   border-bottom: 1px solid var(--border);
   background: var(--bg-2);
+  overflow: hidden; /* 兜底：极窄时在本栏内裁切，不溢出叠到相邻面板 */
 }
 .pane-title {
   flex: none;

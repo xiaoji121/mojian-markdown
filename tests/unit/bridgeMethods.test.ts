@@ -329,6 +329,53 @@ test('有草稿、已编辑、已开文件或列表为空时，不覆盖当前�
   }
 });
 
+test('从最近阅读打开后，图片替换发生在重新接上本地句柄之后', async () => {
+  const restore = installFetchStub({
+    '/api/documents/doc-1': {
+      document: {
+        documentId: 'doc-1', fileName: 'note.md', localPath: '/tmp/note.md',
+        content: '![图](./a.png)', annotations: [], messages: []
+      }
+    }
+  });
+  try {
+    const order: string[] = [];
+    const editor = createEditor();
+    Object.assign(editor, {
+      sourceRef: { current: { value: '' } },
+      previewRef: { current: { querySelectorAll: () => [] } },
+      activeAnswerRequestId: null,
+      previewOverrideMarkdown: '',
+      fileName: 'note.md',
+      _detachLocalFile() {},
+      _cleanOpenedMarkdown: (text: string) => text,
+      _resetEditingHistory() {},
+      _commentsFromBridge: () => [],
+      _setFileName() {},
+      _showConversationMessages() {},
+      _renderComments() {},
+      _renderPreview() { order.push('render'); },
+      _setDirty() {},
+      _setStatus() {},
+      closeDocumentSidebar() {},
+      async _reattachLocalFileForDocument() {
+        order.push('reattach');
+        editor.localFilePath = '/tmp/note.md';
+      },
+      _hydrateLocalImages() { order.push('hydrate'); }
+    });
+
+    await editor.openRecentDocument('doc-1');
+
+    const reattachAt = order.indexOf('reattach');
+    const hydrateAt = order.lastIndexOf('hydrate');
+    assert.ok(reattachAt >= 0, '应重新接上本地句柄');
+    assert.ok(hydrateAt > reattachAt, '接上句柄后应补齐相对路径图片');
+  } finally {
+    restore();
+  }
+});
+
 test('Bridge 未启用或文件未命名时不发起认领请求', async () => {
   const previous = globalThis.fetch;
   let called = 0;

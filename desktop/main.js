@@ -10,6 +10,7 @@ import { readFile, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startAgentBridge } from '../scripts/agent-bridge.js';
+import { readLocalAsset } from './localAssets.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MARKDOWN_EXTENSIONS = new Set(['.md', '.markdown', '.txt']);
@@ -125,6 +126,12 @@ function registerIpcHandlers() {
     assertGranted(filePath);
     await writeFile(String(filePath), String(content ?? ''), 'utf8');
     return { lastModified: (await stat(String(filePath))).mtimeMs };
+  });
+
+  // 预览里的相对路径图片：以已授权的文档为根解析读取，返回 data URL。
+  ipcMain.handle('desktop:read-asset', async (_event, docPath, src) => {
+    assertGranted(docPath);
+    return readLocalAsset(String(docPath), String(src ?? ''));
   });
 
   ipcMain.handle('desktop:stat-file', async (_event, filePath) => {

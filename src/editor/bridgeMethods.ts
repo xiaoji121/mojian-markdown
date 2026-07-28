@@ -276,6 +276,9 @@ export class BridgeMethods {
       this.closeDocumentSidebar();
       // 若之前打开过同名本地文件，重新接上句柄；本地文件内容优先于工作区副本。
       await this._reattachLocalFileForDocument(doc);
+      // localFilePath 到这里才可用；内容与磁盘一致时上面不会再重渲染，
+      // 需要在此补齐相对路径图片的替换。
+      this._hydrateLocalImages(this.previewRef.current);
     } catch (error) {
       this._setStatus(error.message || 'Reading Workspace 文档读取失败');
     }
