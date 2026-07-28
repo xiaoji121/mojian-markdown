@@ -134,6 +134,13 @@
 .file-menu-wrap { position: relative; display: inline-flex; }
 .file-menu { min-width: 148px; }
 .header-menu-separator { height: 1px; margin: 4px 2px; background: var(--border-soft); }
+
+/* 复制成功后按钮原地闪现的确认态 */
+button.is-copied {
+  color: var(--good) !important;
+  border-color: var(--good) !important;
+}
+.abtn.primary.is-copied { background: var(--good); color: var(--accent-ink) !important; }
 .file-menu .header-menu-item {
   display: flex;
   align-items: center;

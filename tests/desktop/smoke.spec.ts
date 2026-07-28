@@ -130,6 +130,63 @@ test('重启恢复且内容一致时，相对路径图片仍能展示', async ()
   }
 });
 
+// 用户场景：批注随文档从工作区载入后，批注面板的复制/删除按钮应可用。
+test('桌面端批注面板的复制与删除按钮可用', async () => {
+  const workspace = await mkdtemp(join(tmpdir(), 'mojian-ws-'));
+  const userData = await mkdtemp(join(tmpdir(), 'mojian-user-'));
+  const docDir = await mkdtemp(join(tmpdir(), 'mojian-doc-'));
+  const docPath = join(docDir, 'note.md');
+  const content = '# 批注\n\n这是一段足够长的正文，用来验证桌面端批注按钮。\n';
+  await writeFile(docPath, content);
+  await writeFile(join(userData, 'granted-paths.json'), JSON.stringify([docPath]));
+  await mkdir(join(workspace, 'documents'), { recursive: true });
+  await writeFile(join(workspace, 'documents', 'doc-comments.json'), JSON.stringify({
+    documentId: 'doc-comments',
+    sourceApp: 'markdown-editor',
+    title: 'note.md',
+    fileName: 'note.md',
+    localPath: docPath,
+    content,
+    createdAt: '2026-07-27T00:00:00.000Z',
+    updatedAt: '2026-07-27T00:00:00.000Z',
+    annotations: [
+      { id: 'a1', quote: '足够长的正文', type: 'idea', note: 'hello world', occ: 0, ts: 1753600000000 }
+    ],
+    messages: []
+  }, null, 2));
+
+  const app = await electron.launch({
+    args: ['.'],
+    env: {
+      ...process.env,
+      AGENT_BRIDGE_WORKSPACE: workspace,
+      MOJIAN_USER_DATA: userData,
+      NO_PROXY: 'localhost,127.0.0.1'
+    }
+  });
+  try {
+    const page = await app.firstWindow();
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(String(error)));
+
+    await expect(page.locator('.md-source')).toHaveValue(/足够长的正文/, { timeout: 15_000 });
+    await page.getByRole('button', { name: /^批注/ }).click();
+    await expect(page.locator('.comments-panel')).toBeVisible();
+    await expect(page.locator('.comments-panel .comment-quote')).toHaveCount(1);
+
+    await page.getByRole('button', { name: '复制', exact: true }).click();
+    await expect(page.locator('.save-status')).toHaveText(/已复制该批注/);
+
+    page.on('dialog', (dialog) => dialog.accept());
+    await page.getByRole('button', { name: '删除', exact: true }).click();
+    await expect(page.locator('.comments-panel .comment-quote')).toHaveCount(0);
+
+    expect(errors).toEqual([]);
+  } finally {
+    await app.close();
+  }
+});
+
 // 模拟「重启」：工作区已有上次会话登记的文档（旧副本 + 本地路径 + 授权），
 // 应用启动后应自动恢复这篇最近阅读，并按路径重建本地同步——
 // 编辑器显示磁盘最新内容而非工作区旧副本，外部修改继续自动进编辑器。
