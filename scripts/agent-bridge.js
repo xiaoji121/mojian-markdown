@@ -36,14 +36,28 @@ async function readBody(req) {
 
 function summarizeDocument(doc) {
   const messages = Array.isArray(doc.messages) ? doc.messages : [];
+  // parentRequestId 指向提问时所在的子文档，前端据此把追问渲染成嵌套树。
   const answers = messages
     .filter((item) => item.answer)
     .map((item) => ({
       requestId: item.requestId,
       question: item.question || '未命名问题',
       engine: item.engine,
+      parentRequestId: item.parentRequestId || undefined,
       updatedAt: item.answerAt || item.questionAt || doc.updatedAt
     }));
+  // 用户把别处找到的答案贴在批注下时，同样作为该文档的子节点展示。
+  const replies = (Array.isArray(doc.annotations) ? doc.annotations : [])
+    .filter((item) => item.type !== 'ai' && item.reply && String(item.reply).trim())
+    .map((item) => ({
+      requestId: item.id,
+      question: item.note || item.question || item.quote || '未命名想法',
+      kind: 'reply',
+      parentRequestId: item.answerRequestId || undefined,
+      updatedAt: new Date(item.replyAt || item.ts || doc.updatedAt).toISOString()
+    }));
+  const answerDocuments = [...answers, ...replies]
+    .sort((a, b) => String(a.updatedAt).localeCompare(String(b.updatedAt)));
   return {
     documentId: doc.documentId,
     title: doc.title,
@@ -52,7 +66,7 @@ function summarizeDocument(doc) {
     updatedAt: doc.updatedAt,
     annotationCount: Array.isArray(doc.annotations) ? doc.annotations.length : 0,
     questionCount: messages.length,
-    answerDocuments: answers
+    answerDocuments
   };
 }
 
@@ -134,12 +148,16 @@ function createRequestHandler({ store, staticDir, cors }) {
     const engine = normalizeEngine(body.engine);
     const doc = await upsertDocument(body.document || {});
     const requestId = randomUUID();
+    // 在子文档视图里追问时，记下父节点，问答树才能逐级嵌套。
+    const parentRequestId = typeof body.parentRequestId === 'string' && body.parentRequestId
+      ? body.parentRequestId : undefined;
     const message = {
       requestId,
       engine,
       question: body.question || '',
       quote: body.selection?.quote || '',
       questionAt: new Date().toISOString(),
+      parentRequestId,
       answer: ''
     };
     doc.messages.push(message);
@@ -152,6 +170,7 @@ function createRequestHandler({ store, staticDir, cors }) {
       note: message.question,
       question: message.question,
       answer: '',
+      answerRequestId: parentRequestId,
       aiStatus: 'pending'
     }));
     await writeDocument(doc);

@@ -55,6 +55,8 @@ export class AIMethods {
       question,
       engine: this.aiEngine === 'codex' ? 'codex' : 'claude',
       document: this._documentPayload(),
+      // 在子文档视图里追问时带上父节点，服务端把这次问答挂进追问树。
+      parentRequestId: (this.previewOverrideMarkdown && this.activeAnswerRequestId) || undefined,
       selection: {
         quote: this.aiQuote,
         occurrence: this.aiOccurrence || 0,
@@ -450,6 +452,9 @@ export class AIMethods {
       aiStatus: 'pending',
       ts: Date.now()
     };
+    if (this.previewOverrideMarkdown && this.activeAnswerRequestId) {
+      aiComment.answerRequestId = this.activeAnswerRequestId;
+    }
     this.comments.push(aiComment);
     this._persist();
     this._renderPreview();

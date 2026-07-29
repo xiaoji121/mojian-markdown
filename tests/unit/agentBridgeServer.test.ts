@@ -43,6 +43,57 @@ test('文档 API 在嵌入模式下可用', async () => {
   });
 });
 
+test('带回复的批注在文档摘要里生成「摘录回答」子节点', async () => {
+  await withBridge({}, async (bridge) => {
+    const created = await fetch(`${bridge.url}/api/documents`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        document: { fileName: 'note.md', content: '# hi' },
+        annotations: [
+          { id: 'a1', type: 'idea', quote: '原文', note: '如何衡量效率？', reply: '从另一本书里找到的答案', replyAt: 1753600000000 },
+          { id: 'a2', type: 'idea', quote: '原文', note: '没有回复的想法' },
+          { id: 'a3', type: 'marker', quote: '划线', reply: '   ' }
+        ]
+      })
+    });
+    assert.equal(created.ok, true);
+
+    const { documents } = await (await fetch(`${bridge.url}/api/documents`)).json();
+    assert.equal(documents.length, 1);
+    const children = documents[0].answerDocuments;
+    assert.equal(children.length, 1);
+    assert.equal(children[0].requestId, 'a1');
+    assert.equal(children[0].question, '如何衡量效率？');
+    assert.equal(children[0].kind, 'reply');
+    assert.equal(children[0].updatedAt, new Date(1753600000000).toISOString());
+  });
+});
+
+test('嵌套追问：子文档里的批注回复携带 parentRequestId', async () => {
+  await withBridge({}, async (bridge) => {
+    await fetch(`${bridge.url}/api/documents`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        document: { fileName: 'note.md', content: '# hi' },
+        annotations: [
+          { id: 'a1', type: 'idea', quote: '原文', note: '一级问题', reply: '一级答案', ts: 1 },
+          { id: 'a2', type: 'idea', quote: '一级答案里的句子', note: '二级追问', reply: '二级答案', answerRequestId: 'a1', ts: 2 }
+        ]
+      })
+    });
+
+    const { documents } = await (await fetch(`${bridge.url}/api/documents`)).json();
+    const children = documents[0].answerDocuments;
+    assert.equal(children.length, 2);
+    const first = children.find((item: { requestId: string }) => item.requestId === 'a1');
+    const second = children.find((item: { requestId: string }) => item.requestId === 'a2');
+    assert.equal(first.parentRequestId, undefined);
+    assert.equal(second.parentRequestId, 'a1');
+  });
+});
+
 test('DELETE /api/documents/:id 删除文档', async () => {
   await withBridge({}, async (bridge) => {
     const created = await fetch(`${bridge.url}/api/documents`, {

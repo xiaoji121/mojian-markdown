@@ -600,8 +600,15 @@ textarea.md-source {
   font-size: var(--fs-xs);
   letter-spacing: 0.04em;
 }
-.save-status { color: var(--text-3); }
-.footer-stats { display: flex; align-items: center; gap: 20px; }
+/* 状态文案可能带问题摘要，单行省略兜底，不许把 30px 底栏撑高 */
+.save-status {
+  color: var(--text-3);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.footer-stats { flex: none; display: flex; align-items: center; gap: 20px; }
 .font-controls { display: flex; align-items: center; gap: 7px; }
 .font-controls-label { color: var(--text-4); letter-spacing: 0.1em; }
 .font-size-value { min-width: 34px; color: var(--text-2); text-align: center; }

@@ -1,6 +1,7 @@
 // Vite waits for these editor-only styles before evaluating this module, so the
 // mounted editor is styled on its first frame without burdening the landing page.
 import './editor/styles.css';
+import './editor/documentSidebar.css';
 import './editor/shell.css';
 
 import * as React from 'react';

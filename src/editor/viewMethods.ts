@@ -59,9 +59,9 @@ export class ViewMethods {
   }
 
   _resolvedPaper() {
-    // 纸色按主题分别记忆；未选择时暗→墨黑、亮→羊皮纸
+    // 纸色按主题分别记忆；未选择时暗→墨黑、亮→清爽白
     const pref = this.theme === 'light' ? this.paperLight : this.paperDark;
-    return pref || (this.theme === 'light' ? 'parchment' : 'ink');
+    return pref || (this.theme === 'light' ? 'snow' : 'ink');
   }
 
   _applyPaper() {
@@ -229,12 +229,14 @@ export class ViewMethods {
     const src = this.sourceRef.current, prev = this.previewRef.current;
     if (!src || !prev || !window.marked) return;
     const markdown = this.previewOverrideMarkdown || src.value;
+    // 脉络视图（override 且不属于任何子文档）：节点可点击，样式上给出提示
+    prev.classList.toggle('is-reading-map', !!this.previewOverrideMarkdown && !this.activeAnswerRequestId);
     this._syncPreviewEditable();
     prev.innerHTML = window.marked.parse ? window.marked.parse(markdown) : window.marked(markdown);
     this._renderMermaidDiagrams(prev);
     this._highlightCodeBlocks(prev);
     this._hydrateLocalImages(prev);
-    if (!this.previewOverrideMarkdown) this._applyHighlights();
+    this._applyHighlights();
     this._renderOutline();
     this._updateCount();
   }

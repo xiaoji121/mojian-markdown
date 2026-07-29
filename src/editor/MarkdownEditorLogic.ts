@@ -12,6 +12,7 @@ import { ENABLE_AGENT_BRIDGE } from './featureFlags';
 import { LocalFileSyncMethods } from './localFileSyncMethods';
 import { NavigationMethods } from './navigationMethods';
 import { applyPrototypeMethods } from './prototypeMethods';
+import { ReadingMapMethods } from './readingMapMethods';
 import { SearchReplaceMethods } from './searchReplaceMethods';
 import { ViewMethods } from './viewMethods';
 
@@ -383,6 +384,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     Component,
     ViewMethods,
     BridgeMethods,
+    ReadingMapMethods,
     NavigationMethods,
     SearchReplaceMethods,
     CommentMethods,

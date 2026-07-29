@@ -69,6 +69,9 @@
     font: var(--fs-sm)/1.7 var(--mono);
   }
   .mermaid-rendered.has-error { border-color: color-mix(in srgb, var(--danger) 65%, var(--paper-border)); }
+  /* 阅读脉络视图：节点可点击跳到对应子文档（点击委托见 readingMapMethods） */
+  .md-preview.is-reading-map .mermaid-rendered .node { cursor: pointer; }
+  .md-preview.is-reading-map .mermaid-rendered .node:hover { opacity: .75; }
   .md-preview hr { border: none; border-top: 1px solid var(--paper-border); margin: 36px 0; }
   .md-preview table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 0.9em; }
   .md-preview th, .md-preview td { border: 1px solid var(--paper-border); padding: 10px 14px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
@@ -425,164 +428,19 @@
     border:1px solid var(--border-soft);
     border-radius:var(--radius-control);
   }
+  .comment-reply-label {
+    margin: 0 10px;
+    color: var(--text-4);
+    font: var(--fs-2xs)/1.4 var(--mono);
+    letter-spacing: 0.06em;
+  }
+  .comment-note-input.comment-reply-input {
+    margin-top: 4px;
+    border-left: 2px solid var(--accent);
+  }
   .editor-main.preview-mode-active > .source-pane { display: none !important; }
   .editor-main.preview-mode-active > .preview-pane { display: flex !important; }
   .editor-main.preview-mode-active > .editor-divider { display: none !important; }
-  .document-sidebar {
-    position: relative;
-    width: 236px;
-    flex: 0 0 236px;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    border-right: 1px solid var(--border);
-    background: var(--bg-3);
-  }
-  .document-sidebar-resize {
-    position: absolute;
-    z-index: 5;
-    top: 0;
-    right: -5px;
-    bottom: 0;
-    width: 10px;
-    cursor: col-resize;
-  }
-  .document-sidebar-resize::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    right: 4px;
-    bottom: 0;
-    width: 1px;
-    background: transparent;
-    transition: background .15s ease;
-  }
-  .document-sidebar-resize:hover::after { background: var(--accent); }
-  .document-sidebar-header {
-    height: 42px;
-    flex: none;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 13px 0 15px;
-    border-bottom: 1px solid var(--border);
-    color: var(--text-3);
-    font: var(--fs-xs)/1 var(--mono);
-    letter-spacing: .12em;
-  }
-  .document-sidebar-title { display: flex; align-items: center; gap: 7px; }
-  .document-sidebar-title::before { content: "⌄"; color: var(--accent); font-size: var(--fs-md); }
-  .document-count {
-    min-width: 18px;
-    height: 18px;
-    padding: 0 5px;
-    border-radius: var(--radius-pill);
-    background: var(--accent-soft);
-    color: var(--accent);
-    font: 600 var(--fs-2xs)/18px var(--mono);
-    text-align: center;
-  }
-  .document-sidebar-close { display: none; }
-  .recent-document-list { flex: 1; min-height: 0; overflow-y: auto; padding: 8px; }
-  .recent-document-group { margin-bottom: 2px; position: relative; }
-  /* 删除按钮：悬停条目时出现在右上角 */
-  .recent-document-delete {
-    position: absolute;
-    top: 7px;
-    right: 7px;
-    width: 20px;
-    height: 20px;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    border: 0;
-    border-radius: var(--radius-control);
-    background: transparent;
-    color: var(--text-4);
-    font: var(--fs-lg)/1 var(--sans);
-    cursor: pointer;
-  }
-  .recent-document-group:hover .recent-document-delete,
-  .recent-document-delete:focus-visible { display: flex; }
-  .recent-document-delete:hover { background: var(--bg-2); color: var(--danger); }
-  .recent-document-item {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    padding: 9px 9px;
-    border: 1px solid transparent;
-    border-radius: var(--radius-control);
-    background: transparent;
-    color: var(--text-3);
-    text-align: left;
-    cursor: pointer;
-  }
-  .recent-document-item:hover { background: var(--bg-2); color: var(--text-2); }
-  .recent-document-item.is-active {
-    border-color: var(--border);
-    background: var(--accent-soft);
-    color: var(--text);
-  }
-  .recent-document-icon { flex: none; color: var(--accent); font: var(--fs-md)/1 var(--mono); }
-  .recent-document-body { min-width: 0; display: flex; flex: 1; flex-direction: column; gap: 4px; }
-  .recent-document-body strong {
-    overflow: hidden;
-    font: 500 var(--fs-sm)/1.35 var(--sans);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .recent-document-body small { color: var(--text-4); font: var(--fs-2xs)/1 var(--mono); }
-  .recent-document-path {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    direction: rtl; /* 路径过长时保留结尾的文件名部分 */
-    text-align: left;
-  }
-  /* 完整路径悬停浮层：fixed 定位挂 body，坐标由 JS 按锚点计算 */
-  .path-tooltip {
-    position: fixed;
-    z-index: 400;
-    display: none;
-    padding: 6px 10px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-control);
-    background: var(--tool-bg);
-    color: var(--text-2);
-    font: var(--fs-2xs)/1.6 var(--mono);
-    word-break: break-all;
-    box-shadow: var(--shadow-md);
-    pointer-events: none;
-  }
-  .path-tooltip.is-visible { display: block; }
-  .recent-document-children { margin: 1px 0 6px 17px; padding-left: 8px; }
-  .recent-answer-item {
-    width: 100%;
-    display: flex;
-    align-items: flex-start;
-    gap: 5px;
-    padding: 7px 8px 7px 0;
-    border: 0;
-    border-radius: var(--radius-control);
-    background: transparent;
-    color: var(--text-3);
-    text-align: left;
-    cursor: pointer;
-  }
-  .recent-answer-item:hover { background: var(--bg-2); color: var(--text-2); }
-  .recent-answer-item.is-active { background: var(--accent-soft); color: var(--text); }
-  .recent-answer-branch { flex: none; color: var(--border); font: var(--fs-xs)/1.4 var(--mono); }
-  .recent-answer-body { min-width: 0; display: flex; flex: 1; flex-direction: column; gap: 4px; }
-  .recent-answer-body strong {
-    overflow: hidden;
-    font: 500 var(--fs-xs)/1.4 var(--sans);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .recent-answer-body small { color: var(--text-4); font: var(--fs-2xs)/1 var(--mono); }
-  .recent-documents-empty { padding: 18px 12px; color: var(--text-4); font: var(--fs-xs)/1.7 var(--sans); }
 
   /* 保持平板宽度的双栏布局，但精简预览工具栏，避免中文按钮被压成竖排。 */
   @media (min-width: 761px) and (max-width: 1100px) {
@@ -644,33 +502,6 @@
     .preview-pane-fullscreen .tbtn.immersive-wide-toggle,
     .immersive-wide-toggle { display: none !important; }
     .editor-main { position: relative; overflow: hidden; }
-    .document-sidebar {
-      position: fixed;
-      z-index: 115;
-      top: 0;
-      bottom: 0;
-      left: 0;
-      width: min(82vw, 300px);
-      transform: translateX(-102%);
-      /* 收起时不画阴影（否则会从屏幕外探回左缘）、对键盘/读屏不可达 */
-      box-shadow: none;
-      visibility: hidden;
-      transition: transform .2s ease, visibility .2s;
-    }
-    .document-sidebar.is-mobile-open {
-      transform: translateX(0);
-      visibility: visible;
-      box-shadow: 18px 0 48px rgba(0,0,0,.38);
-    }
-    .document-sidebar-resize { display: none; }
-    .document-sidebar-close {
-      display: block;
-      border: 0;
-      background: transparent;
-      color: var(--text-3);
-      font-size: 20px;
-      cursor: pointer;
-    }
     .editor-main > .source-pane,
     .editor-main > .preview-pane {
       position: absolute;

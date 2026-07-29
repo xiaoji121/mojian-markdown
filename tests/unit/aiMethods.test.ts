@@ -43,6 +43,20 @@ test('问答请求体携带当前引擎', () => {
   assert.equal(body.selection.quote, '选中的原文');
 });
 
+test('在子文档视图问 AI 时请求体携带 parentRequestId', () => {
+  const editor = createEditor();
+  editor.previewOverrideMarkdown = '# 摘录回答';
+  editor.activeAnswerRequestId = 'a1';
+
+  const body = editor._aiChatRequestBody('追问一下');
+  assert.equal(body.parentRequestId, 'a1');
+
+  editor.previewOverrideMarkdown = '';
+  editor.activeAnswerRequestId = null;
+  const mainBody = editor._aiChatRequestBody('主文档提问');
+  assert.equal(mainBody.parentRequestId, undefined);
+});
+
 test('引擎标签用于消息署名', () => {
   const editor = createEditor();
   assert.equal(editor._aiEngineLabel(), 'Claude');

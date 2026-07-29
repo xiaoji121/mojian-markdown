@@ -47,6 +47,83 @@ test('preview remains read-only when override content is shown', () => {
   assert.equal(preview.getAttribute('contenteditable'), 'false');
 });
 
+test('摘录回答等 override 视图下渲染预览时也应用批注高亮', () => {
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'window');
+  Object.defineProperty(globalThis, 'window', {
+    value: { marked: { parse: (s: string) => s } },
+    configurable: true
+  });
+  try {
+    let highlighted = 0;
+    const context = {
+      sourceRef: createRef({ value: '# 原文' }),
+      previewRef: createRef(createStubElement()),
+      previewOverrideMarkdown: '# 摘录回答',
+      _syncPreviewEditable() {},
+      _renderMermaidDiagrams() {},
+      _highlightCodeBlocks() {},
+      _hydrateLocalImages() {},
+      _applyHighlights() { highlighted += 1; },
+      _renderOutline() {},
+      _updateCount() {}
+    };
+
+    ViewMethods.prototype._renderPreview.call(context);
+
+    assert.equal(highlighted, 1, 'override 视图也应渲染高亮（按视图过滤在 _applyHighlights 内完成）');
+  } finally {
+    if (previous) Object.defineProperty(globalThis, 'window', previous);
+    else delete (globalThis as Record<string, unknown>).window;
+  }
+});
+
+test('脉络视图给预览容器打上 is-reading-map 标记，子文档视图则移除', () => {
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'window');
+  Object.defineProperty(globalThis, 'window', {
+    value: { marked: { parse: (s: string) => s } },
+    configurable: true
+  });
+  try {
+    const preview = createStubElement();
+    const context = {
+      sourceRef: createRef({ value: '# 原文' }),
+      previewRef: createRef(preview),
+      previewOverrideMarkdown: '# 阅读脉络',
+      activeAnswerRequestId: null,
+      _syncPreviewEditable() {},
+      _renderMermaidDiagrams() {},
+      _highlightCodeBlocks() {},
+      _hydrateLocalImages() {},
+      _applyHighlights() {},
+      _renderOutline() {},
+      _updateCount() {}
+    };
+
+    ViewMethods.prototype._renderPreview.call(context);
+    assert.equal(preview.classList.contains('is-reading-map'), true);
+
+    context.activeAnswerRequestId = 'r-1';
+    ViewMethods.prototype._renderPreview.call(context);
+    assert.equal(preview.classList.contains('is-reading-map'), false);
+  } finally {
+    if (previous) Object.defineProperty(globalThis, 'window', previous);
+    else delete (globalThis as Record<string, unknown>).window;
+  }
+});
+
+test('未选择纸色时：亮色主题默认清爽白，暗色主题默认墨黑，已保存的选择优先', () => {
+  const context = { theme: 'light', paperLight: '', paperDark: '' };
+
+  assert.equal(ViewMethods.prototype._resolvedPaper.call(context), 'snow');
+
+  context.theme = 'dark';
+  assert.equal(ViewMethods.prototype._resolvedPaper.call(context), 'ink');
+
+  context.theme = 'light';
+  context.paperLight = 'cream';
+  assert.equal(ViewMethods.prototype._resolvedPaper.call(context), 'cream');
+});
+
 test('view modes map to editor-only, split, and preview-only layouts', () => {
   const classList = createClassList();
   const buttons = ['editor', 'split', 'preview'].map((mode) => ({
