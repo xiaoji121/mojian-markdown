@@ -24,15 +24,18 @@ export class AIMethods {
   }
 
 
-  // ===== AI 引擎切换（Claude / Codex） =====
+  // ===== AI 引擎切换（Claude / Codex / Gemini） =====
 
   _aiEngineLabel(engine) {
-    return (engine || this.aiEngine) === 'codex' ? 'Codex' : 'Claude';
+    const value = engine || this.aiEngine;
+    if (value === 'codex') return 'Codex';
+    if (value === 'gemini') return 'Gemini';
+    return 'Claude';
   }
 
 
   setAIEngine(engine) {
-    this.aiEngine = engine === 'codex' ? 'codex' : 'claude';
+    this.aiEngine = (engine === 'codex' || engine === 'gemini') ? engine : 'claude';
     this._syncAIEngineSwitch();
     this._persist(false);
     this._setStatus('AI 引擎已切换为 ' + this._aiEngineLabel());
@@ -53,7 +56,7 @@ export class AIMethods {
   _aiChatRequestBody(question) {
     return {
       question,
-      engine: this.aiEngine === 'codex' ? 'codex' : 'claude',
+      engine: (this.aiEngine === 'codex' || this.aiEngine === 'gemini') ? this.aiEngine : 'claude',
       document: this._documentPayload(),
       // 在子文档视图里追问时带上父节点，服务端把这次问答挂进追问树。
       parentRequestId: (this.previewOverrideMarkdown && this.activeAnswerRequestId) || undefined,

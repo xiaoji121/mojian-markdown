@@ -8,6 +8,7 @@ import { pathToFileURL } from 'node:url';
 import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { createDocumentStore, normalizeAnnotation } from './agent-bridge-store.js';
+import { createSettingsStore, maskProviderSettings } from './agent-bridge-settings.js';
 import { normalizeEngine, runEngine } from './agent-bridge-engines.js';
 
 const STATIC_TYPES = {
@@ -108,7 +109,16 @@ function bridgePrompt(body, doc) {
   ].join('\n');
 }
 
-function createRequestHandler({ store, staticDir, cors }) {
+function translatePrompt(text) {
+  return [
+    '你是翻译助手。请翻译下面这段文字：若其主要语言是中文，译成英文；否则译成中文。',
+    '只输出译文本身，不要任何解释、注音或前后缀。',
+    '',
+    text
+  ].join('\n');
+}
+
+function createRequestHandler({ store, settings, staticDir, cors }) {
   const { readDocument, writeDocument, deleteDocument, upsertDocument, listDocuments } = store;
   const corsHeaders = cors
     ? {
@@ -189,9 +199,12 @@ function createRequestHandler({ store, staticDir, cors }) {
     });
 
     try {
+      const engineOptions = engine === 'gemini'
+        ? { gemini: await settings.providerSettings('gemini') }
+        : {};
       const answer = await runEngine(engine, bridgePrompt(body, doc), (delta) => {
         writeSse(res, 'delta', { text: delta });
-      });
+      }, process.env, engineOptions);
       message.answer = answer;
       message.answerAt = new Date().toISOString();
       const annotation = doc.annotations.find((item) => item.requestId === requestId);
@@ -207,12 +220,71 @@ function createRequestHandler({ store, staticDir, cors }) {
     }
   }
 
+  // 连通性验证：优先用请求里的 Key/模型（保存前先测），缺省回落到已保存配置。
+  async function handleSettingsTest(req, res) {
+    const body = await readBody(req);
+    const saved = await settings.providerSettings('gemini');
+    const gemini = {
+      apiKey: body?.gemini?.apiKey || saved.apiKey,
+      model: body?.gemini?.model || saved.model,
+      proxy: body?.gemini?.proxy || saved.proxy
+    };
+    let timer = null;
+    try {
+      const reply = await Promise.race([
+        runEngine('gemini', '连通性测试：请只回复 OK', () => {}, process.env, { gemini }),
+        new Promise((_resolve, reject) => {
+          timer = setTimeout(() => reject(new Error('验证超时（15 秒），请检查网络或模型名')), 15_000);
+        })
+      ]);
+      return sendJson(res, 200, { ok: true, model: gemini.model, reply: String(reply).slice(0, 80) });
+    } catch (error) {
+      return sendJson(res, 200, { ok: false, message: error.message || String(error) });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  // 划词翻译：走用户自配的 Gemini Key，流式 SSE 返回译文。
+  async function handleTranslate(req, res) {
+    const body = await readBody(req);
+    const text = String(body.text || '').trim();
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      ...corsHeaders
+    });
+    try {
+      if (!text) throw new Error('没有可翻译的文字');
+      const gemini = await settings.providerSettings('gemini');
+      writeSse(res, 'meta', { provider: 'gemini', model: gemini.model });
+      const answer = await runEngine('gemini', translatePrompt(text), (delta) => {
+        writeSse(res, 'delta', { text: delta });
+      }, process.env, { gemini });
+      writeSse(res, 'done', { text: answer });
+    } catch (error) {
+      writeSse(res, 'error', { message: error.message || String(error) });
+    } finally {
+      res.end();
+    }
+  }
+
   return async function handleRequest(req, res) {
     if (req.method === 'OPTIONS') return sendJson(res, 204, {});
     const url = new URL(req.url || '/', `http://${req.headers.host || '127.0.0.1'}`);
     const parts = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
     try {
       if (req.method === 'GET' && url.pathname === '/health') return sendJson(res, 200, { ok: true });
+      if (req.method === 'GET' && url.pathname === '/api/settings') {
+        return sendJson(res, 200, maskProviderSettings(await settings.readSettings()));
+      }
+      if (req.method === 'POST' && url.pathname === '/api/settings') {
+        const body = await readBody(req);
+        return sendJson(res, 200, maskProviderSettings(await settings.updateProviders(body)));
+      }
+      if (req.method === 'POST' && url.pathname === '/api/settings/test') return handleSettingsTest(req, res);
+      if (req.method === 'POST' && url.pathname === '/api/translate') return handleTranslate(req, res);
       if (req.method === 'GET' && url.pathname === '/api/documents') {
         const documents = (await listDocuments()).map(summarizeDocument);
         return sendJson(res, 200, { documents });
@@ -267,7 +339,8 @@ export function startAgentBridge({
   cors = true
 } = {}) {
   const store = createDocumentStore(root);
-  const server = createServer(createRequestHandler({ store, staticDir, cors }));
+  const settings = createSettingsStore(root);
+  const server = createServer(createRequestHandler({ store, settings, staticDir, cors }));
   return new Promise((resolvePromise, rejectPromise) => {
     server.once('error', rejectPromise);
     server.listen(port, host, () => {

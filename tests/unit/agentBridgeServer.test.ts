@@ -112,6 +112,171 @@ test('DELETE /api/documents/:id 删除文档', async () => {
   });
 });
 
+test('/api/settings 读写 Gemini 配置且不回明文 Key', async () => {
+  await withBridge({}, async (bridge) => {
+    const initial = await (await fetch(`${bridge.url}/api/settings`)).json();
+    assert.deepEqual(initial.gemini, { configured: false, apiKeyTail: '', model: 'gemini-2.5-flash', proxy: '' });
+
+    const saved = await fetch(`${bridge.url}/api/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gemini: { apiKey: 'AIzaSyTest123456', model: 'gemini-2.5-pro', proxy: 'http://127.0.0.1:7890' } })
+    });
+    assert.equal(saved.ok, true);
+    const masked = await saved.json();
+    assert.deepEqual(masked.gemini, {
+      configured: true, apiKeyTail: '3456', model: 'gemini-2.5-pro', proxy: 'http://127.0.0.1:7890'
+    });
+    assert.ok(!JSON.stringify(masked).includes('AIzaSyTest'));
+
+    const reloaded = await (await fetch(`${bridge.url}/api/settings`)).json();
+    assert.equal(reloaded.gemini.configured, true);
+  });
+});
+
+test('/api/translate 未配置 Key 时返回错误事件', async () => {
+  await withBridge({}, async (bridge) => {
+    const response = await fetch(`${bridge.url}/api/translate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: 'hello world' })
+    });
+    const stream = await response.text();
+    assert.match(stream, /event: error/);
+    assert.match(stream, /Gemini API Key/);
+  });
+});
+
+test('/api/translate 配置 Key 后流式返回译文', async () => {
+  const { createServer } = await import('node:http');
+  const prompts: string[] = [];
+  const mock = createServer((req, res) => {
+    let body = '';
+    req.on('data', (chunk) => { body += chunk; });
+    req.on('end', () => {
+      prompts.push(body);
+      res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+      res.write('data: ' + JSON.stringify({ candidates: [{ content: { parts: [{ text: '你好' }] } }] }) + '\n\n');
+      res.write('data: ' + JSON.stringify({ candidates: [{ content: { parts: [{ text: '世界' }] } }] }) + '\n\n');
+      res.end();
+    });
+  });
+  await new Promise<void>((resolve) => mock.listen(0, '127.0.0.1', resolve));
+  const mockPort = (mock.address() as { port: number }).port;
+  const previousBase = process.env.AGENT_BRIDGE_GEMINI_BASE;
+  process.env.AGENT_BRIDGE_GEMINI_BASE = `http://127.0.0.1:${mockPort}`;
+  try {
+    await withBridge({}, async (bridge) => {
+      await fetch(`${bridge.url}/api/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gemini: { apiKey: 'test-key' } })
+      });
+
+      const response = await fetch(`${bridge.url}/api/translate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: 'hello world' })
+      });
+      const stream = await response.text();
+      assert.match(stream, /event: delta/);
+      assert.match(stream, /你好/);
+      assert.match(stream, /世界/);
+      assert.equal(prompts.length, 1);
+      assert.match(prompts[0], /hello world/);
+    });
+  } finally {
+    if (previousBase === undefined) delete process.env.AGENT_BRIDGE_GEMINI_BASE;
+    else process.env.AGENT_BRIDGE_GEMINI_BASE = previousBase;
+    await new Promise((resolve) => mock.close(resolve));
+  }
+});
+
+test('/api/settings/test 未配置且未提供 Key 时返回失败', async () => {
+  await withBridge({}, async (bridge) => {
+    const response = await fetch(`${bridge.url}/api/settings/test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    const result = await response.json();
+    assert.equal(result.ok, false);
+    assert.match(result.message, /Gemini API Key/);
+  });
+});
+
+test('/api/settings/test 优先用请求里的 Key 试连，成功返回 ok', async () => {
+  const { createServer } = await import('node:http');
+  const keys: string[] = [];
+  const mock = createServer((req, res) => {
+    req.on('data', () => {});
+    req.on('end', () => {
+      keys.push(String(req.headers['x-goog-api-key'] || ''));
+      if (keys[keys.length - 1] === 'good-key') {
+        res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+        res.end('data: ' + JSON.stringify({ candidates: [{ content: { parts: [{ text: 'OK' }] } }] }) + '\n\n');
+      } else {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: { message: 'API key not valid' } }));
+      }
+    });
+  });
+  await new Promise<void>((resolve) => mock.listen(0, '127.0.0.1', resolve));
+  const previousBase = process.env.AGENT_BRIDGE_GEMINI_BASE;
+  process.env.AGENT_BRIDGE_GEMINI_BASE = `http://127.0.0.1:${(mock.address() as { port: number }).port}`;
+  try {
+    await withBridge({}, async (bridge) => {
+      // 保存了一个坏 Key，但请求里带好 Key：应测试请求里的（保存前先验证的场景）
+      await fetch(`${bridge.url}/api/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gemini: { apiKey: 'bad-key' } })
+      });
+
+      const good = await (await fetch(`${bridge.url}/api/settings/test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gemini: { apiKey: 'good-key' } })
+      })).json();
+      assert.equal(good.ok, true);
+      assert.equal(good.model, 'gemini-2.5-flash');
+      assert.equal(keys[keys.length - 1], 'good-key');
+
+      // 请求不带 Key：回落到已保存的坏 Key，失败并透出接口错误
+      const savedTest = await (await fetch(`${bridge.url}/api/settings/test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      })).json();
+      assert.equal(savedTest.ok, false);
+      assert.match(savedTest.message, /API key not valid/);
+      assert.equal(keys[keys.length - 1], 'bad-key');
+    });
+  } finally {
+    if (previousBase === undefined) delete process.env.AGENT_BRIDGE_GEMINI_BASE;
+    else process.env.AGENT_BRIDGE_GEMINI_BASE = previousBase;
+    await new Promise((resolve) => mock.close(resolve));
+  }
+});
+
+test('/api/chat 选 gemini 但未配置 Key 时返回错误事件', async () => {
+  await withBridge({}, async (bridge) => {
+    const response = await fetch(`${bridge.url}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        engine: 'gemini',
+        question: '这段讲什么？',
+        document: { fileName: 'note.md', content: '# hi' },
+        selection: { quote: 'hi' }
+      })
+    });
+    const stream = await response.text();
+    assert.match(stream, /event: error/);
+    assert.match(stream, /Gemini API Key/);
+  });
+});
+
 test('默认发送 CORS 头，cors:false 时不发送', async () => {
   await withBridge({}, async (bridge) => {
     const response = await fetch(`${bridge.url}/health`);

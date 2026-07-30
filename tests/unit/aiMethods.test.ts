@@ -32,6 +32,18 @@ test('切换 AI 引擎会持久化选择', () => {
   assert.equal(editor.aiEngine, 'claude');
 });
 
+test('AI 引擎支持 Gemini（API Key 提供方）', () => {
+  const editor = createEditor();
+
+  editor.setAIEngine('gemini');
+
+  assert.equal(editor.aiEngine, 'gemini');
+  assert.equal(editor._aiEngineLabel(), 'Gemini');
+
+  const body = editor._aiChatRequestBody('这段讲什么？');
+  assert.equal(body.engine, 'gemini');
+});
+
 test('问答请求体携带当前引擎', () => {
   const editor = createEditor();
   editor.aiEngine = 'codex';

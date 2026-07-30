@@ -624,6 +624,81 @@
   body:not(.agent-bridge-enabled) .document-sidebar,
   body:not(.agent-bridge-enabled) .document-toggle,
   body:not(.agent-bridge-enabled) .ai-panel,
-  body:not(.agent-bridge-enabled) .ai-entry {
+  body:not(.agent-bridge-enabled) .ai-entry,
+  body:not(.agent-bridge-enabled) .translate-entry {
     display: none !important;
   }
+
+  /* ===== 划词翻译浮层 ===== */
+  .translate-popover {
+    position: fixed;
+    z-index: 320;
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    width: min(420px, calc(100vw - 24px));
+    max-height: 50vh;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    background: var(--tool-bg);
+    color: var(--text-2);
+    box-shadow: var(--shadow-md);
+    font: var(--fs-sm)/1.7 var(--sans);
+  }
+  .translate-popover-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .translate-popover-title { color: var(--text-3); font: var(--fs-2xs)/1.4 var(--mono); letter-spacing: .08em; }
+  .translate-popover-close {
+    padding: 0 4px;
+    border: 0;
+    background: transparent;
+    color: var(--text-4);
+    font-size: var(--fs-lg);
+    cursor: pointer;
+  }
+  .translate-popover-body { overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .translate-popover-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .translate-popover-actions:empty { display: none; }
+
+  /* ===== AI 设置弹窗（API Key） ===== */
+  .ai-settings-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 340;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, .45);
+  }
+  .ai-settings-modal {
+    width: min(420px, calc(100vw - 32px));
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    background: var(--bg-2);
+    color: var(--text-2);
+    box-shadow: var(--shadow-md);
+    font: var(--fs-sm)/1.6 var(--sans);
+  }
+  .ai-settings-title { color: var(--text); font: 600 var(--fs-md)/1.4 var(--sans); }
+  .ai-settings-hint { margin: 0; color: var(--text-4); font-size: var(--fs-xs); }
+  .ai-settings-field { display: flex; flex-direction: column; gap: 5px; }
+  .ai-settings-field span { color: var(--text-3); font: var(--fs-2xs)/1.4 var(--mono); letter-spacing: .06em; }
+  .ai-settings-field input {
+    padding: 8px 9px;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-control);
+    outline: none;
+    background: var(--bg-input);
+    color: var(--text-2);
+    font: var(--fs-sm)/1.4 var(--mono);
+  }
+  .ai-settings-field input:focus { border-color: var(--text-4); }
+  .ai-settings-note { min-height: 1.5em; color: var(--text-4); font-size: var(--fs-xs); }
+  .ai-settings-note[data-state="ok"] { color: var(--accent); }
+  .ai-settings-note[data-state="error"] { color: var(--danger); }
+  .ai-settings-actions { display: flex; align-items: center; gap: 8px; }
+  .ai-settings-actions .spacer { flex: 1; }

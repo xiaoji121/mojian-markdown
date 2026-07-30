@@ -1,16 +1,22 @@
-// AI 问答引擎：本地 CLI 的调用抽象。
+// AI 问答引擎：本地 CLI 与 API Key 提供方的调用抽象。
 //   claude —— `claude -p <prompt>`，stdout 即回答，天然流式。
 //   codex  —— `codex exec`，stdout 是进度噪音（thinking、token 统计等），
 //              干净的最终回答通过 --output-last-message 落盘后一次性取回；
 //              提示词经 stdin 传入，避免长文档超出 argv 长度限制。
-// 均可用环境变量覆盖命令与参数（AGENT_BRIDGE_{CLAUDE,CODEX}_{COMMAND,ARGS}）。
+//   gemini —— Google Generative Language API（用户自配 API Key），SSE 流式；
+//              接口地址可用 AGENT_BRIDGE_GEMINI_BASE 覆盖（测试用 mock）。
+//              Node 内置 fetch 不认代理环境变量，Gemini 有地域封锁，
+//              故显式支持代理：设置里的代理地址优先，其次环境变量。
+// CLI 引擎可用环境变量覆盖命令与参数（AGENT_BRIDGE_{CLAUDE,CODEX}_{COMMAND,ARGS}）。
 import { spawn } from 'node:child_process';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { ProxyAgent, fetch as undiciFetch } from 'undici';
 
 export function normalizeEngine(value) {
-  return value === 'codex' ? 'codex' : 'claude';
+  if (value === 'codex' || value === 'gemini') return value;
+  return 'claude';
 }
 
 export function engineInvocation(engine, prompt, { env = process.env, outputFile = '' } = {}) {
@@ -83,6 +89,81 @@ async function runCodex(prompt, onDelta, env) {
   }
 }
 
-export function runEngine(engine, prompt, onDelta, env = process.env) {
+function geminiProxy(env, gemini) {
+  return gemini?.proxy
+    || env.HTTPS_PROXY || env.https_proxy
+    || env.HTTP_PROXY || env.http_proxy
+    || env.ALL_PROXY || env.all_proxy
+    || '';
+}
+
+async function runGemini(prompt, onDelta, env, gemini) {
+  const apiKey = gemini?.apiKey;
+  if (!apiKey) throw new Error('尚未配置 Gemini API Key，请在 AI 面板的设置（⚙）里填写。');
+  const base = env.AGENT_BRIDGE_GEMINI_BASE || 'https://generativelanguage.googleapis.com';
+  const model = gemini.model || 'gemini-2.5-flash';
+  const proxy = geminiProxy(env, gemini);
+  const doFetch = proxy
+    ? (url, init) => undiciFetch(url, { ...init, dispatcher: new ProxyAgent(proxy) })
+    : fetch;
+  const response = await doFetch(
+    `${base}/v1beta/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] })
+    }
+  );
+  if (!response.ok || !response.body) {
+    let message = `Gemini 接口返回 ${response.status}`;
+    try {
+      const detail = await response.json();
+      if (detail?.error?.message) message = 'Gemini：' + detail.error.message;
+    } catch {}
+    throw new Error(message);
+  }
+
+  // 真实接口的 SSE 事件用 \r\n\r\n 分隔（规范允许 CRLF），流末尾可能没有分隔符。
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let answer = '';
+  let finishInfo = '';
+  const consumePacket = (packet) => {
+    for (const line of packet.split(/\r?\n/)) {
+      if (!line.startsWith('data:')) continue;
+      let payload = null;
+      try { payload = JSON.parse(line.slice(5).trim()); } catch {}
+      const candidate = payload?.candidates?.[0];
+      // 思考模型的推理片段（thought）不属于回答正文
+      const text = candidate?.content?.parts
+        ?.filter((item) => !item.thought)
+        .map((item) => item.text || '').join('') || '';
+      if (text) {
+        answer += text;
+        onDelta(text);
+      }
+      const reason = payload?.promptFeedback?.blockReason || candidate?.finishReason;
+      if (reason && reason !== 'STOP') finishInfo = reason;
+    }
+  };
+  while (true) {
+    const part = await reader.read();
+    if (part.done) break;
+    buffer += decoder.decode(part.value, { stream: true });
+    const packets = buffer.split(/\r?\n\r?\n/);
+    buffer = packets.pop() || '';
+    packets.forEach(consumePacket);
+  }
+  buffer += decoder.decode();
+  if (buffer.trim()) consumePacket(buffer);
+  if (!answer.trim()) {
+    throw new Error('Gemini 未返回文本' + (finishInfo ? '（' + finishInfo + '）' : '，请检查模型名或稍后重试'));
+  }
+  return answer.trim();
+}
+
+export function runEngine(engine, prompt, onDelta, env = process.env, options = {}) {
+  if (engine === 'gemini') return runGemini(prompt, onDelta, env, options.gemini);
   return engine === 'codex' ? runCodex(prompt, onDelta, env) : runClaude(prompt, onDelta, env);
 }

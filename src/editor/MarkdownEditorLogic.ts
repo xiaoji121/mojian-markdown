@@ -11,8 +11,10 @@ import { EditingFileLayoutMethods } from './editingFileLayoutMethods';
 import { ENABLE_AGENT_BRIDGE } from './featureFlags';
 import { LocalFileSyncMethods } from './localFileSyncMethods';
 import { NavigationMethods } from './navigationMethods';
+import { AISettingsMethods } from './aiSettingsMethods';
 import { applyPrototypeMethods } from './prototypeMethods';
 import { ReadingMapMethods } from './readingMapMethods';
+import { TranslateMethods } from './translateMethods';
 import { SearchReplaceMethods } from './searchReplaceMethods';
 import { ViewMethods } from './viewMethods';
 
@@ -164,7 +166,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
         this.activeDocumentId = saved.bridgeDocumentId;
       }
       if (saved.savedAt) this._draftSavedAt = saved.savedAt;
-      if (saved.aiEngine === 'codex') this.aiEngine = 'codex';
+      if (saved.aiEngine === 'codex' || saved.aiEngine === 'gemini') this.aiEngine = saved.aiEngine;
       if (saved.theme) { this.theme = saved.theme; this._themeTouched = true; }
       if (saved.paperDark) this.paperDark = saved.paperDark;
       if (saved.paperLight) this.paperLight = saved.paperLight;
@@ -352,6 +354,9 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       sendAIQuestion: () => this.sendAIQuestion(),
       engineClaude: () => this.setAIEngine('claude'),
       engineCodex: () => this.setAIEngine('codex'),
+      engineGemini: () => this.setAIEngine('gemini'),
+      openAISettings: () => this.openAISettings(),
+      translateSel: () => this.translateSel(),
       askExplain: () => this.askAIQuick('请用更容易理解的语言解释这段话。'),
       askContext: () => this.askAIQuick('这段话在全文上下文中起什么作用？'),
       askChallenge: () => this.askAIQuick('这段话有哪些隐含假设或值得质疑的地方？'),
@@ -390,6 +395,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     CommentMethods,
     DiagramMethods,
     AIMethods,
+    AISettingsMethods,
+    TranslateMethods,
     EditingFileLayoutMethods,
     LocalFileSyncMethods
   );

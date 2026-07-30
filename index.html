@@ -489,7 +489,9 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
           <span ref="{{ aiEngineSwitchRef }}" class="ai-engine-switch" role="group" aria-label="选择 AI 引擎">
             <button class="ai-engine-option is-active" data-engine="claude" onClick="{{ engineClaude }}" aria-pressed="true">Claude</button>
             <button class="ai-engine-option" data-engine="codex" onClick="{{ engineCodex }}" aria-pressed="false">Codex</button>
+            <button class="ai-engine-option" data-engine="gemini" onClick="{{ engineGemini }}" aria-pressed="false">Gemini</button>
           </span>
+          <button class="ai-history-toggle ai-settings-toggle" onClick="{{ openAISettings }}" title="AI 设置（API Key）" aria-label="AI 设置">⚙</button>
           <button class="ai-history-toggle" onClick="{{ toggleAIHistory }}" title="本地对话历史">历史</button>
           <button class="panel-close" onClick="{{ closeAI }}" title="收起" aria-label="收起 AI 面板">&times;</button>
         </span>
@@ -554,6 +556,9 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
     <span class="seltool-divider"></span>
     <button class="seltool" onClick="{{ writeIdea }}" title="写想法（加批注）">
       <span class="seltool-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M12 7v6M9 10h6" strokeWidth="1.6"></path></svg></span>写想法
+    </button>
+    <button class="seltool translate-entry" onClick="{{ translateSel }}" title="翻译选中文字（需在 AI 设置里配置 Gemini Key）">
+      <span class="seltool-icon"><span class="seltool-glyph">译</span></span>翻译
     </button>
     <button class="seltool ai-entry" onClick="{{ aiAsk }}" title="复制为 AI 提问">
       <span class="seltool-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg></span>问 AI

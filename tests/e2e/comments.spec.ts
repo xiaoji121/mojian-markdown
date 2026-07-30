@@ -48,6 +48,14 @@ test('删除批注需要二次确认，取消则保留', async ({ page }) => {
   await expect(page.locator('.comments-panel .comment-quote')).toHaveCount(1);
 });
 
+test('官网版划词工具条隐藏依赖本地 Bridge 的翻译与问 AI', async ({ page }) => {
+  await selectInPreview(page);
+
+  await expect(page.locator('.selection-toolbar .translate-entry')).toBeHidden();
+  await expect(page.locator('.selection-toolbar .ai-entry')).toBeHidden();
+  await expect(page.getByRole('button', { name: /写想法/ })).toBeVisible();
+});
+
 test('想法批注可贴入自己找到的回答，刷新后仍保留', async ({ page }) => {
   await createIdeaComment(page);
 
