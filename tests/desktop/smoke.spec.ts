@@ -81,6 +81,52 @@ test('桌面端启动并与本地文件双向同步', async () => {
   }
 });
 
+// 文章里的链接应交给系统浏览器打开：target=_blank 不自开 Electron 窗口，
+// 普通链接不把编辑器导航走，两者都转发给 shell.openExternal。
+test('文章链接交给系统浏览器打开，应用窗口不动', async () => {
+  const workspace = await mkdtemp(join(tmpdir(), 'mojian-ws-'));
+  const userData = await mkdtemp(join(tmpdir(), 'mojian-user-'));
+
+  const app = await electron.launch({
+    args: ['.'],
+    env: {
+      ...process.env,
+      AGENT_BRIDGE_WORKSPACE: workspace,
+      MOJIAN_USER_DATA: userData,
+      NO_PROXY: 'localhost,127.0.0.1'
+    }
+  });
+  try {
+    const page = await app.firstWindow();
+    await expect(page.locator('.md-source')).toBeVisible({ timeout: 15_000 });
+
+    // 主进程里替换 shell.openExternal，记录被转发的 URL。
+    await app.evaluate(({ shell }) => {
+      (shell as { _opened?: string[] })._opened = [];
+      shell.openExternal = async (url: string) => {
+        (shell as unknown as { _opened: string[] })._opened.push(url);
+      };
+    });
+
+    // target=_blank 路径（AI 回答里的链接形态）：window.open 不应自开窗口。
+    await page.evaluate(() => { window.open('https://example.com/blank'); });
+
+    // 普通链接路径（正文 marked 渲染形态）：点击不应把编辑器导航走。
+    await page.locator('.md-source').fill('# 链接\n\n[外部链接](https://example.com/plain)\n');
+    await page.locator('.md-preview a', { hasText: '外部链接' }).click();
+
+    await expect.poll(() => app.evaluate(({ shell }) =>
+      (shell as unknown as { _opened: string[] })._opened
+    ), { timeout: 10_000 }).toEqual(['https://example.com/blank', 'https://example.com/plain']);
+
+    // 窗口数量不变，编辑器仍在原地。
+    expect(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1);
+    await expect(page.locator('.md-source')).toBeVisible();
+  } finally {
+    await app.close();
+  }
+});
+
 // 用户实际场景：同步一直写穿，重启时工作区副本与磁盘内容完全一致——
 // 恢复后不会因内容差异触发重渲染，相对路径图片必须在接上句柄后补齐展示。
 test('重启恢复且内容一致时，相对路径图片仍能展示', async () => {
