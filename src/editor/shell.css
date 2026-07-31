@@ -11,6 +11,20 @@
   background: var(--bg);
   color: var(--text);
   font-family: var(--sans);
+  /* 界面骨架不可选中；原文、预览与输入类内容在下方单独放开 */
+  -webkit-user-select: none;
+  user-select: none;
+}
+.app-shell input,
+.app-shell textarea,
+.md-source,
+.md-preview,
+.ai-message-body,
+.ai-message-quote,
+.comment-ai-question,
+.comment-ai-answer {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /* ===== header ===== */

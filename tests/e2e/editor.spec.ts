@@ -121,3 +121,25 @@ test('主题切换写入 data-theme 并可来回切换', async ({ page }) => {
   await page.getByRole('button', { name: '切换亮色或暗黑主题' }).click();
   await expect(body).toHaveAttribute('data-theme', initial!);
 });
+
+test('界面骨架不可选中，原文与预览内容可选', async ({ page }) => {
+  const styles = await page.evaluate(() => {
+    const pick = (selector: string) =>
+      getComputedStyle(document.querySelector(selector)!).userSelect;
+    return {
+      header: pick('.app-header'),
+      footer: pick('.app-footer'),
+      previewToolbar: pick('.preview-pane .pane-toolbar'),
+      source: pick('.md-source'),
+      preview: pick('.md-preview'),
+      searchInput: pick('.search-input')
+    };
+  });
+
+  expect(styles.header).toBe('none');
+  expect(styles.footer).toBe('none');
+  expect(styles.previewToolbar).toBe('none');
+  expect(styles.source).toBe('text');
+  expect(styles.preview).toBe('text');
+  expect(styles.searchInput).toBe('text');
+});
