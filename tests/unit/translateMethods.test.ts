@@ -45,7 +45,7 @@ function withDom(run: (body: ReturnType<typeof createStubElement>) => Promise<vo
     configurable: true
   });
   Object.defineProperty(globalThis, 'window', {
-    value: { getSelection: () => null },
+    value: { getSelection: () => null, innerWidth: 1440, innerHeight: 900 },
     configurable: true
   });
   return run(body).finally(() => {
@@ -117,6 +117,78 @@ test('未配置 Key 的报错在浮层里给出去配置入口', async () => {
       assert.ok(configButton, '应提供去配置按钮');
       configButton!.dispatch('click');
       assert.equal(opened, 1);
+    } finally {
+      globalThis.fetch = previousFetch;
+    }
+  });
+});
+
+test('浮层超出视口时收拢回视口内', async () => {
+  await withDom(async (body) => {
+    const previousFetch = globalThis.fetch;
+    globalThis.fetch = (async () => sseResponse(['event: delta\ndata: {"text":"你好"}\n\n'])) as typeof fetch;
+    try {
+      const editor = createTranslator();
+      await editor.translateSel();
+
+      const popover = findByClass(body, 'translate-popover')! as never as {
+        offsetWidth: number; offsetHeight: number; style: Record<string, string>;
+      };
+      popover.offsetWidth = 400;
+      popover.offsetHeight = 300;
+      popover.style.left = '1300px';
+      popover.style.top = '850px';
+
+      editor._clampTranslatePopover();
+
+      assert.equal(popover.style.left, '1032px', '右侧越界应收拢（1440-400-8）');
+      assert.equal(popover.style.top, '592px', '底部越界应上移（900-300-8）');
+    } finally {
+      globalThis.fetch = previousFetch;
+    }
+  });
+});
+
+test('流式追加译文的过程中随内容增长收拢位置', async () => {
+  await withDom(async () => {
+    const previousFetch = globalThis.fetch;
+    globalThis.fetch = (async () => sseResponse([
+      'event: delta\ndata: {"text":"第一段"}\n\n',
+      'event: delta\ndata: {"text":"第二段"}\n\n'
+    ])) as typeof fetch;
+    try {
+      const editor = createTranslator();
+      let clamped = 0;
+      editor._clampTranslatePopover = () => { clamped += 1; };
+
+      await editor.translateSel();
+
+      assert.ok(clamped >= 2, '每次追加译文都应重新收拢，实际 ' + clamped);
+    } finally {
+      globalThis.fetch = previousFetch;
+    }
+  });
+});
+
+test('浮层可通过标题栏拖拽移动，松手后停止跟随', async () => {
+  await withDom(async (body) => {
+    const previousFetch = globalThis.fetch;
+    globalThis.fetch = (async () => sseResponse(['event: delta\ndata: {"text":"你好"}\n\n'])) as typeof fetch;
+    try {
+      const editor = createTranslator();
+      await editor.translateSel();
+      const popover = findByClass(body, 'translate-popover')! as never as { style: Record<string, string> };
+      // 初始位置来自划词工具条：left 120px / top 80px
+
+      editor._onTranslateDragStart({ clientX: 200, clientY: 100, preventDefault() {} });
+      editor._onTranslateDragMove({ clientX: 260, clientY: 180 });
+      assert.equal(popover.style.left, '180px');
+      assert.equal(popover.style.top, '160px');
+
+      editor._onTranslateDragEnd();
+      editor._onTranslateDragMove({ clientX: 900, clientY: 700 });
+      assert.equal(popover.style.left, '180px', '松手后不再跟随');
+      assert.equal(popover.style.top, '160px');
     } finally {
       globalThis.fetch = previousFetch;
     }

@@ -21,7 +21,49 @@ export class TranslateMethods {
     popover.style.top = anchor.top;
     popover.style.display = 'flex';
     this._translateBody.textContent = '正在翻译…';
+    this._clampTranslatePopover();
     await this._streamTranslation(p.quote);
+  }
+
+
+  // 浮层始终收拢在视口内：靠近底部/右缘时上移左移，流式增高过程中持续生效。
+  _clampTranslatePopover() {
+    const pop = this._translatePopoverEl;
+    if (!pop || typeof window === 'undefined' || !window.innerWidth) return;
+    const margin = 8;
+    const left = Math.max(margin, Math.min(
+      parseFloat(pop.style.left) || 0, window.innerWidth - (pop.offsetWidth || 0) - margin));
+    const top = Math.max(margin, Math.min(
+      parseFloat(pop.style.top) || 0, window.innerHeight - (pop.offsetHeight || 0) - margin));
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+  }
+
+
+  // ===== 标题栏拖拽 =====
+
+  _onTranslateDragStart(e) {
+    const pop = this._translatePopoverEl;
+    if (!pop) return;
+    this._translateDrag = {
+      dx: e.clientX - (parseFloat(pop.style.left) || 0),
+      dy: e.clientY - (parseFloat(pop.style.top) || 0)
+    };
+    if (e.preventDefault) e.preventDefault();
+  }
+
+
+  _onTranslateDragMove(e) {
+    const pop = this._translatePopoverEl;
+    if (!this._translateDrag || !pop) return;
+    pop.style.left = (e.clientX - this._translateDrag.dx) + 'px';
+    pop.style.top = (e.clientY - this._translateDrag.dy) + 'px';
+    this._clampTranslatePopover();
+  }
+
+
+  _onTranslateDragEnd() {
+    this._translateDrag = null;
   }
 
 
@@ -42,6 +84,16 @@ export class TranslateMethods {
     close.setAttribute('aria-label', '关闭翻译');
     close.addEventListener('click', () => this._hideTranslatePopover());
     head.append(title, close);
+    // 标题栏按住拖动浮层；点关闭按钮不触发拖拽
+    head.addEventListener('mousedown', (e) => {
+      if (e.target === close) return;
+      this._onTranslateDragStart(e);
+    });
+    if (window.addEventListener && !this._translateDragBound) {
+      window.addEventListener('mousemove', (e) => this._onTranslateDragMove(e));
+      window.addEventListener('mouseup', () => this._onTranslateDragEnd());
+      this._translateDragBound = true;
+    }
     const body = document.createElement('div');
     body.className = 'translate-popover-body';
     const actions = document.createElement('div');
@@ -99,6 +151,8 @@ export class TranslateMethods {
         config.addEventListener('click', () => { this._hideTranslatePopover(); this.openAISettings(); });
         actions.appendChild(config);
       }
+    } finally {
+      this._clampTranslatePopover();
     }
   }
 
@@ -126,6 +180,7 @@ export class TranslateMethods {
         if (event === 'delta' && data && data.text) {
           translated += data.text;
           bodyEl.textContent = translated;
+          this._clampTranslatePopover();
         } else if (event === 'error' && data) {
           failed = data.message || '翻译失败';
         }

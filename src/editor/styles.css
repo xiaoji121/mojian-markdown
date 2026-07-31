@@ -646,7 +646,14 @@
     box-shadow: var(--shadow-md);
     font: var(--fs-sm)/1.7 var(--sans);
   }
-  .translate-popover-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .translate-popover-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    cursor: move;
+    user-select: none;
+  }
   .translate-popover-title { color: var(--text-3); font: var(--fs-2xs)/1.4 var(--mono); letter-spacing: .08em; }
   .translate-popover-close {
     padding: 0 4px;
