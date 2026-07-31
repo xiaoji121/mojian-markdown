@@ -351,12 +351,12 @@ export class SearchReplaceMethods {
     const src = this.sourceRef.current;
     const input = this.searchInputRef.current;
     if (!layer || !src || !input) return;
-    // 字号控件用内联样式改 textarea 字号，镜像层必须逐次跟随，否则高亮错位。
-    if (layer.style && typeof getComputedStyle === 'function') {
-      const style = getComputedStyle(src);
-      layer.style.font = style.font;
-      layer.style.letterSpacing = style.letterSpacing;
-    }
+    // 字号控件用内联样式改 textarea 字号，镜像层同步同一内联值。
+    // 不能拷贝 getComputedStyle 的 font 简写：它把 line-height:1.85 序列化成
+    // 29.6px 这类绝对值，Chromium 对两种写法的行框取整相差约 1/128px，
+    // 数千行的长文档里逐行累积成整行级的高亮偏移（Electron 桌面端实测）。
+    // 其余排版属性两层共用同一份 CSS，天然一致，无需 JS 同步。
+    if (layer.style && src.style) layer.style.fontSize = src.style.fontSize || '';
     const query = input.value;
     if (!this.searchOpen || !query || !this._searchMatches || !this._searchMatches.length) {
       layer.innerHTML = '';

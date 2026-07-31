@@ -289,6 +289,35 @@ test('源码搜索渲染镜像高亮层：转义原文、标记全部匹配与�
   assert.equal(layer.innerHTML, '', '关闭搜索后清空高亮层');
 });
 
+test('镜像层字号同步 textarea 的内联 font-size，不拷贝 font 简写', () => {
+  const editor = Object.create(SearchReplaceMethods.prototype);
+  const layer = { innerHTML: '', scrollTop: 0, style: {} as Record<string, string> };
+  const src = createSource('money talks') as ReturnType<typeof createSource> & {
+    style: Record<string, string>;
+  };
+  src.style = { fontSize: '18px' };
+  Object.assign(editor, {
+    searchOpen: true,
+    sourceRef: createRef(src),
+    searchInputRef: createRef(createInput('money')),
+    sourceHighlightRef: createRef(layer)
+  });
+  editor._searchMatches = [{ start: 0, end: 5 }];
+  editor._searchIndex = 0;
+
+  editor._renderSourceHighlights();
+  assert.equal(layer.style.fontSize, '18px', '字号控件改过字号后镜像层跟随同一内联值');
+  assert.equal(
+    layer.style.font,
+    undefined,
+    '不得整份拷贝 font 简写：行高 1.85 会被序列化成绝对 px，长文档里逐行累积出高亮偏移'
+  );
+
+  src.style.fontSize = '';
+  editor._renderSourceHighlights();
+  assert.equal(layer.style.fontSize, '', '恢复默认字号时镜像层一并回落到 CSS 默认');
+});
+
 // ===== VS Code 风格：全字匹配 / 正则 / 替换行折叠 =====
 
 test('全字匹配只命中独立单词', () => {
