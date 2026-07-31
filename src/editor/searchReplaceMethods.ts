@@ -219,9 +219,30 @@ export class SearchReplaceMethods {
     this._searchIndex = index;
     const match = this._searchMatches[index];
     src.setSelectionRange(match.start, match.end);
-    this._scrollSourceToPosition(src, match.start);
+    // 先渲染镜像层（标出 is-current），再按标记的真实位置滚动
     this._syncSearchCount();
+    this._scrollSourceToMatch(src, match.start);
   }
+
+
+  // 镜像层与原文排版一致，当前项 mark 的 offsetTop 即精确纵向位置；
+  // 镜像层不可用时退回按行号估算（soft wrap 下不准，仅兜底）。
+  _scrollSourceToMatch(src, position) {
+    const layer = this.sourceHighlightRef && this.sourceHighlightRef.current;
+    const mark = layer && layer.querySelector && layer.querySelector('mark.is-current');
+    if (mark && typeof mark.offsetTop === 'number' && src.clientHeight) {
+      const view = src.clientHeight;
+      const top = mark.offsetTop;
+      if (top < src.scrollTop + 40 || top > src.scrollTop + view - 60) {
+        src.scrollTop = Math.max(0, top - view / 2);
+      }
+      layer.scrollTop = src.scrollTop;
+      layer.scrollLeft = src.scrollLeft;
+      return;
+    }
+    this._scrollSourceToPosition(src, position);
+  }
+
 
   // textarea 无法滚动到任意 selection，按行号近似定位（soft wrap 下为估算）。
   _scrollSourceToPosition(src, position) {

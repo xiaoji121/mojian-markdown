@@ -359,3 +359,23 @@ test('计数文案：无结果标红、空关键字为空', () => {
   assert.equal(editor.searchCountRef.current.textContent, '无结果');
   assert.equal(editor.searchBarRef.current.classList.contains('search-no-match'), true);
 });
+
+test('跳转匹配按镜像层标记的真实位置滚动，软换行长行不失准', () => {
+  // 单个逻辑行软换行成几十个视觉行：按行号估算会得出 y≈0 而不滚动
+  const editor = createEditor('x'.repeat(5000) + ' target');
+  editor.searchInputRef.current.value = 'target';
+  editor.searchOpen = true;
+  const mark = { offsetTop: 1000 };
+  const layer = {
+    innerHTML: '',
+    scrollTop: 0,
+    scrollLeft: 0,
+    querySelector: (selector: string) => (selector.includes('is-current') ? mark : null)
+  };
+  editor.sourceHighlightRef = createRef(layer);
+
+  editor._updateSearchMatches();
+
+  assert.equal(editor.sourceRef.current.scrollTop, 800, '应滚动到镜像层标记居中（1000 - 400/2）');
+  assert.equal(layer.scrollTop, 800, '镜像层滚动同步');
+});

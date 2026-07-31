@@ -159,3 +159,16 @@ test('全字匹配与正则开关（VS Code 风格内嵌按钮）', async ({ pag
   await page.getByRole('textbox', { name: '搜索文本' }).fill('(未闭合');
   await expect(page.locator('.search-bar .search-count')).toHaveText('表达式无效');
 });
+
+test('软换行长段落中搜索能滚动定位到匹配处', async ({ page }) => {
+  await openEditor(page);
+  await setSource(page, '# 长段落\n\n' + 'word '.repeat(3000) + 'NEEDLE');
+  await page.locator('.md-source').click();
+
+  await page.keyboard.press('ControlOrMeta+f');
+  await page.getByRole('textbox', { name: '搜索文本' }).fill('NEEDLE');
+  await expect(page.locator('.search-bar .search-count')).toHaveText('第 1 项，共 1 项');
+
+  const scrolled = await page.evaluate(() => document.querySelector('.md-source')!.scrollTop);
+  expect(scrolled).toBeGreaterThan(500);
+});
