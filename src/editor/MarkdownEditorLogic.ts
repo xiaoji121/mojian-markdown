@@ -55,8 +55,14 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.replaceInputRef = React.createRef();
     this.searchCountRef = React.createRef();
     this.searchCaseRef = React.createRef();
+    this.searchWordRef = React.createRef();
+    this.searchRegexRef = React.createRef();
+    this.searchExpandRef = React.createRef();
     this.searchOpen = false;
     this.searchCaseSensitive = false;
+    this.searchWholeWord = false;
+    this.searchRegex = false;
+    this.searchReplaceExpanded = false;
     this._searchMatches = [];
     this._searchIndex = -1;
     this._searchAnchor = 0;
@@ -309,6 +315,9 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       replaceInputRef: this.replaceInputRef,
       searchCountRef: this.searchCountRef,
       searchCaseRef: this.searchCaseRef,
+      searchWordRef: this.searchWordRef,
+      searchRegexRef: this.searchRegexRef,
+      searchExpandRef: this.searchExpandRef,
       sourceHighlightRef: this.sourceHighlightRef,
       previewSearchBarRef: this.previewSearchBarRef,
       previewSearchInputRef: this.previewSearchInputRef,
@@ -357,6 +366,9 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       searchPrev: () => this.searchPrev(),
       searchNext: () => this.searchNext(),
       toggleSearchCase: () => this.toggleSearchCase(),
+      toggleSearchWord: () => this.toggleSearchWord(),
+      toggleSearchRegex: () => this.toggleSearchRegex(),
+      toggleSearchReplaceRow: () => this.toggleSearchReplaceRow(),
       replaceCurrent: () => this.replaceCurrent(),
       replaceAll: () => this.replaceAll(),
       togglePreviewSearch: () => this.togglePreviewSearch(),

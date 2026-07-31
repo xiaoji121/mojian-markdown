@@ -17,10 +17,10 @@ function createEditor(text: string, query: string) {
     applied,
     scrolled,
     // 复用与源码搜索相同的匹配算法（运行时同挂在编辑器原型上）
-    _searchMatchPositions: SearchReplaceMethods.prototype._searchMatchPositions,
+    _searchMatchRanges: SearchReplaceMethods.prototype._searchMatchRanges,
     // DOM 相关步骤在单测里替换为可断言的替身
-    _previewMatchRanges(_root: unknown, positions: number[]) {
-      return positions.map((pos) => ({ pos }));
+    _previewMatchRanges(_root: unknown, ranges: Array<{ start: number }>) {
+      return ranges.map((item) => ({ pos: item.start }));
     },
     _applyPreviewSearchHighlights() { applied.push(this._previewSearchIndex); },
     _scrollToPreviewMatch(range: unknown) { scrolled.push(range); }
@@ -31,22 +31,22 @@ test('预览搜索：计数、循环跳转与匹配定位', () => {
   const editor = createEditor('hello world hello', 'hello');
 
   editor._updatePreviewSearchMatches();
-  assert.equal(editor.previewSearchCountRef.current.textContent, '1/2');
+  assert.equal(editor.previewSearchCountRef.current.textContent, '第 1 项，共 2 项');
   assert.ok(editor.applied.length >= 1, '应用高亮应被调用');
   assert.equal(editor.scrolled.length, 1, '应滚动到当前匹配');
 
   editor.previewSearchNext();
-  assert.equal(editor.previewSearchCountRef.current.textContent, '2/2');
+  assert.equal(editor.previewSearchCountRef.current.textContent, '第 2 项，共 2 项');
   editor.previewSearchNext();
-  assert.equal(editor.previewSearchCountRef.current.textContent, '1/2', '到末尾后回绕');
+  assert.equal(editor.previewSearchCountRef.current.textContent, '第 1 项，共 2 项', '到末尾后回绕');
   editor.previewSearchPrev();
-  assert.equal(editor.previewSearchCountRef.current.textContent, '2/2');
+  assert.equal(editor.previewSearchCountRef.current.textContent, '第 2 项，共 2 项');
 });
 
 test('预览搜索：无匹配显示 0/0，空关键字不显示计数', () => {
   const editor = createEditor('hello world', '找不到');
   editor._updatePreviewSearchMatches();
-  assert.equal(editor.previewSearchCountRef.current.textContent, '0/0');
+  assert.equal(editor.previewSearchCountRef.current.textContent, '无结果');
 
   editor.previewSearchInputRef.current.value = '';
   editor._updatePreviewSearchMatches();

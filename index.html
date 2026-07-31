@@ -406,18 +406,29 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
         </div>
       </div>
       <div ref="{{ searchBarRef }}" class="search-bar" role="search" aria-label="搜索与替换">
-        <div class="search-row">
-          <input ref="{{ searchInputRef }}" class="search-input" type="text" placeholder="搜索原文…" aria-label="搜索文本" spellCheck="false" />
-          <span ref="{{ searchCountRef }}" class="search-count" aria-live="polite"></span>
-          <button ref="{{ searchCaseRef }}" class="tbtn search-tool" onClick="{{ toggleSearchCase }}" title="区分大小写" aria-label="区分大小写" aria-pressed="false">Aa</button>
-          <button class="tbtn search-tool" onClick="{{ searchPrev }}" title="上一处（Shift+Enter）" aria-label="上一处">↑</button>
-          <button class="tbtn search-tool" onClick="{{ searchNext }}" title="下一处（Enter）" aria-label="下一处">↓</button>
-          <button class="tbtn search-tool search-close" onClick="{{ closeSearch }}" title="关闭（Esc）" aria-label="关闭搜索">&times;</button>
-        </div>
-        <div class="search-row">
-          <input ref="{{ replaceInputRef }}" class="search-input replace-input" type="text" placeholder="替换为…" aria-label="替换文本" spellCheck="false" />
-          <button class="tbtn search-tool search-replace-btn" onClick="{{ replaceCurrent }}" title="替换当前匹配" aria-label="替换当前匹配">替换</button>
-          <button class="tbtn search-tool search-replace-btn" onClick="{{ replaceAll }}" title="替换全部匹配" aria-label="替换全部匹配">全部</button>
+        <button ref="{{ searchExpandRef }}" class="search-expand-toggle" onClick="{{ toggleSearchReplaceRow }}" title="切换替换（⌘⌥F）" aria-label="展开或收起替换" aria-expanded="false">›</button>
+        <div class="search-bar-rows">
+          <div class="search-row">
+            <span class="search-input-wrap">
+              <input ref="{{ searchInputRef }}" class="search-input" type="text" placeholder="搜索原文…" aria-label="搜索文本" spellCheck="false" />
+              <span class="search-input-tools">
+                <button ref="{{ searchCaseRef }}" class="search-opt" onClick="{{ toggleSearchCase }}" title="区分大小写" aria-label="区分大小写" aria-pressed="false">Aa</button>
+                <button ref="{{ searchWordRef }}" class="search-opt search-opt-word" onClick="{{ toggleSearchWord }}" title="全字匹配" aria-label="全字匹配" aria-pressed="false">ab</button>
+                <button ref="{{ searchRegexRef }}" class="search-opt" onClick="{{ toggleSearchRegex }}" title="使用正则表达式" aria-label="使用正则表达式" aria-pressed="false">.*</button>
+              </span>
+            </span>
+            <span ref="{{ searchCountRef }}" class="search-count" aria-live="polite"></span>
+            <button class="tbtn search-tool" onClick="{{ searchPrev }}" title="上一处（Shift+Enter）" aria-label="上一处">↑</button>
+            <button class="tbtn search-tool" onClick="{{ searchNext }}" title="下一处（Enter）" aria-label="下一处">↓</button>
+            <button class="tbtn search-tool search-close" onClick="{{ closeSearch }}" title="关闭（Esc）" aria-label="关闭搜索">&times;</button>
+          </div>
+          <div class="search-row search-row-replace">
+            <span class="search-input-wrap">
+              <input ref="{{ replaceInputRef }}" class="search-input replace-input" type="text" placeholder="替换…" aria-label="替换文本" spellCheck="false" />
+            </span>
+            <button class="tbtn search-tool search-replace-btn" onClick="{{ replaceCurrent }}" title="替换当前匹配" aria-label="替换当前匹配">替换</button>
+            <button class="tbtn search-tool search-replace-btn" onClick="{{ replaceAll }}" title="替换全部匹配" aria-label="替换全部匹配">全部</button>
+          </div>
         </div>
       </div>
       <div class="source-editor-area">

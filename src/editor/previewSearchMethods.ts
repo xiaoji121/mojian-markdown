@@ -50,8 +50,8 @@ export class PreviewSearchMethods {
     const input = this.previewSearchInputRef.current;
     if (!prev || !input) return;
     const query = input.value;
-    const positions = query ? this._searchMatchPositions(prev.textContent || '', query, false) : [];
-    this._previewSearchRanges = positions.length ? this._previewMatchRanges(prev, positions, query.length) : [];
+    const matches = query ? this._searchMatchRanges(prev.textContent || '', query, {}) : [];
+    this._previewSearchRanges = matches.length ? this._previewMatchRanges(prev, matches) : [];
     if (!this._previewSearchRanges.length) {
       this._previewSearchIndex = -1;
       this._applyPreviewSearchHighlights();
@@ -92,14 +92,16 @@ export class PreviewSearchMethods {
     const count = this.previewSearchCountRef.current;
     if (!count) return;
     const total = this._previewSearchRanges ? this._previewSearchRanges.length : 0;
-    count.textContent = total ? (this._previewSearchIndex + 1) + '/' + total : (query ? '0/0' : '');
+    count.textContent = total
+      ? '第 ' + (this._previewSearchIndex + 1) + ' 项，共 ' + total + ' 项'
+      : (query ? '无结果' : '');
     const bar = this.previewSearchBarRef.current;
     if (bar) bar.classList.toggle('search-no-match', Boolean(query) && !total);
   }
 
 
-  // 纯文本偏移 → DOM Range：TreeWalker 逐文本节点累积偏移后切出区间。
-  _previewMatchRanges(root, positions, length) {
+  // 纯文本区间 → DOM Range：TreeWalker 逐文本节点累积偏移后切出区间。
+  _previewMatchRanges(root, matches) {
     if (typeof document === 'undefined' || !document.createTreeWalker || !document.createRange) return [];
     const nodes = [];
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
@@ -110,14 +112,19 @@ export class PreviewSearchMethods {
       at += node.nodeValue.length;
     }
     const ranges = [];
-    for (const start of positions) {
-      const end = start + length;
+    for (const match of matches) {
       const range = document.createRange();
       let assigned = 0;
       for (const item of nodes) {
-        if (item.end <= start || item.start >= end) continue;
-        if (start >= item.start && start < item.end) { range.setStart(item.node, start - item.start); assigned |= 1; }
-        if (end > item.start && end <= item.end) { range.setEnd(item.node, end - item.start); assigned |= 2; }
+        if (item.end <= match.start || item.start >= match.end) continue;
+        if (match.start >= item.start && match.start < item.end) {
+          range.setStart(item.node, match.start - item.start);
+          assigned |= 1;
+        }
+        if (match.end > item.start && match.end <= item.end) {
+          range.setEnd(item.node, match.end - item.start);
+          assigned |= 2;
+        }
       }
       if (assigned === 3) ranges.push(range);
     }

@@ -55,6 +55,7 @@ export class SearchReplaceMethods {
     }
     this.searchOpen = true;
     bar.classList.add('is-open');
+    if (focusReplace) this._setSearchReplaceExpanded(true);
     const selection = src.value.slice(src.selectionStart, src.selectionEnd);
     if (selection && !selection.includes('\n')) input.value = selection;
     this._searchAnchor = src.selectionStart;
@@ -75,28 +76,106 @@ export class SearchReplaceMethods {
     if (src) src.focus();
   }
 
+  _syncSearchOptionButton(ref, active) {
+    const btn = ref && ref.current;
+    if (!btn) return;
+    btn.classList.toggle('is-active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  }
+
+
   toggleSearchCase() {
     this.searchCaseSensitive = !this.searchCaseSensitive;
-    const btn = this.searchCaseRef.current;
-    if (btn) {
-      btn.classList.toggle('is-active', this.searchCaseSensitive);
-      btn.setAttribute('aria-pressed', this.searchCaseSensitive ? 'true' : 'false');
-    }
+    this._syncSearchOptionButton(this.searchCaseRef, this.searchCaseSensitive);
     this._updateSearchMatches();
   }
 
-  // 字面量匹配（无正则语义），返回全部起始位置；匹配之间不重叠。
-  _searchMatchPositions(text, query, caseSensitive) {
-    if (!query) return [];
-    const haystack = caseSensitive ? text : text.toLowerCase();
-    const needle = caseSensitive ? query : query.toLowerCase();
-    const positions = [];
-    let at = haystack.indexOf(needle);
-    while (at >= 0) {
-      positions.push(at);
-      at = haystack.indexOf(needle, at + needle.length);
+
+  toggleSearchWord() {
+    this.searchWholeWord = !this.searchWholeWord;
+    this._syncSearchOptionButton(this.searchWordRef, this.searchWholeWord);
+    this._updateSearchMatches();
+  }
+
+
+  toggleSearchRegex() {
+    this.searchRegex = !this.searchRegex;
+    this._syncSearchOptionButton(this.searchRegexRef, this.searchRegex);
+    this._updateSearchMatches();
+  }
+
+
+  // 替换行折叠/展开（VS Code 风格的左侧箭头）
+  toggleSearchReplaceRow() {
+    this._setSearchReplaceExpanded(!this.searchReplaceExpanded);
+  }
+
+
+  _setSearchReplaceExpanded(expanded) {
+    this.searchReplaceExpanded = !!expanded;
+    const bar = this.searchBarRef.current;
+    if (bar) bar.classList.toggle('is-expanded', this.searchReplaceExpanded);
+    const toggle = this.searchExpandRef && this.searchExpandRef.current;
+    if (toggle) toggle.setAttribute('aria-expanded', this.searchReplaceExpanded ? 'true' : 'false');
+  }
+
+
+  _buildSearchRegex(query, global) {
+    try {
+      return new RegExp(query, (global ? 'g' : '') + (this.searchCaseSensitive ? '' : 'i'));
+    } catch {
+      return null;
     }
-    return positions;
+  }
+
+
+  // 全字匹配：匹配边缘是单词字符时，紧邻处不能还是单词字符（CJK 视为边界）。
+  _isWholeWordRange(text, start, end) {
+    const word = /[A-Za-z0-9_]/;
+    if (word.test(text[start] || '') && word.test(text[start - 1] || '')) return false;
+    if (word.test(text[end - 1] || '') && word.test(text[end] || '')) return false;
+    return true;
+  }
+
+
+  // 返回全部匹配区间 [{start, end}]；匹配之间不重叠。
+  // options：caseSensitive / wholeWord / regex；正则无效时置 _searchRegexInvalid。
+  _searchMatchRanges(text, query, options = {}) {
+    this._searchRegexInvalid = false;
+    if (!query) return [];
+    const ranges = [];
+    if (options.regex) {
+      const pattern = this._buildSearchRegex(query, true);
+      if (!pattern) {
+        this._searchRegexInvalid = true;
+        return [];
+      }
+      let match;
+      while ((match = pattern.exec(text))) {
+        if (match[0]) ranges.push({ start: match.index, end: match.index + match[0].length });
+        else pattern.lastIndex += 1; // 零宽匹配防死循环
+        if (ranges.length > 100000) break;
+      }
+    } else {
+      const haystack = options.caseSensitive ? text : text.toLowerCase();
+      const needle = options.caseSensitive ? query : query.toLowerCase();
+      let at = haystack.indexOf(needle);
+      while (at >= 0) {
+        ranges.push({ start: at, end: at + needle.length });
+        at = haystack.indexOf(needle, at + needle.length);
+      }
+    }
+    if (!options.wholeWord) return ranges;
+    return ranges.filter((range) => this._isWholeWordRange(text, range.start, range.end));
+  }
+
+
+  _searchOptions() {
+    return {
+      caseSensitive: this.searchCaseSensitive,
+      wholeWord: this.searchWholeWord,
+      regex: this.searchRegex
+    };
   }
 
   // options.silent：只刷新计数，不移动原文选区（编辑原文时用，避免抢走光标）。
@@ -104,14 +183,14 @@ export class SearchReplaceMethods {
     const src = this.sourceRef.current;
     const input = this.searchInputRef.current;
     if (!src || !input) return;
-    this._searchMatches = this._searchMatchPositions(src.value, input.value, this.searchCaseSensitive);
+    this._searchMatches = this._searchMatchRanges(src.value, input.value, this._searchOptions());
     if (!this._searchMatches.length) {
       this._searchIndex = -1;
       this._syncSearchCount();
       return;
     }
     const anchor = typeof options.from === 'number' ? options.from : (this._searchAnchor || 0);
-    let index = this._searchMatches.findIndex((pos) => pos >= anchor);
+    let index = this._searchMatches.findIndex((match) => match.start >= anchor);
     if (index < 0) index = 0;
     this._searchIndex = Math.min(index, this._searchMatches.length - 1);
     if (options.silent) this._syncSearchCount();
@@ -136,12 +215,11 @@ export class SearchReplaceMethods {
 
   _selectSearchMatch(index) {
     const src = this.sourceRef.current;
-    const input = this.searchInputRef.current;
-    if (!src || !input || !this._searchMatches.length) return;
+    if (!src || !this._searchMatches.length) return;
     this._searchIndex = index;
-    const start = this._searchMatches[index];
-    src.setSelectionRange(start, start + input.value.length);
-    this._scrollSourceToPosition(src, start);
+    const match = this._searchMatches[index];
+    src.setSelectionRange(match.start, match.end);
+    this._scrollSourceToPosition(src, match.start);
     this._syncSearchCount();
   }
 
@@ -157,30 +235,49 @@ export class SearchReplaceMethods {
     }
   }
 
+  _searchCountText(index, total, query) {
+    if (this._searchRegexInvalid) return '表达式无效';
+    if (total) return '第 ' + (index + 1) + ' 项，共 ' + total + ' 项';
+    return query ? '无结果' : '';
+  }
+
+
   _syncSearchCount() {
     const count = this.searchCountRef.current;
     const input = this.searchInputRef.current;
     if (!count || !input) return;
     const total = this._searchMatches.length;
-    count.textContent = total ? (this._searchIndex + 1) + '/' + total : (input.value ? '0/0' : '');
+    count.textContent = this._searchCountText(this._searchIndex, total, input.value);
     const bar = this.searchBarRef.current;
     if (bar) bar.classList.toggle('search-no-match', Boolean(input.value) && !total);
     this._renderSourceHighlights();
   }
 
+  // 正则模式下替换文本支持 $1 分组引用：对命中的片段重跑一次非全局正则展开。
+  _expandReplacement(matchedText, replacement) {
+    if (!this.searchRegex) return replacement;
+    const pattern = this._buildSearchRegex(this.searchInputRef.current.value, false);
+    if (!pattern) return replacement;
+    try {
+      return matchedText.replace(pattern, replacement);
+    } catch {
+      return replacement;
+    }
+  }
+
+
   replaceCurrent() {
     const src = this.sourceRef.current;
-    const input = this.searchInputRef.current;
     const replaceInput = this.replaceInputRef.current;
-    if (!src || !input || !replaceInput) return;
+    if (!src || !replaceInput) return;
     if (!this._requireSearchMatches()) return;
     const index = this._searchIndex >= 0 ? this._searchIndex : 0;
-    const start = this._searchMatches[index];
-    const replacement = replaceInput.value;
+    const match = this._searchMatches[index];
+    const replacement = this._expandReplacement(src.value.slice(match.start, match.end), replaceInput.value);
     this._applySearchEdit(
       src,
-      src.value.slice(0, start) + replacement + src.value.slice(start + input.value.length),
-      start + replacement.length
+      src.value.slice(0, match.start) + replacement + src.value.slice(match.end),
+      match.start + replacement.length
     );
     this._setStatus('已替换 1 处');
   }
@@ -190,19 +287,19 @@ export class SearchReplaceMethods {
     const input = this.searchInputRef.current;
     const replaceInput = this.replaceInputRef.current;
     if (!src || !input || !replaceInput) return;
-    const positions = this._searchMatchPositions(src.value, input.value, this.searchCaseSensitive);
-    if (!positions.length) return;
+    const matches = this._searchMatchRanges(src.value, input.value, this._searchOptions());
+    if (!matches.length) return;
     const value = src.value;
-    const replacement = replaceInput.value;
     let result = '';
     let last = 0;
-    for (const start of positions) {
-      result += value.slice(last, start) + replacement;
-      last = start + input.value.length;
+    for (const match of matches) {
+      result += value.slice(last, match.start)
+        + this._expandReplacement(value.slice(match.start, match.end), replaceInput.value);
+      last = match.end;
     }
     result += value.slice(last);
     this._applySearchEdit(src, result, 0);
-    this._setStatus('已替换 ' + positions.length + ' 处');
+    this._setStatus('已替换 ' + matches.length + ' 处');
   }
 
   // 替换共用的落盘链路：写入新值、记独立历史、重渲染、标脏，并定位后续匹配。
@@ -247,11 +344,11 @@ export class SearchReplaceMethods {
     const value = src.value;
     let html = '';
     let last = 0;
-    this._searchMatches.forEach((start, index) => {
-      html += this._escapeSourceHtml(value.slice(last, start));
+    this._searchMatches.forEach((match, index) => {
+      html += this._escapeSourceHtml(value.slice(last, match.start));
       html += '<mark class="source-mark' + (index === this._searchIndex ? ' is-current' : '') + '">'
-        + this._escapeSourceHtml(value.slice(start, start + query.length)) + '</mark>';
-      last = start + query.length;
+        + this._escapeSourceHtml(value.slice(match.start, match.end)) + '</mark>';
+      last = match.end;
     });
     // 末尾补换行，保证镜像层与 textarea 的内容高度一致
     layer.innerHTML = html + this._escapeSourceHtml(value.slice(last)) + '\n';
