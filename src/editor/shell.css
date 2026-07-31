@@ -360,16 +360,21 @@ textarea.md-source {
 .search-expand-toggle {
   flex: none;
   width: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border: 0;
   border-radius: var(--radius-control);
   background: transparent;
   color: var(--text-4);
   font-size: var(--fs-md);
   cursor: pointer;
-  transition: transform .15s ease;
 }
 .search-expand-toggle:hover { background: var(--bg-2); color: var(--text-2); }
-.search-bar.is-expanded .search-expand-toggle { transform: rotate(90deg); }
+/* 只旋转箭头字形；按钮本体是全高条，整体旋转会把 hover 背景转出搜索条外 */
+.search-expand-icon { display: block; transition: transform .15s ease; }
+.search-bar.is-expanded .search-expand-icon { transform: rotate(90deg); }
 .search-bar-rows { display: flex; flex-direction: column; gap: 6px; }
 .search-bar:not(.is-expanded) .search-row-replace { display: none; }
 .search-row { display: flex; align-items: center; gap: 6px; }
