@@ -262,7 +262,7 @@ export class AIMethods {
       if (item.answer) this.aiMessages.push({
         id: 'a-' + item.requestId, role: 'assistant', text: item.answer,
         requestId: item.requestId, documentId, engine: item.engine,
-        meta: '本地历史 · 已归档至 Brain OS', pending: false
+        meta: '本地历史 · 已归档至阅读工作区', pending: false
       });
     });
     const lastQuote = history.length ? history[history.length - 1].quote : '';
@@ -356,7 +356,7 @@ export class AIMethods {
     if (!this.aiMessages.length) {
       const empty = document.createElement('div');
       empty.className = 'ai-empty';
-      empty.innerHTML = '<span>选择一段原文，然后提出你的疑问。</span><small>回答由本机 Claude Code 或 Codex 生成，并归档到 Brain OS。</small>';
+      empty.innerHTML = '<span>选择一段原文，然后提出你的疑问。</span><small>回答由本地 Agent（Claude / Codex / Gemini）生成，并归档到阅读工作区。</small>';
       list.appendChild(empty);
       return;
     }
@@ -526,7 +526,7 @@ export class AIMethods {
         }
       }
       assistant.pending = false;
-      assistant.meta = (contextMeta ? contextMeta + ' · ' : '') + '已归档至 Brain OS';
+      assistant.meta = (contextMeta ? contextMeta + ' · ' : '') + '已归档至阅读工作区';
       this.aiBridgeOnline = true;
       aiComment.answer = assistant.text;
       aiComment.aiStatus = 'answered';
@@ -535,7 +535,7 @@ export class AIMethods {
       this._refreshAIConversations();
       this._refreshRecentDocuments();
       this._setAIStatus('本地 Agent 已连接', 'online');
-      this._setStatus('AI 回答已保存到 Reading Workspace');
+      this._setStatus('AI 回答已归档到阅读工作区');
     } catch (error) {
       assistant.pending = false;
       const message = error && error.message ? error.message : String(error);
