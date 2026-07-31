@@ -143,3 +143,17 @@ test('界面骨架不可选中，原文与预览内容可选', async ({ page }) 
   expect(styles.preview).toBe('text');
   expect(styles.searchInput).toBe('text');
 });
+
+test('NBSP 正文与超长 token 不撑出预览区横向滚动', async ({ page }) => {
+  // 钉钉文档导出的正文空格全是 U+00A0，整段成为不可断行长串；再加无断点长 token
+  const nbspParagraph = ('word' + '\u00A0').repeat(120).trim();
+  const longToken = 'https://example.com/' + 'x'.repeat(160);
+  await page.locator('.md-source').fill('# 宽内容\n\n' + nbspParagraph + '\n\n' + longToken + '\n');
+
+  const overflow = await page.evaluate(() => {
+    const preview = document.querySelector('.md-preview')!;
+    return preview.scrollWidth - preview.clientWidth;
+  });
+
+  expect(overflow).toBeLessThanOrEqual(0);
+});

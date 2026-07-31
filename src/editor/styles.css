@@ -18,7 +18,8 @@
   /* ===== rendered markdown prose ===== */
   /* 正文渲染在"纸面"上：全部使用 --paper-* token，与框架配色解耦。
      中文正文加少量正字距（参照微信读书），标题保持 -0.01em 收紧 */
-  .md-preview { background: var(--paper-bg); color: var(--paper-text-2); font-family: var(--paper-font-body); line-height: var(--paper-line-height); font-size: var(--fs-xl); letter-spacing: var(--paper-letter-spacing); }
+  /* overflow-wrap 可继承：兜住 NBSP 长串、无断点 URL 等不可断行内容，宁可折行不出横向滚动 */
+  .md-preview { background: var(--paper-bg); color: var(--paper-text-2); font-family: var(--paper-font-body); line-height: var(--paper-line-height); font-size: var(--fs-xl); letter-spacing: var(--paper-letter-spacing); overflow-wrap: break-word; }
   .md-preview ::selection { background: var(--paper-sel); }
   .md-preview > *:first-child { margin-top: 0 !important; }
   .md-preview img { max-width: 100%; height: auto; border-radius: 4px; }
@@ -73,7 +74,8 @@
   .md-preview.is-reading-map .mermaid-rendered .node { cursor: pointer; }
   .md-preview.is-reading-map .mermaid-rendered .node:hover { opacity: .75; }
   .md-preview hr { border: none; border-top: 1px solid var(--paper-border); margin: 36px 0; }
-  .md-preview table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 0.9em; }
+  /* display:block 让超宽表格在自身内部横向滚动（预览区整体 overflow-x 已锁死） */
+  .md-preview table { display: block; border-collapse: collapse; width: 100%; max-width: 100%; overflow-x: auto; margin: 20px 0; font-size: 0.9em; }
   .md-preview th, .md-preview td { border: 1px solid var(--paper-border); padding: 10px 14px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
   .md-preview [data-comment-id] { overflow-wrap: anywhere; }
   .md-preview th { background: var(--paper-code); color: var(--paper-text); font-weight: 600; font-family: var(--mono); font-size: 0.78em; letter-spacing: 0.04em; }

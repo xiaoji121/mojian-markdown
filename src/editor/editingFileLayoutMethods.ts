@@ -192,6 +192,8 @@ export class EditingFileLayoutMethods {
 
   _cleanOpenedMarkdown(text) {
     let value = String(text || '');
+    // 钉钉文档等导出源把空格全写成 U+00A0（不换行空格），整段无法断行；归一化为普通空格。
+    value = value.replace(/\u00A0/g, ' ');
     value = value.replace(/<sup\b(?=[^>]*\bdata-comment-badge=)[\s\S]*?<\/sup>/gi, '');
     let previous = '';
     while (previous !== value) {
