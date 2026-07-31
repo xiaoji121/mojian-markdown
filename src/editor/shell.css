@@ -3,6 +3,11 @@
    JS 运行时仍以内联 style 覆盖（display / width / fontSize 等），
    这里的取值即各元素初始态。 */
 
+/* 编辑器骨架自管滚动，页面级滚动一律锁死：弹层 / 提示等追加到 body 的
+   元素意外占高时，页面会多出一条几乎满高的滚动条竖带（桌面端实测）。 */
+html:has(body.editor-active),
+body.editor-active { overflow: hidden; }
+
 .app-shell {
   height: 100vh;
   display: flex;

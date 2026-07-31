@@ -144,6 +144,29 @@ test('界面骨架不可选中，原文与预览内容可选', async ({ page }) 
   expect(styles.searchInput).toBe('text');
 });
 
+test('body 被杂散元素撑高时不出现页面级第二根滚动条', async ({ page }) => {
+  // 弹层/提示类元素追加到 body 后若意外占高，页面会多出一条几乎满高的
+  // 滚动条竖带（桌面端实测）；编辑器骨架自管滚动，页面级滚动必须锁死。
+  await page.evaluate(() => {
+    const stray = document.createElement('div');
+    stray.style.height = '15px';
+    document.body.appendChild(stray);
+  });
+
+  // 滚轮滚动页面本身不应生效（无头环境滚动条不占宽，只能按可滚动性断言）；
+  // 落点选在顶部标题栏——内部无滚动容器，滚轮会直接作用于页面。
+  await page.mouse.move(500, 20);
+  await page.mouse.wheel(0, 120);
+  await page.waitForTimeout(120);
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+
+  // 有占位滚动条的环境（桌面端）也不得让页面滚动条抢走视口宽度
+  const gutter = await page.evaluate(
+    () => window.innerWidth - document.documentElement.clientWidth
+  );
+  expect(gutter).toBe(0);
+});
+
 test('NBSP 正文与超长 token 不撑出预览区横向滚动', async ({ page }) => {
   // 钉钉文档导出的正文空格全是 U+00A0，整段成为不可断行长串；再加无断点长 token
   const nbspParagraph = ('word' + '\u00A0').repeat(120).trim();
