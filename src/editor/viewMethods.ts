@@ -237,6 +237,10 @@ export class ViewMethods {
     this._highlightCodeBlocks(prev);
     this._hydrateLocalImages(prev);
     this._applyHighlights();
+    // 预览重渲染使旧 Range 失效，搜索打开时按新 DOM 重建高亮（不抢滚动）
+    if (this.previewSearchOpen && this._updatePreviewSearchMatches) {
+      this._updatePreviewSearchMatches({ keepIndex: true, silent: true });
+    }
     this._renderOutline();
     this._updateCount();
   }

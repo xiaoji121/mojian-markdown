@@ -9,16 +9,16 @@ test('⌘F 打开搜索条，计数、循环跳转与 Esc 关闭', async ({ page
   await expect(page.locator('.search-bar')).toHaveClass(/is-open/);
 
   await page.getByRole('textbox', { name: '搜索文本' }).fill('alpha');
-  await expect(page.locator('.search-count')).toHaveText('1/2');
+  await expect(page.locator('.search-bar .search-count')).toHaveText('1/2');
 
   await page.keyboard.press('Enter');
-  await expect(page.locator('.search-count')).toHaveText('2/2');
+  await expect(page.locator('.search-bar .search-count')).toHaveText('2/2');
 
   await page.keyboard.press('Enter'); // 到末尾后回绕
-  await expect(page.locator('.search-count')).toHaveText('1/2');
+  await expect(page.locator('.search-bar .search-count')).toHaveText('1/2');
 
   await page.keyboard.press('Shift+Enter'); // 回绕到最后一处
-  await expect(page.locator('.search-count')).toHaveText('2/2');
+  await expect(page.locator('.search-bar .search-count')).toHaveText('2/2');
 
   await page.keyboard.press('Escape');
   await expect(page.locator('.search-bar')).not.toHaveClass(/is-open/);
@@ -33,7 +33,7 @@ test('选中文字后打开搜索会预填关键字', async ({ page }) => {
   await page.getByRole('button', { name: '搜索替换' }).click();
 
   await expect(page.getByRole('textbox', { name: '搜索文本' })).toHaveValue('beta');
-  await expect(page.locator('.search-count')).toHaveText('1/1');
+  await expect(page.locator('.search-bar .search-count')).toHaveText('1/1');
 });
 
 test('替换当前与全部替换，预览同步且可撤销', async ({ page }) => {
@@ -42,7 +42,7 @@ test('替换当前与全部替换，预览同步且可撤销', async ({ page }) 
 
   await page.getByRole('button', { name: '搜索替换' }).click();
   await page.getByRole('textbox', { name: '搜索文本' }).fill('alpha');
-  await expect(page.locator('.search-count')).toHaveText('1/3');
+  await expect(page.locator('.search-bar .search-count')).toHaveText('1/3');
   await page.getByRole('textbox', { name: '替换文本' }).fill('omega');
 
   await page.getByRole('button', { name: '替换当前匹配' }).click();
@@ -51,7 +51,7 @@ test('替换当前与全部替换，预览同步且可撤销', async ({ page }) 
 
   await page.getByRole('button', { name: '替换全部匹配' }).click();
   await expect(page.locator('.md-source')).toHaveValue('# omega\n\nomega beta omega');
-  await expect(page.locator('.search-count')).toHaveText(/0\/0|^$/);
+  await expect(page.locator('.search-bar .search-count')).toHaveText(/0\/0|^$/);
 
   // 每次替换都是独立的撤销条目
   await page.getByRole('button', { name: '撤销' }).click();
@@ -66,11 +66,74 @@ test('区分大小写开关影响匹配数量', async ({ page }) => {
 
   await page.getByRole('button', { name: '搜索替换' }).click();
   await page.getByRole('textbox', { name: '搜索文本' }).fill('alpha');
-  await expect(page.locator('.search-count')).toHaveText('1/3');
+  await expect(page.locator('.search-bar .search-count')).toHaveText('1/3');
 
   await page.getByRole('button', { name: '区分大小写' }).click();
-  await expect(page.locator('.search-count')).toHaveText('1/1');
+  await expect(page.locator('.search-bar .search-count')).toHaveText('1/1');
 
   await page.getByRole('button', { name: '区分大小写' }).click();
-  await expect(page.locator('.search-count')).toHaveText('1/3');
+  await expect(page.locator('.search-bar .search-count')).toHaveText('1/3');
+});
+
+test('预览模式下 ⌘F 打开预览搜索并用 Highlight API 高亮', async ({ page }) => {
+  await openEditor(page);
+  await setSource(page, '# 搜索\n\n第一段有目标词的内容。\n\n第二段也有目标词的内容。');
+  await page.locator('.view-mode-option[data-mode="preview"]').click();
+
+  await page.keyboard.press('ControlOrMeta+f');
+  await expect(page.locator('.preview-search-bar')).toHaveClass(/is-open/);
+
+  await page.getByRole('textbox', { name: '搜索预览' }).fill('目标词');
+  await expect(page.locator('.preview-search-count')).toHaveText('1/2');
+  expect(await page.evaluate(() => CSS.highlights.has('mojian-search'))).toBe(true);
+
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.preview-search-count')).toHaveText('2/2');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.preview-search-count')).toHaveText('1/2');
+
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.preview-search-bar')).not.toHaveClass(/is-open/);
+  expect(await page.evaluate(() => CSS.highlights.has('mojian-search'))).toBe(false);
+});
+
+test('沉浸式阅读下可搜索，Esc 先关搜索再退出沉浸式', async ({ page }) => {
+  await openEditor(page);
+  await setSource(page, '# 沉浸\n\n沉浸式里的目标词。');
+  await page.getByRole('button', { name: '沉浸式阅读' }).click();
+  await expect(page.locator('.preview-pane')).toHaveClass(/preview-pane-fullscreen/);
+
+  await page.keyboard.press('ControlOrMeta+f');
+  await expect(page.locator('.preview-search-bar')).toHaveClass(/is-open/);
+  await page.getByRole('textbox', { name: '搜索预览' }).fill('目标词');
+  await expect(page.locator('.preview-search-count')).toHaveText('1/1');
+
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.preview-search-bar')).not.toHaveClass(/is-open/);
+  await expect(page.locator('.preview-pane')).toHaveClass(/preview-pane-fullscreen/, {
+    timeout: 2000
+  });
+
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.preview-pane')).not.toHaveClass(/preview-pane-fullscreen/);
+});
+
+test('源码搜索在镜像层高亮全部匹配并标记当前项', async ({ page }) => {
+  await openEditor(page);
+  await setSource(page, 'alpha beta\nalpha gamma\nalpha delta');
+  await page.locator('.md-source').click();
+
+  await page.keyboard.press('ControlOrMeta+f');
+  await page.getByRole('textbox', { name: '搜索文本' }).fill('alpha');
+
+  const marks = page.locator('.source-highlight-layer mark.source-mark');
+  await expect(marks).toHaveCount(3);
+  await expect(page.locator('.source-highlight-layer mark.is-current')).toHaveCount(1);
+  await expect(marks.first()).toHaveClass(/is-current/);
+
+  await page.keyboard.press('Enter');
+  await expect(marks.nth(1)).toHaveClass(/is-current/);
+
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.source-highlight-layer mark')).toHaveCount(0);
 });

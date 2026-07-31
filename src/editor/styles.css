@@ -445,6 +445,7 @@
   /* 保持平板宽度的双栏布局，但精简预览工具栏，避免中文按钮被压成竖排。 */
   @media (min-width: 761px) and (max-width: 1100px) {
     .preview-toolbar-hint,
+    .preview-toolbar-actions .preview-search-toggle,
     .preview-toolbar-actions .outline-toggle .action-label,
     .preview-toolbar-actions .fullscreen-button-label {
       display: none !important;
@@ -453,12 +454,14 @@
   }
 
   /* 批注/AI 侧面板打开压缩的是预览栏宽度、窗口宽度不变，媒体查询不触发；
-     按预览栏实际宽度（容器查询）收纳工具栏，避免按钮溢出叠到面板上。 */
+     按预览栏实际宽度（容器查询）收纳工具栏，避免按钮溢出叠到面板上。
+     基础样式在 shell.css（加载顺序靠后），此处必须 !important 才能生效。 */
   @container (max-width: 640px) {
     .preview-toolbar-hint,
+    .preview-toolbar-actions .preview-search-toggle,
     .preview-toolbar-actions .outline-toggle .action-label,
     .preview-toolbar-actions .fullscreen-button-label {
-      display: none;
+      display: none !important;
     }
     .preview-toolbar-actions { gap: 6px; }
   }

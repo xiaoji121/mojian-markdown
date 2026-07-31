@@ -13,6 +13,7 @@ import { LocalFileSyncMethods } from './localFileSyncMethods';
 import { NavigationMethods } from './navigationMethods';
 import { AISettingsMethods } from './aiSettingsMethods';
 import { applyPrototypeMethods } from './prototypeMethods';
+import { PreviewSearchMethods } from './previewSearchMethods';
 import { ReadingMapMethods } from './readingMapMethods';
 import { TranslateMethods } from './translateMethods';
 import { SearchReplaceMethods } from './searchReplaceMethods';
@@ -59,6 +60,13 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._searchMatches = [];
     this._searchIndex = -1;
     this._searchAnchor = 0;
+    this.sourceHighlightRef = React.createRef();
+    this.previewSearchBarRef = React.createRef();
+    this.previewSearchInputRef = React.createRef();
+    this.previewSearchCountRef = React.createRef();
+    this.previewSearchOpen = false;
+    this._previewSearchRanges = [];
+    this._previewSearchIndex = -1;
     this.selBarRef = React.createRef();
     this.commentsRef = React.createRef();
     this.commentListRef = React.createRef();
@@ -229,6 +237,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
 
     this._initDivider();
     this._initSearchBar();
+    this._initPreviewSearch();
     this._initComments();
     this._renderComments();
     if (this.agentBridgeEnabled) {
@@ -300,6 +309,10 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       replaceInputRef: this.replaceInputRef,
       searchCountRef: this.searchCountRef,
       searchCaseRef: this.searchCaseRef,
+      sourceHighlightRef: this.sourceHighlightRef,
+      previewSearchBarRef: this.previewSearchBarRef,
+      previewSearchInputRef: this.previewSearchInputRef,
+      previewSearchCountRef: this.previewSearchCountRef,
       selBarRef: this.selBarRef,
       commentsRef: this.commentsRef,
       commentListRef: this.commentListRef,
@@ -346,6 +359,10 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       toggleSearchCase: () => this.toggleSearchCase(),
       replaceCurrent: () => this.replaceCurrent(),
       replaceAll: () => this.replaceAll(),
+      togglePreviewSearch: () => this.togglePreviewSearch(),
+      closePreviewSearch: () => this.closePreviewSearch(),
+      previewSearchPrev: () => this.previewSearchPrev(),
+      previewSearchNext: () => this.previewSearchNext(),
       toggleComments: () => this._openPanel(),
       closePanel: () => this._openPanel(false),
       toggleAI: () => this._openAIPanel(),
@@ -392,6 +409,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     ReadingMapMethods,
     NavigationMethods,
     SearchReplaceMethods,
+    PreviewSearchMethods,
     CommentMethods,
     DiagramMethods,
     AIMethods,

@@ -12,6 +12,14 @@ export class SearchReplaceMethods {
       src.addEventListener('input', () => {
         if (this.searchOpen) this._updateSearchMatches({ silent: true });
       });
+      // 镜像高亮层与原文滚动实时对齐
+      src.addEventListener('scroll', () => {
+        const layer = this.sourceHighlightRef && this.sourceHighlightRef.current;
+        if (layer) {
+          layer.scrollTop = src.scrollTop;
+          layer.scrollLeft = src.scrollLeft;
+        }
+      });
     }
     if (input) {
       input.addEventListener('input', () => this._updateSearchMatches());
@@ -62,6 +70,7 @@ export class SearchReplaceMethods {
     this.searchOpen = false;
     this._searchMatches = [];
     this._searchIndex = -1;
+    this._renderSourceHighlights();
     const src = this.sourceRef.current;
     if (src) src.focus();
   }
@@ -156,6 +165,7 @@ export class SearchReplaceMethods {
     count.textContent = total ? (this._searchIndex + 1) + '/' + total : (input.value ? '0/0' : '');
     const bar = this.searchBarRef.current;
     if (bar) bar.classList.toggle('search-no-match', Boolean(input.value) && !total);
+    this._renderSourceHighlights();
   }
 
   replaceCurrent() {
@@ -211,19 +221,66 @@ export class SearchReplaceMethods {
     this._touch();
   }
 
+  // textarea 画不出高亮：在其下方垫一层同字体同排版的镜像层，
+  // 匹配处涂 mark（当前项强调色），滚动与原文实时对齐。
+  _escapeSourceHtml(text) {
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+
+  _renderSourceHighlights() {
+    const layer = this.sourceHighlightRef && this.sourceHighlightRef.current;
+    const src = this.sourceRef.current;
+    const input = this.searchInputRef.current;
+    if (!layer || !src || !input) return;
+    // 字号控件用内联样式改 textarea 字号，镜像层必须逐次跟随，否则高亮错位。
+    if (layer.style && typeof getComputedStyle === 'function') {
+      const style = getComputedStyle(src);
+      layer.style.font = style.font;
+      layer.style.letterSpacing = style.letterSpacing;
+    }
+    const query = input.value;
+    if (!this.searchOpen || !query || !this._searchMatches || !this._searchMatches.length) {
+      layer.innerHTML = '';
+      return;
+    }
+    const value = src.value;
+    let html = '';
+    let last = 0;
+    this._searchMatches.forEach((start, index) => {
+      html += this._escapeSourceHtml(value.slice(last, start));
+      html += '<mark class="source-mark' + (index === this._searchIndex ? ' is-current' : '') + '">'
+        + this._escapeSourceHtml(value.slice(start, start + query.length)) + '</mark>';
+      last = start + query.length;
+    });
+    // 末尾补换行，保证镜像层与 textarea 的内容高度一致
+    layer.innerHTML = html + this._escapeSourceHtml(value.slice(last)) + '\n';
+    layer.scrollTop = src.scrollTop;
+    layer.scrollLeft = src.scrollLeft;
+  }
+
+
   // 全局快捷键（挂在 window keydown 上）。返回 true 表示已消费该事件。
   _handleSearchShortcut(e) {
     const key = typeof e.key === 'string' ? e.key.toLowerCase() : '';
     const mod = e.metaKey || e.ctrlKey;
     if (mod && !e.altKey && !e.shiftKey && key === 'f') {
       e.preventDefault();
-      this.openSearch(false);
+      // 预览 / 沉浸式下源码不可见，⌘F 打开预览搜索
+      if (this.previewFullscreen || this.viewMode === 'preview') this.openPreviewSearch();
+      else this.openSearch(false);
       return true;
     }
     // Mac 的 ⌘H 被系统隐藏窗口占用，替换用 ⌘⌥F；Windows/Linux 用 Ctrl+H。
     if ((mod && e.altKey && key === 'f') || (e.ctrlKey && !e.metaKey && !e.altKey && key === 'h')) {
       e.preventDefault();
       this.openSearch(true);
+      return true;
+    }
+    // Esc 优先关闭预览搜索（沉浸式下第二次 Esc 才退出沉浸式）
+    if (e.key === 'Escape' && this.previewSearchOpen) {
+      e.preventDefault();
+      this.closePreviewSearch();
       return true;
     }
     if (e.key === 'Escape' && this.searchOpen && !this.previewFullscreen) {

@@ -420,7 +420,10 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
           <button class="tbtn search-tool search-replace-btn" onClick="{{ replaceAll }}" title="替换全部匹配" aria-label="替换全部匹配">全部</button>
         </div>
       </div>
-      <textarea ref="{{ sourceRef }}" class="md-source" spellCheck="false" placeholder="# 在这里写 Markdown…"></textarea>
+      <div class="source-editor-area">
+        <div ref="{{ sourceHighlightRef }}" class="source-highlight-layer" aria-hidden="true"></div>
+        <textarea ref="{{ sourceRef }}" class="md-source" spellCheck="false" placeholder="# 在这里写 Markdown…"></textarea>
+      </div>
     </section>
 
     <!-- DIVIDER -->
@@ -436,6 +439,9 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
           <span class="preview-toolbar-hint">
             <span class="hint-dot"></span>选中文字可划线
           </span>
+          <button class="tbtn tool-pill preview-search-toggle" onClick="{{ togglePreviewSearch }}" title="搜索预览内容（⌘F）" aria-label="搜索预览内容">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
+          </button>
           <span ref="{{ paperPickerRef }}" class="paper-picker" role="group" aria-label="选择纸色"></span>
           <span class="fullscreen-only-control fullscreen-font-controls" aria-label="调整预览字号">
             <button class="tbtn font-btn font-dec" onClick="{{ fontDec }}" title="缩小字号" aria-label="缩小字号">A−</button>
@@ -456,6 +462,13 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
             <span ref="{{ fullscreenLabelRef }}" class="fullscreen-button-label">沉浸式阅读</span>
           </button>
         </span>
+      </div>
+      <div ref="{{ previewSearchBarRef }}" class="preview-search-bar" role="search" aria-label="搜索预览内容">
+        <input ref="{{ previewSearchInputRef }}" class="search-input preview-search-input" type="text" placeholder="搜索预览…" aria-label="搜索预览" spellCheck="false" />
+        <span ref="{{ previewSearchCountRef }}" class="search-count preview-search-count" aria-live="polite"></span>
+        <button class="tbtn search-tool" onClick="{{ previewSearchPrev }}" title="上一处（Shift+Enter）" aria-label="上一处">↑</button>
+        <button class="tbtn search-tool" onClick="{{ previewSearchNext }}" title="下一处（Enter）" aria-label="下一处">↓</button>
+        <button class="tbtn search-tool search-close" onClick="{{ closePreviewSearch }}" title="关闭（Esc）" aria-label="关闭预览搜索">&times;</button>
       </div>
       <div ref="{{ previewRef }}" class="md-preview" contentEditable="false" spellCheck="false"></div>
       <aside ref="{{ outlinePanelRef }}" class="outline-panel" aria-label="文章大纲">

@@ -222,7 +222,7 @@ body.is-desktop-app .header-more { display: none; }
 /* ===== 双栏主体 ===== */
 .editor-main { flex: 1; display: flex; min-height: 0; }
 .source-pane,
-.preview-pane { flex: 1 1 50%; min-width: 0; display: flex; flex-direction: column; }
+.preview-pane { position: relative; flex: 1 1 50%; min-width: 0; display: flex; flex-direction: column; }
 /* 预览栏作为容器查询锚点：侧面板开合改变的是栏宽而非窗口宽，
    工具栏的收纳规则（styles.css）按栏宽生效。 */
 .preview-pane { container-type: inline-size; }
@@ -288,6 +288,15 @@ body.is-desktop-app .header-more { display: none; }
 .fmt-lg { font-size: var(--fs-lg); }
 .fmt-code { font-family: var(--mono); }
 
+/* 镜像高亮层方案：textarea 画不出高亮，背景转透明，
+   下方垫一层同字体同排版的镜像层渲染搜索 mark（searchReplaceMethods）。 */
+.source-editor-area {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  background: var(--paper-bg-soft);
+}
 textarea.md-source {
   flex: 1;
   min-height: 0;
@@ -296,12 +305,38 @@ textarea.md-source {
   border: none;
   outline: none;
   padding: 28px 32px;
-  background: var(--paper-bg-soft);
+  background: transparent;
   color: var(--paper-text-2);
   font-family: var(--mono);
   font-size: var(--fs-lg);
   line-height: 1.85;
   tab-size: 2;
+  position: relative;
+  z-index: 1;
+}
+.source-highlight-layer {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  padding: 28px 32px;
+  color: transparent;
+  font-family: var(--mono);
+  font-size: var(--fs-lg);
+  line-height: 1.85;
+  tab-size: 2;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  pointer-events: none;
+}
+/* 滚动槽与 textarea 同宽以保证换行一致，但滑块不可见 */
+.source-highlight-layer::-webkit-scrollbar-thumb { background: transparent; }
+.source-highlight-layer mark.source-mark {
+  color: transparent;
+  background: var(--paper-mark);
+  border-radius: 2px;
+}
+.source-highlight-layer mark.is-current {
+  background: color-mix(in srgb, var(--accent) 55%, transparent);
 }
 
 /* ===== 原文搜索替换浮层 ===== */
@@ -346,6 +381,30 @@ textarea.md-source {
 .search-tool { flex: none; height: 26px; min-width: 28px; padding: 0 6px; font-size: var(--fs-sm); }
 .search-tool.is-active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 .search-replace-btn { min-width: 46px; }
+
+/* ===== 预览 / 沉浸式搜索浮层（previewSearchMethods） ===== */
+.preview-search-bar {
+  display: none;
+  position: absolute;
+  z-index: 40;
+  top: 46px;
+  right: 16px;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--tool-bg);
+  box-shadow: var(--shadow-md);
+}
+.preview-search-bar.is-open { display: flex; }
+.preview-search-bar.search-no-match .search-input { border-color: var(--danger); }
+/* 匹配高亮走 CSS Custom Highlight API，不改动预览 DOM */
+::highlight(mojian-search) { background-color: var(--paper-mark); }
+::highlight(mojian-search-current) {
+  background-color: var(--accent);
+  color: var(--accent-ink);
+}
 @media (max-width: 760px) {
   .search-bar { left: 12px; right: 12px; }
   .search-count { min-width: 34px; }

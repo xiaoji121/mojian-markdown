@@ -220,3 +220,71 @@ test('快捷键：⌘F 打开搜索、Ctrl+H 打开并聚焦替换、Esc 关闭'
 
   assert.equal(editor._handleSearchShortcut(event('f')), false);
 });
+
+// ===== ⌘F 按视图路由 & 源码镜像高亮层 =====
+
+test('预览模式与沉浸式下 ⌘F 路由到预览搜索', () => {
+  const editor = Object.create(SearchReplaceMethods.prototype);
+  let previewOpened = 0;
+  let sourceOpened = 0;
+  Object.assign(editor, {
+    viewMode: 'preview',
+    previewFullscreen: false,
+    openPreviewSearch() { previewOpened += 1; },
+    openSearch() { sourceOpened += 1; }
+  });
+  const press = () => editor._handleSearchShortcut({ key: 'f', metaKey: true, preventDefault() {} });
+
+  assert.equal(press(), true);
+  assert.equal(previewOpened, 1);
+
+  editor.viewMode = 'split';
+  editor.previewFullscreen = true;
+  press();
+  assert.equal(previewOpened, 2, '沉浸式下也应打开预览搜索');
+
+  editor.previewFullscreen = false;
+  press();
+  assert.equal(sourceOpened, 1, '分屏回到源码搜索');
+});
+
+test('Esc 优先关闭预览搜索', () => {
+  const editor = Object.create(SearchReplaceMethods.prototype);
+  let closed = 0;
+  Object.assign(editor, {
+    previewSearchOpen: true,
+    previewFullscreen: true,
+    searchOpen: false,
+    closePreviewSearch() { closed += 1; this.previewSearchOpen = false; }
+  });
+
+  assert.equal(editor._handleSearchShortcut({ key: 'Escape', preventDefault() {} }), true);
+  assert.equal(closed, 1);
+});
+
+test('源码搜索渲染镜像高亮层：转义原文、标记全部匹配与当前项', () => {
+  const editor = Object.create(SearchReplaceMethods.prototype);
+  const layer = { innerHTML: '', scrollTop: 0 };
+  const src = createSource('a <b> a');
+  src.scrollTop = 120;
+  Object.assign(editor, {
+    searchOpen: true,
+    sourceRef: createRef(src),
+    searchInputRef: createRef(createInput('a')),
+    sourceHighlightRef: createRef(layer)
+  });
+  editor._searchMatches = [0, 6];
+  editor._searchIndex = 1;
+
+  editor._renderSourceHighlights();
+
+  assert.equal(
+    layer.innerHTML,
+    '<mark class="source-mark">a</mark> &lt;b&gt; <mark class="source-mark is-current">a</mark>\n'
+  );
+  assert.equal(layer.scrollTop, 120, '渲染后滚动位置与原文对齐');
+
+  editor.searchOpen = false;
+  editor._renderSourceHighlights();
+  assert.equal(layer.innerHTML, '', '关闭搜索后清空高亮层');
+});
