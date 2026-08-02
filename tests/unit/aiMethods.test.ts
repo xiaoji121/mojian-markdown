@@ -12,7 +12,7 @@ function createEditor() {
     fileName: 'note.md',
     persisted: 0,
     statuses: [] as string[],
-    aiEngineSwitchRef: createRef(createStubElement()),
+    aiEngineChipRef: createRef(createStubElement()),
     _persist() { this.persisted += 1; },
     _setStatus(msg: string) { this.statuses.push(msg); },
     _documentPayload: () => ({ fileName: 'note.md', content: '' }),
@@ -30,6 +30,18 @@ test('切换 AI 引擎会持久化选择', () => {
 
   editor.setAIEngine('不认识的引擎');
   assert.equal(editor.aiEngine, 'claude');
+});
+
+test('引擎同步：更新面板 chip 文本并转发到设置弹窗', () => {
+  const editor = createEditor();
+  const synced: number[] = [];
+  editor._syncAISettingsEngine = () => synced.push(1);
+  editor.aiEngine = 'gemini';
+
+  editor._syncAIEngineSwitch();
+
+  assert.equal(editor.aiEngineChipRef.current.textContent, 'Gemini', 'chip 显示当前引擎');
+  assert.equal(synced.length, 1, '设置弹窗选中态一并同步');
 });
 
 test('AI 引擎支持 Gemini（API Key 提供方）', () => {

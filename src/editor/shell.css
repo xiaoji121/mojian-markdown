@@ -592,27 +592,17 @@ textarea.md-source {
 }
 
 /* ===== AI 面板 ===== */
-.ai-engine-switch {
-  display: flex;
-  gap: 2px;
-  padding: 2px;
+/* 当前引擎只读 chip：引擎切换与 API Key 都在顶栏「设置」里（aiSettingsMethods） */
+.ai-engine-chip {
+  padding: 5px 9px;
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius-control);
-}
-.ai-engine-option {
-  padding: 4px 8px;
-  border: 0;
-  border-radius: calc(var(--radius-control) - 2px);
-  background: transparent;
-  color: var(--text-3);
-  font: var(--fs-2xs)/1 var(--mono);
-  cursor: pointer;
-}
-.ai-engine-option.is-active {
+  border-radius: var(--radius-pill);
   background: var(--accent-soft);
   color: var(--accent);
-  font-weight: 600;
+  font: 600 var(--fs-2xs)/1 var(--mono);
+  cursor: pointer;
 }
+.ai-engine-chip:hover { border-color: var(--accent); }
 .ai-history-toggle {
   padding: 6px 8px;
   border: 1px solid var(--border-soft);

@@ -28,6 +28,84 @@ const MASKED = {
   gemini: { configured: true, apiKeyTail: '3456', model: 'gemini-2.5-pro', proxy: 'http://127.0.0.1:7890' }
 };
 
+function findAll(
+  el: { className?: string; children?: unknown[] },
+  cls: string,
+  out: Array<ReturnType<typeof createStubElement> & { className?: string }> = []
+) {
+  if ((el.className || '').split(' ').includes(cls)) out.push(el as never);
+  (el.children || []).forEach((child) => findAll(child as never, cls, out));
+  return out;
+}
+
+function collectTexts(el: { textContent?: string; children?: unknown[] }, out: string[] = []) {
+  if (el.textContent) out.push(el.textContent);
+  (el.children || []).forEach((child) => collectTexts(child as typeof el, out));
+  return out;
+}
+
+test('设置弹窗按渠道分组列出引擎：本地 Agent（Claude/Codex）与 API Key（Gemini）', async () => {
+  await withDom(async (body) => {
+    const previousFetch = globalThis.fetch;
+    globalThis.fetch = (async () => ({ ok: true, json: async () => MASKED })) as typeof fetch;
+    try {
+      const editor = createEditor();
+      editor.aiEngine = 'gemini';
+
+      await editor.openAISettings();
+
+      const overlay = body.children[0] as ReturnType<typeof createStubElement>;
+      const groups = findAll(overlay, 'ai-channel-group');
+      assert.equal(groups.length, 2, '两个渠道分组');
+      const text = collectTexts(overlay).join('\n');
+      assert.match(text, /本地 Agent/);
+      assert.match(text, /API Key/);
+
+      const options = findAll(overlay, 'ai-channel-option');
+      assert.deepEqual(
+        options.map((option) => option.dataset.engine),
+        ['claude', 'codex', 'gemini'],
+        '三个引擎选项'
+      );
+      const gemini = options.find((option) => option.dataset.engine === 'gemini')!;
+      assert.equal(gemini.getAttribute('aria-checked'), 'true', '当前引擎选中');
+      assert.equal(gemini.classList.contains('is-active'), true);
+      const claude = options.find((option) => option.dataset.engine === 'claude')!;
+      assert.equal(claude.getAttribute('aria-checked'), 'false');
+    } finally {
+      globalThis.fetch = previousFetch;
+    }
+  });
+});
+
+test('点击渠道选项立即切换引擎并更新选中态', async () => {
+  await withDom(async (body) => {
+    const previousFetch = globalThis.fetch;
+    globalThis.fetch = (async () => ({ ok: true, json: async () => MASKED })) as typeof fetch;
+    try {
+      const editor = createEditor();
+      editor.aiEngine = 'claude';
+      const switched: string[] = [];
+      editor.setAIEngine = function (engine: string) {
+        switched.push(engine);
+        this.aiEngine = engine;
+        this._syncAISettingsEngine();
+      };
+
+      await editor.openAISettings();
+      const overlay = body.children[0] as ReturnType<typeof createStubElement>;
+      const codex = findAll(overlay, 'ai-channel-option').find((option) => option.dataset.engine === 'codex')!;
+      codex.dispatch('click');
+
+      assert.deepEqual(switched, ['codex'], '点击选项调用 setAIEngine');
+      assert.equal(codex.classList.contains('is-active'), true, '选中态跟随切换');
+      assert.equal(codex.getAttribute('aria-checked'), 'true');
+    } finally {
+      globalThis.fetch = previousFetch;
+    }
+  });
+});
+
 test('打开设置弹窗时加载掩码配置回填表单（含代理地址）', async () => {
   await withDom(async (body) => {
     const previousFetch = globalThis.fetch;

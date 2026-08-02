@@ -349,6 +349,7 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
         <button class="view-mode-option" data-mode="preview" onClick="{{ showPreviewMode }}" aria-pressed="false" title="仅显示只读预览">预览</button>
       </span>
       <button class="abtn icon collapsible-action" onClick="{{ toggleTheme }}" title="切换 亮色/暗黑" aria-label="切换亮色或暗黑主题"><span ref="{{ themeIconRef }}">☾</span></button>
+      <button class="abtn icon collapsible-action settings-entry" onClick="{{ openAISettings }}" title="设置（AI 渠道与 API Key）" aria-label="打开设置">⚙</button>
       <button class="abtn" onClick="{{ toggleComments }}" aria-label="批注"><span class="action-label">批注</span> <span ref="{{ commentCountRef }}" class="count-badge">0</span></button>
       <button class="abtn ai-entry" onClick="{{ toggleAI }}" aria-label="AI 助手" title="打开 AI 阅读助手"><span class="action-label">AI 助手</span><span class="accent-star">✦</span></button>
       <span class="file-menu-wrap">
@@ -364,6 +365,7 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
       <button ref="{{ headerMoreRef }}" class="abtn icon header-more" onClick="{{ toggleHeaderMenu }}" title="更多操作" aria-label="更多操作" aria-haspopup="menu" aria-expanded="false">⋯</button>
       <div ref="{{ headerMenuRef }}" class="header-menu" role="menu" aria-label="更多操作">
         <button class="header-menu-item collapsible-menu-item" role="menuitem" onClick="{{ menuTheme }}">切换主题</button>
+        <button class="header-menu-item collapsible-menu-item settings-entry" role="menuitem" onClick="{{ menuSettings }}">设置<small class="menu-item-hint">AI 渠道与 API Key</small></button>
         <button class="header-menu-item folder-menu-item" role="menuitem" onClick="{{ menuFolder }}" title="选择一个存放 Markdown 的文件夹。此后从该文件夹打开的文档，会在最近阅读列表和顶部文件名提示里显示「文件夹名/相对路径」的本地路径，方便辨认同名文件">关联本地文件夹<small class="menu-item-hint">让文档显示本地路径</small></button>
       </div>
     </div>
@@ -531,12 +533,9 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
       <div class="panel-header">
         <span class="panel-title">AI 阅读助手</span>
         <span class="panel-header-tools">
-          <span ref="{{ aiEngineSwitchRef }}" class="ai-engine-switch" role="group" aria-label="选择 AI 引擎">
-            <button class="ai-engine-option is-active" data-engine="claude" onClick="{{ engineClaude }}" aria-pressed="true">Claude</button>
-            <button class="ai-engine-option" data-engine="codex" onClick="{{ engineCodex }}" aria-pressed="false">Codex</button>
-            <button class="ai-engine-option" data-engine="gemini" onClick="{{ engineGemini }}" aria-pressed="false">Gemini</button>
-          </span>
-          <button class="ai-history-toggle ai-settings-toggle" onClick="{{ openAISettings }}" title="AI 设置（API Key）" aria-label="AI 设置">⚙</button>
+          <!-- 引擎切换与 API Key 都在顶栏「设置」里；这里只读显示当前渠道，点击直达设置 -->
+          <button ref="{{ aiEngineChipRef }}" class="ai-engine-chip" onClick="{{ openAISettings }}"
+            title="当前 AI 渠道 · 点击到设置中更换" aria-label="当前 AI 渠道，点击打开设置">Claude</button>
           <button class="ai-history-toggle" onClick="{{ toggleAIHistory }}" title="本地对话历史">历史</button>
           <button class="panel-close" onClick="{{ closeAI }}" title="收起" aria-label="收起 AI 面板">&times;</button>
         </span>

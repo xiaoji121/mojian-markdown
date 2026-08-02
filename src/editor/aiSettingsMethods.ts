@@ -1,9 +1,32 @@
 // @ts-nocheck
-// AI 提供方设置弹窗（首批仅 Gemini）：API Key 保存在本机 Reading Workspace
-// 的 settings.json，界面上永远只显示尾号掩码，不回显明文。
+// 产品级「设置」弹窗（顶栏 ⚙ 进入）。目前只有 AI 渠道一节，按两类渠道组织：
+//   本地 Agent 渠道 —— Claude / Codex，调用本机已登录的 CLI，无需 Key；
+//   API Key 渠道 —— 目前支持 Gemini，Key 保存在本机 Reading Workspace 的
+//     settings.json，界面上永远只显示尾号掩码，不回显明文。
+// 渠道选择点击即生效（setAIEngine），Key/模型/代理仍需「保存」。
 import { bridgeUrl } from './bridgeClient.ts';
 
 const GEMINI_FALLBACK = { configured: false, apiKeyTail: '', model: 'gemini-2.5-flash', proxy: '' };
+
+const AI_CHANNELS = [
+  {
+    key: 'agent',
+    name: '本地 Agent 渠道',
+    desc: '调用本机已安装并登录的命令行工具，无需 API Key',
+    engines: [
+      { engine: 'claude', name: 'Claude', desc: 'Claude Code CLI' },
+      { engine: 'codex', name: 'Codex', desc: 'Codex CLI' }
+    ]
+  },
+  {
+    key: 'api',
+    name: 'API Key 渠道',
+    desc: '使用你自己的 API Key 直连服务商',
+    engines: [
+      { engine: 'gemini', name: 'Gemini', desc: 'Google Generative Language API' }
+    ]
+  }
+];
 
 export class AISettingsMethods {
   async openAISettings() {
@@ -11,9 +34,8 @@ export class AISettingsMethods {
     // 先加载回填、再展示：异步回填会重置 Key 输入框，
     // 若先展示，粘贴得快的 Key 会被回填悄悄清掉。
     await this._loadAISettings();
+    this._syncAISettingsEngine();
     overlay.style.display = 'flex';
-    const key = this._aiSettingsInputs && this._aiSettingsInputs.key;
-    if (key && key.focus) setTimeout(() => key.focus(), 50);
   }
 
 
@@ -40,11 +62,89 @@ export class AISettingsMethods {
     modal.className = 'ai-settings-modal';
     const title = document.createElement('strong');
     title.className = 'ai-settings-title';
-    title.textContent = 'AI 设置 · Gemini';
+    title.textContent = '设置';
+    const overline = document.createElement('div');
+    overline.className = 'ai-settings-overline';
+    overline.textContent = 'AI 渠道';
     const hint = document.createElement('p');
     hint.className = 'ai-settings-hint';
-    hint.textContent = 'API Key 只保存在本机 Reading Workspace，用于 Gemini 问答与划词翻译。';
+    hint.textContent = '阅读问答使用所选渠道回答；渠道点击即生效。划词翻译固定走 Gemini。';
 
+    const note = document.createElement('div');
+    note.className = 'ai-settings-note';
+
+    modal.append(title, overline, hint, this._buildAIChannelSection(), note, this._buildAISettingsActions());
+    overlay.appendChild(modal);
+    if (overlay.addEventListener) {
+      overlay.addEventListener('mousedown', (e) => { if (e.target === overlay) this.closeAISettings(); });
+    }
+    document.body.appendChild(overlay);
+    this._aiSettingsEl = overlay;
+    this._aiSettingsNote = note;
+    return overlay;
+  }
+
+
+  // 渠道分组：本地 Agent（Claude/Codex）与 API Key（Gemini + 其配置表单）。
+  _buildAIChannelSection() {
+    const section = document.createElement('div');
+    section.className = 'ai-channel-section';
+    AI_CHANNELS.forEach((channel) => {
+      const group = document.createElement('div');
+      group.className = 'ai-channel-group';
+      const head = document.createElement('div');
+      head.className = 'ai-channel-head';
+      const name = document.createElement('strong');
+      name.textContent = channel.name;
+      const desc = document.createElement('small');
+      desc.className = 'ai-channel-desc';
+      desc.textContent = channel.desc;
+      head.append(name, desc);
+      const options = document.createElement('div');
+      options.className = 'ai-channel-options';
+      options.setAttribute('role', 'radiogroup');
+      options.setAttribute('aria-label', channel.name);
+      channel.engines.forEach((item) => options.appendChild(this._aiChannelOption(item)));
+      group.append(head, options);
+      if (channel.key === 'api') group.appendChild(this._buildGeminiForm());
+      section.appendChild(group);
+    });
+    return section;
+  }
+
+
+  _aiChannelOption(item) {
+    const option = document.createElement('button');
+    option.type = 'button';
+    option.className = 'ai-channel-option';
+    option.dataset.engine = item.engine;
+    option.setAttribute('role', 'radio');
+    option.setAttribute('aria-checked', 'false');
+    const name = document.createElement('strong');
+    name.textContent = item.name;
+    const desc = document.createElement('small');
+    desc.textContent = item.desc;
+    option.append(name, desc);
+    option.addEventListener('click', () => this.setAIEngine(item.engine));
+    if (!this._aiChannelOptions) this._aiChannelOptions = [];
+    this._aiChannelOptions.push(option);
+    return option;
+  }
+
+
+  // 当前引擎的选中态；引擎切换（setAIEngine → _syncAIEngineSwitch）也会转发到这里。
+  _syncAISettingsEngine() {
+    (this._aiChannelOptions || []).forEach((option) => {
+      const active = option.dataset.engine === this.aiEngine;
+      option.classList.toggle('is-active', active);
+      option.setAttribute('aria-checked', active ? 'true' : 'false');
+    });
+  }
+
+
+  _buildGeminiForm() {
+    const form = document.createElement('div');
+    form.className = 'ai-channel-provider-form';
     const key = document.createElement('input');
     key.type = 'password';
     key.spellcheck = false;
@@ -55,10 +155,17 @@ export class AISettingsMethods {
     proxy.type = 'text';
     proxy.spellcheck = false;
     proxy.placeholder = '如 http://127.0.0.1:7890，留空自动用系统代理变量';
+    form.append(
+      this._aiSettingsField('Gemini API Key', key),
+      this._aiSettingsField('模型', model),
+      this._aiSettingsField('代理地址（可选）', proxy)
+    );
+    this._aiSettingsInputs = { key, model, proxy };
+    return form;
+  }
 
-    const note = document.createElement('div');
-    note.className = 'ai-settings-note';
 
+  _buildAISettingsActions() {
     const actions = document.createElement('div');
     actions.className = 'ai-settings-actions';
     const testBtn = document.createElement('button');
@@ -73,35 +180,19 @@ export class AISettingsMethods {
     clear.addEventListener('click', () => this._clearAIKey());
     const spacer = document.createElement('span');
     spacer.className = 'spacer';
-    const cancel = document.createElement('button');
-    cancel.type = 'button';
-    cancel.className = 'abtn secondary';
-    cancel.textContent = '取消';
-    cancel.addEventListener('click', () => this.closeAISettings());
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'abtn secondary';
+    close.textContent = '关闭';
+    close.addEventListener('click', () => this.closeAISettings());
     const save = document.createElement('button');
     save.type = 'button';
     save.className = 'abtn primary';
     save.textContent = '保存';
     save.addEventListener('click', () => this._saveAISettings());
-    actions.append(testBtn, clear, spacer, cancel, save);
-
-    modal.append(
-      title, hint,
-      this._aiSettingsField('Gemini API Key', key),
-      this._aiSettingsField('模型', model),
-      this._aiSettingsField('代理地址（可选）', proxy),
-      note, actions
-    );
-    overlay.appendChild(modal);
-    if (overlay.addEventListener) {
-      overlay.addEventListener('mousedown', (e) => { if (e.target === overlay) this.closeAISettings(); });
-    }
-    document.body.appendChild(overlay);
-    this._aiSettingsEl = overlay;
-    this._aiSettingsInputs = { key, model, proxy };
+    actions.append(testBtn, clear, spacer, close, save);
     this._aiSettingsClearBtn = clear;
-    this._aiSettingsNote = note;
-    return overlay;
+    return actions;
   }
 
 

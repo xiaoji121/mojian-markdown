@@ -631,6 +631,7 @@
   body:not(.agent-bridge-enabled) .document-toggle,
   body:not(.agent-bridge-enabled) .ai-panel,
   body:not(.agent-bridge-enabled) .ai-entry,
+  body:not(.agent-bridge-enabled) .settings-entry,
   body:not(.agent-bridge-enabled) .translate-entry {
     display: none !important;
   }
@@ -715,3 +716,48 @@
   .ai-settings-note[data-state="error"] { color: var(--danger); }
   .ai-settings-actions { display: flex; align-items: center; gap: 8px; }
   .ai-settings-actions .spacer { flex: 1; }
+  /* AI 渠道分组（本地 Agent / API Key），选项为 radio 风格按钮 */
+  .ai-settings-overline { color: var(--text-3); font: var(--fs-2xs)/1.4 var(--mono); letter-spacing: .1em; }
+  .ai-channel-section { display: flex; flex-direction: column; gap: 14px; }
+  .ai-channel-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-control);
+  }
+  .ai-channel-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .ai-channel-head strong { color: var(--text); font-size: var(--fs-sm); }
+  .ai-channel-desc { color: var(--text-4); font-size: var(--fs-2xs); }
+  .ai-channel-options { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ai-channel-option {
+    flex: 1;
+    min-width: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    padding: 8px 10px;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-control);
+    background: transparent;
+    color: var(--text-2);
+    text-align: left;
+    cursor: pointer;
+  }
+  .ai-channel-option small { color: var(--text-4); font-size: var(--fs-2xs); }
+  .ai-channel-option:hover { border-color: var(--text-4); }
+  .ai-channel-option.is-active {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .ai-channel-option.is-active strong { color: var(--accent); }
+  .ai-channel-provider-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 2px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border-soft);
+  }

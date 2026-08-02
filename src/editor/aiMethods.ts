@@ -42,14 +42,11 @@ export class AIMethods {
   }
 
 
+  // 引擎切换入口在顶栏「设置」弹窗里；面板头部只放一枚只读 chip 显示当前引擎。
   _syncAIEngineSwitch() {
-    const wrap = this.aiEngineSwitchRef?.current;
-    if (!wrap) return;
-    wrap.querySelectorAll('[data-engine]').forEach((button) => {
-      const active = button.dataset.engine === this.aiEngine;
-      button.classList.toggle('is-active', active);
-      button.setAttribute('aria-pressed', active ? 'true' : 'false');
-    });
+    const chip = this.aiEngineChipRef?.current;
+    if (chip) chip.textContent = this._aiEngineLabel();
+    if (typeof this._syncAISettingsEngine === 'function') this._syncAISettingsEngine();
   }
 
 
@@ -356,7 +353,7 @@ export class AIMethods {
     if (!this.aiMessages.length) {
       const empty = document.createElement('div');
       empty.className = 'ai-empty';
-      empty.innerHTML = '<span>选择一段原文，然后提出你的疑问。</span><small>回答由本地 Agent（Claude / Codex / Gemini）生成，并归档到阅读工作区。</small>';
+      empty.innerHTML = '<span>选择一段原文，然后提出你的疑问。</span><small>回答由所选 AI 渠道（本地 Agent 或 API Key）生成，并归档到阅读工作区。渠道在顶栏「设置」里更换。</small>';
       list.appendChild(empty);
       return;
     }

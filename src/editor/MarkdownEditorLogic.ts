@@ -88,7 +88,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.aiInputRef = React.createRef();
     this.aiStatusRef = React.createRef();
     this.aiSendRef = React.createRef();
-    this.aiEngineSwitchRef = React.createRef();
+    this.aiEngineChipRef = React.createRef();
     this.themeIconRef = React.createRef();
     this.viewModeSwitcherRef = React.createRef();
     this.documentSidebarRef = React.createRef();
@@ -347,7 +347,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       aiInputRef: this.aiInputRef,
       aiStatusRef: this.aiStatusRef,
       aiSendRef: this.aiSendRef,
-      aiEngineSwitchRef: this.aiEngineSwitchRef,
+      aiEngineChipRef: this.aiEngineChipRef,
       viewModeSwitcherRef: this.viewModeSwitcherRef,
       documentSidebarRef: this.documentSidebarRef,
       documentSidebarResizeRef: this.documentSidebarResizeRef,
@@ -393,10 +393,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       closeAI: () => this._openAIPanel(false),
       toggleAIHistory: () => this.toggleAIHistory(),
       sendAIQuestion: () => this.sendAIQuestion(),
-      engineClaude: () => this.setAIEngine('claude'),
-      engineCodex: () => this.setAIEngine('codex'),
-      engineGemini: () => this.setAIEngine('gemini'),
       openAISettings: () => this.openAISettings(),
+      menuSettings: () => { this.toggleHeaderMenu(false); this.openAISettings(); },
       translateSel: () => this.translateSel(),
       askExplain: () => this.askAIQuick('请用更容易理解的语言解释这段话。'),
       askContext: () => this.askAIQuick('这段话在全文上下文中起什么作用？'),
