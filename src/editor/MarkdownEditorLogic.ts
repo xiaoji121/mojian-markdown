@@ -13,6 +13,7 @@ import { LocalFileSyncMethods } from './localFileSyncMethods';
 import { NavigationMethods } from './navigationMethods';
 import { AISettingsMethods } from './aiSettingsMethods';
 import { applyPrototypeMethods } from './prototypeMethods';
+import { PathComposeMethods } from './pathComposeMethods';
 import { PreviewSearchMethods } from './previewSearchMethods';
 import { ReadingMapMethods } from './readingMapMethods';
 import { TranslateMethods } from './translateMethods';
@@ -94,6 +95,15 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.documentSidebarResizeRef = React.createRef();
     this.documentListRef = React.createRef();
     this.documentCountRef = React.createRef();
+    this.readingPathBarRef = React.createRef();
+    this.readingPathModeRef = React.createRef();
+    this.readingPathCountRef = React.createRef();
+    this.readingPathInstructionRef = React.createRef();
+    this.readingPathSelectMode = false;
+    this._readingPathSelection = new Set();
+    this._readingPathDocId = null;
+    this._composeBusy = false;
+    this._composeRenderT = null;
     this.comments = [];
     this.recentDocuments = [];
     this.activeDocumentId = null;
@@ -277,6 +287,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     if (this._resizeHandler) window.removeEventListener('resize', this._resizeHandler);
     if (this._outlineJumpT) clearTimeout(this._outlineJumpT);
     this._disposePathTooltip();
+    this._disposeReadingPathHelp();
     this._stopLocalFileWatcher();
     document.body.style.overflow = '';
   }
@@ -342,6 +353,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       documentSidebarResizeRef: this.documentSidebarResizeRef,
       documentListRef: this.documentListRef,
       documentCountRef: this.documentCountRef,
+      ...this._readingPathRenderVals(),
       showEditorMode: () => this.setViewMode('editor'),
       showSplitMode: () => this.setViewMode('split'),
       showPreviewMode: () => this.setViewMode('preview'),
@@ -419,6 +431,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     ViewMethods,
     BridgeMethods,
     ReadingMapMethods,
+    PathComposeMethods,
     NavigationMethods,
     SearchReplaceMethods,
     PreviewSearchMethods,

@@ -18,6 +18,10 @@ export class ReadingMapMethods {
       this.activeAnswerRequestId = null;
       const nodes = this._readingMapNodes(doc);
       this._readingMapIndex = this._readingMapBuildIndex(nodes);
+      this._readingMapParents = this._readingMapParentIndex(nodes);
+      if (typeof this._resetReadingPathForDocument === 'function') {
+        this._resetReadingPathForDocument(doc.documentId);
+      }
       this._bindReadingMapClicks();
       this.previewOverrideMarkdown = this._readingMapMarkdown(doc, nodes);
       this.viewMode = 'preview';
@@ -70,6 +74,18 @@ export class ReadingMapMethods {
   }
 
 
+  // 父指针索引（子节点 → 有效父节点，缺失/成环回落为主文档 ''），路径选择沿它上溯。
+  _readingMapParentIndex(nodes) {
+    const known = new Set(nodes.map((node) => node.requestId));
+    const parents = new Map();
+    nodes.forEach((node) => {
+      const valid = node.parentRequestId && node.parentRequestId !== node.requestId && known.has(node.parentRequestId);
+      parents.set(node.requestId, valid ? node.parentRequestId : '');
+    });
+    return parents;
+  }
+
+
   // 点击委托挂在预览容器上（innerHTML 重渲染不影响），只绑一次。
   _bindReadingMapClicks() {
     if (this._readingMapClickBound) return;
@@ -90,6 +106,11 @@ export class ReadingMapMethods {
     if (!match) return;
     const requestId = this._readingMapIndex[match[1]];
     if (requestId === undefined || !this.bridgeDocumentId) return;
+    // 路径选择模式：点击改为选中/取消节点，交给 pathComposeMethods 结算。
+    if (this.readingPathSelectMode && typeof this._toggleReadingPathNode === 'function') {
+      this._toggleReadingPathNode(requestId);
+      return;
+    }
     if (requestId) this.openAnswerDocument(this.bridgeDocumentId, requestId);
     else this.openRecentDocument(this.bridgeDocumentId);
   }

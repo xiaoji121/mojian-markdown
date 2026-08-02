@@ -489,6 +489,27 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
         </div>
         <nav ref="{{ outlineListRef }}" class="outline-list" aria-label="文章标题导航"></nav>
       </aside>
+      <!-- 阅读脉络 · 路径成文操作条（仅脉络视图可见） -->
+      <div ref="{{ readingPathBarRef }}" class="reading-path-bar" role="toolbar" aria-label="按阅读路径成文">
+        <button ref="{{ readingPathModeRef }}" class="tbtn tool-pill reading-path-mode" onClick="{{ toggleReadingPathMode }}"
+          title="开启后点击图中节点选中它与它的上级链路" aria-pressed="false">选择路径</button>
+        <span ref="{{ readingPathCountRef }}" class="reading-path-count">开启选择后点选节点，AI 按路径成文</span>
+        <input ref="{{ readingPathInstructionRef }}" class="reading-path-instruction" type="text"
+          placeholder="补充要求（可选）" title="生成时的个性化要求，如：用第一人称写" aria-label="生成的补充要求" spellCheck="false" />
+        <!-- 初始不写 disabled：DC 运行时会把它固化成 React props，onClick 将永久失效；
+             禁用态由 _syncReadingPathBar 按选中数量在 DOM 上结算 -->
+        <span class="reading-path-action-group">
+          <button class="abtn primary reading-path-action" data-compose-action="article" onClick="{{ composePathArticle }}"
+            title="把选中路径上的问答与批注整理成一篇长文">整理成长文</button>
+          <button class="reading-path-help" onClick="{{ helpPathArticle }}" title="什么是「整理成长文」" aria-label="什么是整理成长文">?</button>
+        </span>
+        <span class="reading-path-action-group">
+          <button class="abtn secondary reading-path-action" data-compose-action="remix" onClick="{{ composePathRemix }}"
+            title="以选中路径的思考为素材写一篇新文章">写一篇二创</button>
+          <button class="reading-path-help" onClick="{{ helpPathRemix }}" title="什么是「写一篇二创」" aria-label="什么是写一篇二创">?</button>
+        </span>
+        <button class="tbtn reading-path-clear" onClick="{{ clearReadingPathSelection }}" title="清空已选节点" aria-label="清空已选节点">清空</button>
+      </div>
     </section>
 
     <!-- COMMENTS PANEL -->

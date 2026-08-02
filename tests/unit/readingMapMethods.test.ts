@@ -120,6 +120,45 @@ test('openReadingMap 建立节点索引并只绑定一次点击委托', async ()
   }
 });
 
+test('openReadingMap 构建父指针索引，供路径选择沿链路上溯', async () => {
+  const previousFetch = globalThis.fetch;
+  globalThis.fetch = (async () => ({ ok: true, json: async () => ({ document: sampleDoc }) })) as typeof fetch;
+  try {
+    const editor = createMapEditor();
+
+    await editor.openReadingMap('doc-1');
+
+    assert.equal(editor._readingMapParents.get('m1'), 'a1');
+    assert.equal(editor._readingMapParents.get('a1'), '', '无父节点回落到主文档');
+    assert.equal(editor._readingMapParents.get('a2'), 'a1');
+  } finally {
+    globalThis.fetch = previousFetch;
+  }
+});
+
+test('选择模式下点击节点转交路径选择，不打开子文档', () => {
+  const editor = Object.create(ReadingMapMethods.prototype);
+  const opened: string[] = [];
+  const toggled: string[] = [];
+  Object.assign(editor, {
+    previewOverrideMarkdown: '# 阅读脉络',
+    activeAnswerRequestId: null,
+    bridgeDocumentId: 'doc-1',
+    readingPathSelectMode: true,
+    _readingMapIndex: { doc0: '', q0: 'm1', q1: 'a1' },
+    _toggleReadingPathNode(requestId: string) { toggled.push(requestId); },
+    openAnswerDocument(_documentId: string, requestId: string) { opened.push(requestId); },
+    openRecentDocument(documentId: string) { opened.push(documentId); }
+  });
+  const eventFor = (id: string) => ({ target: { closest: () => ({ id }) } });
+
+  editor._onReadingMapClick(eventFor('flowchart-q0-1'));
+  editor._onReadingMapClick(eventFor('flowchart-doc0-7'));
+
+  assert.deepEqual(toggled, ['m1', ''], '子文档节点与主文档节点都进入选择');
+  assert.equal(opened.length, 0, '选择模式下不再跳转');
+});
+
 test('点击脉络图节点打开对应子文档，点击根节点回主文档', () => {
   const editor = Object.create(ReadingMapMethods.prototype);
   const opened: Array<[string, string]> = [];

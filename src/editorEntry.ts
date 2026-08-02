@@ -2,6 +2,7 @@
 // mounted editor is styled on its first frame without burdening the landing page.
 import './editor/styles.css';
 import './editor/documentSidebar.css';
+import './editor/readingPath.css';
 import './editor/shell.css';
 
 import * as React from 'react';

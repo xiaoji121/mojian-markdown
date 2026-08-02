@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { startAgentBridge } from '../../scripts/agent-bridge.js';
@@ -274,6 +274,100 @@ test('/api/chat 选 gemini 但未配置 Key 时返回错误事件', async () => 
     const stream = await response.text();
     assert.match(stream, /event: error/);
     assert.match(stream, /Gemini API Key/);
+  });
+});
+
+test('/api/compose 按选中路径生成长文并存为新文档', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'compose-test-'));
+  const fake = join(dir, 'fake-claude.js');
+  const promptFile = join(dir, 'prompt.txt');
+  // 假 claude：把收到的提示词落盘供断言，stdout 输出固定文章。
+  await writeFile(fake, `
+    require('node:fs').writeFileSync(process.env.FAKE_CLAUDE_PROMPT_FILE, process.argv[2] || '');
+    process.stdout.write('# 生成的长文\\n\\n这是按路径写出的正文。');
+  `);
+  const previousEnv = {
+    AGENT_BRIDGE_CLAUDE_COMMAND: process.env.AGENT_BRIDGE_CLAUDE_COMMAND,
+    AGENT_BRIDGE_CLAUDE_ARGS: process.env.AGENT_BRIDGE_CLAUDE_ARGS,
+    FAKE_CLAUDE_PROMPT_FILE: process.env.FAKE_CLAUDE_PROMPT_FILE
+  };
+  process.env.AGENT_BRIDGE_CLAUDE_COMMAND = process.execPath;
+  process.env.AGENT_BRIDGE_CLAUDE_ARGS = fake;
+  process.env.FAKE_CLAUDE_PROMPT_FILE = promptFile;
+  try {
+    await withBridge({}, async (bridge) => {
+      const created = await fetch(`${bridge.url}/api/documents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          document: { fileName: 'note.md', content: '# 原文\n\n财富是资产。' },
+          annotations: [
+            { id: 'a1', type: 'idea', quote: '财富', note: '财富怎么定义', reply: '资产而非现金' },
+            { id: 'a2', type: 'idea', quote: '资产', note: '如何追求财富', reply: '构建可复利的东西', answerRequestId: 'a1' }
+          ]
+        })
+      });
+      const { documentId } = await created.json();
+
+      const response = await fetch(`${bridge.url}/api/compose`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentId, requestIds: ['a2', 'a1'], mode: 'article', engine: 'claude' })
+      });
+      const stream = await response.text();
+      assert.match(stream, /event: meta/);
+      assert.match(stream, /"nodeCount":2/);
+      assert.match(stream, /event: delta/);
+      assert.match(stream, /生成的长文/);
+      assert.match(stream, /event: done/);
+      assert.match(stream, /"composedDocumentId"/);
+
+      const prompt = await readFile(promptFile, 'utf8');
+      assert.match(prompt, /财富是资产/, '原文进入提示词');
+      assert.match(prompt, /财富怎么定义/);
+      assert.match(prompt, /构建可复利的东西/);
+
+      const { documents } = await (await fetch(`${bridge.url}/api/documents`)).json();
+      assert.equal(documents.length, 2, '生成结果存为新文档');
+      const composed = documents.find((doc: { fileName: string }) => /路径长文/.test(doc.fileName));
+      assert.ok(composed, '新文档名带「路径长文」标签');
+      const detail = await (await fetch(`${bridge.url}/api/documents/${composed.documentId}`)).json();
+      assert.match(detail.document.content, /^# 生成的长文/);
+      assert.match(detail.document.content, /由「阅读脉络 · 路径长文」生成/);
+      assert.match(detail.document.content, /这是按路径写出的正文/);
+    });
+  } finally {
+    for (const [key, value] of Object.entries(previousEnv)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('/api/compose 文档不存在或没有可用节点时返回错误事件', async () => {
+  await withBridge({}, async (bridge) => {
+    const missing = await fetch(`${bridge.url}/api/compose`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ documentId: 'nope', requestIds: ['a1'] })
+    });
+    assert.match(await missing.text(), /event: error/);
+
+    const created = await fetch(`${bridge.url}/api/documents`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ document: { fileName: 'note.md', content: '# hi' } })
+    });
+    const { documentId } = await created.json();
+    const empty = await fetch(`${bridge.url}/api/compose`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ documentId, requestIds: ['ghost'] })
+    });
+    const stream = await empty.text();
+    assert.match(stream, /event: error/);
+    assert.match(stream, /节点/);
   });
 });
 

@@ -73,6 +73,7 @@
   /* 阅读脉络视图：节点可点击跳到对应子文档（点击委托见 readingMapMethods） */
   .md-preview.is-reading-map .mermaid-rendered .node { cursor: pointer; }
   .md-preview.is-reading-map .mermaid-rendered .node:hover { opacity: .75; }
+  /* 路径成文（选择模式、选中描边、操作条、问号浮层）见 readingPath.css */
   .md-preview hr { border: none; border-top: 1px solid var(--paper-border); margin: 36px 0; }
   /* display:block 让超宽表格在自身内部横向滚动（预览区整体 overflow-x 已锁死） */
   .md-preview table { display: block; border-collapse: collapse; width: 100%; max-width: 100%; overflow-x: auto; margin: 20px 0; font-size: 0.9em; }

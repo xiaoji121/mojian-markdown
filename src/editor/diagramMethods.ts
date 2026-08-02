@@ -36,6 +36,8 @@ export class DiagramMethods {
       host.classList.remove('is-loading');
       host.innerHTML = result.svg;
       if (result.bindFunctions) result.bindFunctions(host);
+      // 渲染是异步的，阅读脉络的路径选中态要在 SVG 就位后补挂
+      if (typeof this._onMermaidRendered === 'function') this._onMermaidRendered(host);
     } catch (error) {
       host.classList.remove('is-loading');
       host.classList.add('has-error');

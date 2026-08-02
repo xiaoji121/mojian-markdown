@@ -10,6 +10,13 @@ import { randomUUID } from 'node:crypto';
 import { createDocumentStore, normalizeAnnotation } from './agent-bridge-store.js';
 import { createSettingsStore, maskProviderSettings } from './agent-bridge-settings.js';
 import { normalizeEngine, runEngine } from './agent-bridge-engines.js';
+import {
+  collectPathNodes,
+  composePrompt,
+  composedFileName,
+  composedDocumentContent,
+  normalizeComposeMode
+} from './agent-bridge-compose.js';
 
 const STATIC_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -220,6 +227,49 @@ function createRequestHandler({ store, settings, staticDir, cors }) {
     }
   }
 
+  // 路径成文：把阅读脉络里选中的节点串成上下文，生成长文/二创并存为新文档。
+  async function handleCompose(req, res) {
+    const body = await readBody(req);
+    const engine = normalizeEngine(body.engine);
+    const mode = normalizeComposeMode(body.mode);
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      ...corsHeaders
+    });
+    try {
+      const documentId = String(body.documentId || '');
+      let doc = null;
+      try {
+        if (/^[\w.-]+$/.test(documentId)) doc = await readDocument(documentId);
+      } catch {}
+      if (!doc) throw new Error('文档不存在，请回到阅读脉络重新发起');
+      const nodes = collectPathNodes(doc, body.requestIds);
+      if (!nodes.length) throw new Error('所选节点在该文档中不存在，请回到阅读脉络重新选择');
+      writeSse(res, 'meta', { documentId: doc.documentId, engine, mode, nodeCount: nodes.length });
+      const engineOptions = engine === 'gemini'
+        ? { gemini: await settings.providerSettings('gemini') }
+        : {};
+      const prompt = composePrompt({ doc, nodes, mode, instruction: body.instruction });
+      const answer = await runEngine(engine, prompt, (delta) => {
+        writeSse(res, 'delta', { text: delta });
+      }, process.env, engineOptions);
+      const fileName = composedFileName(doc, mode);
+      const composed = await upsertDocument({
+        sourceApp: 'markdown-editor',
+        title: fileName,
+        fileName,
+        content: composedDocumentContent(answer, { doc, nodes, mode })
+      });
+      writeSse(res, 'done', { composedDocumentId: composed.documentId, fileName: composed.fileName });
+    } catch (error) {
+      writeSse(res, 'error', { message: error.message || String(error) });
+    } finally {
+      res.end();
+    }
+  }
+
   // 连通性验证：优先用请求里的 Key/模型（保存前先测），缺省回落到已保存配置。
   async function handleSettingsTest(req, res) {
     const body = await readBody(req);
@@ -300,6 +350,7 @@ function createRequestHandler({ store, settings, staticDir, cors }) {
         return sendJson(res, 200, { documentId: doc.documentId, messages: doc.messages || [] });
       }
       if (req.method === 'POST' && url.pathname === '/api/chat') return handleChat(req, res);
+      if (req.method === 'POST' && url.pathname === '/api/compose') return handleCompose(req, res);
       if (req.method === 'GET' && url.pathname === '/api/conversations') {
         const conversations = (await listDocuments()).filter((doc) => doc.messages?.length).map(conversationSummary);
         return sendJson(res, 200, { conversations });

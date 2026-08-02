@@ -231,6 +231,8 @@ export class ViewMethods {
     const markdown = this.previewOverrideMarkdown || src.value;
     // 脉络视图（override 且不属于任何子文档）：节点可点击，样式上给出提示
     prev.classList.toggle('is-reading-map', !!this.previewOverrideMarkdown && !this.activeAnswerRequestId);
+    // 路径成文的浮动操作条只在脉络视图出现，跟随每次预览重渲染结算显隐
+    if (typeof this._syncReadingPathBar === 'function') this._syncReadingPathBar();
     this._syncPreviewEditable();
     prev.innerHTML = window.marked.parse ? window.marked.parse(markdown) : window.marked(markdown);
     this._renderMermaidDiagrams(prev);
