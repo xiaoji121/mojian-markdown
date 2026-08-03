@@ -45,6 +45,16 @@ test('字数统计跟随内容更新', async ({ page }) => {
   await expect(page.locator('.word-count')).toHaveText('5 字 · 2 行');
 });
 
+test('顶栏纯图标按钮（主题/设置）字形足够大，不糊成小点', async ({ page }) => {
+  // 单字符图标（☀/⚙）与相邻的多字词按钮不同，14px 时在 34px 按钮里又小又飘，
+  // 桌面端看不清。要求字形明显大于文本按钮的 12px。
+  const glyphSize = (selector: string) =>
+    page.locator(selector).evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+
+  expect(await glyphSize('.abtn.icon.collapsible-action:not(.settings-entry)')).toBeGreaterThanOrEqual(17);
+  expect(await glyphSize('.settings-entry.collapsible-action')).toBeGreaterThanOrEqual(17);
+});
+
 test('视图切换在编辑、分屏、预览三种布局间生效', async ({ page }) => {
   const main = page.locator('.editor-main');
   const source = page.locator('.md-source');

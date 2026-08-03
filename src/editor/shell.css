@@ -220,8 +220,12 @@ body.is-desktop-app .header-more { display: none; }
   font-weight: 600;
 }
 .abtn.primary:hover { border-color: var(--accent-2); background: var(--accent-2); color: var(--accent-ink); }
-.abtn.icon { width: 34px; padding: 0; font-size: var(--fs-lg); }
-.abtn.document-toggle { display: none; width: 34px; padding: 0; font-size: var(--fs-lg); }
+/* 纯图标按钮的字形要比文本按钮大：单个符号（☀/⚙/☰/⋯）在 34px 按钮里
+   用 14px 会又小又飘，看不清；18px 才与相邻的多字词按钮视觉等重。 */
+.abtn.icon { width: 34px; padding: 0; font-size: 18px; }
+.abtn.document-toggle { display: none; width: 34px; padding: 0; font-size: 18px; }
+/* 主题/设置这类低频图标默认更淡，放大后再加深一档以补足对比度 */
+.abtn.icon.collapsible-action { color: var(--text-2); }
 .abtn-glyph { font-size: var(--fs-lg); }
 .accent-star { color: var(--accent); font-size: var(--fs-lg); }
 .count-badge {
