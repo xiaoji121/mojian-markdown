@@ -450,6 +450,7 @@
     .preview-toolbar-hint,
     .preview-toolbar-actions .preview-search-toggle,
     .preview-toolbar-actions .outline-toggle .action-label,
+    .preview-toolbar-actions .longimg-entry .action-label,
     .preview-toolbar-actions .fullscreen-button-label {
       display: none !important;
     }
@@ -463,6 +464,7 @@
     .preview-toolbar-hint,
     .preview-toolbar-actions .preview-search-toggle,
     .preview-toolbar-actions .outline-toggle .action-label,
+    .preview-toolbar-actions .longimg-entry .action-label,
     .preview-toolbar-actions .fullscreen-button-label {
       display: none !important;
     }

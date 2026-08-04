@@ -42,6 +42,7 @@
     "浏览器本地缓存",
     "Markdown 文件导入导出",
     "全文与批注复制",
+    "预览保存为可分享长图",
     "最近阅读列表（本地完整版）",
     "AI 问答（本地完整版）",
     "桌面端应用：本地文件双向同步与文件关联（Electron，源码构建）"
@@ -223,6 +224,7 @@
             <li class="yes">直接编辑与实时预览</li>
             <li class="yes">双击双向定位</li>
             <li class="yes">划线批注与批注面板</li>
+            <li class="yes">预览保存为长图</li>
             <li class="yes">本地缓存、导入导出</li>
             <li class="no">最近阅读列表</li>
             <li class="no">AI 问答</li>
@@ -464,6 +466,10 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
           <button ref="{{ outlineButtonRef }}" class="tbtn tool-pill outline-toggle" onClick="{{ toggleOutline }}"
             title="查看文章大纲" aria-label="查看文章大纲" aria-expanded="false">
             <span>☷</span><span class="action-label">大纲</span><span ref="{{ outlineCountRef }}" class="outline-count">0</span>
+          </button>
+          <button class="tbtn tool-pill longimg-entry" onClick="{{ openLongImage }}" title="把当前预览保存成一张可分享的长图" aria-label="保存长图">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="12" rx="2"></rect><path d="m5 13 4-4 3 3 2.5-2.5L21 14"></path><path d="M12 17.5V22m0 0-2.6-2.6M12 22l2.6-2.6"></path></svg>
+            <span class="action-label">长图</span>
           </button>
           <button ref="{{ immersiveWideRef }}" class="tbtn tool-pill fullscreen-only-control immersive-wide-toggle" onClick="{{ toggleImmersiveWide }}" title="切换为宽屏阅读" aria-pressed="false">宽屏</button>
           <button class="tbtn tool-pill fullscreen-only-control" onClick="{{ toggleComments }}" title="显示批注" aria-label="显示批注">

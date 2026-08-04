@@ -474,6 +474,8 @@ export class BridgeMethods {
       paperDark: this.paperDark || undefined,
       paperLight: this.paperLight || undefined,
       immersiveWide: this.immersiveWide || undefined,
+      longImageWidth: this.longImageWidth || undefined,
+      longImageMarks: this.longImageMarks === false ? false : undefined,
       comments: this.comments,
       bridgeDocumentId: this.bridgeDocumentId || undefined,
       aiEngine: (this.aiEngine && this.aiEngine !== 'claude') ? this.aiEngine : undefined,

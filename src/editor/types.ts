@@ -32,6 +32,10 @@ export interface PersistedEditorState {
   paper?: PaperTheme;
   /** 沉浸式阅读是否使用宽屏内容宽度 */
   immersiveWide?: boolean;
+  /** 保存长图使用的宽度档位（见 longImageComposer 的 LONG_IMAGE_PRESETS） */
+  longImageWidth?: string;
+  /** 长图是否带上划线批注；缺省为带 */
+  longImageMarks?: boolean;
   comments: Annotation[];
   bridgeDocumentId?: string;
   /** AI 问答使用的本地 CLI 引擎；缺省为 claude */

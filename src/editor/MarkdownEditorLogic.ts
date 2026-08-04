@@ -9,6 +9,8 @@ import { CommentMethods } from './commentMethods';
 import { DiagramMethods } from './diagramMethods';
 import { EditingFileLayoutMethods } from './editingFileLayoutMethods';
 import { ENABLE_AGENT_BRIDGE } from './featureFlags';
+import { DEFAULT_LONG_IMAGE_PRESET } from './longImageComposer';
+import { LongImageMethods } from './longImageMethods';
 import { LocalFileSyncMethods } from './localFileSyncMethods';
 import { NavigationMethods } from './navigationMethods';
 import { AISettingsMethods } from './aiSettingsMethods';
@@ -126,6 +128,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.paperDark = ''; // 纸色按主题分别记忆；空 = 该主题默认
     this.paperLight = '';
     this.immersiveWide = false;
+    this.longImageWidth = DEFAULT_LONG_IMAGE_PRESET;
+    this.longImageMarks = true;
     this._themeTouched = false;
     this.panelOpen = false;
     this.previewFullscreen = false;
@@ -195,6 +199,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       if (saved.paperDark) this.paperDark = saved.paperDark;
       if (saved.paperLight) this.paperLight = saved.paperLight;
       if (saved.immersiveWide) this.immersiveWide = true;
+      if (saved.longImageWidth) this.longImageWidth = saved.longImageWidth;
+      if (saved.longImageMarks === false) this.longImageMarks = false;
       if (saved.paper) {
         // 迁移旧的单份纸色记忆：墨黑归暗色，其余归亮色
         if (saved.paper === 'ink') this.paperDark = this.paperDark || saved.paper;
@@ -373,6 +379,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       menuFileSaveAs: () => { this.toggleFileMenu(false); this.onSaveAs(); },
       menuFolder: () => { this.toggleHeaderMenu(false); this.associateLocalFolder(); },
       toggleOutline: () => this.toggleOutline(),
+      openLongImage: () => this.openLongImage(),
       toggleSearch: () => this.toggleSearch(),
       closeSearch: () => this.closeSearch(),
       searchPrev: () => this.searchPrev(),
@@ -435,6 +442,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     PreviewSearchMethods,
     CommentMethods,
     DiagramMethods,
+    LongImageMethods,
     AIMethods,
     AISettingsMethods,
     TranslateMethods,
