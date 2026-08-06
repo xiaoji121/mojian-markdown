@@ -1,0 +1,110 @@
+/* 路径成文（阅读脉络 · 选择路径 → AI 成文）的全部样式。
+   交互逻辑见 pathComposeMethods.ts；脉络图本体样式仍在 styles.css 的 mermaid 段。 */
+
+/* 路径选择模式：点选节点改为选中，选中态描边盖过 mermaid 内联主题色 */
+.md-preview.is-reading-map.is-path-select-mode .mermaid-rendered .node { cursor: cell; }
+.md-preview.is-reading-map .mermaid-rendered .node.is-path-selected rect,
+.md-preview.is-reading-map .mermaid-rendered .node.is-path-selected polygon,
+.md-preview.is-reading-map .mermaid-rendered .node.is-path-selected circle,
+.md-preview.is-reading-map .mermaid-rendered .node.is-path-selected path {
+  stroke: var(--paper-accent) !important;
+  stroke-width: 2.4px !important;
+}
+.md-preview.is-reading-map .mermaid-rendered .node.is-path-selected { opacity: 1; }
+
+/* 路径成文操作条：浮在预览底部居中，仅脉络视图可见 */
+.reading-path-bar {
+  position: absolute;
+  /* left/right 同时锚定 + fit-content 居中：left:50% 平移居中会把
+     shrink-to-fit 的可用宽度砍半，内容没超宽也会提前换行 */
+  left: 12px;
+  right: 12px;
+  bottom: 22px;
+  z-index: 30;
+  width: fit-content;
+  margin-inline: auto;
+  display: none;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--tool-bg);
+  box-shadow: var(--shadow-md);
+}
+.reading-path-bar.is-visible { display: flex; }
+.reading-path-bar .reading-path-count {
+  color: var(--text-3);
+  font: var(--fs-xs)/1.5 var(--mono);
+  white-space: nowrap;
+}
+.reading-path-bar .reading-path-mode.is-active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.reading-path-bar .abtn { height: 30px; padding: 0 12px; font-size: var(--fs-xs); white-space: nowrap; }
+.reading-path-bar .abtn[disabled] {
+  opacity: .45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.reading-path-bar .reading-path-clear { color: var(--text-4); }
+.reading-path-instruction {
+  width: 170px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--text-2);
+  font: var(--fs-xs)/1.5 var(--mono);
+}
+.reading-path-instruction::placeholder { color: var(--text-4); }
+.reading-path-instruction:focus { outline: none; border-color: var(--accent); }
+.reading-path-action-group { display: inline-flex; align-items: center; gap: 4px; }
+
+/* 模式说明问号：与生成按钮并排的小圆钮 */
+.reading-path-help {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-4);
+  font: 600 11px/1 var(--mono);
+  cursor: pointer;
+}
+.reading-path-help:hover { color: var(--accent); border-color: var(--accent); }
+
+/* 模式说明浮层：单例挂 body，定位到问号上方（见 pathComposeMethods） */
+.reading-path-help-popover {
+  position: fixed;
+  z-index: 420;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 340px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--tool-bg);
+  color: var(--text-2);
+  font: var(--fs-xs)/1.75 var(--sans);
+  box-shadow: var(--shadow-md);
+}
+.reading-path-help-popover.is-visible { display: flex; }
+.reading-path-help-popover strong { font-size: var(--fs-sm); }
+.reading-path-help-popover p { margin: 0; }
+.reading-path-help-popover small {
+  color: var(--text-3);
+  font-size: var(--fs-2xs);
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}

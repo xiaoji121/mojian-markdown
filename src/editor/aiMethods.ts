@@ -24,37 +24,39 @@ export class AIMethods {
   }
 
 
-  // ===== AI 引擎切换（Claude / Codex） =====
+  // ===== AI 引擎切换（Claude / Codex / Gemini） =====
 
   _aiEngineLabel(engine) {
-    return (engine || this.aiEngine) === 'codex' ? 'Codex' : 'Claude';
+    const value = engine || this.aiEngine;
+    if (value === 'codex') return 'Codex';
+    if (value === 'gemini') return 'Gemini';
+    return 'Claude';
   }
 
 
   setAIEngine(engine) {
-    this.aiEngine = engine === 'codex' ? 'codex' : 'claude';
+    this.aiEngine = (engine === 'codex' || engine === 'gemini') ? engine : 'claude';
     this._syncAIEngineSwitch();
     this._persist(false);
     this._setStatus('AI 引擎已切换为 ' + this._aiEngineLabel());
   }
 
 
+  // 引擎切换入口在顶栏「设置」弹窗里；面板头部只放一枚只读 chip 显示当前引擎。
   _syncAIEngineSwitch() {
-    const wrap = this.aiEngineSwitchRef?.current;
-    if (!wrap) return;
-    wrap.querySelectorAll('[data-engine]').forEach((button) => {
-      const active = button.dataset.engine === this.aiEngine;
-      button.classList.toggle('is-active', active);
-      button.setAttribute('aria-pressed', active ? 'true' : 'false');
-    });
+    const chip = this.aiEngineChipRef?.current;
+    if (chip) chip.textContent = this._aiEngineLabel();
+    if (typeof this._syncAISettingsEngine === 'function') this._syncAISettingsEngine();
   }
 
 
   _aiChatRequestBody(question) {
     return {
       question,
-      engine: this.aiEngine === 'codex' ? 'codex' : 'claude',
+      engine: (this.aiEngine === 'codex' || this.aiEngine === 'gemini') ? this.aiEngine : 'claude',
       document: this._documentPayload(),
+      // 在子文档视图里追问时带上父节点，服务端把这次问答挂进追问树。
+      parentRequestId: (this.previewOverrideMarkdown && this.activeAnswerRequestId) || undefined,
       selection: {
         quote: this.aiQuote,
         occurrence: this.aiOccurrence || 0,
@@ -257,7 +259,7 @@ export class AIMethods {
       if (item.answer) this.aiMessages.push({
         id: 'a-' + item.requestId, role: 'assistant', text: item.answer,
         requestId: item.requestId, documentId, engine: item.engine,
-        meta: '本地历史 · 已归档至 Brain OS', pending: false
+        meta: '本地历史 · 已归档至阅读工作区', pending: false
       });
     });
     const lastQuote = history.length ? history[history.length - 1].quote : '';
@@ -351,7 +353,7 @@ export class AIMethods {
     if (!this.aiMessages.length) {
       const empty = document.createElement('div');
       empty.className = 'ai-empty';
-      empty.innerHTML = '<span>选择一段原文，然后提出你的疑问。</span><small>回答由本机 Claude Code 或 Codex 生成，并归档到 Brain OS。</small>';
+      empty.innerHTML = '<span>选择一段原文，然后提出你的疑问。</span><small>回答由所选 AI 渠道（本地 Agent 或 API Key）生成，并归档到阅读工作区。渠道在顶栏「设置」里更换。</small>';
       list.appendChild(empty);
       return;
     }
@@ -450,6 +452,9 @@ export class AIMethods {
       aiStatus: 'pending',
       ts: Date.now()
     };
+    if (this.previewOverrideMarkdown && this.activeAnswerRequestId) {
+      aiComment.answerRequestId = this.activeAnswerRequestId;
+    }
     this.comments.push(aiComment);
     this._persist();
     this._renderPreview();
@@ -518,7 +523,7 @@ export class AIMethods {
         }
       }
       assistant.pending = false;
-      assistant.meta = (contextMeta ? contextMeta + ' · ' : '') + '已归档至 Brain OS';
+      assistant.meta = (contextMeta ? contextMeta + ' · ' : '') + '已归档至阅读工作区';
       this.aiBridgeOnline = true;
       aiComment.answer = assistant.text;
       aiComment.aiStatus = 'answered';
@@ -527,7 +532,7 @@ export class AIMethods {
       this._refreshAIConversations();
       this._refreshRecentDocuments();
       this._setAIStatus('本地 Agent 已连接', 'online');
-      this._setStatus('AI 回答已保存到 Reading Workspace');
+      this._setStatus('AI 回答已归档到阅读工作区');
     } catch (error) {
       assistant.pending = false;
       const message = error && error.message ? error.message : String(error);

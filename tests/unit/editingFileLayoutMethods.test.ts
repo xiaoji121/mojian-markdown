@@ -303,3 +303,12 @@ test('桌面端 _initDesktop 给 body 打上 is-desktop-app 标记（CSS 据此�
     delete (globalThis as { document?: unknown }).document;
   }
 });
+
+test('_cleanOpenedMarkdown 把不换行空格归一化为普通空格', async () => {
+  const { EditingFileLayoutMethods } = await import('../../src/editor/editingFileLayoutMethods.ts');
+  const editor = Object.create(EditingFileLayoutMethods.prototype);
+
+  const cleaned = editor._cleanOpenedMarkdown('Wealth\u00A0is\u00A0assets\u00A0that\u00A0earn');
+
+  assert.equal(cleaned, 'Wealth is assets that earn');
+});

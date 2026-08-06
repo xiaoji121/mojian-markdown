@@ -9,9 +9,16 @@ import { CommentMethods } from './commentMethods';
 import { DiagramMethods } from './diagramMethods';
 import { EditingFileLayoutMethods } from './editingFileLayoutMethods';
 import { ENABLE_AGENT_BRIDGE } from './featureFlags';
+import { DEFAULT_LONG_IMAGE_PRESET } from './longImageComposer';
+import { LongImageMethods } from './longImageMethods';
 import { LocalFileSyncMethods } from './localFileSyncMethods';
 import { NavigationMethods } from './navigationMethods';
+import { AISettingsMethods } from './aiSettingsMethods';
 import { applyPrototypeMethods } from './prototypeMethods';
+import { PathComposeMethods } from './pathComposeMethods';
+import { PreviewSearchMethods } from './previewSearchMethods';
+import { ReadingMapMethods } from './readingMapMethods';
+import { TranslateMethods } from './translateMethods';
 import { SearchReplaceMethods } from './searchReplaceMethods';
 import { ViewMethods } from './viewMethods';
 
@@ -51,11 +58,24 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.replaceInputRef = React.createRef();
     this.searchCountRef = React.createRef();
     this.searchCaseRef = React.createRef();
+    this.searchWordRef = React.createRef();
+    this.searchRegexRef = React.createRef();
+    this.searchExpandRef = React.createRef();
     this.searchOpen = false;
     this.searchCaseSensitive = false;
+    this.searchWholeWord = false;
+    this.searchRegex = false;
+    this.searchReplaceExpanded = false;
     this._searchMatches = [];
     this._searchIndex = -1;
     this._searchAnchor = 0;
+    this.sourceHighlightRef = React.createRef();
+    this.previewSearchBarRef = React.createRef();
+    this.previewSearchInputRef = React.createRef();
+    this.previewSearchCountRef = React.createRef();
+    this.previewSearchOpen = false;
+    this._previewSearchRanges = [];
+    this._previewSearchIndex = -1;
     this.selBarRef = React.createRef();
     this.commentsRef = React.createRef();
     this.commentListRef = React.createRef();
@@ -70,13 +90,22 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.aiInputRef = React.createRef();
     this.aiStatusRef = React.createRef();
     this.aiSendRef = React.createRef();
-    this.aiEngineSwitchRef = React.createRef();
+    this.aiEngineChipRef = React.createRef();
     this.themeIconRef = React.createRef();
     this.viewModeSwitcherRef = React.createRef();
     this.documentSidebarRef = React.createRef();
     this.documentSidebarResizeRef = React.createRef();
     this.documentListRef = React.createRef();
     this.documentCountRef = React.createRef();
+    this.readingPathBarRef = React.createRef();
+    this.readingPathModeRef = React.createRef();
+    this.readingPathCountRef = React.createRef();
+    this.readingPathInstructionRef = React.createRef();
+    this.readingPathSelectMode = false;
+    this._readingPathSelection = new Set();
+    this._readingPathDocId = null;
+    this._composeBusy = false;
+    this._composeRenderT = null;
     this.comments = [];
     this.recentDocuments = [];
     this.activeDocumentId = null;
@@ -99,6 +128,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.paperDark = ''; // 纸色按主题分别记忆；空 = 该主题默认
     this.paperLight = '';
     this.immersiveWide = false;
+    this.longImageWidth = DEFAULT_LONG_IMAGE_PRESET;
+    this.longImageMarks = true;
     this._themeTouched = false;
     this.panelOpen = false;
     this.previewFullscreen = false;
@@ -163,11 +194,13 @@ export function createMarkdownEditorComponent(DCLogic, React) {
         this.activeDocumentId = saved.bridgeDocumentId;
       }
       if (saved.savedAt) this._draftSavedAt = saved.savedAt;
-      if (saved.aiEngine === 'codex') this.aiEngine = 'codex';
+      if (saved.aiEngine === 'codex' || saved.aiEngine === 'gemini') this.aiEngine = saved.aiEngine;
       if (saved.theme) { this.theme = saved.theme; this._themeTouched = true; }
       if (saved.paperDark) this.paperDark = saved.paperDark;
       if (saved.paperLight) this.paperLight = saved.paperLight;
       if (saved.immersiveWide) this.immersiveWide = true;
+      if (saved.longImageWidth) this.longImageWidth = saved.longImageWidth;
+      if (saved.longImageMarks === false) this.longImageMarks = false;
       if (saved.paper) {
         // 迁移旧的单份纸色记忆：墨黑归暗色，其余归亮色
         if (saved.paper === 'ink') this.paperDark = this.paperDark || saved.paper;
@@ -226,6 +259,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
 
     this._initDivider();
     this._initSearchBar();
+    this._initPreviewSearch();
     this._initComments();
     this._renderComments();
     if (this.agentBridgeEnabled) {
@@ -259,6 +293,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     if (this._resizeHandler) window.removeEventListener('resize', this._resizeHandler);
     if (this._outlineJumpT) clearTimeout(this._outlineJumpT);
     this._disposePathTooltip();
+    this._disposeReadingPathHelp();
     this._stopLocalFileWatcher();
     document.body.style.overflow = '';
   }
@@ -297,6 +332,13 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       replaceInputRef: this.replaceInputRef,
       searchCountRef: this.searchCountRef,
       searchCaseRef: this.searchCaseRef,
+      searchWordRef: this.searchWordRef,
+      searchRegexRef: this.searchRegexRef,
+      searchExpandRef: this.searchExpandRef,
+      sourceHighlightRef: this.sourceHighlightRef,
+      previewSearchBarRef: this.previewSearchBarRef,
+      previewSearchInputRef: this.previewSearchInputRef,
+      previewSearchCountRef: this.previewSearchCountRef,
       selBarRef: this.selBarRef,
       commentsRef: this.commentsRef,
       commentListRef: this.commentListRef,
@@ -311,12 +353,13 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       aiInputRef: this.aiInputRef,
       aiStatusRef: this.aiStatusRef,
       aiSendRef: this.aiSendRef,
-      aiEngineSwitchRef: this.aiEngineSwitchRef,
+      aiEngineChipRef: this.aiEngineChipRef,
       viewModeSwitcherRef: this.viewModeSwitcherRef,
       documentSidebarRef: this.documentSidebarRef,
       documentSidebarResizeRef: this.documentSidebarResizeRef,
       documentListRef: this.documentListRef,
       documentCountRef: this.documentCountRef,
+      ...this._readingPathRenderVals(),
       showEditorMode: () => this.setViewMode('editor'),
       showSplitMode: () => this.setViewMode('split'),
       showPreviewMode: () => this.setViewMode('preview'),
@@ -336,21 +379,30 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       menuFileSaveAs: () => { this.toggleFileMenu(false); this.onSaveAs(); },
       menuFolder: () => { this.toggleHeaderMenu(false); this.associateLocalFolder(); },
       toggleOutline: () => this.toggleOutline(),
+      openLongImage: () => this.openLongImage(),
       toggleSearch: () => this.toggleSearch(),
       closeSearch: () => this.closeSearch(),
       searchPrev: () => this.searchPrev(),
       searchNext: () => this.searchNext(),
       toggleSearchCase: () => this.toggleSearchCase(),
+      toggleSearchWord: () => this.toggleSearchWord(),
+      toggleSearchRegex: () => this.toggleSearchRegex(),
+      toggleSearchReplaceRow: () => this.toggleSearchReplaceRow(),
       replaceCurrent: () => this.replaceCurrent(),
       replaceAll: () => this.replaceAll(),
+      togglePreviewSearch: () => this.togglePreviewSearch(),
+      closePreviewSearch: () => this.closePreviewSearch(),
+      previewSearchPrev: () => this.previewSearchPrev(),
+      previewSearchNext: () => this.previewSearchNext(),
       toggleComments: () => this._openPanel(),
       closePanel: () => this._openPanel(false),
       toggleAI: () => this._openAIPanel(),
       closeAI: () => this._openAIPanel(false),
       toggleAIHistory: () => this.toggleAIHistory(),
       sendAIQuestion: () => this.sendAIQuestion(),
-      engineClaude: () => this.setAIEngine('claude'),
-      engineCodex: () => this.setAIEngine('codex'),
+      openAISettings: () => this.openAISettings(),
+      menuSettings: () => { this.toggleHeaderMenu(false); this.openAISettings(); },
+      translateSel: () => this.translateSel(),
       askExplain: () => this.askAIQuick('请用更容易理解的语言解释这段话。'),
       askContext: () => this.askAIQuick('这段话在全文上下文中起什么作用？'),
       askChallenge: () => this.askAIQuick('这段话有哪些隐含假设或值得质疑的地方？'),
@@ -383,11 +435,17 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     Component,
     ViewMethods,
     BridgeMethods,
+    ReadingMapMethods,
+    PathComposeMethods,
     NavigationMethods,
     SearchReplaceMethods,
+    PreviewSearchMethods,
     CommentMethods,
     DiagramMethods,
+    LongImageMethods,
     AIMethods,
+    AISettingsMethods,
+    TranslateMethods,
     EditingFileLayoutMethods,
     LocalFileSyncMethods
   );

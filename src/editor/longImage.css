@@ -1,0 +1,233 @@
+/* 「保存长图」样式。分两半，边界必须守住：
+   - `.longimg-poster` / `.longimg-prose` 开头的规则会被抽进长图（见
+     longImageComposer.ts 的 POSTER_SELECTOR），海报内部的一切都写成
+     `.longimg-poster xxx`，否则导出的图上就会缺样式；
+   - `.longimg-overlay` / `.longimg-modal` / `.longimg-stage` 是弹窗外壳，
+     只活在页面里，不进长图。
+   本文件在 editorEntry.ts 里最后引入：抄来的 `.md-preview` 规则与这里同特异度，
+   靠加载顺序覆盖。 */
+
+/* ===== 海报（会被抽进长图） ===== */
+
+.longimg-poster {
+  box-sizing: border-box;
+  padding: 56px 48px 40px;
+  background: var(--paper-bg);
+  color: var(--paper-text-2);
+  font-family: var(--paper-font-body);
+}
+.longimg-poster * { box-sizing: border-box; }
+.longimg-poster .longimg-head { margin-bottom: 40px; }
+.longimg-poster .longimg-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--paper-text-3);
+  font-family: var(--mono);
+  font-size: .68em;
+  line-height: 1.4;
+  letter-spacing: .12em;
+}
+.longimg-poster .longimg-brand::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  background: var(--paper-accent);
+}
+.longimg-poster .longimg-title {
+  margin: 20px 0 0;
+  color: var(--paper-text);
+  font-family: var(--paper-font-heading);
+  font-size: 2.1em;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+.longimg-poster .longimg-rule {
+  width: 44px;
+  height: 2px;
+  margin: 22px 0 14px;
+  border-radius: 2px;
+  background: var(--paper-accent);
+}
+.longimg-poster .longimg-meta {
+  color: var(--paper-text-3);
+  font-family: var(--mono);
+  font-size: .68em;
+  line-height: 1.5;
+  letter-spacing: .06em;
+}
+.longimg-poster .longimg-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 48px;
+  padding-top: 18px;
+  border-top: 1px solid var(--paper-border);
+  color: var(--paper-text-3);
+  font-family: var(--mono);
+  font-size: .62em;
+  line-height: 1.5;
+  letter-spacing: .1em;
+}
+.longimg-poster .longimg-missing {
+  margin: 20px 0;
+  padding: 22px;
+  border: 1px dashed var(--paper-border);
+  border-radius: var(--radius-control);
+  color: var(--paper-text-3);
+  font-family: var(--mono);
+  font-size: .7em;
+  text-align: center;
+}
+
+/* 正文：抄自预览的排版，只改掉「滚动容器」相关的几条。
+   静态图没有滚动条，凡是靠横向滚动兜住的宽内容都得改成折行，否则直接被裁掉。 */
+.longimg-prose {
+  flex: none;
+  min-height: 0;
+  padding: 0;
+  overflow: visible;
+  font-size: 1em;
+}
+.longimg-poster .longimg-prose pre {
+  overflow: visible;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+/* 预览里表格是 display:block 的横向滚动容器，宽度贴着内容；
+   长图改回 display:table 并用 max-width 收口——列宽观感与预览一致，超宽时折行而不是被裁 */
+.longimg-poster .longimg-prose table {
+  display: table;
+  width: auto;
+  max-width: 100%;
+  overflow: visible;
+  white-space: normal;
+}
+/* 预览把小图撑到 620px 便于阅读，超宽图靠容器横向滚动兜住。长图沿用同一个下限，
+   但版心更窄时收到版心宽——不覆盖 mermaid 自己写在 style 上的上限，避免小图被拉爆。 */
+.longimg-poster .mermaid-rendered { overflow: visible; }
+.longimg-poster .mermaid-rendered svg {
+  min-width: min(620px, 100%);
+  height: auto;
+}
+
+/* ===== 弹窗外壳（只在页面里） ===== */
+
+.longimg-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 340;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, .45);
+}
+.longimg-modal {
+  width: min(520px, calc(100vw - 32px));
+  max-height: min(88vh, 860px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--bg-2);
+  color: var(--text-2);
+  box-shadow: var(--shadow-lg);
+  font: var(--fs-sm)/1.6 var(--sans);
+}
+.longimg-modal-head { position: relative; padding-right: 28px; }
+.longimg-modal-title { color: var(--text); font: 600 var(--fs-md)/1.4 var(--sans); }
+.longimg-modal-hint { margin: 6px 0 0; color: var(--text-4); font-size: var(--fs-xs); }
+.longimg-modal-close {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--text-3);
+  font-size: var(--fs-lg);
+  line-height: 1;
+  cursor: pointer;
+}
+.longimg-modal-close:hover { background: var(--bg-3); color: var(--text); }
+
+/* 缩略图区：stage 按比例缩放（transform 不占布局），外层 box 占住缩放后的尺寸 */
+.longimg-stage-wrap {
+  flex: 1;
+  min-height: 120px;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  padding: 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-control);
+  background: var(--bg-3);
+}
+.longimg-stage-box {
+  flex: none;
+  align-self: flex-start;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-sm);
+}
+.longimg-stage { transform-origin: top left; }
+
+.longimg-modal-foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.longimg-options { display: flex; align-items: center; gap: 8px; }
+.longimg-segmented {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-control);
+}
+.longimg-segment {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-3);
+  font: var(--fs-xs)/1.4 var(--sans);
+  cursor: pointer;
+}
+.longimg-segment:hover { color: var(--text); }
+.longimg-segment.is-active { background: var(--accent-soft); color: var(--accent); }
+.longimg-mark-toggle {
+  padding: 5px 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--text-3);
+  font: var(--fs-xs)/1.4 var(--sans);
+  cursor: pointer;
+}
+.longimg-mark-toggle:hover { border-color: var(--text-4); color: var(--text); }
+.longimg-mark-toggle.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.longimg-modal-meta {
+  flex: 1;
+  min-width: 120px;
+  color: var(--text-4);
+  font: var(--fs-2xs)/1.5 var(--mono);
+  letter-spacing: .04em;
+  text-align: right;
+}
+.longimg-save:disabled { cursor: progress; opacity: .6; }
+
+@media (max-width: 760px) {
+  .longimg-overlay { padding: 12px; }
+  .longimg-modal { max-height: 92dvh; }
+  .longimg-modal-foot { justify-content: space-between; }
+  .longimg-modal-meta { order: 3; flex-basis: 100%; text-align: left; }
+}

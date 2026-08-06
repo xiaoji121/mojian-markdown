@@ -5,7 +5,7 @@
 //   2. 原生文件对话框与读写——真实绝对路径，授权一次永久有效
 //      （授权清单持久化在 userData，重启后恢复的文档仍可直接同步）；
 //   3. 应用菜单、macOS「双击 .md 打开」、单实例与命令行参数接管。
-import { app, BrowserWindow, Menu, dialog, ipcMain } from 'electron';
+import { app, BrowserWindow, Menu, dialog, ipcMain, shell } from 'electron';
 import { readFile, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -214,6 +214,20 @@ async function createWindow() {
     }
   });
   mainWindow.webContents.on('did-start-loading', () => { rendererReady = false; });
+  // 文章里的链接一律交给系统浏览器：target=_blank 不自开 Electron 窗口，
+  // 普通链接不把编辑器导航走；http/https/mailto 之外的协议直接丢弃。
+  const openExternally = (url) => {
+    if (/^(https?|mailto):/i.test(url)) shell.openExternal(url);
+  };
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    openExternally(url);
+    return { action: 'deny' };
+  });
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (url.startsWith(bridge.url)) return;
+    event.preventDefault();
+    openExternally(url);
+  });
   mainWindow.on('closed', () => { mainWindow = null; });
   // 直达编辑器（跳过落地页）。
   await mainWindow.loadURL(`${bridge.url}/#editor`);

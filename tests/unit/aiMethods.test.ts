@@ -12,7 +12,7 @@ function createEditor() {
     fileName: 'note.md',
     persisted: 0,
     statuses: [] as string[],
-    aiEngineSwitchRef: createRef(createStubElement()),
+    aiEngineChipRef: createRef(createStubElement()),
     _persist() { this.persisted += 1; },
     _setStatus(msg: string) { this.statuses.push(msg); },
     _documentPayload: () => ({ fileName: 'note.md', content: '' }),
@@ -32,6 +32,30 @@ test('切换 AI 引擎会持久化选择', () => {
   assert.equal(editor.aiEngine, 'claude');
 });
 
+test('引擎同步：更新面板 chip 文本并转发到设置弹窗', () => {
+  const editor = createEditor();
+  const synced: number[] = [];
+  editor._syncAISettingsEngine = () => synced.push(1);
+  editor.aiEngine = 'gemini';
+
+  editor._syncAIEngineSwitch();
+
+  assert.equal(editor.aiEngineChipRef.current.textContent, 'Gemini', 'chip 显示当前引擎');
+  assert.equal(synced.length, 1, '设置弹窗选中态一并同步');
+});
+
+test('AI 引擎支持 Gemini（API Key 提供方）', () => {
+  const editor = createEditor();
+
+  editor.setAIEngine('gemini');
+
+  assert.equal(editor.aiEngine, 'gemini');
+  assert.equal(editor._aiEngineLabel(), 'Gemini');
+
+  const body = editor._aiChatRequestBody('这段讲什么？');
+  assert.equal(body.engine, 'gemini');
+});
+
 test('问答请求体携带当前引擎', () => {
   const editor = createEditor();
   editor.aiEngine = 'codex';
@@ -41,6 +65,20 @@ test('问答请求体携带当前引擎', () => {
   assert.equal(body.engine, 'codex');
   assert.equal(body.question, '这段讲什么？');
   assert.equal(body.selection.quote, '选中的原文');
+});
+
+test('在子文档视图问 AI 时请求体携带 parentRequestId', () => {
+  const editor = createEditor();
+  editor.previewOverrideMarkdown = '# 摘录回答';
+  editor.activeAnswerRequestId = 'a1';
+
+  const body = editor._aiChatRequestBody('追问一下');
+  assert.equal(body.parentRequestId, 'a1');
+
+  editor.previewOverrideMarkdown = '';
+  editor.activeAnswerRequestId = null;
+  const mainBody = editor._aiChatRequestBody('主文档提问');
+  assert.equal(mainBody.parentRequestId, undefined);
 });
 
 test('引擎标签用于消息署名', () => {

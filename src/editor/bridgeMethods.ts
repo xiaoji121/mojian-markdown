@@ -80,32 +80,83 @@ export class BridgeMethods {
       group.appendChild(remove);
       const answers = Array.isArray(doc.answerDocuments) ? doc.answerDocuments : [];
       if (answers.length) {
-        const children = document.createElement('div');
-        children.className = 'recent-document-children';
-        answers.forEach((answer, index) => {
-          const child = document.createElement('button');
-          child.type = 'button';
-          child.className = 'recent-answer-item' +
-            (doc.documentId === this.bridgeDocumentId && answer.requestId === this.activeAnswerRequestId ? ' is-active' : '');
-          child.title = answer.question;
-          const branch = document.createElement('span');
-          branch.className = 'recent-answer-branch';
-          branch.textContent = index === answers.length - 1 ? '└' : '├';
-          const childBody = document.createElement('span');
-          childBody.className = 'recent-answer-body';
-          const childName = document.createElement('strong');
-          childName.textContent = answer.question;
-          const childMeta = document.createElement('small');
-          childMeta.textContent = (answer.engine === 'codex' ? 'Codex' : 'AI') + ' 回答 · ' + this._formatRecentTime(answer.updatedAt);
-          childBody.append(childName, childMeta);
-          child.append(branch, childBody);
-          child.addEventListener('click', () => this.openAnswerDocument(doc.documentId, answer.requestId));
-          children.appendChild(child);
-        });
-        group.appendChild(children);
+        group.appendChild(this._answerMapButton(doc));
+        const { roots, byParent } = this._answerTree(answers);
+        group.appendChild(this._answerTreeLevel(doc, roots, byParent));
       }
       list.appendChild(group);
     });
+  }
+
+
+  // ===== 追问树：子文档按 parentRequestId 逐级嵌套 =====
+
+  // 平铺的子文档列表组装成树；父节点缺失或成环的条目回落为根节点。
+  _answerTree(answers) {
+    const known = new Set(answers.map((item) => item.requestId));
+    const byParent = new Map();
+    const roots = [];
+    answers.forEach((item) => {
+      const pid = item.parentRequestId;
+      if (pid && pid !== item.requestId && known.has(pid)) {
+        if (!byParent.has(pid)) byParent.set(pid, []);
+        byParent.get(pid).push(item);
+      } else roots.push(item);
+    });
+    return { roots, byParent };
+  }
+
+
+  _answerTreeLevel(doc, nodes, byParent, seen = new Set()) {
+    const container = document.createElement('div');
+    container.className = 'recent-document-children';
+    nodes.forEach((answer, index) => {
+      if (seen.has(answer.requestId)) return;
+      seen.add(answer.requestId);
+      container.appendChild(this._answerNode(doc, answer, index === nodes.length - 1));
+      const kids = byParent.get(answer.requestId);
+      if (kids && kids.length) container.appendChild(this._answerTreeLevel(doc, kids, byParent, seen));
+    });
+    return container;
+  }
+
+
+  _answerNode(doc, answer, isLast) {
+    const child = document.createElement('button');
+    child.type = 'button';
+    child.className = 'recent-answer-item' +
+      (doc.documentId === this.bridgeDocumentId && answer.requestId === this.activeAnswerRequestId ? ' is-active' : '');
+    child.title = answer.question;
+    const branch = document.createElement('span');
+    branch.className = 'recent-answer-branch';
+    branch.textContent = isLast ? '└' : '├';
+    const childBody = document.createElement('span');
+    childBody.className = 'recent-answer-body';
+    const childName = document.createElement('strong');
+    childName.textContent = answer.question;
+    const childMeta = document.createElement('small');
+    const engineName = ({ codex: 'Codex', gemini: 'Gemini' })[answer.engine] || 'AI';
+    const childLabel = answer.kind === 'reply' ? '摘录回答' : engineName + ' 回答';
+    childMeta.textContent = childLabel + ' · ' + this._formatRecentTime(answer.updatedAt);
+    childBody.append(childName, childMeta);
+    child.append(branch, childBody);
+    child.addEventListener('click', () => this.openAnswerDocument(doc.documentId, answer.requestId));
+    return child;
+  }
+
+
+  _answerMapButton(doc) {
+    const map = document.createElement('button');
+    map.type = 'button';
+    map.className = 'recent-document-map';
+    map.title = '查看阅读脉络图';
+    map.setAttribute('aria-label', '查看 ' + doc.fileName + ' 的阅读脉络');
+    map.textContent = '⌗';
+    map.addEventListener('click', (e) => {
+      if (e && e.stopPropagation) e.stopPropagation();
+      this.openReadingMap(doc.documentId);
+    });
+    return map;
   }
 
 
@@ -126,6 +177,9 @@ export class BridgeMethods {
     }
     if (this.bridgeDocumentId === doc.documentId) {
       // 被删的是当前文档：只解除工作区关联，编辑器内容保持不动；继续编辑会重新登记。
+      // 挂起的防抖同步一并取消，否则计时器触发会把刚删除的文档重新写回工作区。
+      clearTimeout(this._bridgeSyncT);
+      this._bridgeSyncT = null;
       this.bridgeDocumentId = null;
       this.activeDocumentId = null;
       this.previewOverrideMarkdown = '';
@@ -253,6 +307,7 @@ export class BridgeMethods {
   async openRecentDocument(documentId) {
     if (!this.sourceRef.current) return;
     try {
+      await this._flushBridgeSync();
       const response = await fetch(bridgeUrl('/api/documents/') + encodeURIComponent(documentId));
       if (!response.ok) throw new Error('文档读取失败');
       const data = await response.json();
@@ -292,16 +347,24 @@ export class BridgeMethods {
       const data = await response.json();
       const doc = data.document;
       const item = (doc.messages || []).find((message) => message.requestId === requestId);
-      if (!item || !item.answer) throw new Error('这条问答还没有回答结果');
+      // 子节点也可能是用户贴在批注下的摘录回答，此时 requestId 是批注 id。
+      const reply = (item && item.answer) ? null : (doc.annotations || [])
+        .find((annotation) => annotation.id === requestId && annotation.reply && String(annotation.reply).trim());
+      if ((!item || !item.answer) && !reply) throw new Error('这条问答还没有回答结果');
       this.bridgeDocumentId = documentId;
       this.activeDocumentId = documentId;
       this.activeAnswerRequestId = requestId;
-      this.previewOverrideMarkdown = this._answerMarkdown(doc, item);
+      const trail = this._answerTrail(doc, requestId);
+      this.previewOverrideMarkdown = reply
+        ? this._answerMarkdown(doc, { quote: reply.quote, question: reply.note || reply.question, answer: reply.reply }, '摘录回答', trail)
+        : this._answerMarkdown(doc, item, 'AI 问答', trail);
       this.viewMode = 'preview';
       this._syncViewMode();
       this._renderPreview();
       this._renderRecentDocuments();
-      this._setStatus('正在阅读 AI 问答 · ' + (item.question || '未命名问题'));
+      this._setStatus(reply
+        ? '正在阅读摘录回答 · ' + this._crumbLabel(reply.note || '未命名想法')
+        : '正在阅读 AI 问答 · ' + this._crumbLabel(item.question || '未命名问题'));
       this.closeDocumentSidebar();
     } catch (error) {
       this._setStatus(error.message || 'AI 问答读取失败');
@@ -309,11 +372,48 @@ export class BridgeMethods {
   }
 
 
-  _answerMarkdown(doc, item) {
+  // 从当前子文档回溯到根，输出沿途的问题标签（不含当前节点自身）。
+  // 父指针：消息用 parentRequestId，批注用 answerRequestId（创建它的那个子文档视图）。
+  _answerTrail(doc, requestId) {
+    const messages = Array.isArray(doc.messages) ? doc.messages : [];
+    const annotations = Array.isArray(doc.annotations) ? doc.annotations : [];
+    const parentOf = (id) => {
+      const message = messages.find((m) => m.requestId === id);
+      if (message) return message.parentRequestId;
+      const annotation = annotations.find((a) => a.id === id);
+      return annotation && annotation.answerRequestId;
+    };
+    const labelOf = (id) => {
+      const message = messages.find((m) => m.requestId === id);
+      if (message) return message.question;
+      const annotation = annotations.find((a) => a.id === id);
+      return annotation && (annotation.note || annotation.question);
+    };
+    const trail = [];
+    const seen = new Set([requestId]);
+    let current = parentOf(requestId);
+    while (current && !seen.has(current)) {
+      seen.add(current);
+      trail.unshift(labelOf(current) || '未命名问题');
+      current = parentOf(current);
+    }
+    return trail;
+  }
+
+
+  _crumbLabel(label) {
+    const text = String(label || '').replace(/\s+/g, ' ').trim();
+    return text.length > 24 ? text.slice(0, 24) + '…' : text;
+  }
+
+
+  _answerMarkdown(doc, item, heading = 'AI 问答', trail = []) {
     const quote = String(item.quote || '').trim();
+    const crumbs = ['来源：' + (doc.fileName || doc.title || '未命名文档')]
+      .concat(trail.map((label) => this._crumbLabel(label)));
     const parts = [
-      '# AI 问答',
-      `> 来源：${doc.fileName || doc.title || '未命名文档'}`
+      '# ' + heading,
+      '> ' + crumbs.join(' › ')
     ];
     if (quote) parts.push('> ' + quote.replace(/\n/g, '\n> '));
     parts.push('## 问题', item.question || '', '## 回答', item.answer || '');
@@ -336,6 +436,9 @@ export class BridgeMethods {
         note: item.note || question,
         question,
         answer,
+        reply: item.reply || '',
+        replyAt: item.replyAt,
+        answerRequestId: item.answerRequestId || undefined,
         requestId: item.requestId || item.id || '',
         documentId,
         aiStatus: question ? (answer ? 'answered' : 'pending') : undefined,
@@ -371,9 +474,11 @@ export class BridgeMethods {
       paperDark: this.paperDark || undefined,
       paperLight: this.paperLight || undefined,
       immersiveWide: this.immersiveWide || undefined,
+      longImageWidth: this.longImageWidth || undefined,
+      longImageMarks: this.longImageMarks === false ? false : undefined,
       comments: this.comments,
       bridgeDocumentId: this.bridgeDocumentId || undefined,
-      aiEngine: this.aiEngine === 'codex' ? 'codex' : undefined,
+      aiEngine: (this.aiEngine && this.aiEngine !== 'claude') ? this.aiEngine : undefined,
       savedAt
     });
     if (syncBridge && this.agentBridgeEnabled) this._scheduleBridgeSync();
@@ -383,7 +488,20 @@ export class BridgeMethods {
   _scheduleBridgeSync() {
     if (!this.sourceRef.current || !this.fileName || this.fileName === '未命名.md') return;
     clearTimeout(this._bridgeSyncT);
-    this._bridgeSyncT = setTimeout(() => this._syncDocumentToBridge(), 800);
+    this._bridgeSyncT = setTimeout(() => {
+      this._bridgeSyncT = null;
+      this._syncDocumentToBridge();
+    }, 800);
+  }
+
+
+  // 还在防抖等待中的变更立即落盘。openRecentDocument 会用 bridge 数据整体重建
+  // comments，不先冲刷的话，这 800ms 窗口里新写的批注/回复会被覆盖丢失。
+  async _flushBridgeSync() {
+    if (!this._bridgeSyncT) return;
+    clearTimeout(this._bridgeSyncT);
+    this._bridgeSyncT = null;
+    await this._syncDocumentToBridge();
   }
 
 

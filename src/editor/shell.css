@@ -3,6 +3,11 @@
    JS 运行时仍以内联 style 覆盖（display / width / fontSize 等），
    这里的取值即各元素初始态。 */
 
+/* 编辑器骨架自管滚动，页面级滚动一律锁死：弹层 / 提示等追加到 body 的
+   元素意外占高时，页面会多出一条几乎满高的滚动条竖带（桌面端实测）。 */
+html:has(body.editor-active),
+body.editor-active { overflow: hidden; }
+
 .app-shell {
   height: 100vh;
   display: flex;
@@ -11,6 +16,20 @@
   background: var(--bg);
   color: var(--text);
   font-family: var(--sans);
+  /* 界面骨架不可选中；原文、预览与输入类内容在下方单独放开 */
+  -webkit-user-select: none;
+  user-select: none;
+}
+.app-shell input,
+.app-shell textarea,
+.md-source,
+.md-preview,
+.ai-message-body,
+.ai-message-quote,
+.comment-ai-question,
+.comment-ai-answer {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /* ===== header ===== */
@@ -201,8 +220,12 @@ body.is-desktop-app .header-more { display: none; }
   font-weight: 600;
 }
 .abtn.primary:hover { border-color: var(--accent-2); background: var(--accent-2); color: var(--accent-ink); }
-.abtn.icon { width: 34px; padding: 0; font-size: var(--fs-lg); }
-.abtn.document-toggle { display: none; width: 34px; padding: 0; font-size: var(--fs-lg); }
+/* 纯图标按钮的字形要比文本按钮大：单个符号（☀/⚙/☰/⋯）在 34px 按钮里
+   用 14px 会又小又飘，看不清；18px 才与相邻的多字词按钮视觉等重。 */
+.abtn.icon { width: 34px; padding: 0; font-size: 18px; }
+.abtn.document-toggle { display: none; width: 34px; padding: 0; font-size: 18px; }
+/* 主题/设置这类低频图标默认更淡，放大后再加深一档以补足对比度 */
+.abtn.icon.collapsible-action { color: var(--text-2); }
 .abtn-glyph { font-size: var(--fs-lg); }
 .accent-star { color: var(--accent); font-size: var(--fs-lg); }
 .count-badge {
@@ -222,7 +245,7 @@ body.is-desktop-app .header-more { display: none; }
 /* ===== 双栏主体 ===== */
 .editor-main { flex: 1; display: flex; min-height: 0; }
 .source-pane,
-.preview-pane { flex: 1 1 50%; min-width: 0; display: flex; flex-direction: column; }
+.preview-pane { position: relative; flex: 1 1 50%; min-width: 0; display: flex; flex-direction: column; }
 /* 预览栏作为容器查询锚点：侧面板开合改变的是栏宽而非窗口宽，
    工具栏的收纳规则（styles.css）按栏宽生效。 */
 .preview-pane { container-type: inline-size; }
@@ -288,6 +311,15 @@ body.is-desktop-app .header-more { display: none; }
 .fmt-lg { font-size: var(--fs-lg); }
 .fmt-code { font-family: var(--mono); }
 
+/* 镜像高亮层方案：textarea 画不出高亮，背景转透明，
+   下方垫一层同字体同排版的镜像层渲染搜索 mark（searchReplaceMethods）。 */
+.source-editor-area {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  background: var(--paper-bg-soft);
+}
 textarea.md-source {
   flex: 1;
   min-height: 0;
@@ -296,56 +328,153 @@ textarea.md-source {
   border: none;
   outline: none;
   padding: 28px 32px;
-  background: var(--paper-bg-soft);
+  background: transparent;
   color: var(--paper-text-2);
   font-family: var(--mono);
   font-size: var(--fs-lg);
   line-height: 1.85;
   tab-size: 2;
+  position: relative;
+  z-index: 1;
+}
+.source-highlight-layer {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  padding: 28px 32px;
+  color: transparent;
+  font-family: var(--mono);
+  font-size: var(--fs-lg);
+  line-height: 1.85;
+  tab-size: 2;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  pointer-events: none;
+}
+/* 滚动槽与 textarea 同宽以保证换行一致，但滑块不可见 */
+.source-highlight-layer::-webkit-scrollbar-thumb { background: transparent; }
+.source-highlight-layer mark.source-mark {
+  color: transparent;
+  background: var(--paper-mark);
+  border-radius: 2px;
+}
+.source-highlight-layer mark.is-current {
+  background: color-mix(in srgb, var(--accent) 55%, transparent);
 }
 
 /* ===== 原文搜索替换浮层 ===== */
 .source-pane { position: relative; }
+/* VS Code 风格搜索替换条：左侧箭头折叠替换行，选项按钮内嵌在输入框里 */
 .search-bar {
   display: none;
   position: absolute;
   top: 48px;
   right: 12px;
   z-index: 24;
-  flex-direction: column;
+  align-items: stretch;
   gap: 6px;
-  padding: 8px 10px;
+  padding: 6px 8px;
   background: var(--tool-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-surface);
   box-shadow: var(--shadow-md);
 }
 .search-bar.is-open { display: flex; }
+.search-expand-toggle {
+  flex: none;
+  width: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--text-4);
+  font-size: var(--fs-md);
+  cursor: pointer;
+}
+.search-expand-toggle:hover { background: var(--bg-2); color: var(--text-2); }
+/* 只旋转箭头字形；按钮本体是全高条，整体旋转会把 hover 背景转出搜索条外 */
+.search-expand-icon { display: block; transition: transform .15s ease; }
+.search-bar.is-expanded .search-expand-icon { transform: rotate(90deg); }
+.search-bar-rows { display: flex; flex-direction: column; gap: 6px; }
+.search-bar:not(.is-expanded) .search-row-replace { display: none; }
 .search-row { display: flex; align-items: center; gap: 6px; }
+.search-input-wrap { position: relative; flex: 1 1 auto; display: flex; }
 .search-input {
   flex: 1 1 auto;
-  width: 190px;
+  width: 230px;
   height: 26px;
-  padding: 0 8px;
+  padding: 0 76px 0 8px;
   background: var(--bg-input);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-control);
   color: var(--text);
   font-size: var(--fs-md);
 }
+.search-input.replace-input { padding-right: 8px; }
 .search-input:focus { outline: none; border-color: var(--accent); }
 .search-bar.search-no-match .search-input:not(.replace-input) { border-color: var(--danger); }
-.search-count {
-  flex: none;
-  min-width: 40px;
-  text-align: center;
-  color: var(--text-3);
+.search-input-tools {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 2px;
+}
+.search-opt {
+  height: 20px;
+  min-width: 22px;
+  padding: 0 3px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--text-4);
   font-family: var(--mono);
   font-size: var(--fs-xs);
+  cursor: pointer;
 }
+.search-opt:hover { background: var(--bg-2); color: var(--text-2); }
+.search-opt.is-active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.search-opt-word { text-decoration: underline; text-underline-offset: 2px; }
+.search-count {
+  flex: none;
+  min-width: 88px;
+  text-align: left;
+  color: var(--text-3);
+  font-family: var(--sans);
+  font-size: var(--fs-xs);
+}
+.search-bar.search-no-match .search-count { color: var(--danger); }
 .search-tool { flex: none; height: 26px; min-width: 28px; padding: 0 6px; font-size: var(--fs-sm); }
 .search-tool.is-active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 .search-replace-btn { min-width: 46px; }
+
+/* ===== 预览 / 沉浸式搜索浮层（previewSearchMethods） ===== */
+.preview-search-bar {
+  display: none;
+  position: absolute;
+  z-index: 40;
+  top: 46px;
+  right: 16px;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--tool-bg);
+  box-shadow: var(--shadow-md);
+}
+.preview-search-bar.is-open { display: flex; }
+.preview-search-bar.search-no-match .search-input { border-color: var(--danger); }
+/* 匹配高亮走 CSS Custom Highlight API，不改动预览 DOM */
+::highlight(mojian-search) { background-color: var(--paper-mark); }
+::highlight(mojian-search-current) {
+  background-color: var(--accent);
+  color: var(--accent-ink);
+}
 @media (max-width: 760px) {
   .search-bar { left: 12px; right: 12px; }
   .search-count { min-width: 34px; }
@@ -405,7 +534,8 @@ textarea.md-source {
   font-size: var(--fs-2xs);
   text-align: center;
 }
-.md-preview { flex: 1; min-height: 0; overflow-y: auto; padding: 30px 40px; }
+/* 横向永不滚动：宽内容（表格/代码/图）各自内部滚动，正文靠 overflow-wrap 断行 */
+.md-preview { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 30px 40px; }
 
 /* ===== 侧面板（批注 / AI）公共骨架 ===== */
 .comments-panel,
@@ -466,27 +596,17 @@ textarea.md-source {
 }
 
 /* ===== AI 面板 ===== */
-.ai-engine-switch {
-  display: flex;
-  gap: 2px;
-  padding: 2px;
+/* 当前引擎只读 chip：引擎切换与 API Key 都在顶栏「设置」里（aiSettingsMethods） */
+.ai-engine-chip {
+  padding: 5px 9px;
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius-control);
-}
-.ai-engine-option {
-  padding: 4px 8px;
-  border: 0;
-  border-radius: calc(var(--radius-control) - 2px);
-  background: transparent;
-  color: var(--text-3);
-  font: var(--fs-2xs)/1 var(--mono);
-  cursor: pointer;
-}
-.ai-engine-option.is-active {
+  border-radius: var(--radius-pill);
   background: var(--accent-soft);
   color: var(--accent);
-  font-weight: 600;
+  font: 600 var(--fs-2xs)/1 var(--mono);
+  cursor: pointer;
 }
+.ai-engine-chip:hover { border-color: var(--accent); }
 .ai-history-toggle {
   padding: 6px 8px;
   border: 1px solid var(--border-soft);
@@ -600,8 +720,15 @@ textarea.md-source {
   font-size: var(--fs-xs);
   letter-spacing: 0.04em;
 }
-.save-status { color: var(--text-3); }
-.footer-stats { display: flex; align-items: center; gap: 20px; }
+/* 状态文案可能带问题摘要，单行省略兜底，不许把 30px 底栏撑高 */
+.save-status {
+  color: var(--text-3);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.footer-stats { flex: none; display: flex; align-items: center; gap: 20px; }
 .font-controls { display: flex; align-items: center; gap: 7px; }
 .font-controls-label { color: var(--text-4); letter-spacing: 0.1em; }
 .font-size-value { min-width: 34px; color: var(--text-2); text-align: center; }

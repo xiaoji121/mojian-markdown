@@ -45,6 +45,16 @@ test('字数统计跟随内容更新', async ({ page }) => {
   await expect(page.locator('.word-count')).toHaveText('5 字 · 2 行');
 });
 
+test('顶栏纯图标按钮（主题/设置）字形足够大，不糊成小点', async ({ page }) => {
+  // 单字符图标（☀/⚙）与相邻的多字词按钮不同，14px 时在 34px 按钮里又小又飘，
+  // 桌面端看不清。要求字形明显大于文本按钮的 12px。
+  const glyphSize = (selector: string) =>
+    page.locator(selector).evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+
+  expect(await glyphSize('.abtn.icon.collapsible-action:not(.settings-entry)')).toBeGreaterThanOrEqual(17);
+  expect(await glyphSize('.settings-entry.collapsible-action')).toBeGreaterThanOrEqual(17);
+});
+
 test('视图切换在编辑、分屏、预览三种布局间生效', async ({ page }) => {
   const main = page.locator('.editor-main');
   const source = page.locator('.md-source');
@@ -120,4 +130,63 @@ test('主题切换写入 data-theme 并可来回切换', async ({ page }) => {
 
   await page.getByRole('button', { name: '切换亮色或暗黑主题' }).click();
   await expect(body).toHaveAttribute('data-theme', initial!);
+});
+
+test('界面骨架不可选中，原文与预览内容可选', async ({ page }) => {
+  const styles = await page.evaluate(() => {
+    const pick = (selector: string) =>
+      getComputedStyle(document.querySelector(selector)!).userSelect;
+    return {
+      header: pick('.app-header'),
+      footer: pick('.app-footer'),
+      previewToolbar: pick('.preview-pane .pane-toolbar'),
+      source: pick('.md-source'),
+      preview: pick('.md-preview'),
+      searchInput: pick('.search-input')
+    };
+  });
+
+  expect(styles.header).toBe('none');
+  expect(styles.footer).toBe('none');
+  expect(styles.previewToolbar).toBe('none');
+  expect(styles.source).toBe('text');
+  expect(styles.preview).toBe('text');
+  expect(styles.searchInput).toBe('text');
+});
+
+test('body 被杂散元素撑高时不出现页面级第二根滚动条', async ({ page }) => {
+  // 弹层/提示类元素追加到 body 后若意外占高，页面会多出一条几乎满高的
+  // 滚动条竖带（桌面端实测）；编辑器骨架自管滚动，页面级滚动必须锁死。
+  await page.evaluate(() => {
+    const stray = document.createElement('div');
+    stray.style.height = '15px';
+    document.body.appendChild(stray);
+  });
+
+  // 滚轮滚动页面本身不应生效（无头环境滚动条不占宽，只能按可滚动性断言）；
+  // 落点选在顶部标题栏——内部无滚动容器，滚轮会直接作用于页面。
+  await page.mouse.move(500, 20);
+  await page.mouse.wheel(0, 120);
+  await page.waitForTimeout(120);
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+
+  // 有占位滚动条的环境（桌面端）也不得让页面滚动条抢走视口宽度
+  const gutter = await page.evaluate(
+    () => window.innerWidth - document.documentElement.clientWidth
+  );
+  expect(gutter).toBe(0);
+});
+
+test('NBSP 正文与超长 token 不撑出预览区横向滚动', async ({ page }) => {
+  // 钉钉文档导出的正文空格全是 U+00A0，整段成为不可断行长串；再加无断点长 token
+  const nbspParagraph = ('word' + '\u00A0').repeat(120).trim();
+  const longToken = 'https://example.com/' + 'x'.repeat(160);
+  await page.locator('.md-source').fill('# 宽内容\n\n' + nbspParagraph + '\n\n' + longToken + '\n');
+
+  const overflow = await page.evaluate(() => {
+    const preview = document.querySelector('.md-preview')!;
+    return preview.scrollWidth - preview.clientWidth;
+  });
+
+  expect(overflow).toBeLessThanOrEqual(0);
 });

@@ -43,6 +43,11 @@ export class CommentMethods {
   _onPreviewSelect() {
     const prev = this.previewRef.current, bar = this.selBarRef.current;
     if (!prev || !bar) return;
+    // 阅读脉络图是导航总览，不支持在其上划词批注/提问。
+    if (this.previewOverrideMarkdown && !this.activeAnswerRequestId) {
+      bar.style.display = 'none';
+      return;
+    }
     const sel = window.getSelection();
     if (!sel || sel.isCollapsed || !sel.rangeCount) { bar.style.display = 'none'; return; }
     const range = sel.getRangeAt(0);
@@ -144,12 +149,24 @@ export class CommentMethods {
   }
 
 
+  // 预览可能是主文档、某条问答/摘录回答的 override 视图，或阅读脉络图。
+  // 批注只在创建它的那个视图里渲染高亮，互不串扰；
+  // 脉络图不属于任何子文档（override 但无 activeAnswerRequestId），不渲染任何高亮。
+  _commentVisibleInPreview(c) {
+    if (this.previewOverrideMarkdown) {
+      return !!this.activeAnswerRequestId && c.answerRequestId === this.activeAnswerRequestId;
+    }
+    return !c.answerRequestId;
+  }
+
+
   _applyHighlights() {
     const prev = this.previewRef.current;
     if (!prev || !this.comments || !this.comments.length) return;
     const full = prev.textContent;
     const placed = [];
     for (const c of this.comments) {
+      if (!this._commentVisibleInPreview(c)) { placed.push(null); continue; }
       const range = this._quoteRange(full, c);
       placed.push(range ? this._wrapRange(prev, range.start, range.end, c) : null);
     }
@@ -164,6 +181,7 @@ export class CommentMethods {
     const p = this._pending;
     if (!p || !p.quote) return null;
     const c = { id: 'c' + Date.now() + Math.floor(Math.random() * 999), quote: p.quote, occ: p.occ || 0, start: p.start, type: type, note: '', ts: Date.now() };
+    if (this.previewOverrideMarkdown && this.activeAnswerRequestId) c.answerRequestId = this.activeAnswerRequestId;
     this.comments.push(c);
     this._pending = null;
     const sel = window.getSelection(); if (sel) sel.removeAllRanges();
@@ -245,8 +263,26 @@ export class CommentMethods {
   }
 
 
-  _focusComment(id, focusInput) {
+  // 批注不在当前预览视图时先切过去：子文档批注打开对应子文档，
+  // 主文档批注从 override 视图退回主文档，之后才能滚动定位到高亮处。
+  async _openCommentView(c) {
+    if (c.answerRequestId) {
+      const documentId = c.documentId || this.bridgeDocumentId;
+      if (!documentId) return;
+      await this.openAnswerDocument(documentId, c.answerRequestId);
+    } else if (this.previewOverrideMarkdown) {
+      this.previewOverrideMarkdown = '';
+      this.activeAnswerRequestId = null;
+      this._renderPreview();
+      this._renderRecentDocuments();
+    }
+  }
+
+
+  async _focusComment(id, focusInput) {
     this._openPanel(true);
+    const comment = this.comments.find((c) => c.id === id);
+    if (comment && !this._commentVisibleInPreview(comment)) await this._openCommentView(comment);
     const prev = this.previewRef.current;
     const span = prev && prev.querySelector('[data-comment-id="' + id + '"]');
     if (span) { this._scrollPreviewTo(span); this._flashEl(span); }
@@ -322,6 +358,12 @@ export class CommentMethods {
       viewBtn.disabled = c.aiStatus === 'pending';
       viewBtn.addEventListener('click', () => this._openAIFromComment(c));
       acts.appendChild(viewBtn);
+    } else if (!this._replyBoxVisible(c)) {
+      const replyBtn = document.createElement('button');
+      replyBtn.textContent = '回复'; replyBtn.className = 'tbtn'; replyBtn.style.cssText = btnCss;
+      replyBtn.title = '把从别处找到的回答贴在这条批注下方';
+      replyBtn.addEventListener('click', () => this._openReplyBox(c.id));
+      acts.appendChild(replyBtn);
     }
     acts.appendChild(delBtn);
     head.appendChild(left); head.appendChild(acts);
@@ -360,8 +402,47 @@ export class CommentMethods {
       ta.addEventListener('input', () => { c.note = ta.value; grow(); this._persist(); this._refreshBadges(); });
       setTimeout(grow, 0);
       card.appendChild(ta);
+      if (this._replyBoxVisible(c)) this._appendReplyBlock(card, c);
     }
     return card;
+  }
+
+
+  // ===== 批注回复：把从别处找到的答案贴在想法下方 =====
+
+  _replyBoxVisible(c) {
+    if (c.type === 'ai') return false;
+    if (c.reply && c.reply.trim()) return true;
+    return !!(this._openReplyIds && this._openReplyIds.has(c.id));
+  }
+
+
+  _openReplyBox(id) {
+    (this._openReplyIds || (this._openReplyIds = new Set())).add(id);
+    this._renderComments();
+    const list = this.commentListRef.current;
+    const card = list && list.querySelector('[data-card-id="' + id + '"]');
+    const ta = card && card.querySelector('.comment-reply-input');
+    if (ta) setTimeout(() => ta.focus(), 50);
+  }
+
+
+  _appendReplyBlock(card, c) {
+    const label = document.createElement('div');
+    label.className = 'comment-reply-label';
+    label.textContent = '找到的回答';
+    const ta = document.createElement('textarea');
+    ta.className = 'comment-note-input comment-reply-input';
+    ta.value = c.reply || '';
+    ta.placeholder = '把你从别处找到的回答贴在这里…';
+    ta.spellcheck = false;
+    const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.max(42, ta.scrollHeight) + 'px'; };
+    ta.addEventListener('focus', () => { ta.style.borderColor = 'var(--text-4)'; });
+    ta.addEventListener('blur', () => { ta.style.borderColor = 'var(--border-soft)'; });
+    ta.addEventListener('input', () => { c.reply = ta.value; c.replyAt = Date.now(); grow(); this._persist(); });
+    setTimeout(grow, 0);
+    card.appendChild(label);
+    card.appendChild(ta);
   }
 
 
@@ -384,7 +465,10 @@ export class CommentMethods {
     if (c.type === 'ai') {
       s += '\n问题：' + (c.question || c.note || '');
       if (c.answer) s += '\n回答：' + c.answer;
-    } else if (c.note && c.note.trim()) s += '\n我的想法：' + c.note;
+    } else {
+      if (c.note && c.note.trim()) s += '\n我的想法：' + c.note;
+      if (c.reply && c.reply.trim()) s += '\n找到的回答：' + c.reply;
+    }
     return s;
   }
 
@@ -405,7 +489,10 @@ export class CommentMethods {
         if (c.type === 'ai') {
           line += '\n\n**问题：** ' + (c.question || c.note || '');
           if (c.answer) line += '\n\n**回答：**\n\n' + c.answer;
-        } else if (c.note && c.note.trim()) line += '\n\n> ' + c.note;
+        } else {
+          if (c.note && c.note.trim()) line += '\n\n> ' + c.note;
+          if (c.reply && c.reply.trim()) line += '\n\n**找到的回答：**\n\n' + c.reply;
+        }
         return line;
       }).join('\n\n');
     }

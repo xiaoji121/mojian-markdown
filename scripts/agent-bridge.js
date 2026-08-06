@@ -8,7 +8,15 @@ import { pathToFileURL } from 'node:url';
 import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { createDocumentStore, normalizeAnnotation } from './agent-bridge-store.js';
+import { createSettingsStore, maskProviderSettings } from './agent-bridge-settings.js';
 import { normalizeEngine, runEngine } from './agent-bridge-engines.js';
+import {
+  collectPathNodes,
+  composePrompt,
+  composedFileName,
+  composedDocumentContent,
+  normalizeComposeMode
+} from './agent-bridge-compose.js';
 
 const STATIC_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -36,14 +44,28 @@ async function readBody(req) {
 
 function summarizeDocument(doc) {
   const messages = Array.isArray(doc.messages) ? doc.messages : [];
+  // parentRequestId 指向提问时所在的子文档，前端据此把追问渲染成嵌套树。
   const answers = messages
     .filter((item) => item.answer)
     .map((item) => ({
       requestId: item.requestId,
       question: item.question || '未命名问题',
       engine: item.engine,
+      parentRequestId: item.parentRequestId || undefined,
       updatedAt: item.answerAt || item.questionAt || doc.updatedAt
     }));
+  // 用户把别处找到的答案贴在批注下时，同样作为该文档的子节点展示。
+  const replies = (Array.isArray(doc.annotations) ? doc.annotations : [])
+    .filter((item) => item.type !== 'ai' && item.reply && String(item.reply).trim())
+    .map((item) => ({
+      requestId: item.id,
+      question: item.note || item.question || item.quote || '未命名想法',
+      kind: 'reply',
+      parentRequestId: item.answerRequestId || undefined,
+      updatedAt: new Date(item.replyAt || item.ts || doc.updatedAt).toISOString()
+    }));
+  const answerDocuments = [...answers, ...replies]
+    .sort((a, b) => String(a.updatedAt).localeCompare(String(b.updatedAt)));
   return {
     documentId: doc.documentId,
     title: doc.title,
@@ -52,7 +74,7 @@ function summarizeDocument(doc) {
     updatedAt: doc.updatedAt,
     annotationCount: Array.isArray(doc.annotations) ? doc.annotations.length : 0,
     questionCount: messages.length,
-    answerDocuments: answers
+    answerDocuments
   };
 }
 
@@ -94,7 +116,16 @@ function bridgePrompt(body, doc) {
   ].join('\n');
 }
 
-function createRequestHandler({ store, staticDir, cors }) {
+function translatePrompt(text) {
+  return [
+    '你是翻译助手。请翻译下面这段文字：若其主要语言是中文，译成英文；否则译成中文。',
+    '只输出译文本身，不要任何解释、注音或前后缀。',
+    '',
+    text
+  ].join('\n');
+}
+
+function createRequestHandler({ store, settings, staticDir, cors }) {
   const { readDocument, writeDocument, deleteDocument, upsertDocument, listDocuments } = store;
   const corsHeaders = cors
     ? {
@@ -134,12 +165,16 @@ function createRequestHandler({ store, staticDir, cors }) {
     const engine = normalizeEngine(body.engine);
     const doc = await upsertDocument(body.document || {});
     const requestId = randomUUID();
+    // 在子文档视图里追问时，记下父节点，问答树才能逐级嵌套。
+    const parentRequestId = typeof body.parentRequestId === 'string' && body.parentRequestId
+      ? body.parentRequestId : undefined;
     const message = {
       requestId,
       engine,
       question: body.question || '',
       quote: body.selection?.quote || '',
       questionAt: new Date().toISOString(),
+      parentRequestId,
       answer: ''
     };
     doc.messages.push(message);
@@ -152,6 +187,7 @@ function createRequestHandler({ store, staticDir, cors }) {
       note: message.question,
       question: message.question,
       answer: '',
+      answerRequestId: parentRequestId,
       aiStatus: 'pending'
     }));
     await writeDocument(doc);
@@ -170,9 +206,12 @@ function createRequestHandler({ store, staticDir, cors }) {
     });
 
     try {
+      const engineOptions = engine === 'gemini'
+        ? { gemini: await settings.providerSettings('gemini') }
+        : {};
       const answer = await runEngine(engine, bridgePrompt(body, doc), (delta) => {
         writeSse(res, 'delta', { text: delta });
-      });
+      }, process.env, engineOptions);
       message.answer = answer;
       message.answerAt = new Date().toISOString();
       const annotation = doc.annotations.find((item) => item.requestId === requestId);
@@ -188,12 +227,114 @@ function createRequestHandler({ store, staticDir, cors }) {
     }
   }
 
+  // 路径成文：把阅读脉络里选中的节点串成上下文，生成长文/二创并存为新文档。
+  async function handleCompose(req, res) {
+    const body = await readBody(req);
+    const engine = normalizeEngine(body.engine);
+    const mode = normalizeComposeMode(body.mode);
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      ...corsHeaders
+    });
+    try {
+      const documentId = String(body.documentId || '');
+      let doc = null;
+      try {
+        if (/^[\w.-]+$/.test(documentId)) doc = await readDocument(documentId);
+      } catch {}
+      if (!doc) throw new Error('文档不存在，请回到阅读脉络重新发起');
+      const nodes = collectPathNodes(doc, body.requestIds);
+      if (!nodes.length) throw new Error('所选节点在该文档中不存在，请回到阅读脉络重新选择');
+      writeSse(res, 'meta', { documentId: doc.documentId, engine, mode, nodeCount: nodes.length });
+      const engineOptions = engine === 'gemini'
+        ? { gemini: await settings.providerSettings('gemini') }
+        : {};
+      const prompt = composePrompt({ doc, nodes, mode, instruction: body.instruction });
+      const answer = await runEngine(engine, prompt, (delta) => {
+        writeSse(res, 'delta', { text: delta });
+      }, process.env, engineOptions);
+      const fileName = composedFileName(doc, mode);
+      const composed = await upsertDocument({
+        sourceApp: 'markdown-editor',
+        title: fileName,
+        fileName,
+        content: composedDocumentContent(answer, { doc, nodes, mode })
+      });
+      writeSse(res, 'done', { composedDocumentId: composed.documentId, fileName: composed.fileName });
+    } catch (error) {
+      writeSse(res, 'error', { message: error.message || String(error) });
+    } finally {
+      res.end();
+    }
+  }
+
+  // 连通性验证：优先用请求里的 Key/模型（保存前先测），缺省回落到已保存配置。
+  async function handleSettingsTest(req, res) {
+    const body = await readBody(req);
+    const saved = await settings.providerSettings('gemini');
+    const gemini = {
+      apiKey: body?.gemini?.apiKey || saved.apiKey,
+      model: body?.gemini?.model || saved.model,
+      proxy: body?.gemini?.proxy || saved.proxy
+    };
+    let timer = null;
+    try {
+      const reply = await Promise.race([
+        runEngine('gemini', '连通性测试：请只回复 OK', () => {}, process.env, { gemini }),
+        new Promise((_resolve, reject) => {
+          timer = setTimeout(() => reject(new Error('验证超时（15 秒），请检查网络或模型名')), 15_000);
+        })
+      ]);
+      return sendJson(res, 200, { ok: true, model: gemini.model, reply: String(reply).slice(0, 80) });
+    } catch (error) {
+      return sendJson(res, 200, { ok: false, message: error.message || String(error) });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  // 划词翻译：走用户自配的 Gemini Key，流式 SSE 返回译文。
+  async function handleTranslate(req, res) {
+    const body = await readBody(req);
+    const text = String(body.text || '').trim();
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      ...corsHeaders
+    });
+    try {
+      if (!text) throw new Error('没有可翻译的文字');
+      const gemini = await settings.providerSettings('gemini');
+      writeSse(res, 'meta', { provider: 'gemini', model: gemini.model });
+      const answer = await runEngine('gemini', translatePrompt(text), (delta) => {
+        writeSse(res, 'delta', { text: delta });
+      }, process.env, { gemini });
+      writeSse(res, 'done', { text: answer });
+    } catch (error) {
+      writeSse(res, 'error', { message: error.message || String(error) });
+    } finally {
+      res.end();
+    }
+  }
+
   return async function handleRequest(req, res) {
     if (req.method === 'OPTIONS') return sendJson(res, 204, {});
     const url = new URL(req.url || '/', `http://${req.headers.host || '127.0.0.1'}`);
     const parts = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
     try {
       if (req.method === 'GET' && url.pathname === '/health') return sendJson(res, 200, { ok: true });
+      if (req.method === 'GET' && url.pathname === '/api/settings') {
+        return sendJson(res, 200, maskProviderSettings(await settings.readSettings()));
+      }
+      if (req.method === 'POST' && url.pathname === '/api/settings') {
+        const body = await readBody(req);
+        return sendJson(res, 200, maskProviderSettings(await settings.updateProviders(body)));
+      }
+      if (req.method === 'POST' && url.pathname === '/api/settings/test') return handleSettingsTest(req, res);
+      if (req.method === 'POST' && url.pathname === '/api/translate') return handleTranslate(req, res);
       if (req.method === 'GET' && url.pathname === '/api/documents') {
         const documents = (await listDocuments()).map(summarizeDocument);
         return sendJson(res, 200, { documents });
@@ -209,6 +350,7 @@ function createRequestHandler({ store, staticDir, cors }) {
         return sendJson(res, 200, { documentId: doc.documentId, messages: doc.messages || [] });
       }
       if (req.method === 'POST' && url.pathname === '/api/chat') return handleChat(req, res);
+      if (req.method === 'POST' && url.pathname === '/api/compose') return handleCompose(req, res);
       if (req.method === 'GET' && url.pathname === '/api/conversations') {
         const conversations = (await listDocuments()).filter((doc) => doc.messages?.length).map(conversationSummary);
         return sendJson(res, 200, { conversations });
@@ -248,7 +390,8 @@ export function startAgentBridge({
   cors = true
 } = {}) {
   const store = createDocumentStore(root);
-  const server = createServer(createRequestHandler({ store, staticDir, cors }));
+  const settings = createSettingsStore(root);
+  const server = createServer(createRequestHandler({ store, settings, staticDir, cors }));
   return new Promise((resolvePromise, rejectPromise) => {
     server.once('error', rejectPromise);
     server.listen(port, host, () => {
