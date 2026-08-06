@@ -575,6 +575,7 @@ export class ViewMethods {
     this.fileName = name;
     if (this.fileNameRef.current) this.fileNameRef.current.textContent = name;
     if (typeof this._syncFileNameTooltip === 'function') this._syncFileNameTooltip();
+    if (typeof this._updateFooterPath === 'function') this._updateFooterPath();
   }
 
 }

@@ -162,3 +162,34 @@ test('本会话打开过的旧文档即使超出上限也保留在最近区', ()
     assert.ok(collectTexts(list).includes('doc-9.md'), '本会话打开过的文档应始终保留在最近区');
   });
 });
+
+test('追问树默认收起，点击「N 条追问」展开', () => {
+  withStubDocument(() => {
+    const { editor, list } = pinEditor([{
+      documentId: 'doc-1', fileName: 'note.md', updatedAt: '2026-08-05T08:00:00.000Z',
+      annotationCount: 0, questionCount: 2,
+      answerDocuments: [
+        { requestId: 'a1', question: '第一问', engine: 'claude', updatedAt: '2026-08-05T08:10:00.000Z' },
+        { requestId: 'a2', question: '第二问', engine: 'gemini', updatedAt: '2026-08-05T08:20:00.000Z' }
+      ]
+    }], { _expandedAnswerDocIds: new Set(), openReadingMap() {} });
+
+    editor._renderRecentDocuments();
+    // 默认收起：只见开关，不见子节点
+    const toggle = findByClass(list, 'recent-answer-toggle');
+    assert.ok(toggle && collectTexts(toggle).includes('2 条追问'), '应显示「2 条追问」开关');
+    assert.equal(findByClassLoose(list, 'recent-answer-item'), null, '默认不渲染子节点');
+
+    editor.toggleAnswerTree('doc-1');
+    assert.ok(collectTexts(list).includes('第一问'), '展开后子节点可见');
+    assert.ok(findByClassLoose(list, 'recent-answer-toggle')!.className.includes('is-open'), '开关标记为展开态');
+  });
+});
+
+test('打开文档会自动展开其追问树', () => {
+  withStubDocument(() => {
+    const { editor } = pinEditor([]);
+    editor._noteDocumentOpened('doc-42');
+    assert.ok(editor._expandedAnswerDocIds.has('doc-42'), '打开的文档应记入展开集');
+  });
+});

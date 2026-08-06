@@ -81,14 +81,31 @@
   }
   .recent-list-more:hover { background: var(--bg-2); color: var(--accent); }
   .recent-document-group { margin-bottom: 2px; position: relative; }
-  /* 固定按钮：固定态常显 ★（accent），未固定悬停显 ☆ */
-  .recent-document-pin {
+  /* 悬停操作区：右侧一排按钮，渐隐背景把文件名裁在按钮之前，避免糊在一起。
+     容器本身不拦截指针（让文件名可点开），各按钮自行恢复 pointer-events。 */
+  .recent-document-actions {
     position: absolute;
-    top: 7px;
-    right: 7px;
-    width: 20px;
-    height: 20px;
+    top: 0;
+    right: 0;
+    height: 35px;
     display: none;
+    align-items: center;
+    gap: 2px;
+    padding: 0 6px 0 28px;
+    background: linear-gradient(90deg, transparent, var(--bg-2) 34%);
+    border-radius: var(--radius-control);
+    pointer-events: none;
+  }
+  .recent-document-group:hover .recent-document-actions { display: flex; }
+  /* 当前项底色不同，遮罩尾色跟随，避免色块接缝 */
+  .recent-document-group:has(.is-active) .recent-document-actions {
+    background: linear-gradient(90deg, transparent, var(--accent-soft) 34%);
+  }
+  .recent-document-actions button {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    display: flex;
     align-items: center;
     justify-content: center;
     padding: 0;
@@ -96,35 +113,15 @@
     border-radius: var(--radius-control);
     background: transparent;
     color: var(--text-4);
-    font: var(--fs-md)/1 var(--sans);
     cursor: pointer;
+    pointer-events: auto;
   }
-  .recent-document-group:hover .recent-document-pin,
-  .recent-document-pin:focus-visible,
-  .recent-document-pin.is-pinned { display: flex; }
+  .recent-document-delete { font: var(--fs-lg)/1 var(--sans); }
+  .recent-document-delete:hover { background: var(--bg-2); color: var(--danger); }
+  /* 固定切换：★ 已固定 / ☆ 未固定；固定态主要由左侧图标常显，这里是切换入口 */
+  .recent-document-pin { font: var(--fs-md)/1 var(--sans); }
   .recent-document-pin.is-pinned { color: var(--accent); }
   .recent-document-pin:hover { background: var(--bg-2); color: var(--accent); }
-  /* 删除按钮：悬停条目时出现在右上角（固定按钮左侧） */
-  .recent-document-delete {
-    position: absolute;
-    top: 7px;
-    right: 30px;
-    width: 20px;
-    height: 20px;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    border: 0;
-    border-radius: var(--radius-control);
-    background: transparent;
-    color: var(--text-4);
-    font: var(--fs-lg)/1 var(--sans);
-    cursor: pointer;
-  }
-  .recent-document-group:hover .recent-document-delete,
-  .recent-document-delete:focus-visible { display: flex; }
-  .recent-document-delete:hover { background: var(--bg-2); color: var(--danger); }
   .recent-document-item {
     width: 100%;
     display: flex;
@@ -145,6 +142,7 @@
     color: var(--text);
   }
   .recent-document-icon { flex: none; color: var(--accent); font: var(--fs-md)/1 var(--mono); }
+  .recent-document-icon.is-pinned { color: var(--accent); }
   .recent-document-body { min-width: 0; display: flex; flex: 1; flex-direction: column; gap: 4px; }
   .recent-document-body strong {
     overflow: hidden;
@@ -153,29 +151,27 @@
     white-space: nowrap;
   }
   .recent-document-body small { color: var(--text-4); font: var(--fs-2xs)/1 var(--mono); }
-  .recent-document-path {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    direction: rtl; /* 路径过长时保留结尾的文件名部分 */
-    text-align: left;
-  }
-  /* 完整路径悬停浮层：fixed 定位挂 body，坐标由 JS 按锚点计算 */
-  .path-tooltip {
-    position: fixed;
-    z-index: 400;
-    display: none;
-    padding: 6px 10px;
-    border: 1px solid var(--border);
+  /* 阅读脉络入口：在悬停操作区里与删除/固定同排 */
+  .recent-document-map { font: var(--fs-md)/1 var(--mono); }
+  .recent-document-map:hover { background: var(--bg-2); color: var(--accent); }
+  /* 追问树折叠开关：默认收起，点击展开；三角随展开旋转 */
+  .recent-answer-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 1px 0 3px 17px;
+    padding: 4px 8px;
+    border: 0;
     border-radius: var(--radius-control);
-    background: var(--tool-bg);
-    color: var(--text-2);
-    font: var(--fs-2xs)/1.6 var(--mono);
-    word-break: break-all;
-    box-shadow: var(--shadow-md);
-    pointer-events: none;
+    background: transparent;
+    color: var(--text-4);
+    font: var(--fs-2xs)/1 var(--mono);
+    letter-spacing: .04em;
+    cursor: pointer;
   }
-  .path-tooltip.is-visible { display: block; }
+  .recent-answer-toggle:hover { background: var(--bg-2); color: var(--text-3); }
+  .recent-answer-caret { display: inline-block; transition: transform .15s ease; }
+  .recent-answer-toggle.is-open .recent-answer-caret { transform: rotate(90deg); }
   .recent-document-children { margin: 1px 0 6px 17px; padding-left: 8px; }
   /* 追问树：子文档的子文档逐级缩进，左侧参考线提示层级归属 */
   .recent-document-children .recent-document-children {
@@ -183,27 +179,6 @@
     padding-left: 8px;
     border-left: 1px solid var(--border-faint);
   }
-  /* 阅读脉络入口：与删除/固定按钮同排，悬停条目时出现 */
-  .recent-document-map {
-    position: absolute;
-    top: 7px;
-    right: 53px;
-    width: 20px;
-    height: 20px;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    border: 0;
-    border-radius: var(--radius-control);
-    background: transparent;
-    color: var(--text-4);
-    font: var(--fs-md)/1 var(--mono);
-    cursor: pointer;
-  }
-  .recent-document-group:hover .recent-document-map,
-  .recent-document-map:focus-visible { display: flex; }
-  .recent-document-map:hover { background: var(--bg-2); color: var(--accent); }
   .recent-answer-item {
     width: 100%;
     display: flex;

@@ -61,17 +61,15 @@ export class BridgeMethods {
     if (!documentId) return;
     if (!(this._sessionOpenedIds instanceof Set)) this._sessionOpenedIds = new Set();
     this._sessionOpenedIds.add(documentId);
+    // 打开即展开该文档的追问树，正在读的文档树可见，其余保持收起。
+    if (!(this._expandedAnswerDocIds instanceof Set)) this._expandedAnswerDocIds = new Set();
+    this._expandedAnswerDocIds.add(documentId);
   }
 
   _renderRecentDocuments() {
     const list = this.documentListRef.current;
     if (!list) return;
-    // 重渲染会移走被悬停的元素，mouseleave 不再触发，先行收起浮层。
-    this._hidePathTooltip();
-    if (!this._pathTooltipScrollBound && list.addEventListener) {
-      list.addEventListener('scroll', () => this._hidePathTooltip());
-      this._pathTooltipScrollBound = true;
-    }
+    this._updateFooterPath();
     list.innerHTML = '';
     const docs = [...this.recentDocuments].sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
     if (this.documentCountRef.current) this.documentCountRef.current.textContent = String(docs.length);
@@ -130,8 +128,9 @@ export class BridgeMethods {
     button.type = 'button';
     button.setAttribute('aria-current', doc.documentId === this.bridgeDocumentId ? 'page' : 'false');
     const icon = document.createElement('span');
-    icon.className = 'recent-document-icon';
-    icon.textContent = '▧';
+    // 左侧图标兼作固定态常显指示：固定为 ★，未固定为普通图标，且不与文件名重叠。
+    icon.className = 'recent-document-icon' + (isPinned ? ' is-pinned' : '');
+    icon.textContent = isPinned ? '★' : '▧';
     const body = document.createElement('span');
     body.className = 'recent-document-body';
     const name = document.createElement('strong');
@@ -141,19 +140,42 @@ export class BridgeMethods {
     time.textContent = this._formatRecentTime(doc.updatedAt) +
       ' · ' + (doc.annotationCount || 0) + ' 批注 · ' + (doc.questionCount || 0) + ' 问答';
     body.append(name, time);
-    if (doc.localPath) {
-      const path = document.createElement('small');
-      path.className = 'recent-document-path';
-      path.textContent = doc.localPath;
-      // 路径被 CSS 截断，悬停即刻弹出完整路径（原生 title 延迟高且不醒目）。
-      path.addEventListener('mouseenter', () => this._showPathTooltip(path, doc.localPath));
-      path.addEventListener('mouseleave', () => this._hidePathTooltip());
-      body.appendChild(path);
-    }
     button.append(icon, body);
     button.addEventListener('click', () => this.openRecentDocument(doc.documentId));
     group.appendChild(button);
-    // 固定按钮：固定态常显 ★，未固定悬停显 ☆。button 不可嵌套，做成绝对定位兄弟节点。
+    // 悬停操作区：右侧渐隐遮罩上排列脉络/删除/固定，避免按钮与文件名糊在一起。
+    group.appendChild(this._recentDocumentActions(doc, isPinned));
+    const answers = Array.isArray(doc.answerDocuments) ? doc.answerDocuments : [];
+    if (answers.length) {
+      const expandedTrees = this._expandedAnswerDocIds instanceof Set ? this._expandedAnswerDocIds : new Set();
+      const open = expandedTrees.has(doc.documentId);
+      group.appendChild(this._answerTreeToggle(doc, answers.length, open));
+      if (open) {
+        const { roots, byParent } = this._answerTree(answers);
+        group.appendChild(this._answerTreeLevel(doc, roots, byParent));
+      }
+    }
+    return group;
+  }
+
+  // 悬停操作区：脉络图（有问答时）+ 删除 + 固定；渐隐背景把文件名裁在按钮之前。
+  _recentDocumentActions(doc, isPinned) {
+    const actions = document.createElement('div');
+    actions.className = 'recent-document-actions';
+    if (Array.isArray(doc.answerDocuments) && doc.answerDocuments.length) {
+      actions.appendChild(this._answerMapButton(doc));
+    }
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'recent-document-delete';
+    remove.title = '从最近阅读中删除';
+    remove.setAttribute('aria-label', '删除 ' + doc.fileName);
+    remove.textContent = '×';
+    remove.addEventListener('click', (e) => {
+      if (e && e.stopPropagation) e.stopPropagation();
+      this.deleteRecentDocument(doc);
+    });
+    actions.appendChild(remove);
     const pin = document.createElement('button');
     pin.type = 'button';
     pin.className = 'recent-document-pin' + (isPinned ? ' is-pinned' : '');
@@ -165,25 +187,49 @@ export class BridgeMethods {
       if (e && e.stopPropagation) e.stopPropagation();
       this.togglePinnedDocument(doc);
     });
-    group.appendChild(pin);
-    const remove = document.createElement('button');
-    remove.type = 'button';
-    remove.className = 'recent-document-delete';
-    remove.title = '从最近阅读中删除';
-    remove.setAttribute('aria-label', '删除 ' + doc.fileName);
-    remove.textContent = '×';
-    remove.addEventListener('click', (e) => {
+    actions.appendChild(pin);
+    return actions;
+  }
+
+  // 追问树折叠开关：默认收起，仅打开的文档自动展开（见 _noteDocumentOpened），避免长树挤压后续文档。
+  _answerTreeToggle(doc, count, open) {
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'recent-answer-toggle' + (open ? ' is-open' : '');
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    const caret = document.createElement('span');
+    caret.className = 'recent-answer-caret';
+    caret.textContent = '▸';
+    const label = document.createElement('span');
+    label.textContent = count + ' 条追问';
+    toggle.append(caret, label);
+    toggle.addEventListener('click', (e) => {
       if (e && e.stopPropagation) e.stopPropagation();
-      this.deleteRecentDocument(doc);
+      this.toggleAnswerTree(doc.documentId);
     });
-    group.appendChild(remove);
-    const answers = Array.isArray(doc.answerDocuments) ? doc.answerDocuments : [];
-    if (answers.length) {
-      group.appendChild(this._answerMapButton(doc));
-      const { roots, byParent } = this._answerTree(answers);
-      group.appendChild(this._answerTreeLevel(doc, roots, byParent));
+    return toggle;
+  }
+
+  toggleAnswerTree(documentId) {
+    if (!documentId) return;
+    if (!(this._expandedAnswerDocIds instanceof Set)) this._expandedAnswerDocIds = new Set();
+    if (this._expandedAnswerDocIds.has(documentId)) this._expandedAnswerDocIds.delete(documentId);
+    else this._expandedAnswerDocIds.add(documentId);
+    this._renderRecentDocuments();
+  }
+
+  // 当前文档的本地路径写到底部状态栏（列表项内不再展示，减轻拥挤）。
+  _updateFooterPath() {
+    const el = this.footerPathRef && this.footerPathRef.current;
+    if (!el) return;
+    let path = this.localFilePath || '';
+    if (!path && this.bridgeDocumentId && Array.isArray(this.recentDocuments)) {
+      const doc = this.recentDocuments.find((item) => item.documentId === this.bridgeDocumentId);
+      if (doc && doc.localPath) path = doc.localPath;
     }
-    return group;
+    el.textContent = path;
+    el.title = path;
+    if (el.classList) el.classList.toggle('has-path', !!path);
   }
 
 
@@ -288,51 +334,6 @@ export class BridgeMethods {
     await this._refreshRecentDocuments();
   }
 
-
-  // ===== 完整路径悬停浮层（单例，挂 body 上避免被侧栏滚动容器裁剪） =====
-
-  _showPathTooltip(anchor, text) {
-    if (!document.body) return;
-    let tip = this._pathTooltipEl;
-    if (!tip) {
-      tip = document.createElement('div');
-      tip.className = 'path-tooltip';
-      document.body.appendChild(tip);
-      this._pathTooltipEl = tip;
-    }
-    tip.textContent = text;
-    tip.classList.add('is-visible');
-    this._positionPathTooltip(tip, anchor);
-  }
-
-
-  _positionPathTooltip(tip, anchor) {
-    if (!anchor.getBoundingClientRect || typeof window === 'undefined' || !tip.style) return;
-    const rect = anchor.getBoundingClientRect();
-    const margin = 8;
-    tip.style.maxWidth = Math.min(440, window.innerWidth - margin * 2) + 'px';
-    // 先落位再测量，宽高确定后按视口收拢；底部放不下时翻到锚点上方。
-    tip.style.left = '0px';
-    tip.style.top = '0px';
-    const width = tip.offsetWidth || 0;
-    const height = tip.offsetHeight || 0;
-    const left = Math.max(margin, Math.min(rect.left, window.innerWidth - width - margin));
-    let top = rect.bottom + 6;
-    if (top + height + margin > window.innerHeight) top = rect.top - height - 6;
-    tip.style.left = left + 'px';
-    tip.style.top = Math.max(margin, top) + 'px';
-  }
-
-
-  _hidePathTooltip() {
-    if (this._pathTooltipEl) this._pathTooltipEl.classList.remove('is-visible');
-  }
-
-
-  _disposePathTooltip() {
-    if (this._pathTooltipEl && this._pathTooltipEl.remove) this._pathTooltipEl.remove();
-    this._pathTooltipEl = null;
-  }
 
 
   async _refreshRecentDocuments() {

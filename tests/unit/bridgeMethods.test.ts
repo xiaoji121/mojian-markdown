@@ -96,7 +96,7 @@ function collectTexts(el: { textContent?: string; children?: unknown[] }, out: s
   return out;
 }
 
-test('最近文档列表展示每篇文档的本地路径', () => {
+test('当前文档的本地路径展示在底部状态栏，不再挤进列表项', () => {
   const previous = Object.getOwnPropertyDescriptor(globalThis, 'document');
   Object.defineProperty(globalThis, 'document', {
     value: { createElement: () => createStubElement() },
@@ -104,12 +104,15 @@ test('最近文档列表展示每篇文档的本地路径', () => {
   });
   try {
     const list = createStubElement();
+    const footer = createStubElement();
     const editor = Object.create(BridgeMethods.prototype);
     Object.assign(editor, {
       documentListRef: { current: list },
       documentCountRef: { current: createStubElement() },
-      bridgeDocumentId: null,
+      footerPathRef: { current: footer },
+      bridgeDocumentId: 'doc-1',
       activeAnswerRequestId: null,
+      localFilePath: null,
       recentDocuments: [{
         documentId: 'doc-1', fileName: 'note.md', localPath: '我的笔记/阅读/note.md',
         updatedAt: '2026-07-25T08:00:00.000Z', annotationCount: 0, questionCount: 0, answerDocuments: []
@@ -120,7 +123,9 @@ test('最近文档列表展示每篇文档的本地路径', () => {
 
     editor._renderRecentDocuments();
 
-    assert.ok(collectTexts(list).includes('我的笔记/阅读/note.md'));
+    assert.equal(footer.textContent, '我的笔记/阅读/note.md', '路径写入底部状态栏');
+    assert.ok(footer.classList.contains('has-path'));
+    assert.ok(!collectTexts(list).includes('我的笔记/阅读/note.md'), '路径不再出现在列表项里');
   } finally {
     if (previous) Object.defineProperty(globalThis, 'document', previous);
     else delete (globalThis as Record<string, unknown>).document;
@@ -138,52 +143,6 @@ function findByClass(
   }
   return null;
 }
-
-test('悬停本地路径时显示完整路径浮层，移开后隐藏', () => {
-  const previous = Object.getOwnPropertyDescriptor(globalThis, 'document');
-  const body = createStubElement();
-  Object.defineProperty(globalThis, 'document', {
-    value: { createElement: () => createStubElement(), body },
-    configurable: true
-  });
-  try {
-    const list = createStubElement();
-    const editor = Object.create(BridgeMethods.prototype);
-    Object.assign(editor, {
-      documentListRef: { current: list },
-      documentCountRef: { current: createStubElement() },
-      bridgeDocumentId: null,
-      activeAnswerRequestId: null,
-      recentDocuments: [{
-        documentId: 'doc-1', fileName: 'note.md', localPath: '/Users/me/writing/drafts/note.md',
-        updatedAt: '2026-07-25T08:00:00.000Z', annotationCount: 0, questionCount: 0, answerDocuments: []
-      }],
-      openRecentDocument() {},
-      openAnswerDocument() {}
-    });
-    editor._renderRecentDocuments();
-
-    const path = findByClass(list, 'recent-document-path');
-    assert.ok(path, '路径元素应该渲染');
-    path!.dispatch!('mouseenter');
-
-    const tip = body.children[0] as ReturnType<typeof createStubElement>;
-    assert.ok(tip, '浮层应挂到 document.body');
-    assert.equal(tip.textContent, '/Users/me/writing/drafts/note.md');
-    assert.ok(tip.classList.contains('is-visible'));
-
-    path!.dispatch!('mouseleave');
-    assert.equal(tip.classList.contains('is-visible'), false);
-
-    // 重新渲染（如切换文档）后浮层保持隐藏，不会悬空残留
-    path!.dispatch!('mouseenter');
-    editor._renderRecentDocuments();
-    assert.equal(tip.classList.contains('is-visible'), false);
-  } finally {
-    if (previous) Object.defineProperty(globalThis, 'document', previous);
-    else delete (globalThis as Record<string, unknown>).document;
-  }
-});
 
 test('最近文档下渲染「摘录回答」子节点，点击打开对应回答', () => {
   const previous = Object.getOwnPropertyDescriptor(globalThis, 'document');
@@ -207,6 +166,7 @@ test('最近文档下渲染「摘录回答」子节点，点击打开对应回�
           { requestId: 'a1', question: '如何衡量效率？', kind: 'reply', updatedAt: '2026-07-25T08:00:00.000Z' }
         ]
       }],
+      _expandedAnswerDocIds: new Set(['doc-1']), // 追问树默认收起，此处展开以校验子节点
       openRecentDocument() {},
       openAnswerDocument(documentId: string, requestId: string) { openedAnswers.push([documentId, requestId]); }
     });
@@ -260,6 +220,7 @@ test('子文档的子文档在侧栏里递归嵌套展示', () => {
           { requestId: 'm1', question: '三级 AI 追问', engine: 'claude', parentRequestId: 'a2', updatedAt: '2026-07-25T10:00:00.000Z' }
         ]
       }],
+      _expandedAnswerDocIds: new Set(['doc-1']), // 追问树默认收起，此处展开以校验递归嵌套
       openRecentDocument() {},
       openAnswerDocument(documentId: string, requestId: string) { openedAnswers.push([documentId, requestId]); },
       openReadingMap() {}
