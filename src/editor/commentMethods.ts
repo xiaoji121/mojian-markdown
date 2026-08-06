@@ -28,6 +28,7 @@ export class CommentMethods {
       const b = this.selBarRef.current;
       if (b && !b.contains(e.target) && !prev.contains(e.target)) b.style.display = 'none';
     });
+    this._initCommentsResize();
   }
 
 
@@ -238,14 +239,50 @@ export class CommentMethods {
   }
 
 
+  // 批注面板宽度与 AI 面板一致，支持拖拽调整；每机本地记忆（localStorage）。
+  _applyCommentsPanelWidth(width) {
+    const aside = this.commentsRef.current;
+    const split = this.splitRef.current;
+    if (!aside) return;
+    const max = Math.max(300, Math.min(760, window.innerWidth * 0.6));
+    this.commentsPanelWidth = Math.round(Math.max(280, Math.min(max, width || 340)));
+    aside.style.width = this.commentsPanelWidth + 'px';
+    if (this.panelOpen && split) split.style.setProperty('--active-side-panel-width', this.commentsPanelWidth + 'px');
+  }
+
+  _initCommentsResize() {
+    try {
+      const saved = Number(localStorage.getItem('md-editor-comments-panel-width'));
+      if (saved) this.commentsPanelWidth = saved;
+    } catch (e) {}
+    const handle = this.commentsResizeRef && this.commentsResizeRef.current;
+    if (!handle) return;
+    let dragging = false;
+    const move = (e) => { if (dragging) this._applyCommentsPanelWidth(window.innerWidth - e.clientX); };
+    const up = () => {
+      if (!dragging) return;
+      dragging = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      try { localStorage.setItem('md-editor-comments-panel-width', String(this.commentsPanelWidth)); } catch (e) {}
+    };
+    handle.addEventListener('mousedown', (e) => {
+      if (window.matchMedia && window.matchMedia('(max-width: 760px)').matches) return;
+      dragging = true;
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      e.preventDefault();
+    });
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+  }
+
   _openPanel(show) {
     const aside = this.commentsRef.current;
     if (!aside) return;
     this.panelOpen = (show === undefined || show === null) ? !this.panelOpen : show;
     aside.style.display = this.panelOpen ? 'flex' : 'none';
-    if (this.panelOpen && this.splitRef.current) {
-      this.splitRef.current.style.setProperty('--active-side-panel-width', '340px');
-    }
+    if (this.panelOpen) this._applyCommentsPanelWidth(this.commentsPanelWidth);
     if (this.panelOpen && this.aiPanelOpen) {
       this.aiPanelOpen = false;
       if (this.aiPanelRef.current) this.aiPanelRef.current.style.display = 'none';

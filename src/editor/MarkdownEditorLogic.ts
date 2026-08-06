@@ -78,6 +78,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._previewSearchIndex = -1;
     this.selBarRef = React.createRef();
     this.commentsRef = React.createRef();
+    this.commentsResizeRef = React.createRef();
     this.commentListRef = React.createRef();
     this.commentCountRef = React.createRef();
     this.previewCommentCountRef = React.createRef();
@@ -97,6 +98,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.documentSidebarResizeRef = React.createRef();
     this.documentListRef = React.createRef();
     this.documentCountRef = React.createRef();
+    this.footerPathRef = React.createRef();
     this.readingPathBarRef = React.createRef();
     this.readingPathModeRef = React.createRef();
     this.readingPathCountRef = React.createRef();
@@ -108,6 +110,10 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._composeRenderT = null;
     this.comments = [];
     this.recentDocuments = [];
+    this.pinnedDocumentIds = new Set(); // 每机本地固定的文档，_loadPinnedIds 从 localStorage 恢复
+    this._sessionOpenedIds = new Set(); // 本会话打开过的文档，始终留在最近区
+    this._expandedAnswerDocIds = new Set(); // 追问树默认收起，打开或手动展开的文档记于此
+    this.recentListExpanded = false;
     this.activeDocumentId = null;
     this.bridgeDocumentId = null;
     this.activeAnswerRequestId = null;
@@ -123,6 +129,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.aiBusy = false;
     this.aiBridgeOnline = false;
     this.aiPanelWidth = 480;
+    this.commentsPanelWidth = 340;
     this.documentSidebarWidth = 236;
     this.theme = 'dark';
     this.paperDark = ''; // 纸色按主题分别记忆；空 = 该主题默认
@@ -263,6 +270,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._initComments();
     this._renderComments();
     if (this.agentBridgeEnabled) {
+      this._loadPinnedIds();
       this._initDocumentSidebarResize();
       this._initAI();
       this._refreshRecentDocuments().then(() => this._maybeOpenLatestRecentDocument());
@@ -292,7 +300,6 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     if (this._keyHandler) window.removeEventListener('keydown', this._keyHandler);
     if (this._resizeHandler) window.removeEventListener('resize', this._resizeHandler);
     if (this._outlineJumpT) clearTimeout(this._outlineJumpT);
-    this._disposePathTooltip();
     this._disposeReadingPathHelp();
     this._stopLocalFileWatcher();
     document.body.style.overflow = '';
@@ -341,6 +348,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       previewSearchCountRef: this.previewSearchCountRef,
       selBarRef: this.selBarRef,
       commentsRef: this.commentsRef,
+      commentsResizeRef: this.commentsResizeRef,
       commentListRef: this.commentListRef,
       commentCountRef: this.commentCountRef,
       previewCommentCountRef: this.previewCommentCountRef,
@@ -359,6 +367,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       documentSidebarResizeRef: this.documentSidebarResizeRef,
       documentListRef: this.documentListRef,
       documentCountRef: this.documentCountRef,
+      footerPathRef: this.footerPathRef,
       ...this._readingPathRenderVals(),
       showEditorMode: () => this.setViewMode('editor'),
       showSplitMode: () => this.setViewMode('split'),

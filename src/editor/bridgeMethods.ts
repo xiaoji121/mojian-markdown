@@ -2,6 +2,11 @@
 import { saveEditorState } from './storage.ts';
 import { bridgeUrl } from './bridgeClient.ts';
 
+// 固定文档集按「机器」存本地：多台电脑用途不同，各自挑要固定的文档，不进同步的工作区。
+const PINNED_DOCS_KEY = 'md-editor-pinned-docs';
+// 汇聚多设备工作区后文档会很多，最近区默认只留这么多，其余折叠，避免列表过长。
+const RECENT_VISIBLE_LIMIT = 8;
+
 export class BridgeMethods {
   _formatRecentTime(timestamp) {
     const date = new Date(timestamp);
@@ -15,15 +20,56 @@ export class BridgeMethods {
   }
 
 
+  // 每机本地的固定文档集合（惰性初始化，兼容未经构造器的单测实例）。
+  _pinnedSet() {
+    if (!(this.pinnedDocumentIds instanceof Set)) this.pinnedDocumentIds = new Set();
+    return this.pinnedDocumentIds;
+  }
+
+  _loadPinnedIds() {
+    this.pinnedDocumentIds = new Set();
+    try {
+      const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(PINNED_DOCS_KEY) : null;
+      const ids = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(ids)) ids.forEach((id) => { if (typeof id === 'string') this.pinnedDocumentIds.add(id); });
+    } catch (e) {}
+  }
+
+  _savePinnedIds() {
+    try {
+      localStorage.setItem(PINNED_DOCS_KEY, JSON.stringify([...this._pinnedSet()]));
+    } catch (e) {}
+  }
+
+  // 固定 / 取消固定：写本地存储并即时重渲染，不触碰同步的工作区数据。
+  togglePinnedDocument(doc) {
+    if (!doc || !doc.documentId) return;
+    const set = this._pinnedSet();
+    if (set.has(doc.documentId)) set.delete(doc.documentId);
+    else set.add(doc.documentId);
+    this._savePinnedIds();
+    this._renderRecentDocuments();
+  }
+
+  toggleRecentListExpanded() {
+    this.recentListExpanded = !this.recentListExpanded;
+    this._renderRecentDocuments();
+  }
+
+  // 记住本次会话打开过的文档，让它即使超出最近区上限也保持可见（"新打开的也出现在左侧"）。
+  _noteDocumentOpened(documentId) {
+    if (!documentId) return;
+    if (!(this._sessionOpenedIds instanceof Set)) this._sessionOpenedIds = new Set();
+    this._sessionOpenedIds.add(documentId);
+    // 打开即展开该文档的追问树，正在读的文档树可见，其余保持收起。
+    if (!(this._expandedAnswerDocIds instanceof Set)) this._expandedAnswerDocIds = new Set();
+    this._expandedAnswerDocIds.add(documentId);
+  }
+
   _renderRecentDocuments() {
     const list = this.documentListRef.current;
     if (!list) return;
-    // 重渲染会移走被悬停的元素，mouseleave 不再触发，先行收起浮层。
-    this._hidePathTooltip();
-    if (!this._pathTooltipScrollBound && list.addEventListener) {
-      list.addEventListener('scroll', () => this._hidePathTooltip());
-      this._pathTooltipScrollBound = true;
-    }
+    this._updateFooterPath();
     list.innerHTML = '';
     const docs = [...this.recentDocuments].sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
     if (this.documentCountRef.current) this.documentCountRef.current.textContent = String(docs.length);
@@ -34,58 +80,156 @@ export class BridgeMethods {
       list.appendChild(empty);
       return;
     }
-    docs.forEach((doc) => {
-      const group = document.createElement('div');
-      group.className = 'recent-document-group';
-      const button = document.createElement('button');
-      button.className = 'recent-document-item' +
-        (doc.documentId === this.bridgeDocumentId && !this.activeAnswerRequestId ? ' is-active' : '');
-      button.type = 'button';
-      button.setAttribute('aria-current', doc.documentId === this.bridgeDocumentId ? 'page' : 'false');
-      const icon = document.createElement('span');
-      icon.className = 'recent-document-icon';
-      icon.textContent = '▧';
-      const body = document.createElement('span');
-      body.className = 'recent-document-body';
-      const name = document.createElement('strong');
-      name.textContent = doc.fileName;
-      name.title = doc.fileName;
-      const time = document.createElement('small');
-      time.textContent = this._formatRecentTime(doc.updatedAt) +
-        ' · ' + (doc.annotationCount || 0) + ' 批注 · ' + (doc.questionCount || 0) + ' 问答';
-      body.append(name, time);
-      if (doc.localPath) {
-        const path = document.createElement('small');
-        path.className = 'recent-document-path';
-        path.textContent = doc.localPath;
-        // 路径被 CSS 截断，悬停即刻弹出完整路径（原生 title 延迟高且不醒目）。
-        path.addEventListener('mouseenter', () => this._showPathTooltip(path, doc.localPath));
-        path.addEventListener('mouseleave', () => this._hidePathTooltip());
-        body.appendChild(path);
-      }
-      button.append(icon, body);
-      button.addEventListener('click', () => this.openRecentDocument(doc.documentId));
-      group.appendChild(button);
-      // 删除按钮不能嵌进 item button（button 不可嵌套），做成组内绝对定位的兄弟节点。
-      const remove = document.createElement('button');
-      remove.type = 'button';
-      remove.className = 'recent-document-delete';
-      remove.title = '从最近阅读中删除';
-      remove.setAttribute('aria-label', '删除 ' + doc.fileName);
-      remove.textContent = '×';
-      remove.addEventListener('click', (e) => {
-        if (e && e.stopPropagation) e.stopPropagation();
-        this.deleteRecentDocument(doc);
-      });
-      group.appendChild(remove);
-      const answers = Array.isArray(doc.answerDocuments) ? doc.answerDocuments : [];
-      if (answers.length) {
-        group.appendChild(this._answerMapButton(doc));
+    const pinnedSet = this._pinnedSet();
+    const pinned = docs.filter((doc) => pinnedSet.has(doc.documentId));
+    const rest = docs.filter((doc) => !pinnedSet.has(doc.documentId));
+    // 有固定项时才分区标注，否则保持与旧版一致的平铺列表。
+    if (pinned.length) {
+      list.appendChild(this._recentSectionLabel('已固定', pinned.length));
+      pinned.forEach((doc) => list.appendChild(this._recentDocumentGroup(doc, true)));
+      if (rest.length) list.appendChild(this._recentSectionLabel('最近', rest.length));
+    }
+    // 最近区：默认只留最近 N 篇，另加当前打开与本会话开过的，其余折叠。
+    const sessionOpened = this._sessionOpenedIds instanceof Set ? this._sessionOpenedIds : new Set();
+    const expanded = !!this.recentListExpanded;
+    const keep = (doc, index) => index < RECENT_VISIBLE_LIMIT
+      || doc.documentId === this.bridgeDocumentId
+      || sessionOpened.has(doc.documentId);
+    const visible = expanded ? rest : rest.filter(keep);
+    visible.forEach((doc) => list.appendChild(this._recentDocumentGroup(doc, false)));
+    const hidden = rest.length - visible.length;
+    if (hidden > 0 || (expanded && rest.length > RECENT_VISIBLE_LIMIT)) {
+      list.appendChild(this._recentListMoreButton(hidden, expanded));
+    }
+  }
+
+  _recentSectionLabel(text, count) {
+    const label = document.createElement('div');
+    label.className = 'recent-section-label';
+    label.textContent = count ? text + ' · ' + count : text;
+    return label;
+  }
+
+  _recentListMoreButton(hidden, expanded) {
+    const more = document.createElement('button');
+    more.type = 'button';
+    more.className = 'recent-list-more';
+    more.textContent = expanded ? '收起' : ('显示全部 ' + hidden + ' 篇');
+    more.addEventListener('click', () => this.toggleRecentListExpanded());
+    return more;
+  }
+
+  _recentDocumentGroup(doc, isPinned) {
+    const group = document.createElement('div');
+    group.className = 'recent-document-group' + (isPinned ? ' is-pinned' : '');
+    const button = document.createElement('button');
+    button.className = 'recent-document-item' +
+      (doc.documentId === this.bridgeDocumentId && !this.activeAnswerRequestId ? ' is-active' : '');
+    button.type = 'button';
+    button.setAttribute('aria-current', doc.documentId === this.bridgeDocumentId ? 'page' : 'false');
+    const icon = document.createElement('span');
+    // 左侧图标兼作固定态常显指示：固定为 ★，未固定为普通图标，且不与文件名重叠。
+    icon.className = 'recent-document-icon' + (isPinned ? ' is-pinned' : '');
+    icon.textContent = isPinned ? '★' : '▧';
+    const body = document.createElement('span');
+    body.className = 'recent-document-body';
+    const name = document.createElement('strong');
+    name.textContent = doc.fileName;
+    name.title = doc.fileName;
+    const time = document.createElement('small');
+    time.textContent = this._formatRecentTime(doc.updatedAt) +
+      ' · ' + (doc.annotationCount || 0) + ' 批注 · ' + (doc.questionCount || 0) + ' 问答';
+    body.append(name, time);
+    button.append(icon, body);
+    button.addEventListener('click', () => this.openRecentDocument(doc.documentId));
+    group.appendChild(button);
+    // 悬停操作区：右侧渐隐遮罩上排列脉络/删除/固定，避免按钮与文件名糊在一起。
+    group.appendChild(this._recentDocumentActions(doc, isPinned));
+    const answers = Array.isArray(doc.answerDocuments) ? doc.answerDocuments : [];
+    if (answers.length) {
+      const expandedTrees = this._expandedAnswerDocIds instanceof Set ? this._expandedAnswerDocIds : new Set();
+      const open = expandedTrees.has(doc.documentId);
+      group.appendChild(this._answerTreeToggle(doc, answers.length, open));
+      if (open) {
         const { roots, byParent } = this._answerTree(answers);
         group.appendChild(this._answerTreeLevel(doc, roots, byParent));
       }
-      list.appendChild(group);
+    }
+    return group;
+  }
+
+  // 悬停操作区：脉络图（有问答时）+ 删除 + 固定；渐隐背景把文件名裁在按钮之前。
+  _recentDocumentActions(doc, isPinned) {
+    const actions = document.createElement('div');
+    actions.className = 'recent-document-actions';
+    if (Array.isArray(doc.answerDocuments) && doc.answerDocuments.length) {
+      actions.appendChild(this._answerMapButton(doc));
+    }
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'recent-document-delete';
+    remove.title = '从最近阅读中删除';
+    remove.setAttribute('aria-label', '删除 ' + doc.fileName);
+    remove.textContent = '×';
+    remove.addEventListener('click', (e) => {
+      if (e && e.stopPropagation) e.stopPropagation();
+      this.deleteRecentDocument(doc);
     });
+    actions.appendChild(remove);
+    const pin = document.createElement('button');
+    pin.type = 'button';
+    pin.className = 'recent-document-pin' + (isPinned ? ' is-pinned' : '');
+    pin.title = isPinned ? '取消固定' : '固定到列表顶部';
+    pin.setAttribute('aria-label', (isPinned ? '取消固定 ' : '固定 ') + doc.fileName);
+    pin.setAttribute('aria-pressed', isPinned ? 'true' : 'false');
+    pin.textContent = isPinned ? '★' : '☆';
+    pin.addEventListener('click', (e) => {
+      if (e && e.stopPropagation) e.stopPropagation();
+      this.togglePinnedDocument(doc);
+    });
+    actions.appendChild(pin);
+    return actions;
+  }
+
+  // 追问树折叠开关：默认收起，仅打开的文档自动展开（见 _noteDocumentOpened），避免长树挤压后续文档。
+  _answerTreeToggle(doc, count, open) {
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'recent-answer-toggle' + (open ? ' is-open' : '');
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    const caret = document.createElement('span');
+    caret.className = 'recent-answer-caret';
+    caret.textContent = '▸';
+    const label = document.createElement('span');
+    label.textContent = count + ' 条追问';
+    toggle.append(caret, label);
+    toggle.addEventListener('click', (e) => {
+      if (e && e.stopPropagation) e.stopPropagation();
+      this.toggleAnswerTree(doc.documentId);
+    });
+    return toggle;
+  }
+
+  toggleAnswerTree(documentId) {
+    if (!documentId) return;
+    if (!(this._expandedAnswerDocIds instanceof Set)) this._expandedAnswerDocIds = new Set();
+    if (this._expandedAnswerDocIds.has(documentId)) this._expandedAnswerDocIds.delete(documentId);
+    else this._expandedAnswerDocIds.add(documentId);
+    this._renderRecentDocuments();
+  }
+
+  // 当前文档的本地路径写到底部状态栏（列表项内不再展示，减轻拥挤）。
+  _updateFooterPath() {
+    const el = this.footerPathRef && this.footerPathRef.current;
+    if (!el) return;
+    let path = this.localFilePath || '';
+    if (!path && this.bridgeDocumentId && Array.isArray(this.recentDocuments)) {
+      const doc = this.recentDocuments.find((item) => item.documentId === this.bridgeDocumentId);
+      if (doc && doc.localPath) path = doc.localPath;
+    }
+    el.textContent = path;
+    el.title = path;
+    if (el.classList) el.classList.toggle('has-path', !!path);
   }
 
 
@@ -191,51 +335,6 @@ export class BridgeMethods {
   }
 
 
-  // ===== 完整路径悬停浮层（单例，挂 body 上避免被侧栏滚动容器裁剪） =====
-
-  _showPathTooltip(anchor, text) {
-    if (!document.body) return;
-    let tip = this._pathTooltipEl;
-    if (!tip) {
-      tip = document.createElement('div');
-      tip.className = 'path-tooltip';
-      document.body.appendChild(tip);
-      this._pathTooltipEl = tip;
-    }
-    tip.textContent = text;
-    tip.classList.add('is-visible');
-    this._positionPathTooltip(tip, anchor);
-  }
-
-
-  _positionPathTooltip(tip, anchor) {
-    if (!anchor.getBoundingClientRect || typeof window === 'undefined' || !tip.style) return;
-    const rect = anchor.getBoundingClientRect();
-    const margin = 8;
-    tip.style.maxWidth = Math.min(440, window.innerWidth - margin * 2) + 'px';
-    // 先落位再测量，宽高确定后按视口收拢；底部放不下时翻到锚点上方。
-    tip.style.left = '0px';
-    tip.style.top = '0px';
-    const width = tip.offsetWidth || 0;
-    const height = tip.offsetHeight || 0;
-    const left = Math.max(margin, Math.min(rect.left, window.innerWidth - width - margin));
-    let top = rect.bottom + 6;
-    if (top + height + margin > window.innerHeight) top = rect.top - height - 6;
-    tip.style.left = left + 'px';
-    tip.style.top = Math.max(margin, top) + 'px';
-  }
-
-
-  _hidePathTooltip() {
-    if (this._pathTooltipEl) this._pathTooltipEl.classList.remove('is-visible');
-  }
-
-
-  _disposePathTooltip() {
-    if (this._pathTooltipEl && this._pathTooltipEl.remove) this._pathTooltipEl.remove();
-    this._pathTooltipEl = null;
-  }
-
 
   async _refreshRecentDocuments() {
     try {
@@ -315,6 +414,7 @@ export class BridgeMethods {
       this.bridgeDocumentId = doc.documentId;
       this.activeDocumentId = doc.documentId;
       this.activeAnswerRequestId = null;
+      this._noteDocumentOpened(doc.documentId);
       this.previewOverrideMarkdown = '';
       this._detachLocalFile();
       this.sourceRef.current.value = this._cleanOpenedMarkdown(doc.content || '');
@@ -354,6 +454,7 @@ export class BridgeMethods {
       this.bridgeDocumentId = documentId;
       this.activeDocumentId = documentId;
       this.activeAnswerRequestId = requestId;
+      this._noteDocumentOpened(documentId);
       const trail = this._answerTrail(doc, requestId);
       this.previewOverrideMarkdown = reply
         ? this._answerMarkdown(doc, { quote: reply.quote, question: reply.note || reply.question, answer: reply.reply }, '摘录回答', trail)

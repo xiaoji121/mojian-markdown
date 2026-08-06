@@ -728,6 +728,17 @@ textarea.md-source {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* 当前文档的本地路径（原列表项内的路径迁到此处）：占据中段弹性空间，
+   过长时末尾省略，完整路径见 title 悬浮。无路径时隐藏。 */
+.footer-path {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-4);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.footer-path:not(.has-path) { display: none; }
 .footer-stats { flex: none; display: flex; align-items: center; gap: 20px; }
 .font-controls { display: flex; align-items: center; gap: 7px; }
 .font-controls-label { color: var(--text-4); letter-spacing: 0.1em; }

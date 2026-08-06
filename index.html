@@ -522,6 +522,7 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
 
     <!-- COMMENTS PANEL -->
     <aside ref="{{ commentsRef }}" class="comments-panel">
+      <div ref="{{ commentsResizeRef }}" class="comments-resize-handle" title="拖动调整侧栏宽度" aria-hidden="true"></div>
       <div class="panel-header">
         <span class="panel-title">我的批注</span>
         <button class="panel-close" onClick="{{ closePanel }}" title="收起" aria-label="收起批注面板">&times;</button>
@@ -577,6 +578,7 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
   <!-- ===== STATUS BAR ===== -->
   <footer class="app-footer">
     <span ref="{{ saveStatusRef }}" class="save-status">就绪</span>
+    <span ref="{{ footerPathRef }}" class="footer-path" title=""></span>
     <span class="footer-stats">
       <span class="font-controls">
         <span class="font-controls-label">字号</span>

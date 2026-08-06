@@ -31,7 +31,10 @@ export function createStubElement() {
     dataset: {} as Record<string, string>,
     style: {} as Record<string, string>,
     textContent: '',
-    innerHTML: '',
+    // 赋值 innerHTML='' 时清空子节点，与真实 DOM 一致，避免重渲染后节点累积。
+    _innerHTML: '',
+    get innerHTML() { return this._innerHTML as string; },
+    set innerHTML(value: string) { this._innerHTML = value; if (!value) this.children = []; },
     children: [] as unknown[],
     setAttribute(name: string, value: string) { attributes.set(name, String(value)); },
     getAttribute(name: string) { return attributes.has(name) ? attributes.get(name) : null; },
