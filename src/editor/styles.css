@@ -6,10 +6,16 @@
     -webkit-font-smoothing: antialiased;
     transition: background .25s ease;
   }
+  /* 轨道保留 10px 便于抓取，滑块用透明边框 + padding-box 裁成约 5px 细条 */
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--text-4); }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 8px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-4); background-clip: padding-box; }
   ::selection { background: var(--sel); }
   textarea.md-source { caret-color: var(--paper-accent); }
   textarea.md-source::placeholder { color: var(--paper-text-3); }
@@ -168,8 +174,9 @@
   .outline-level-6 { padding-left: 77px; font-size: var(--fs-xs); }
   .outline-empty { padding: 24px 14px; color: var(--text-4); font: var(--fs-xs)/1.7 var(--sans); }
 
-  /* 按钮基础样式与 hover 见 shell.css */
-  .ai-panel { position: relative; }
+  /* 按钮基础样式与 hover 见 shell.css。两个侧面板都作为拖拽把手的定位锚点 */
+  .ai-panel,
+  .comments-panel { position: relative; }
   .preview-pane-fullscreen {
     position: fixed !important;
     inset: 0;
@@ -314,7 +321,8 @@
   .ai-message-body table { width:100%; border-collapse:collapse; margin:12px 0; font-size:.92em; }
   .ai-message-body th,
   .ai-message-body td { border:1px solid var(--border); padding:6px 8px; text-align:left; }
-  .ai-resize-handle {
+  .ai-resize-handle,
+  .comments-resize-handle {
     position: absolute;
     z-index: 4;
     top: 0;
@@ -323,7 +331,8 @@
     width: 10px;
     cursor: col-resize;
   }
-  .ai-resize-handle::after {
+  .ai-resize-handle::after,
+  .comments-resize-handle::after {
     content: "";
     position: absolute;
     top: 0;
@@ -333,7 +342,8 @@
     background: transparent;
     transition: background .15s;
   }
-  .ai-resize-handle:hover::after { background: var(--accent); }
+  .ai-resize-handle:hover::after,
+  .comments-resize-handle:hover::after { background: var(--accent); }
   .ai-message small { display:block; margin-top:7px; color:var(--text-4); font:var(--fs-2xs)/1.5 var(--mono); }
   .ai-message-quote {
     max-height: 74px;
@@ -595,7 +605,8 @@
       box-shadow: 0 -16px 48px rgba(0,0,0,.38);
       padding-bottom: env(safe-area-inset-bottom);
     }
-    .ai-resize-handle { display: none; }
+    .ai-resize-handle,
+    .comments-resize-handle { display: none; }
     .editor-main.preview-fullscreen-active.fullscreen-comments-open .preview-pane-fullscreen {
       right: 0;
       width: 100vw;

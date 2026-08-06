@@ -78,6 +78,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._previewSearchIndex = -1;
     this.selBarRef = React.createRef();
     this.commentsRef = React.createRef();
+    this.commentsResizeRef = React.createRef();
     this.commentListRef = React.createRef();
     this.commentCountRef = React.createRef();
     this.previewCommentCountRef = React.createRef();
@@ -128,6 +129,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.aiBusy = false;
     this.aiBridgeOnline = false;
     this.aiPanelWidth = 480;
+    this.commentsPanelWidth = 340;
     this.documentSidebarWidth = 236;
     this.theme = 'dark';
     this.paperDark = ''; // 纸色按主题分别记忆；空 = 该主题默认
@@ -346,6 +348,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       previewSearchCountRef: this.previewSearchCountRef,
       selBarRef: this.selBarRef,
       commentsRef: this.commentsRef,
+      commentsResizeRef: this.commentsResizeRef,
       commentListRef: this.commentListRef,
       commentCountRef: this.commentCountRef,
       previewCommentCountRef: this.previewCommentCountRef,
