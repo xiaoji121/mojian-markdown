@@ -108,6 +108,9 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._composeRenderT = null;
     this.comments = [];
     this.recentDocuments = [];
+    this.pinnedDocumentIds = new Set(); // 每机本地固定的文档，_loadPinnedIds 从 localStorage 恢复
+    this._sessionOpenedIds = new Set(); // 本会话打开过的文档，始终留在最近区
+    this.recentListExpanded = false;
     this.activeDocumentId = null;
     this.bridgeDocumentId = null;
     this.activeAnswerRequestId = null;
@@ -263,6 +266,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._initComments();
     this._renderComments();
     if (this.agentBridgeEnabled) {
+      this._loadPinnedIds();
       this._initDocumentSidebarResize();
       this._initAI();
       this._refreshRecentDocuments().then(() => this._maybeOpenLatestRecentDocument());
