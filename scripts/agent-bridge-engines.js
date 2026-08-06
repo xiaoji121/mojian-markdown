@@ -3,6 +3,15 @@
 //   codex  —— `codex exec`，stdout 是进度噪音（thinking、token 统计等），
 //              干净的最终回答通过 --output-last-message 落盘后一次性取回；
 //              提示词经 stdin 传入，避免长文档超出 argv 长度限制。
+//
+// 两种模式（mode）：
+//   chat（默认）—— 只会说话：不给工具、不切工作目录、不留会话，与历史行为完全一致。
+//   agent      —— 会做事：这两个 CLI 本身就是 agent loop，我们只是按需解开三处限制：
+//                 ① 工具白名单（精确到命令前缀，够用即止）
+//                 ② 工作目录 = 文档所属工程根，等价于「在那个目录下敲 claude」
+//                 ③ 会话可续接（claude --session-id/--resume；codex 去掉 --ephemeral + exec resume）
+//              两个 CLI 的权限粒度不同，这点无法抹平：claude 是工具级白名单，
+//              codex 只有沙箱级（workspace-write + 放开网络访问，否则 CLI 连不上飞书/钉钉）。
 //   gemini —— Google Generative Language API（用户自配 API Key），SSE 流式；
 //              接口地址可用 AGENT_BRIDGE_GEMINI_BASE 覆盖（测试用 mock）。
 //              Node 内置 fetch 不认代理环境变量，Gemini 有地域封锁，
@@ -19,22 +28,90 @@ export function normalizeEngine(value) {
   return 'claude';
 }
 
-export function engineInvocation(engine, prompt, { env = process.env, outputFile = '' } = {}) {
-  if (engine === 'codex') {
-    const command = env.AGENT_BRIDGE_CODEX_COMMAND || 'codex';
-    const base = env.AGENT_BRIDGE_CODEX_ARGS
-      ? env.AGENT_BRIDGE_CODEX_ARGS.split(' ').filter(Boolean)
-      : ['exec', '--skip-git-repo-check', '--color', 'never', '--sandbox', 'read-only', '--ephemeral'];
-    const args = [...base];
-    if (outputFile) args.push('--output-last-message', outputFile);
-    args.push('-');
-    return { command, args, stdinPrompt: prompt };
-  }
+export function normalizeMode(value) {
+  return value === 'agent' ? 'agent' : 'chat';
+}
+
+// Agent 模式的 claude 工具白名单：只给这个功能真正需要的，写文件是独立开关。
+// 读工程拿上下文（Read/Glob/Grep）+ 两个连接器 CLI（发布到飞书/钉钉）。
+const AGENT_READ_TOOLS = ['Read', 'Glob', 'Grep'];
+const AGENT_CONNECTOR_TOOLS = ['Bash(lark-cli:*)', 'Bash(dws:*)'];
+const AGENT_WRITE_TOOLS = ['Write', 'Edit'];
+
+export function agentAllowedTools(allowWrite = false) {
+  return [
+    ...AGENT_READ_TOOLS,
+    ...AGENT_CONNECTOR_TOOLS,
+    ...(allowWrite ? AGENT_WRITE_TOOLS : [])
+  ].join(',');
+}
+
+function claudeInvocation(prompt, { env, mode, cwd, sessionId, resumeSessionId, allowWrite, addDirs }) {
   const command = env.AGENT_BRIDGE_CLAUDE_COMMAND || 'claude';
-  const args = env.AGENT_BRIDGE_CLAUDE_ARGS
-    ? [...env.AGENT_BRIDGE_CLAUDE_ARGS.split(' ').filter(Boolean), prompt]
-    : ['-p', prompt];
-  return { command, args, stdinPrompt: null };
+  const base = env.AGENT_BRIDGE_CLAUDE_ARGS
+    ? env.AGENT_BRIDGE_CLAUDE_ARGS.split(' ').filter(Boolean)
+    : ['-p'];
+  if (mode !== 'agent') {
+    // 历史行为：提示词作为尾参。
+    return { command, args: [...base, prompt], stdinPrompt: null, cwd: '' };
+  }
+  // --allowedTools / --add-dir 都是可变参数，尾随的提示词会被吞掉，
+  // 因此 Agent 模式一律走 stdin —— 顺带绕开长文档的 argv 长度上限。
+  const args = [...base, '--allowedTools', agentAllowedTools(allowWrite)];
+  (addDirs || []).filter(Boolean).forEach((dir) => args.push('--add-dir', dir));
+  if (resumeSessionId) args.push('--resume', resumeSessionId);
+  else if (sessionId) args.push('--session-id', sessionId);
+  return { command, args, stdinPrompt: prompt, cwd: cwd || '' };
+}
+
+function codexInvocation(prompt, { env, mode, cwd, outputFile, resumeSessionId, addDirs }) {
+  const command = env.AGENT_BRIDGE_CODEX_COMMAND || 'codex';
+  const override = env.AGENT_BRIDGE_CODEX_ARGS
+    ? env.AGENT_BRIDGE_CODEX_ARGS.split(' ').filter(Boolean)
+    : null;
+  let args;
+  if (mode !== 'agent') {
+    args = override || ['exec', '--skip-git-repo-check', '--color', 'never', '--sandbox', 'read-only', '--ephemeral'];
+    args = [...args];
+  } else if (resumeSessionId) {
+    // `codex exec resume` 不接受 -C/--cd、--sandbox、--color：
+    // 工作目录只能靠子进程 cwd，沙箱只能用 -c 覆盖配置。
+    args = [
+      ...(override || ['exec']), 'resume', resumeSessionId,
+      '--skip-git-repo-check', '--json',
+      '-c', 'sandbox_mode="workspace-write"',
+      '-c', 'sandbox_workspace_write.network_access=true'
+    ];
+  } else {
+    // 不加 --ephemeral：会话必须落盘，下一轮才能 resume。
+    args = [
+      ...(override || ['exec']),
+      '--skip-git-repo-check', '--color', 'never',
+      '--sandbox', 'workspace-write',
+      '-c', 'sandbox_workspace_write.network_access=true',
+      '--json'
+    ];
+    (addDirs || []).filter(Boolean).forEach((dir) => args.push('--add-dir', dir));
+  }
+  if (outputFile) args.push('--output-last-message', outputFile);
+  args.push('-');
+  return { command, args, stdinPrompt: prompt, cwd: mode === 'agent' ? (cwd || '') : '' };
+}
+
+export function engineInvocation(engine, prompt, options = {}) {
+  const settings = {
+    env: options.env || process.env,
+    outputFile: options.outputFile || '',
+    mode: normalizeMode(options.mode),
+    cwd: options.cwd || '',
+    sessionId: options.sessionId || '',
+    resumeSessionId: options.resumeSessionId || '',
+    allowWrite: !!options.allowWrite,
+    addDirs: options.addDirs || []
+  };
+  return engine === 'codex'
+    ? codexInvocation(prompt, settings)
+    : claudeInvocation(prompt, settings);
 }
 
 function missingCliMessage(engine) {
@@ -46,6 +123,8 @@ function missingCliMessage(engine) {
 function spawnEngine(engine, invocation, onStdout) {
   return new Promise((resolve, reject) => {
     const child = spawn(invocation.command, invocation.args, {
+      // Agent 模式把工作目录设成文档所属工程根；问答模式不带 cwd，沿用桥接进程目录。
+      ...(invocation.cwd ? { cwd: invocation.cwd } : {}),
       stdio: [invocation.stdinPrompt === null ? 'ignore' : 'pipe', 'pipe', 'pipe']
     });
     let stderr = '';
@@ -65,21 +144,49 @@ function spawnEngine(engine, invocation, onStdout) {
   });
 }
 
-async function runClaude(prompt, onDelta, env) {
+// Agent 模式的会话 id：claude 的由调用方生成并传入，codex 的要从 --json 事件里捕获。
+function reportSession(options, id) {
+  if (id && typeof options.onSession === 'function') options.onSession(id);
+}
+
+async function runClaude(prompt, onDelta, env, options = {}) {
   let answer = '';
-  await spawnEngine('claude', engineInvocation('claude', prompt, { env }), (delta) => {
+  const invocation = engineInvocation('claude', prompt, { ...options, env });
+  await spawnEngine('claude', invocation, (delta) => {
     answer += delta;
     onDelta(delta);
   });
+  if (normalizeMode(options.mode) === 'agent') {
+    reportSession(options, options.resumeSessionId || options.sessionId);
+  }
   return answer.trim();
 }
 
-async function runCodex(prompt, onDelta, env) {
+// codex 的 --json 是 JSONL 事件流；这里只关心 thread.started（会话 id 的唯一来源）。
+function createCodexEventReader(options) {
+  let buffer = '';
+  return (chunk) => {
+    buffer += chunk;
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+    for (const line of lines) {
+      if (!line.trim().startsWith('{')) continue;
+      try {
+        const event = JSON.parse(line);
+        if (event.type === 'thread.started') reportSession(options, event.thread_id);
+      } catch {}
+    }
+  };
+}
+
+async function runCodex(prompt, onDelta, env, options = {}) {
   const dir = await mkdtemp(join(tmpdir(), 'mojian-codex-'));
   const outputFile = join(dir, 'answer.md');
   try {
-    // stdout 是人类可读进度，不进入回答；只取 --output-last-message 的最终消息。
-    await spawnEngine('codex', engineInvocation('codex', prompt, { env, outputFile }), () => {});
+    // stdout 是人类可读进度 / JSON 事件，不进入回答；只取 --output-last-message 的最终消息。
+    const invocation = engineInvocation('codex', prompt, { ...options, env, outputFile });
+    const onStdout = normalizeMode(options.mode) === 'agent' ? createCodexEventReader(options) : () => {};
+    await spawnEngine('codex', invocation, onStdout);
     const answer = (await readFile(outputFile, 'utf8')).trim();
     if (!answer) throw new Error('Codex 没有返回回答内容');
     onDelta(answer);
@@ -165,5 +272,7 @@ async function runGemini(prompt, onDelta, env, gemini) {
 
 export function runEngine(engine, prompt, onDelta, env = process.env, options = {}) {
   if (engine === 'gemini') return runGemini(prompt, onDelta, env, options.gemini);
-  return engine === 'codex' ? runCodex(prompt, onDelta, env) : runClaude(prompt, onDelta, env);
+  return engine === 'codex'
+    ? runCodex(prompt, onDelta, env, options)
+    : runClaude(prompt, onDelta, env, options);
 }

@@ -26,6 +26,18 @@ test('startAgentBridge 在随机端口启动并响应 /health', async () => {
   });
 });
 
+test('/api/connectors 返回飞书与钉钉本机能力状态', async () => {
+  await withBridge({}, async (bridge) => {
+    const response = await fetch(`${bridge.url}/api/connectors`);
+    const result = await response.json();
+    assert.equal(response.status, 200);
+    for (const target of ['feishu', 'dingtalk']) {
+      assert.equal(typeof result[target].available, 'boolean');
+      assert.equal(typeof result[target].reason, 'string');
+    }
+  });
+});
+
 test('文档 API 在嵌入模式下可用', async () => {
   await withBridge({}, async (bridge) => {
     const created = await fetch(`${bridge.url}/api/documents`, {
@@ -274,6 +286,232 @@ test('/api/chat 选 gemini 但未配置 Key 时返回错误事件', async () => 
     const stream = await response.text();
     assert.match(stream, /event: error/);
     assert.match(stream, /Gemini API Key/);
+  });
+});
+
+// ===== Agent 模式：工程上下文 + 会话续接 =====
+
+// 假 claude：把每次调用的 argv 与 cwd 追加到日志，提示词从 stdin 读。
+const FAKE_AGENT_CLAUDE = `
+  const fs = require('node:fs');
+  let prompt = '';
+  process.stdin.on('data', (chunk) => { prompt += chunk; });
+  process.stdin.on('end', () => {
+    fs.appendFileSync(process.env.FAKE_AGENT_LOG, JSON.stringify({
+      argv: process.argv.slice(2), cwd: process.cwd(), prompt
+    }) + '\\n');
+    if (process.argv.includes('--resume') && process.env.FAKE_AGENT_RESUME_FAILS) {
+      process.stderr.write('No conversation found with session ID');
+      process.exit(1);
+    }
+    process.stdout.write('已经帮你存好了');
+  });
+`;
+
+async function withFakeAgentCli(script, extraEnv, run) {
+  const dir = await mkdtemp(join(tmpdir(), 'agent-chat-test-'));
+  const fake = join(dir, 'fake-claude.js');
+  const log = join(dir, 'calls.jsonl');
+  await writeFile(fake, script);
+  const keys = ['AGENT_BRIDGE_CLAUDE_COMMAND', 'AGENT_BRIDGE_CLAUDE_ARGS', 'FAKE_AGENT_LOG', ...Object.keys(extraEnv)];
+  const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+  process.env.AGENT_BRIDGE_CLAUDE_COMMAND = process.execPath;
+  process.env.AGENT_BRIDGE_CLAUDE_ARGS = fake;
+  process.env.FAKE_AGENT_LOG = log;
+  Object.assign(process.env, extraEnv);
+  const readCalls = async () =>
+    (await readFile(log, 'utf8')).trim().split('\n').filter(Boolean).map((line) => JSON.parse(line));
+  try {
+    await run({ dir, readCalls });
+  } finally {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
+async function askAgent(bridge, body) {
+  const response = await fetch(`${bridge.url}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ engine: 'claude', mode: 'agent', ...body })
+  });
+  return response.text();
+}
+
+test('/api/chat Agent 模式：cwd 落在文档所属工程根，会话 id 持久化后续接', async () => {
+  await withFakeAgentCli(FAKE_AGENT_CLAUDE, {}, async ({ dir, readCalls }) => {
+    // 造一个带 .git 的工程，文档在其子目录里。
+    await mkdir(join(dir, 'repo', '.git'), { recursive: true });
+    await mkdir(join(dir, 'repo', 'docs'), { recursive: true });
+    const localPath = join(dir, 'repo', 'docs', '技术方案.md');
+    await writeFile(localPath, '# 方案');
+
+    await withBridge({}, async (bridge) => {
+      const document = { fileName: '技术方案.md', content: '# 方案\n正文', localPath };
+
+      const first = await askAgent(bridge, {
+        question: '把这篇存到飞书', document, selection: { quote: '方案' }
+      });
+      assert.match(first, /event: meta/);
+      assert.match(first, /"mode":"agent"/);
+      assert.match(first, /已经帮你存好了/);
+
+      const calls = await readCalls();
+      assert.equal(calls.length, 1);
+      assert.ok(calls[0].cwd.endsWith(join('repo')), `cwd 应为工程根，实际 ${calls[0].cwd}`);
+      assert.ok(calls[0].argv.includes('--session-id'), '首轮应新建会话');
+      assert.ok(calls[0].argv.includes('--allowedTools'));
+      assert.match(calls[0].prompt, /把这篇存到飞书/, '提示词应走 stdin');
+      const sessionId = calls[0].argv[calls[0].argv.indexOf('--session-id') + 1];
+
+      // 第二轮：同一篇文档应当续接上面那个会话。
+      const second = await askAgent(bridge, {
+        question: '再存一份到钉钉', document, selection: { quote: '方案' }
+      });
+      assert.match(second, /"resumed":true/);
+      const after = await readCalls();
+      assert.equal(after.length, 2);
+      assert.ok(after[1].argv.includes('--resume'));
+      assert.equal(after[1].argv[after[1].argv.indexOf('--resume') + 1], sessionId);
+    });
+  });
+});
+
+test('/api/chat Agent 模式：会话失效时自动重建并通知前端', async () => {
+  await withFakeAgentCli(FAKE_AGENT_CLAUDE, { FAKE_AGENT_RESUME_FAILS: '1' }, async ({ readCalls }) => {
+    await withBridge({}, async (bridge) => {
+      const document = { fileName: 'note.md', content: '# hi' };
+      await askAgent(bridge, { question: '第一问', document, selection: { quote: 'hi' } });
+      const second = await askAgent(bridge, { question: '第二问', document, selection: { quote: 'hi' } });
+
+      assert.match(second, /event: session-reset/);
+      assert.match(second, /已经帮你存好了/, '重建会话后仍应给出回答');
+      const calls = await readCalls();
+      assert.equal(calls.length, 3, '首轮 + 失败的 resume + 重建后的新会话');
+      assert.ok(calls[1].argv.includes('--resume'));
+      assert.ok(calls[2].argv.includes('--session-id'));
+    });
+  });
+});
+
+test('/api/chat 问答模式不带工具、不带工作目录（默认零回归）', async () => {
+  await withFakeAgentCli(`
+    const fs = require('node:fs');
+    fs.appendFileSync(process.env.FAKE_AGENT_LOG, JSON.stringify({ argv: process.argv.slice(2), cwd: process.cwd() }) + '\\n');
+    process.stdout.write('普通回答');
+  `, {}, async ({ dir, readCalls }) => {
+    await mkdir(join(dir, 'repo', '.git'), { recursive: true });
+    const localPath = join(dir, 'repo', 'note.md');
+    await writeFile(localPath, '# hi');
+
+    await withBridge({}, async (bridge) => {
+      const response = await fetch(`${bridge.url}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          engine: 'claude', question: '这段讲什么',
+          document: { fileName: 'note.md', content: '# hi', localPath },
+          selection: { quote: 'hi' }
+        })
+      });
+      // meta 事件在引擎启动前就写出，必须读完整个流才能确认子进程已跑完。
+      await response.text();
+      const calls = await readCalls();
+      assert.ok(!calls[0].argv.includes('--allowedTools'));
+      assert.ok(!calls[0].argv.includes('--session-id'));
+      assert.ok(!calls[0].cwd.endsWith('repo'), '问答模式不切工作目录');
+    });
+  });
+});
+
+// ===== 连接器：一键发布到飞书 / 钉钉 =====
+
+test('/api/publish 把当前文档发到飞书并把链接写回文档记录', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'publish-test-'));
+  const fake = join(dir, 'fake-lark.js');
+  await writeFile(fake, `
+    const fs = require('node:fs');
+    const at = process.argv.indexOf('--file');
+    fs.writeFileSync(process.env.FAKE_LARK_BODY, fs.readFileSync(process.argv[at + 1], 'utf8'));
+    process.stdout.write(JSON.stringify({ ok: true, data: { files: [{ url: 'https://x.feishu.cn/docx/abc' }] } }));
+  `);
+  const bodyFile = join(dir, 'body.md');
+  const previous = {
+    AGENT_BRIDGE_LARK_COMMAND: process.env.AGENT_BRIDGE_LARK_COMMAND,
+    AGENT_BRIDGE_LARK_ARGS: process.env.AGENT_BRIDGE_LARK_ARGS,
+    FAKE_LARK_BODY: process.env.FAKE_LARK_BODY
+  };
+  process.env.AGENT_BRIDGE_LARK_COMMAND = process.execPath;
+  process.env.AGENT_BRIDGE_LARK_ARGS = fake;
+  process.env.FAKE_LARK_BODY = bodyFile;
+  try {
+    await withBridge({}, async (bridge) => {
+      const created = await fetch(`${bridge.url}/api/documents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ document: { fileName: '技术方案.md', content: '# 方案\n正文' } })
+      });
+      const { documentId } = await created.json();
+
+      const response = await fetch(`${bridge.url}/api/publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target: 'feishu', documentId })
+      });
+      assert.equal(response.ok, true);
+      const result = await response.json();
+      assert.equal(result.url, 'https://x.feishu.cn/docx/abc');
+      assert.equal(result.target, 'feishu');
+
+      assert.equal(await readFile(bodyFile, 'utf8'), '# 方案\n正文', '发布内容应为文档正文');
+
+      const detail = await (await fetch(`${bridge.url}/api/documents/${documentId}`)).json();
+      const publications = detail.document.publications;
+      assert.equal(publications.length, 1);
+      assert.equal(publications[0].target, 'feishu');
+      assert.equal(publications[0].url, 'https://x.feishu.cn/docx/abc');
+      assert.ok(publications[0].at, '记录发布时间');
+    });
+  } finally {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('/api/publish 目标不支持或文档缺失时返回明确错误', async () => {
+  await withBridge({}, async (bridge) => {
+    const badTarget = await fetch(`${bridge.url}/api/publish`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target: 'notion', document: { fileName: 'a.md', content: '#' } })
+    });
+    assert.equal(badTarget.status, 500);
+    assert.match((await badTarget.json()).error, /不支持/);
+
+    const missing = await fetch(`${bridge.url}/api/publish`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target: 'feishu', documentId: 'nope' })
+    });
+    assert.equal(missing.status, 500);
+  });
+});
+
+test('/api/publish 空文档不发布，避免在云端建一堆空壳', async () => {
+  await withBridge({}, async (bridge) => {
+    const response = await fetch(`${bridge.url}/api/publish`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target: 'feishu', document: { fileName: 'a.md', content: '   ' } })
+    });
+    assert.equal(response.status, 500);
+    assert.match((await response.json()).error, /没有内容/);
   });
 });
 

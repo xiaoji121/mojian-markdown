@@ -87,3 +87,50 @@ test('引擎标签用于消息署名', () => {
   editor.aiEngine = 'codex';
   assert.equal(editor._aiEngineLabel(), 'Codex');
 });
+
+// ===== 统一入口：普通问题只读，项目操作按次确认 =====
+
+test('默认是问答模式，请求体带 mode=chat（零回归）', () => {
+  const editor = createEditor();
+
+  assert.equal(editor._aiChatRequestBody('这段讲什么').mode, 'chat');
+});
+
+test('明确的项目操作请求在确认后按 Agent 模式发送', () => {
+  const editor = createEditor();
+  const prompts: string[] = [];
+  const mode = editor._resolveQuestionMode('请修改项目里的 README 文件', (message: string) => {
+    prompts.push(message);
+    return true;
+  });
+
+  assert.equal(mode, 'agent');
+  assert.equal(prompts.length, 1);
+  assert.match(prompts[0], /项目文件/);
+  assert.equal(editor._aiChatRequestBody('请修改项目里的 README 文件', mode).mode, 'agent');
+});
+
+test('普通阅读问题直接按只读问答发送，不弹确认', () => {
+  const editor = createEditor();
+  let confirmed = false;
+  const mode = editor._resolveQuestionMode('解释一下这段代码的作用', () => {
+    confirmed = true;
+    return true;
+  });
+
+  assert.equal(mode, 'chat');
+  assert.equal(confirmed, false);
+});
+
+test('拒绝项目工具授权时取消请求', () => {
+  const editor = createEditor();
+  assert.equal(editor._resolveQuestionMode('运行项目测试', () => false), null);
+});
+
+test('Gemini 遇到项目操作时不发送并提示切换渠道', () => {
+  const editor = createEditor();
+  editor.aiEngine = 'gemini';
+
+  assert.equal(editor._resolveQuestionMode('把这篇发布到飞书', () => true), null);
+  assert.ok(editor.statuses.some((text: string) => text.includes('Claude') && text.includes('Codex')));
+});

@@ -42,6 +42,30 @@ export class AIMethods {
   }
 
 
+  // ===== 统一提问入口 =====
+  // 普通阅读问题保持只读；只有明确要求操作项目、文件或外部发布时，才按次申请工具权限。
+  _questionNeedsProjectTools(question) {
+    const text = String(question || '').trim();
+    if (!text) return false;
+    const action = /(修改|改动|改一下|修复|实现|创建|新建|删除|移除|重命名|写入|保存到|发布到|上传|运行|执行|安装|提交|推送|部署|生成文件|edit|modify|fix|implement|create|delete|rename|write|save|publish|upload|run|execute|install|commit|push|deploy)/i;
+    const target = /(项目|工程|代码|文件|目录|仓库|测试|命令|脚本|README|飞书|钉钉|project|code|file|folder|directory|repo|test|command|script)/i;
+    return action.test(text) && target.test(text);
+  }
+
+
+  _resolveQuestionMode(question, confirmTools = (message) => window.confirm(message)) {
+    if (!this._questionNeedsProjectTools(question)) return 'chat';
+    if (this.aiEngine === 'gemini') {
+      this._setStatus('当前 Gemini 渠道不能操作项目，请切换到 Claude 或 Codex');
+      return null;
+    }
+    const confirmed = confirmTools(
+      '这条请求需要使用项目工具，可能读取或修改项目文件。\n\n是否仅为本次请求授权？'
+    );
+    return confirmed ? 'agent' : null;
+  }
+
+
   // 引擎切换入口在顶栏「设置」弹窗里；面板头部只放一枚只读 chip 显示当前引擎。
   _syncAIEngineSwitch() {
     const chip = this.aiEngineChipRef?.current;
@@ -50,10 +74,11 @@ export class AIMethods {
   }
 
 
-  _aiChatRequestBody(question) {
+  _aiChatRequestBody(question, mode = 'chat') {
     return {
       question,
       engine: (this.aiEngine === 'codex' || this.aiEngine === 'gemini') ? this.aiEngine : 'claude',
+      mode: mode === 'agent' ? 'agent' : 'chat',
       document: this._documentPayload(),
       // 在子文档视图里追问时带上父节点，服务端把这次问答挂进追问树。
       parentRequestId: (this.previewOverrideMarkdown && this.activeAnswerRequestId) || undefined,
@@ -435,10 +460,8 @@ export class AIMethods {
     const input = this.aiInputRef.current;
     const question = input ? input.value.trim() : '';
     if (!question) return;
-    if (!this.aiQuote) {
-      this._setAIStatus('请先选择一段原文', 'offline');
-      return;
-    }
+    const requestMode = this._resolveQuestionMode(question);
+    if (!requestMode) return;
 
     const aiComment = {
       id: 'c' + Date.now() + Math.floor(Math.random() * 999),
@@ -455,23 +478,27 @@ export class AIMethods {
     if (this.previewOverrideMarkdown && this.activeAnswerRequestId) {
       aiComment.answerRequestId = this.activeAnswerRequestId;
     }
-    this.comments.push(aiComment);
-    this._persist();
-    this._renderPreview();
-    this._renderComments();
+    // 批注靠引用定位，没有引用（Agent 模式直接下指令）就不落批注，只留问答记录。
+    const anchored = !!this.aiQuote;
+    if (anchored) {
+      this.comments.push(aiComment);
+      this._persist();
+      this._renderPreview();
+      this._renderComments();
+    }
     const engineLabel = this._aiEngineLabel();
     const userMessage = this._pushAIMessage('user', question, '', { quote: this.aiQuote });
     const assistant = this._pushAIMessage('assistant', '', '', { engine: this.aiEngine });
     let bridgeReached = false;
     if (input) input.value = '';
     this._setAIBusy(true);
-    this._setAIStatus(engineLabel + ' 正在阅读…', 'checking');
+    this._setAIStatus(engineLabel + (requestMode === 'agent' ? ' 正在使用项目工具…' : ' 正在阅读…'), 'checking');
 
     try {
       const response = await fetch(bridgeUrl('/api/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(this._aiChatRequestBody(question))
+        body: JSON.stringify(this._aiChatRequestBody(question, requestMode))
       });
       if (!response.ok || !response.body) throw new Error('本地 Agent Bridge 无响应');
       bridgeReached = true;
@@ -508,8 +535,15 @@ export class AIMethods {
             this.bridgeDocumentId = data.documentId;
             this.activeDocumentId = data.documentId;
             this._persist();
-            contextMeta = '整篇文档已载入' + (data.documentChars ? ' · ' + data.documentChars + ' 字符' : '');
-            assistant.meta = contextMeta + (data.resumed ? ' · 已继续阅读会话' : ' · 已建立阅读会话');
+            if (data.mode === 'agent') {
+              // 服务端回报的工作目录：让人看得见这次 Agent 能看到哪个工程。
+              this.agentProjectRoot = data.projectRoot || '';
+              contextMeta = '已使用项目工具' + (this.agentProjectRoot ? ' · 工程 ' + this.agentProjectRoot : ' · 无工程上下文');
+              assistant.meta = contextMeta + (data.resumed ? ' · 已续接会话' : ' · 已新建会话');
+            } else {
+              contextMeta = '整篇文档已载入' + (data.documentChars ? ' · ' + data.documentChars + ' 字符' : '');
+              assistant.meta = contextMeta + (data.resumed ? ' · 已继续阅读会话' : ' · 已建立阅读会话');
+            }
           } else if (event === 'session-reset' && data) {
             this.aiBridgeOnline = true;
             userMessage.documentId = data.documentId || userMessage.documentId;

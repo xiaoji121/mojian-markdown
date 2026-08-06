@@ -115,6 +115,155 @@ test('CLI 不存在时给出对应引擎的安装提示', async () => {
   );
 });
 
+// ===== Agent 模式 =====
+// 问答模式保持只会说话；Agent 模式解开三处限制：工具白名单、工作目录、会话续接。
+
+test('claude Agent 模式：提示词走 stdin，带工具白名单，首轮用 --session-id', () => {
+  const invocation = engineInvocation('claude', '把这篇存到飞书', {
+    env: {},
+    mode: 'agent',
+    cwd: '/repo',
+    sessionId: '11111111-2222-3333-4444-555555555555'
+  });
+
+  // --allowedTools 是可变参数，提示词若仍作为尾参会被吞掉，必须走 stdin。
+  assert.equal(invocation.stdinPrompt, '把这篇存到飞书');
+  assert.ok(!invocation.args.includes('把这篇存到飞书'));
+  assert.equal(invocation.cwd, '/repo');
+  const toolsAt = invocation.args.indexOf('--allowedTools');
+  assert.ok(toolsAt > -1, '应传工具白名单');
+  const tools = invocation.args[toolsAt + 1];
+  assert.match(tools, /Bash\(lark-cli:\*\)/);
+  assert.match(tools, /Bash\(dws:\*\)/);
+  assert.match(tools, /Read/);
+  assert.ok(!/Write/.test(tools), '默认不给写文件权限');
+  const sessionAt = invocation.args.indexOf('--session-id');
+  assert.equal(invocation.args[sessionAt + 1], '11111111-2222-3333-4444-555555555555');
+  assert.ok(!invocation.args.includes('--resume'));
+});
+
+test('claude Agent 模式：已有会话时用 --resume 续接，不再传 --session-id', () => {
+  const invocation = engineInvocation('claude', '接着聊', {
+    env: {},
+    mode: 'agent',
+    cwd: '/repo',
+    sessionId: 'new-id',
+    resumeSessionId: 'old-id'
+  });
+
+  const resumeAt = invocation.args.indexOf('--resume');
+  assert.equal(invocation.args[resumeAt + 1], 'old-id');
+  assert.ok(!invocation.args.includes('--session-id'));
+});
+
+test('claude Agent 模式：允许写文件时白名单才加 Write/Edit', () => {
+  const invocation = engineInvocation('claude', '生成一篇方案', {
+    env: {}, mode: 'agent', cwd: '/repo', sessionId: 'x', allowWrite: true
+  });
+
+  const tools = invocation.args[invocation.args.indexOf('--allowedTools') + 1];
+  assert.match(tools, /Write/);
+  assert.match(tools, /Edit/);
+});
+
+test('claude Agent 模式：额外可读目录（工作区暂存文件）通过 --add-dir 授权', () => {
+  const invocation = engineInvocation('claude', '发布', {
+    env: {}, mode: 'agent', cwd: '/repo', sessionId: 'x', addDirs: ['/workspace/scratch']
+  });
+
+  const addAt = invocation.args.indexOf('--add-dir');
+  assert.equal(invocation.args[addAt + 1], '/workspace/scratch');
+});
+
+test('codex Agent 模式：去掉 --ephemeral 才能留下可续接的会话，并开 --json', () => {
+  const invocation = engineInvocation('codex', '把这篇存到钉钉', {
+    env: {}, mode: 'agent', cwd: '/repo', outputFile: '/tmp/answer.md'
+  });
+
+  assert.deepEqual(invocation.args.slice(0, 2), ['exec', '--skip-git-repo-check']);
+  assert.ok(!invocation.args.includes('--ephemeral'), '会话必须落盘才能 resume');
+  assert.ok(invocation.args.includes('--json'), '需要 --json 才能拿到 thread_id');
+  const sandboxAt = invocation.args.indexOf('--sandbox');
+  assert.equal(invocation.args[sandboxAt + 1], 'workspace-write');
+  assert.equal(invocation.cwd, '/repo');
+  assert.equal(invocation.args[invocation.args.length - 1], '-');
+});
+
+test('codex Agent 模式续接：用 exec resume <id>，沙箱只能靠 -c 覆盖', () => {
+  const invocation = engineInvocation('codex', '接着聊', {
+    env: {}, mode: 'agent', cwd: '/repo', outputFile: '/tmp/answer.md', resumeSessionId: 'thread-1'
+  });
+
+  assert.deepEqual(invocation.args.slice(0, 3), ['exec', 'resume', 'thread-1']);
+  // codex exec resume 不接受 -C/--cd 与 --sandbox，工作目录只能靠子进程 cwd。
+  assert.ok(!invocation.args.includes('--sandbox'));
+  assert.ok(!invocation.args.includes('-C'));
+  assert.ok(invocation.args.some((arg: string) => arg.startsWith('sandbox_mode=')));
+  assert.equal(invocation.cwd, '/repo');
+});
+
+test('runEngine(codex) Agent 模式从 --json 事件里捕获 thread_id', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'engine-test-'));
+  try {
+    const fake = join(dir, 'fake-codex.js');
+    await writeFile(fake, `
+      const at = process.argv.indexOf('--output-last-message');
+      const file = process.argv[at + 1];
+      process.stdin.resume();
+      process.stdin.on('end', () => {
+        process.stdout.write(JSON.stringify({ type: 'thread.started', thread_id: 'thread-42' }) + '\\n');
+        process.stdout.write(JSON.stringify({ type: 'turn.completed' }) + '\\n');
+        require('node:fs').writeFileSync(file, '已存入钉钉');
+        process.exit(0);
+      });
+    `);
+    const sessions: string[] = [];
+    const answer = await runEngine('codex', '存到钉钉', () => {}, {
+      AGENT_BRIDGE_CODEX_COMMAND: process.execPath,
+      AGENT_BRIDGE_CODEX_ARGS: fake
+    }, { mode: 'agent', onSession: (id: string) => sessions.push(id) });
+
+    assert.equal(answer, '已存入钉钉');
+    assert.deepEqual(sessions, ['thread-42']);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('runEngine Agent 模式在指定工作目录里启动子进程', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'engine-test-'));
+  try {
+    const fake = join(dir, 'fake-claude.js');
+    await writeFile(fake, `process.stdout.write(process.cwd());`);
+    const answer = await runEngine('claude', '你在哪', () => {}, {
+      AGENT_BRIDGE_CLAUDE_COMMAND: process.execPath,
+      AGENT_BRIDGE_CLAUDE_ARGS: fake
+    }, { mode: 'agent', cwd: dir, sessionId: 'x' });
+
+    // macOS tmpdir 经软链，比对结尾即可。
+    assert.ok(answer.endsWith(dir.replace('/private', '')) || answer.endsWith(dir), `cwd 未生效：${answer}`);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('runEngine(claude) Agent 模式把会话 id 回调出去，供桥接持久化', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'engine-test-'));
+  try {
+    const fake = join(dir, 'fake-claude.js');
+    await writeFile(fake, `process.stdout.write('好了');`);
+    const sessions: string[] = [];
+    await runEngine('claude', '问题', () => {}, {
+      AGENT_BRIDGE_CLAUDE_COMMAND: process.execPath,
+      AGENT_BRIDGE_CLAUDE_ARGS: fake
+    }, { mode: 'agent', sessionId: 'session-9', onSession: (id: string) => sessions.push(id) });
+
+    assert.deepEqual(sessions, ['session-9']);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 // ===== Gemini（API Key 提供方） =====
 
 import { createServer } from 'node:http';

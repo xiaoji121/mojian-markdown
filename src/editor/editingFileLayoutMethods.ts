@@ -377,6 +377,9 @@ export class EditingFileLayoutMethods {
     const open = typeof force === 'boolean' ? force : !menu.classList.contains('is-open');
     menu.classList.toggle('is-open', open);
     if (button) button.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open && typeof this._refreshConnectorCapabilities === 'function') {
+      this._refreshConnectorCapabilities();
+    }
     if (open && !this._fileMenuDocH) {
       this._fileMenuDocH = (e) => {
         if (menu.contains(e.target)) return;

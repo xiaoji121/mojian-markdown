@@ -645,6 +645,7 @@
   body:not(.agent-bridge-enabled) .ai-panel,
   body:not(.agent-bridge-enabled) .ai-entry,
   body:not(.agent-bridge-enabled) .settings-entry,
+  body:not(.agent-bridge-enabled) .publish-menu-item,
   body:not(.agent-bridge-enabled) .translate-entry {
     display: none !important;
   }

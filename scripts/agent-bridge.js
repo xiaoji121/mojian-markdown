@@ -5,11 +5,13 @@
 import { createServer } from 'node:http';
 import { extname, join, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { readFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { createDocumentStore, normalizeAnnotation } from './agent-bridge-store.js';
 import { createSettingsStore, maskProviderSettings } from './agent-bridge-settings.js';
-import { normalizeEngine, runEngine } from './agent-bridge-engines.js';
+import { normalizeEngine, normalizeMode, runEngine } from './agent-bridge-engines.js';
+import { agentPrompt, prepareAgentContext, runAgentTurn } from './agent-bridge-agent.js';
+import { connectorCapabilities, normalizeTarget, publishDocument } from './agent-bridge-connectors.js';
 import {
   collectPathNodes,
   composePrompt,
@@ -125,7 +127,7 @@ function translatePrompt(text) {
   ].join('\n');
 }
 
-function createRequestHandler({ store, settings, staticDir, cors }) {
+function createRequestHandler({ store, settings, staticDir, cors, root }) {
   const { readDocument, writeDocument, deleteDocument, upsertDocument, listDocuments } = store;
   const corsHeaders = cors
     ? {
@@ -160,9 +162,39 @@ function createRequestHandler({ store, settings, staticDir, cors }) {
     }
   }
 
+  async function runChatEngine({ engine, body, doc, res }) {
+    const engineOptions = engine === 'gemini'
+      ? { gemini: await settings.providerSettings('gemini') }
+      : {};
+    return runEngine(
+      engine,
+      bridgePrompt(body, doc),
+      (delta) => writeSse(res, 'delta', { text: delta }),
+      process.env,
+      engineOptions
+    );
+  }
+
+  // Agent 一轮：会话 id 写回文档，前端下次提问才能续上同一条对话线。
+  async function runAgentChat({ engine, body, doc, context, res }) {
+    const result = await runAgentTurn({
+      engine,
+      prompt: agentPrompt(body, doc, context),
+      context,
+      onDelta: (text) => writeSse(res, 'delta', { text }),
+      onSessionReset: () => writeSse(res, 'session-reset', { documentId: doc.documentId })
+    });
+    if (result.sessionId) {
+      doc.agentSessions = { ...(doc.agentSessions || {}), [engine]: result.sessionId };
+    }
+    return result.answer;
+  }
+
   async function handleChat(req, res) {
     const body = await readBody(req);
     const engine = normalizeEngine(body.engine);
+    // Gemini 是纯文本接口，没有工具也没有会话，Agent 模式对它无意义 → 回落问答。
+    const mode = engine === 'gemini' ? 'chat' : normalizeMode(body.mode);
     const doc = await upsertDocument(body.document || {});
     const requestId = randomUUID();
     // 在子文档视图里追问时，记下父节点，问答树才能逐级嵌套。
@@ -171,6 +203,7 @@ function createRequestHandler({ store, settings, staticDir, cors }) {
     const message = {
       requestId,
       engine,
+      mode,
       question: body.question || '',
       quote: body.selection?.quote || '',
       questionAt: new Date().toISOString(),
@@ -198,20 +231,24 @@ function createRequestHandler({ store, settings, staticDir, cors }) {
       Connection: 'keep-alive',
       ...corsHeaders
     });
+    // Agent 模式：先备好工程上下文与落盘正文，再把会话续接情况告诉前端。
+    const context = mode === 'agent'
+      ? await prepareAgentContext({ root, doc, engine })
+      : null;
     writeSse(res, 'meta', {
       requestId,
       engine,
+      mode,
       documentId: doc.documentId,
-      documentChars: doc.content.length
+      documentChars: doc.content.length,
+      projectRoot: context?.projectRoot || '',
+      resumed: !!context?.resumeSessionId
     });
 
     try {
-      const engineOptions = engine === 'gemini'
-        ? { gemini: await settings.providerSettings('gemini') }
-        : {};
-      const answer = await runEngine(engine, bridgePrompt(body, doc), (delta) => {
-        writeSse(res, 'delta', { text: delta });
-      }, process.env, engineOptions);
+      const answer = context
+        ? await runAgentChat({ engine, body, doc, context, res })
+        : await runChatEngine({ engine, body, doc, res });
       message.answer = answer;
       message.answerAt = new Date().toISOString();
       const annotation = doc.annotations.find((item) => item.requestId === requestId);
@@ -270,6 +307,39 @@ function createRequestHandler({ store, settings, staticDir, cors }) {
     }
   }
 
+  // 一键发布：把当前文档交给本机已登录的飞书/钉钉 CLI 建成在线文档，回链写进文档记录。
+  // 这条是确定性路径 —— 不让大模型来决定「有没有正确调用 CLI」。
+  async function handlePublish(req, res) {
+    const body = await readBody(req);
+    const target = normalizeTarget(body.target);
+    let doc = null;
+    if (body.documentId) {
+      if (!/^[\w.-]+$/.test(String(body.documentId))) throw new Error('文档不存在，请先保存后再发布');
+      try {
+        doc = await readDocument(String(body.documentId));
+      } catch {
+        throw new Error('文档不存在，请先保存后再发布');
+      }
+    } else {
+      doc = await upsertDocument(body.document || {});
+    }
+    const result = await publishDocument(target, {
+      fileName: doc.fileName,
+      content: doc.content,
+      folder: body.folder || ''
+    });
+    const publication = {
+      target: result.target,
+      label: result.label,
+      name: result.name,
+      url: result.url,
+      at: new Date().toISOString()
+    };
+    doc.publications = [...(doc.publications || []), publication];
+    await writeDocument(doc);
+    return sendJson(res, 200, { ok: true, documentId: doc.documentId, ...publication });
+  }
+
   // 连通性验证：优先用请求里的 Key/模型（保存前先测），缺省回落到已保存配置。
   async function handleSettingsTest(req, res) {
     const body = await readBody(req);
@@ -326,6 +396,9 @@ function createRequestHandler({ store, settings, staticDir, cors }) {
     const parts = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
     try {
       if (req.method === 'GET' && url.pathname === '/health') return sendJson(res, 200, { ok: true });
+      if (req.method === 'GET' && url.pathname === '/api/connectors') {
+        return sendJson(res, 200, await connectorCapabilities(process.env));
+      }
       if (req.method === 'GET' && url.pathname === '/api/settings') {
         return sendJson(res, 200, maskProviderSettings(await settings.readSettings()));
       }
@@ -333,8 +406,11 @@ function createRequestHandler({ store, settings, staticDir, cors }) {
         const body = await readBody(req);
         return sendJson(res, 200, maskProviderSettings(await settings.updateProviders(body)));
       }
-      if (req.method === 'POST' && url.pathname === '/api/settings/test') return handleSettingsTest(req, res);
-      if (req.method === 'POST' && url.pathname === '/api/translate') return handleTranslate(req, res);
+      // 下面这些委派处理器都是异步的，必须 await：直接 return promise 的话，
+      // 它们抛出的错误（如请求体 JSON 解析失败、发布目标不支持）会绕过本函数的
+      // catch 变成未处理的 rejection —— 客户端永远等不到响应，进程还可能被拖死。
+      if (req.method === 'POST' && url.pathname === '/api/settings/test') return await handleSettingsTest(req, res);
+      if (req.method === 'POST' && url.pathname === '/api/translate') return await handleTranslate(req, res);
       if (req.method === 'GET' && url.pathname === '/api/documents') {
         const documents = (await listDocuments()).map(summarizeDocument);
         return sendJson(res, 200, { documents });
@@ -349,8 +425,9 @@ function createRequestHandler({ store, settings, staticDir, cors }) {
         const doc = await upsertDocument(body.document || {});
         return sendJson(res, 200, { documentId: doc.documentId, messages: doc.messages || [] });
       }
-      if (req.method === 'POST' && url.pathname === '/api/chat') return handleChat(req, res);
-      if (req.method === 'POST' && url.pathname === '/api/compose') return handleCompose(req, res);
+      if (req.method === 'POST' && url.pathname === '/api/chat') return await handleChat(req, res);
+      if (req.method === 'POST' && url.pathname === '/api/publish') return await handlePublish(req, res);
+      if (req.method === 'POST' && url.pathname === '/api/compose') return await handleCompose(req, res);
       if (req.method === 'GET' && url.pathname === '/api/conversations') {
         const conversations = (await listDocuments()).filter((doc) => doc.messages?.length).map(conversationSummary);
         return sendJson(res, 200, { conversations });
@@ -391,7 +468,7 @@ export function startAgentBridge({
 } = {}) {
   const store = createDocumentStore(root);
   const settings = createSettingsStore(root);
-  const server = createServer(createRequestHandler({ store, settings, staticDir, cors }));
+  const server = createServer(createRequestHandler({ store, settings, staticDir, cors, root }));
   return new Promise((resolvePromise, rejectPromise) => {
     server.once('error', rejectPromise);
     server.listen(port, host, () => {

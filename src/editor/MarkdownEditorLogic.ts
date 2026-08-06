@@ -6,6 +6,7 @@ import { EDITOR_STORAGE_KEY, loadEditorState } from './storage';
 import { AIMethods } from './aiMethods';
 import { BridgeMethods } from './bridgeMethods';
 import { CommentMethods } from './commentMethods';
+import { ConnectorMethods } from './connectorMethods';
 import { DiagramMethods } from './diagramMethods';
 import { EditingFileLayoutMethods } from './editingFileLayoutMethods';
 import { ENABLE_AGENT_BRIDGE } from './featureFlags';
@@ -123,6 +124,9 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.aiMessages = [];
     this.aiConversations = [];
     this.aiEngine = 'claude';
+    this.agentProjectRoot = ''; // Agent 模式下服务端回报的工作目录，仅用于界面提示
+    this.publishBusy = false;
+    this.lastPublication = null;
     this.aiHistoryOpen = false;
     this.aiQuote = '';
     this.aiPanelOpen = false;
@@ -410,6 +414,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       toggleAIHistory: () => this.toggleAIHistory(),
       sendAIQuestion: () => this.sendAIQuestion(),
       openAISettings: () => this.openAISettings(),
+      menuPublishFeishu: () => { this.toggleFileMenu(false); this.publishToFeishu(); },
+      menuPublishDingtalk: () => { this.toggleFileMenu(false); this.publishToDingtalk(); },
       menuSettings: () => { this.toggleHeaderMenu(false); this.openAISettings(); },
       translateSel: () => this.translateSel(),
       askExplain: () => this.askAIQuick('请用更容易理解的语言解释这段话。'),
@@ -454,6 +460,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     LongImageMethods,
     AIMethods,
     AISettingsMethods,
+    ConnectorMethods,
     TranslateMethods,
     EditingFileLayoutMethods,
     LocalFileSyncMethods

@@ -362,6 +362,10 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
           <div class="header-menu-separator" role="separator"></div>
           <button class="header-menu-item" role="menuitem" onClick="{{ menuFileSave }}">保存<span class="menu-shortcut">⌘S</span></button>
           <button class="header-menu-item" role="menuitem" onClick="{{ menuFileSaveAs }}">另存为…<span class="menu-shortcut">⌘⇧S</span></button>
+          <div class="header-menu-separator publish-menu-item" role="separator"></div>
+          <!-- 借飞书/钉钉现成的文档承载与分享能力，走本机已登录的官方 CLI，凭据不经过墨笺 -->
+          <button class="header-menu-item publish-menu-item" data-target="feishu" role="menuitem" onClick="{{ menuPublishFeishu }}" disabled title="正在检测 lark-cli…">上传到飞书文档<small class="menu-item-hint">建成在线文档并复制链接</small></button>
+          <button class="header-menu-item publish-menu-item" data-target="dingtalk" role="menuitem" onClick="{{ menuPublishDingtalk }}" disabled title="正在检测 dws…">上传到钉钉文档<small class="menu-item-hint">建成在线文档并复制链接</small></button>
         </div>
       </span>
       <button ref="{{ headerMoreRef }}" class="abtn icon header-more" onClick="{{ toggleHeaderMenu }}" title="更多操作" aria-label="更多操作" aria-haspopup="menu" aria-expanded="false">⋯</button>
@@ -566,9 +570,9 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
       </div>
       <div ref="{{ aiMessagesRef }}" class="ai-messages" aria-live="polite"></div>
       <div class="ai-composer">
-        <textarea ref="{{ aiInputRef }}" class="ai-input" rows="3" placeholder="针对这段原文提问…（Enter 发送，Shift+Enter 换行）"></textarea>
+        <textarea ref="{{ aiInputRef }}" class="ai-input" rows="3" placeholder="提问或描述要完成的事情…（Enter 发送，Shift+Enter 换行）"></textarea>
         <div class="ai-composer-row">
-          <span class="ai-composer-note">自动归档至阅读工作区</span>
+          <span class="ai-composer-note">默认只读 · 使用项目工具前会确认</span>
           <button ref="{{ aiSendRef }}" class="ai-send" onClick="{{ sendAIQuestion }}">发送</button>
         </div>
       </div>
