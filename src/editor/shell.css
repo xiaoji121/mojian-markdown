@@ -317,28 +317,23 @@ body.is-desktop-app .header-more { display: none; }
   width: 1px;
   background: var(--border);
   cursor: col-resize;
+  transition: background 120ms ease;
 }
 .editor-divider-hit {
   position: absolute;
-  inset: 0 -12px;
+  inset: 0 -4px;
   cursor: col-resize;
 }
 .editor-divider-hit::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 3px;
-  height: 56px;
-  border-radius: var(--radius-pill);
-  background: transparent;
-  transform: translate(-50%, -50%);
-  transition: background 120ms ease;
+  content: none;
 }
-.editor-divider:hover .editor-divider-hit::after,
-.editor-divider.is-dragging .editor-divider-hit::after { background: var(--accent); }
+.editor-divider:hover,
+.editor-divider.is-dragging { background: var(--accent); }
+.editor-divider.is-dragging { transition: none; }
 .editor-main.editor-mode-active > .preview-pane,
 .editor-main.editor-mode-active > .editor-divider { display: none !important; }
+.editor-main.editor-mode-active > .source-pane,
+.editor-main.preview-mode-active > .preview-pane { flex: 1 1 auto !important; }
 .document-sidebar-tools { display: flex; align-items: center; gap: 5px; }
 
 .pane-toolbar {

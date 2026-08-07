@@ -467,7 +467,24 @@ export class CommentMethods {
   _appendReplyBlock(card, c) {
     const label = document.createElement('div');
     label.className = 'comment-reply-label';
-    label.textContent = '找到的回答';
+    const labelText = document.createElement('span');
+    labelText.textContent = '找到的回答';
+    label.appendChild(labelText);
+    const editing = !!(this._openReplyIds && this._openReplyIds.has(c.id));
+    if (c.reply && c.reply.trim() && !editing) {
+      const edit = document.createElement('button');
+      edit.className = 'comment-reply-edit';
+      edit.textContent = '编辑';
+      edit.setAttribute('aria-label', '编辑找到的回答');
+      edit.addEventListener('click', () => this._openReplyBox(c.id));
+      label.appendChild(edit);
+      const rendered = document.createElement('div');
+      rendered.className = 'comment-reply-markdown';
+      this._renderSafeMarkdown(rendered, c.reply, []);
+      card.appendChild(label);
+      card.appendChild(rendered);
+      return;
+    }
     const ta = document.createElement('textarea');
     ta.className = 'comment-note-input comment-reply-input';
     ta.value = c.reply || '';

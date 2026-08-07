@@ -76,17 +76,22 @@ test('视图切换在编辑、分屏、预览三种布局间生效', async ({ pa
   await expect(preview).toBeVisible();
 });
 
-test('分屏分隔条两侧有足够宽的拖拽热区', async ({ page }) => {
+test('分屏分隔条拖拽顺畅且热区不遮挡相邻滚动条', async ({ page }) => {
   const divider = page.locator('.editor-divider');
+  const hitArea = page.locator('.editor-divider-hit');
   const sourcePane = page.locator('.source-pane');
   const dividerBox = await divider.boundingBox();
+  const hitBox = await hitArea.boundingBox();
   const before = await sourcePane.boundingBox();
 
   expect(dividerBox).not.toBeNull();
+  expect(hitBox).not.toBeNull();
   expect(before).not.toBeNull();
+  // 热区只略宽于视觉线，不能再覆盖两侧滚动条。
+  expect(hitBox!.width).toBeLessThanOrEqual(9);
 
-  // 从视觉细线右侧 10px 处开始，仍应命中透明拖拽热区。
-  const startX = dividerBox!.x + dividerBox!.width / 2 + 10;
+  // 从视觉细线右侧 3px 处开始仍可轻松拖动。
+  const startX = dividerBox!.x + dividerBox!.width / 2 + 3;
   const startY = dividerBox!.y + dividerBox!.height / 2;
   await page.mouse.move(startX, startY);
   await page.mouse.down();
@@ -96,6 +101,34 @@ test('分屏分隔条两侧有足够宽的拖拽热区', async ({ page }) => {
   const after = await sourcePane.boundingBox();
   expect(after).not.toBeNull();
   expect(after!.width).toBeGreaterThan(before!.width + 50);
+
+  // 拖动留下的分屏比例不能限制单栏模式；切到预览后应重新占满主体。
+  await page.locator('.view-mode-option[data-mode="preview"]').click();
+  const [mainBox, previewBox] = await Promise.all([
+    page.locator('.editor-main').boundingBox(),
+    page.locator('.preview-pane').boundingBox()
+  ]);
+  expect(mainBox).not.toBeNull();
+  expect(previewBox).not.toBeNull();
+  expect(previewBox!.width).toBeGreaterThanOrEqual(mainBox!.width - 1);
+});
+
+test('分屏线采用整高反馈且滚动条滑块适度加粗', async ({ page }) => {
+  const styles = await page.evaluate(() => {
+    const divider = document.querySelector('.editor-divider')!;
+    const hit = document.querySelector('.editor-divider-hit')!;
+    const thumb = getComputedStyle(document.documentElement, '::-webkit-scrollbar-thumb');
+    return {
+      dividerTransition: getComputedStyle(divider).transitionProperty,
+      shortIndicator: getComputedStyle(hit, '::after').content,
+      thumbBorder: thumb.borderTopWidth
+    };
+  });
+
+  expect(styles.dividerTransition).toContain('background');
+  expect(styles.shortIndicator).toBe('none');
+  expect(styles.thumbBorder).toBe('3px');
+  await expect(page.locator('html')).toHaveCSS('--scrollbar-size', '12px');
 });
 
 test('窄屏分屏模式下预览工具栏按钮不挤压换行', async ({ page }) => {

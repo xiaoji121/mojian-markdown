@@ -544,8 +544,20 @@ export class EditingFileLayoutMethods {
     const div = this.dividerRef.current, split = this.splitRef.current;
     if (!div || !split) return;
     let dragging = false;
+    let pendingX = null;
+    let resizeFrame = 0;
     const left = split.querySelector('.source-pane'), right = split.querySelector('.preview-pane');
     if (!left || !right) return;
+    const applyPendingResize = () => {
+      resizeFrame = 0;
+      if (!dragging || pendingX === null) return;
+      const rect = split.getBoundingClientRect();
+      let ratio = (pendingX - rect.left) / rect.width;
+      ratio = Math.max(0.2, Math.min(0.8, ratio));
+      // 用 grow 表达比例：分屏时仍按 ratio 分配；任一栏隐藏后，剩余栏会自动铺满。
+      left.style.flex = ratio + ' 1 0%';
+      right.style.flex = (1 - ratio) + ' 1 0%';
+    };
     div.addEventListener('mousedown', (e) => {
       dragging = true;
       div.classList.add('is-dragging');
@@ -555,14 +567,13 @@ export class EditingFileLayoutMethods {
     });
     window.addEventListener('mousemove', (e) => {
       if (!dragging) return;
-      const rect = split.getBoundingClientRect();
-      let ratio = (e.clientX - rect.left) / rect.width;
-      ratio = Math.max(0.2, Math.min(0.8, ratio));
-      left.style.flex = '1 1 ' + (ratio * 100) + '%';
-      right.style.flex = '1 1 ' + ((1 - ratio) * 100) + '%';
+      pendingX = e.clientX;
+      if (!resizeFrame) resizeFrame = requestAnimationFrame(applyPendingResize);
     });
     window.addEventListener('mouseup', () => {
+      if (dragging && pendingX !== null) applyPendingResize();
       dragging = false;
+      pendingX = null;
       div.classList.remove('is-dragging');
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
