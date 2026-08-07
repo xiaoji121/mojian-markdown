@@ -162,7 +162,28 @@ async function runClaude(prompt, onDelta, env, options = {}) {
   return answer.trim();
 }
 
-// codex 的 --json 是 JSONL 事件流；这里只关心 thread.started（会话 id 的唯一来源）。
+function reportProgress(options, label, state = 'done') {
+  if (label && typeof options.onProgress === 'function') options.onProgress({ label, state });
+}
+
+// 只转译可观察的执行状态；reasoning 文本与命令参数都不透出，避免泄露隐藏推理或敏感值。
+function codexProgress(event) {
+  const item = event?.item || {};
+  if (event?.type === 'turn.started') return { label: '开始分析请求', state: 'running' };
+  if (event?.type === 'turn.completed') return { label: '正在整理回答', state: 'done' };
+  if (event?.type === 'item.completed' && item.type === 'reasoning') return { label: '完成一步分析', state: 'done' };
+  if (event?.type === 'item.started' && item.type === 'command_execution') return { label: '正在执行命令', state: 'running' };
+  if (event?.type === 'item.completed' && item.type === 'command_execution') return { label: '命令执行完成', state: 'done' };
+  if (event?.type === 'item.started' && item.type === 'mcp_tool_call') return { label: '正在调用工具', state: 'running' };
+  if (event?.type === 'item.completed' && item.type === 'mcp_tool_call') return { label: '工具调用完成', state: 'done' };
+  if (event?.type === 'item.completed' && item.type === 'file_change') {
+    const paths = (item.changes || []).map((change) => change?.path).filter(Boolean);
+    return { label: '已更新文件' + (paths.length ? ' · ' + paths.slice(0, 2).join('、') : ''), state: 'done' };
+  }
+  return null;
+}
+
+// codex 的 --json 是 JSONL 事件流：捕获会话 id，并生成安全的执行进度摘要。
 function createCodexEventReader(options) {
   let buffer = '';
   return (chunk) => {
@@ -174,6 +195,8 @@ function createCodexEventReader(options) {
       try {
         const event = JSON.parse(line);
         if (event.type === 'thread.started') reportSession(options, event.thread_id);
+        const progress = codexProgress(event);
+        if (progress) reportProgress(options, progress.label, progress.state);
       } catch {}
     }
   };

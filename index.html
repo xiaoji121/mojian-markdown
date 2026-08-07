@@ -363,9 +363,9 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
           <button class="header-menu-item" role="menuitem" onClick="{{ menuFileSave }}">保存<span class="menu-shortcut">⌘S</span></button>
           <button class="header-menu-item" role="menuitem" onClick="{{ menuFileSaveAs }}">另存为…<span class="menu-shortcut">⌘⇧S</span></button>
           <div class="header-menu-separator publish-menu-item" role="separator"></div>
-          <!-- 借飞书/钉钉现成的文档承载与分享能力，走本机已登录的官方 CLI，凭据不经过墨笺 -->
-          <button class="header-menu-item publish-menu-item" data-target="feishu" role="menuitem" onClick="{{ menuPublishFeishu }}" disabled title="正在检测 lark-cli…">上传到飞书文档<small class="menu-item-hint">建成在线文档并复制链接</small></button>
-          <button class="header-menu-item publish-menu-item" data-target="dingtalk" role="menuitem" onClick="{{ menuPublishDingtalk }}" disabled title="正在检测 dws…">上传到钉钉文档<small class="menu-item-hint">建成在线文档并复制链接</small></button>
+          <!-- 飞书创建在线文档；钉钉上传原始 Markdown 文件。均走本机已登录的官方 CLI，凭据不经过墨笺 -->
+          <button class="header-menu-item publish-menu-item" data-target="feishu" role="menuitem" onClick="{{ menuPublishFeishu }}" disabled title="正在检测 lark-cli…">上传到飞书文档<small class="menu-item-hint">上传完成后自动打开</small></button>
+          <button class="header-menu-item publish-menu-item" data-target="dingtalk" role="menuitem" onClick="{{ menuPublishDingtalk }}" disabled title="正在检测 dws…">上传到钉钉云盘<small class="menu-item-hint">保留 .md 文件，不转在线文档</small></button>
         </div>
       </span>
       <button ref="{{ headerMoreRef }}" class="abtn icon header-more" onClick="{{ toggleHeaderMenu }}" title="更多操作" aria-label="更多操作" aria-haspopup="menu" aria-expanded="false">⋯</button>
@@ -572,12 +572,21 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
       <div class="ai-composer">
         <textarea ref="{{ aiInputRef }}" class="ai-input" rows="3" placeholder="提问或描述要完成的事情…（Enter 发送，Shift+Enter 换行）"></textarea>
         <div class="ai-composer-row">
-          <span class="ai-composer-note">默认只读 · 使用项目工具前会确认</span>
+          <span class="ai-composer-note">默认只读 · 修改文件时逐次确认</span>
           <button ref="{{ aiSendRef }}" class="ai-send" onClick="{{ sendAIQuestion }}">发送</button>
         </div>
       </div>
     </aside>
   </main>
+
+  <div ref="{{ publishToastRef }}" class="publish-toast" data-state="loading" role="status" aria-live="assertive" aria-atomic="true">
+    <span class="publish-toast-icon" aria-hidden="true"></span>
+    <span class="publish-toast-copy">
+      <strong class="publish-toast-title">正在上传</strong>
+      <small class="publish-toast-detail">正在创建在线文档，请稍候…</small>
+    </span>
+    <button class="publish-toast-action" onClick="{{ openLastPublication }}" hidden>再次打开</button>
+  </div>
 
   <!-- ===== STATUS BAR ===== -->
   <footer class="app-footer">

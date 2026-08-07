@@ -11,8 +11,12 @@ function createEditor(overrides: Record<string, unknown> = {}) {
     fileName: '技术方案.md',
     bridgeDocumentId: 'doc-1',
     statuses: [] as string[],
+    toasts: [] as Array<{ state: string; title: string; detail: string }>,
     opened: [] as string[],
     _setStatus(msg: string) { this.statuses.push(msg); },
+    _showPublishToast(state: string, title: string, detail: string) {
+      this.toasts.push({ state, title, detail });
+    },
     _documentPayload: () => ({ fileName: '技术方案.md', content: '# 方案' }),
     _flushBridgeSync: async () => {},
     _openExternal(url: string) { this.opened.push(url); },
@@ -51,7 +55,7 @@ test('发布到飞书：先冲刷同步，再带 documentId 请求 /api/publish'
   assert.equal(calls[0].body.target, 'feishu');
   assert.equal(calls[0].body.documentId, 'doc-1');
   assert.ok(editor.statuses.some((text: string) => text.includes('飞书')));
-  assert.ok(editor.statuses.some((text: string) => text.includes('https://x.feishu.cn/docx/abc')));
+  assert.ok(editor.statuses.some((text: string) => text.includes('浏览器打开')));
   assert.deepEqual(editor.lastPublication, {
     target: 'feishu', label: '飞书', url: 'https://x.feishu.cn/docx/abc'
   });
@@ -74,10 +78,10 @@ test('发布到钉钉：未登记进工作区时改带 document 负载', async (
   assert.deepEqual(calls[0].body.document, { fileName: '技术方案.md', content: '# 方案' });
 });
 
-test('发布成功后把链接复制到剪贴板并可打开', async () => {
+test('发布过程中立即显示显眼提示，成功后复制链接并自动打开', async () => {
   const editor = createEditor();
   const copied: string[] = [];
-  editor._copyText = async (text: string) => { copied.push(text); };
+  editor._copyText = async (text: string) => { copied.push(text); return true; };
   const { restore } = stubFetch(() => ({
     ok: true, payload: { ok: true, target: 'feishu', label: '飞书', url: 'https://x.feishu.cn/docx/abc' }
   }));
@@ -88,8 +92,13 @@ test('发布成功后把链接复制到剪贴板并可打开', async () => {
   }
 
   assert.deepEqual(copied, ['https://x.feishu.cn/docx/abc'], '链接直接进剪贴板，省一步手工复制');
-  editor.openLastPublication();
-  assert.deepEqual(editor.opened, ['https://x.feishu.cn/docx/abc']);
+  assert.deepEqual(editor.opened, ['https://x.feishu.cn/docx/abc'], '上传完成后直接在浏览器打开');
+  assert.equal(editor.toasts[0].state, 'loading');
+  assert.match(editor.toasts[0].title, /正在上传到飞书文档/);
+  assert.equal(editor.toasts.at(-1)?.state, 'success');
+  assert.match(editor.toasts.at(-1)?.title || '', /上传成功/);
+  assert.match(editor.toasts.at(-1)?.detail || '', /浏览器打开/);
+  assert.match(editor.toasts.at(-1)?.detail || '', /链接.*复制/);
 });
 
 test('发布失败时原样透出后端错误，不谎报成功', async () => {
@@ -106,6 +115,8 @@ test('发布失败时原样透出后端错误，不谎报成功', async () => {
   assert.ok(editor.statuses.some((text: string) => text.includes('未找到 lark-cli')));
   assert.ok(!editor.statuses.some((text: string) => text.includes('已发布')));
   assert.ok(!editor.lastPublication, '失败不该记下发布记录');
+  assert.equal(editor.toasts.at(-1)?.state, 'error');
+  assert.match(editor.toasts.at(-1)?.title || '', /上传失败/);
 });
 
 test('后端建了文档但没解析出链接时，如实提示去云端查看', async () => {
@@ -183,5 +194,5 @@ test('连接器不可用时菜单按钮置灰并用 title 说明原因', () => {
   assert.equal(feishu.disabled, true);
   assert.equal(feishu.title, '未安装 lark-cli');
   assert.equal(dingtalk.disabled, false);
-  assert.match(dingtalk.title, /上传到钉钉文档/);
+  assert.match(dingtalk.title, /上传到钉钉云盘/);
 });

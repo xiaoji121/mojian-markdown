@@ -76,6 +76,28 @@ test('视图切换在编辑、分屏、预览三种布局间生效', async ({ pa
   await expect(preview).toBeVisible();
 });
 
+test('分屏分隔条两侧有足够宽的拖拽热区', async ({ page }) => {
+  const divider = page.locator('.editor-divider');
+  const sourcePane = page.locator('.source-pane');
+  const dividerBox = await divider.boundingBox();
+  const before = await sourcePane.boundingBox();
+
+  expect(dividerBox).not.toBeNull();
+  expect(before).not.toBeNull();
+
+  // 从视觉细线右侧 10px 处开始，仍应命中透明拖拽热区。
+  const startX = dividerBox!.x + dividerBox!.width / 2 + 10;
+  const startY = dividerBox!.y + dividerBox!.height / 2;
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + 80, startY);
+  await page.mouse.up();
+
+  const after = await sourcePane.boundingBox();
+  expect(after).not.toBeNull();
+  expect(after!.width).toBeGreaterThan(before!.width + 50);
+});
+
 test('窄屏分屏模式下预览工具栏按钮不挤压换行', async ({ page }) => {
   await page.setViewportSize({ width: 900, height: 800 });
 

@@ -14,6 +14,7 @@ export interface Annotation {
   answer?: string;
   requestId?: string;
   documentId?: string;
+  hiddenFromReadingTree?: boolean;
   aiStatus?: 'pending' | 'answered' | 'error';
 }
 

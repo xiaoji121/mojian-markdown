@@ -58,15 +58,16 @@ test('飞书发布走 lark-cli markdown +create，文件名补 .md', () => {
   assert.ok(invocation.args.includes('--format'));
 });
 
-test('钉钉发布走 dws doc create，文档名去掉 .md 后缀', () => {
+test('钉钉发布走 dws drive upload，保留 .md 文件且不转在线文档', () => {
   const invocation = connectorInvocation('dingtalk', { name: '技术方案.md', file: '/tmp/a.md', env: {} });
 
   assert.equal(invocation.command, 'dws');
-  assert.deepEqual(invocation.args.slice(0, 2), ['doc', 'create']);
-  const nameAt = invocation.args.indexOf('--name');
-  assert.equal(invocation.args[nameAt + 1], '技术方案');
-  const fileAt = invocation.args.indexOf('--content-file');
+  assert.deepEqual(invocation.args.slice(0, 2), ['drive', 'upload']);
+  const nameAt = invocation.args.indexOf('--file-name');
+  assert.equal(invocation.args[nameAt + 1], '技术方案.md');
+  const fileAt = invocation.args.indexOf('--file');
   assert.equal(invocation.args[fileAt + 1], '/tmp/a.md');
+  assert.ok(!invocation.args.includes('--convert'), '不得转换成钉钉在线文档');
 });
 
 test('连接器命令可用环境变量覆盖（便于测试与自定义安装路径）', () => {
@@ -145,12 +146,15 @@ test('飞书发布在暂存目录内执行，--file 传相对路径', async () =
   });
 });
 
-// dws 接受绝对路径，无需切目录（保持链路简单）。
-test('钉钉发布传绝对路径', async () => {
+// dws drive upload 接受绝对路径，无需切目录（保持链路简单）。
+test('钉钉上传 Markdown 文件时传绝对路径并保留原文', async () => {
   await withFakeCli(`
     const fs = require('node:fs');
-    const at = process.argv.indexOf('--content-file');
-    fs.writeFileSync(process.env.PROBE_PATH, process.argv[at + 1]);
+    const at = process.argv.indexOf('--file');
+    fs.writeFileSync(process.env.PROBE_PATH, JSON.stringify({
+      path: process.argv[at + 1],
+      content: fs.readFileSync(process.argv[at + 1], 'utf8')
+    }));
     process.stdout.write(JSON.stringify({ success: true, serverResponse: { docUrl: 'https://alidocs.dingtalk.com/i/nodes/x' } }));
   `, async (env, dir) => {
     const probe = join(dir, 'probe.txt');
@@ -158,7 +162,9 @@ test('钉钉发布传绝对路径', async () => {
       fileName: 'a.md', content: '# 正文', env: { ...env, PROBE_PATH: probe }
     });
 
-    assert.match(await readFile(probe, 'utf8'), /^\/.+document\.md$/);
+    const seen = JSON.parse(await readFile(probe, 'utf8'));
+    assert.match(seen.path, /^\/.+document\.md$/);
+    assert.equal(seen.content, '# 正文');
     assert.equal(result.url, 'https://alidocs.dingtalk.com/i/nodes/x', 'dws 的链接在 serverResponse.docUrl');
   });
 });

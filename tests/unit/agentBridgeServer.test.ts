@@ -124,6 +124,47 @@ test('DELETE /api/documents/:id 删除文档', async () => {
   });
 });
 
+test('PATCH 问答可从阅读树隐藏整个追问分支，但保留对话历史', async () => {
+  await withBridge({}, async (bridge) => {
+    const created = await fetch(`${bridge.url}/api/documents`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ document: { fileName: 'note.md', content: '# hi' } })
+    });
+    const { documentId, document } = await created.json();
+    document.messages = [
+      { requestId: 'q1', question: '不想保留的问题', answer: '回答', questionAt: '2026-08-07T01:00:00.000Z' },
+      { requestId: 'q2', question: '它的子追问', answer: '回答', parentRequestId: 'q1', questionAt: '2026-08-07T02:00:00.000Z' },
+      { requestId: 'q3', question: '应保留的问题', answer: '回答', questionAt: '2026-08-07T03:00:00.000Z' }
+    ];
+    await writeFile(join(bridge.root, 'documents', `${documentId}.json`), JSON.stringify(document));
+
+    const hidden = await fetch(`${bridge.url}/api/documents/${documentId}/answers/q1`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hiddenFromReadingTree: true })
+    });
+    assert.equal(hidden.ok, true);
+
+    const { documents } = await (await fetch(`${bridge.url}/api/documents`)).json();
+    assert.deepEqual(documents[0].answerDocuments.map((item: { requestId: string }) => item.requestId), ['q3']);
+    assert.equal(documents[0].questionCount, 3, '历史问答数不变');
+    const history = await (await fetch(`${bridge.url}/api/conversations/${documentId}`)).json();
+    assert.equal(history.messages.length, 3);
+    assert.equal(history.messages[0].hiddenFromReadingTree, true);
+
+    const restored = await fetch(`${bridge.url}/api/documents/${documentId}/answers/q1`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hiddenFromReadingTree: false })
+    });
+    assert.equal(restored.ok, true);
+    const afterRestore = await (await fetch(`${bridge.url}/api/documents`)).json();
+    assert.deepEqual(afterRestore.documents[0].answerDocuments
+      .map((item: { requestId: string }) => item.requestId), ['q1', 'q2', 'q3']);
+  });
+});
+
 test('/api/settings 读写 Gemini 配置且不回明文 Key', async () => {
   await withBridge({}, async (bridge) => {
     const initial = await (await fetch(`${bridge.url}/api/settings`)).json();
@@ -393,6 +434,72 @@ test('/api/chat Agent 模式：会话失效时自动重建并通知前端', asyn
       assert.equal(calls.length, 3, '首轮 + 失败的 resume + 重建后的新会话');
       assert.ok(calls[1].argv.includes('--resume'));
       assert.ok(calls[2].argv.includes('--session-id'));
+    });
+  });
+});
+
+test('/api/chat Agent 模式导入回答中当前工程内的 Markdown，并返回墨笺文档入口', async () => {
+  await withFakeAgentCli(`
+    const fs = require('node:fs');
+    const path = require('node:path');
+    fs.writeFileSync(path.join(process.cwd(), '生成结果.md'), '# Agent 生成结果');
+    process.stdout.write('已生成：[生成结果.md](./生成结果.md)');
+  `, {}, async ({ dir }) => {
+    await mkdir(join(dir, 'repo', '.git'), { recursive: true });
+    const localPath = join(dir, 'repo', '原文.md');
+    await writeFile(localPath, '# 原文');
+
+    await withBridge({}, async (bridge) => {
+      const stream = await askAgent(bridge, {
+        question: '生成一篇 markdown',
+        document: { fileName: '原文.md', content: '# 原文', localPath }
+      });
+      assert.match(stream, /event: artifacts/);
+      assert.match(stream, /生成结果\.md/);
+      const { documents } = await (await fetch(`${bridge.url}/api/documents`)).json();
+      const generated = documents.find((doc: { fileName: string }) => doc.fileName === '生成结果.md');
+      assert.ok(generated, '生成的 Markdown 应进入 Reading Workspace');
+      const detail = await (await fetch(`${bridge.url}/api/documents/${generated.documentId}`)).json();
+      assert.equal(detail.document.content, '# Agent 生成结果');
+      assert.ok(detail.document.localPath.endsWith(join('repo', '生成结果.md')));
+    });
+  });
+});
+
+test('/api/chat 写权限按本次请求开启，并把 Agent 修改同步回当前文档', async () => {
+  await withFakeAgentCli(`
+    const fs = require('node:fs');
+    let prompt = '';
+    process.stdin.on('data', (chunk) => { prompt += chunk; });
+    process.stdin.on('end', () => {
+      fs.appendFileSync(process.env.FAKE_AGENT_LOG, JSON.stringify({
+        argv: process.argv.slice(2), cwd: process.cwd(), prompt
+      }) + '\\n');
+      const match = prompt.match(/唯一允许直接修改的当前文档工作副本：(.+)/);
+      if (match) fs.writeFileSync(match[1].trim(), '# Agent 已直接更新');
+      process.stdout.write('已经更新原文档');
+    });
+  `, {}, async ({ dir, readCalls }) => {
+    await mkdir(join(dir, 'repo', '.git'), { recursive: true });
+    const localPath = join(dir, 'repo', '原文.md');
+    await writeFile(localPath, '# 原文');
+
+    await withBridge({}, async (bridge) => {
+      const stream = await askAgent(bridge, {
+        question: '直接修改原文档', allowWrite: true,
+        document: { fileName: '原文.md', content: '# 原文', localPath }
+      });
+      assert.match(stream, /event: document-updated/);
+      assert.match(stream, /Agent 已直接更新/);
+      assert.match(stream, /"writeAuthorized":true/);
+      const calls = await readCalls();
+      const toolsAt = calls[0].argv.indexOf('--allowedTools');
+      assert.match(calls[0].argv[toolsAt + 1], /Write/);
+      assert.match(calls[0].argv[toolsAt + 1], /Edit/);
+
+      const meta = JSON.parse(stream.match(/event: meta\ndata: ([^\n]+)/)[1]);
+      const detail = await (await fetch(`${bridge.url}/api/documents/${meta.documentId}`)).json();
+      assert.equal(detail.document.content, '# Agent 已直接更新');
     });
   });
 });

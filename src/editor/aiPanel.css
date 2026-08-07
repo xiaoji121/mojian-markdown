@@ -35,6 +35,11 @@
 .ai-history-title { color: var(--text-2); font: 600 var(--fs-sm)/1 var(--sans); }
 .ai-history-back { border: none; background: transparent; color: var(--text-3); cursor: pointer; }
 .ai-context { flex: none; padding: 12px 14px 11px; border-bottom: 1px solid var(--border-soft); }
+.ai-context:not(.has-quote) { padding-block: 9px; }
+.ai-context:not(.has-quote) .ai-status { margin-bottom: 0; }
+.ai-context:not(.has-quote) .ai-overline,
+.ai-context:not(.has-quote) .ai-quote,
+.ai-context:not(.has-quote) .ai-quick-row { display: none; }
 .ai-status {
   display: flex;
   align-items: center;
@@ -111,3 +116,53 @@
 }
 .ai-send:hover { border-color: var(--accent-2); background: var(--accent-2); }
 .ai-send:disabled { opacity: .6; cursor: default; }
+.ai-message-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+.ai-message-retry,
+.ai-reading-tree-restore {
+  padding: 5px 10px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--accent);
+  font: 600 var(--fs-2xs)/1 var(--mono);
+  cursor: pointer;
+}
+.ai-message-retry::before { content: '↻'; margin-right: 5px; }
+.ai-reading-tree-restore::before { content: '↩'; margin-right: 5px; }
+.ai-message-retry:hover:not(:disabled),
+.ai-reading-tree-restore:hover:not(:disabled) { background: var(--accent-soft); }
+.ai-message-retry:disabled,
+.ai-reading-tree-restore:disabled { opacity: .55; cursor: default; }
+
+.ai-agent-progress {
+  margin: 8px 0 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-control);
+  background: var(--bg-2);
+  color: var(--text-3);
+  font: var(--fs-2xs)/1.45 var(--sans);
+}
+.ai-agent-progress summary { cursor: pointer; user-select: none; color: var(--text-2); }
+.ai-agent-progress ol { margin: 8px 0 0; padding-left: 20px; }
+.ai-agent-progress li { margin: 4px 0; }
+.ai-agent-progress li::marker { color: var(--text-4); }
+.ai-agent-progress li.is-running { color: var(--accent); }
+.ai-agent-progress li.is-running::marker { content: '●  '; }
+.ai-agent-progress li.is-done::marker { content: '✓  '; }
+
+.ai-local-markdown-link::after {
+  content: '用墨笺打开';
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-pill);
+  font: var(--fs-2xs)/1.5 var(--sans);
+  vertical-align: 2px;
+  text-decoration: none;
+}

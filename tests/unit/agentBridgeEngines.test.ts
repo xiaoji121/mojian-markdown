@@ -230,6 +230,43 @@ test('runEngine(codex) Agent 模式从 --json 事件里捕获 thread_id', async 
   }
 });
 
+test('runEngine(codex) Agent 模式把 JSON 事件转换为安全的执行进度，不暴露推理正文', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'engine-test-'));
+  try {
+    const fake = join(dir, 'fake-codex.js');
+    await writeFile(fake, `
+      const at = process.argv.indexOf('--output-last-message');
+      const file = process.argv[at + 1];
+      process.stdin.resume();
+      process.stdin.on('end', () => {
+        const events = [
+          { type: 'turn.started' },
+          { type: 'item.completed', item: { type: 'reasoning', text: '绝不能展示的内部推理' } },
+          { type: 'item.started', item: { type: 'command_execution', command: 'echo SUPER_SECRET' } },
+          { type: 'item.completed', item: { type: 'file_change', changes: [{ path: 'draft.md' }] } },
+          { type: 'turn.completed' }
+        ];
+        events.forEach((event) => process.stdout.write(JSON.stringify(event) + '\\n'));
+        require('node:fs').writeFileSync(file, '完成');
+        process.exit(0);
+      });
+    `);
+    const progress: Array<{ label: string; state: string }> = [];
+    await runEngine('codex', '生成文档', () => {}, {
+      AGENT_BRIDGE_CODEX_COMMAND: process.execPath,
+      AGENT_BRIDGE_CODEX_ARGS: fake
+    }, { mode: 'agent', onProgress: (item) => progress.push(item) });
+
+    assert.deepEqual(progress.map((item) => item.label), [
+      '开始分析请求', '完成一步分析', '正在执行命令', '已更新文件 · draft.md', '正在整理回答'
+    ]);
+    assert.ok(progress.every((item) => !item.label.includes('SUPER_SECRET')));
+    assert.ok(progress.every((item) => !item.label.includes('绝不能展示')));
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test('runEngine Agent 模式在指定工作目录里启动子进程', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'engine-test-'));
   try {

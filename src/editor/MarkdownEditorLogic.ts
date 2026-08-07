@@ -4,6 +4,7 @@
 import { SAMPLE_MARKDOWN } from './sample';
 import { EDITOR_STORAGE_KEY, loadEditorState } from './storage';
 import { AIMethods } from './aiMethods';
+import { AIReadingTreeMethods } from './aiReadingTreeMethods';
 import { BridgeMethods } from './bridgeMethods';
 import { CommentMethods } from './commentMethods';
 import { ConnectorMethods } from './connectorMethods';
@@ -46,6 +47,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.fileMenuButtonRef = React.createRef();
     this.dirtyDotRef = React.createRef();
     this.saveStatusRef = React.createRef();
+    this.publishToastRef = React.createRef();
     this.countRef = React.createRef();
     this.fontSizeRef = React.createRef();
     this.fullscreenFontSizeRef = React.createRef();
@@ -304,6 +306,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     if (this._keyHandler) window.removeEventListener('keydown', this._keyHandler);
     if (this._resizeHandler) window.removeEventListener('resize', this._resizeHandler);
     if (this._outlineJumpT) clearTimeout(this._outlineJumpT);
+    if (this._publishToastT) clearTimeout(this._publishToastT);
     this._disposeReadingPathHelp();
     this._stopLocalFileWatcher();
     document.body.style.overflow = '';
@@ -330,6 +333,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       fileMenuButtonRef: this.fileMenuButtonRef,
       dirtyDotRef: this.dirtyDotRef,
       saveStatusRef: this.saveStatusRef,
+      publishToastRef: this.publishToastRef,
       countRef: this.countRef,
       fontSizeRef: this.fontSizeRef,
       fullscreenFontSizeRef: this.fullscreenFontSizeRef,
@@ -392,6 +396,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       menuFileSave: () => { this.toggleFileMenu(false); this.onSave(); },
       menuFileSaveAs: () => { this.toggleFileMenu(false); this.onSaveAs(); },
       menuFolder: () => { this.toggleHeaderMenu(false); this.associateLocalFolder(); },
+      openLastPublication: () => this.openLastPublication(),
       toggleOutline: () => this.toggleOutline(),
       openLongImage: () => this.openLongImage(),
       toggleSearch: () => this.toggleSearch(),
@@ -460,6 +465,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     DiagramMethods,
     LongImageMethods,
     AIMethods,
+    AIReadingTreeMethods,
     AISettingsMethods,
     ConnectorMethods,
     TranslateMethods,

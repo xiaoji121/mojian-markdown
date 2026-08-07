@@ -465,7 +465,13 @@ export class EditingFileLayoutMethods {
     let dragging = false;
     const left = split.querySelector('.source-pane'), right = split.querySelector('.preview-pane');
     if (!left || !right) return;
-    div.addEventListener('mousedown', (e) => { dragging = true; document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none'; e.preventDefault(); });
+    div.addEventListener('mousedown', (e) => {
+      dragging = true;
+      div.classList.add('is-dragging');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      e.preventDefault();
+    });
     window.addEventListener('mousemove', (e) => {
       if (!dragging) return;
       const rect = split.getBoundingClientRect();
@@ -474,7 +480,12 @@ export class EditingFileLayoutMethods {
       left.style.flex = '1 1 ' + (ratio * 100) + '%';
       right.style.flex = '1 1 ' + ((1 - ratio) * 100) + '%';
     });
-    window.addEventListener('mouseup', () => { dragging = false; document.body.style.cursor = ''; document.body.style.userSelect = ''; });
+    window.addEventListener('mouseup', () => {
+      dragging = false;
+      div.classList.remove('is-dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    });
   }
 
 }

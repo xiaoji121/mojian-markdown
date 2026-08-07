@@ -10,7 +10,8 @@ import { randomUUID } from 'node:crypto';
 import { createDocumentStore, normalizeAnnotation } from './agent-bridge-store.js';
 import { createSettingsStore, maskProviderSettings } from './agent-bridge-settings.js';
 import { normalizeEngine, normalizeMode, runEngine } from './agent-bridge-engines.js';
-import { agentPrompt, prepareAgentContext, runAgentTurn } from './agent-bridge-agent.js';
+import { agentPrompt, prepareAgentContext, readAgentDocumentUpdate, runAgentTurn } from './agent-bridge-agent.js';
+import { importAgentMarkdownArtifacts } from './agent-bridge-artifacts.js';
 import { connectorCapabilities, normalizeTarget, publishDocument } from './agent-bridge-connectors.js';
 import {
   collectPathNodes,
@@ -54,6 +55,7 @@ function summarizeDocument(doc) {
       question: item.question || '未命名问题',
       engine: item.engine,
       parentRequestId: item.parentRequestId || undefined,
+      hiddenFromReadingTree: item.hiddenFromReadingTree === true,
       updatedAt: item.answerAt || item.questionAt || doc.updatedAt
     }));
   // 用户把别处找到的答案贴在批注下时，同样作为该文档的子节点展示。
@@ -64,9 +66,24 @@ function summarizeDocument(doc) {
       question: item.note || item.question || item.quote || '未命名想法',
       kind: 'reply',
       parentRequestId: item.answerRequestId || undefined,
+      hiddenFromReadingTree: item.hiddenFromReadingTree === true,
       updatedAt: new Date(item.replyAt || item.ts || doc.updatedAt).toISOString()
     }));
-  const answerDocuments = [...answers, ...replies]
+  const allAnswers = [...answers, ...replies];
+  const hidden = new Set(allAnswers.filter((item) => item.hiddenFromReadingTree).map((item) => item.requestId));
+  let changed = true;
+  while (changed) {
+    changed = false;
+    allAnswers.forEach((item) => {
+      if (item.parentRequestId && hidden.has(item.parentRequestId) && !hidden.has(item.requestId)) {
+        hidden.add(item.requestId);
+        changed = true;
+      }
+    });
+  }
+  const answerDocuments = allAnswers
+    .filter((item) => !hidden.has(item.requestId))
+    .map(({ hiddenFromReadingTree, ...item }) => item)
     .sort((a, b) => String(a.updatedAt).localeCompare(String(b.updatedAt)));
   return {
     documentId: doc.documentId,
@@ -132,7 +149,7 @@ function createRequestHandler({ store, settings, staticDir, cors, root }) {
   const corsHeaders = cors
     ? {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS',
+        'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type'
       }
     : {};
@@ -177,17 +194,22 @@ function createRequestHandler({ store, settings, staticDir, cors, root }) {
 
   // Agent 一轮：会话 id 写回文档，前端下次提问才能续上同一条对话线。
   async function runAgentChat({ engine, body, doc, context, res }) {
+    const progress = [];
     const result = await runAgentTurn({
       engine,
       prompt: agentPrompt(body, doc, context),
       context,
       onDelta: (text) => writeSse(res, 'delta', { text }),
+      onProgress: (item) => {
+        progress.push(item);
+        writeSse(res, 'progress', item);
+      },
       onSessionReset: () => writeSse(res, 'session-reset', { documentId: doc.documentId })
     });
     if (result.sessionId) {
       doc.agentSessions = { ...(doc.agentSessions || {}), [engine]: result.sessionId };
     }
-    return result.answer;
+    return { answer: result.answer, progress };
   }
 
   async function handleChat(req, res) {
@@ -233,7 +255,7 @@ function createRequestHandler({ store, settings, staticDir, cors, root }) {
     });
     // Agent 模式：先备好工程上下文与落盘正文，再把会话续接情况告诉前端。
     const context = mode === 'agent'
-      ? await prepareAgentContext({ root, doc, engine })
+      ? await prepareAgentContext({ root, doc, engine, allowWrite: body.allowWrite === true })
       : null;
     writeSse(res, 'meta', {
       requestId,
@@ -242,14 +264,35 @@ function createRequestHandler({ store, settings, staticDir, cors, root }) {
       documentId: doc.documentId,
       documentChars: doc.content.length,
       projectRoot: context?.projectRoot || '',
+      writeAuthorized: !!context?.allowWrite,
       resumed: !!context?.resumeSessionId
     });
 
     try {
-      const answer = context
+      const agentResult = context
         ? await runAgentChat({ engine, body, doc, context, res })
+        : null;
+      const answer = agentResult
+        ? agentResult.answer
         : await runChatEngine({ engine, body, doc, res });
       message.answer = answer;
+      if (agentResult) message.progress = agentResult.progress;
+      const updatedContent = context
+        ? await readAgentDocumentUpdate(context, doc.content)
+        : null;
+      if (updatedContent !== null) {
+        doc.content = updatedContent;
+        message.documentUpdated = true;
+        writeSse(res, 'document-updated', {
+          documentId: doc.documentId,
+          fileName: doc.fileName,
+          content: updatedContent
+        });
+      }
+      if (context) {
+        message.artifacts = await importAgentMarkdownArtifacts(answer, context, upsertDocument);
+        if (message.artifacts.length) writeSse(res, 'artifacts', { items: message.artifacts });
+      }
       message.answerAt = new Date().toISOString();
       const annotation = doc.annotations.find((item) => item.requestId === requestId);
       if (annotation) {
@@ -442,6 +485,19 @@ function createRequestHandler({ store, settings, staticDir, cors, root }) {
       if (parts[0] === 'api' && parts[1] === 'documents' && parts.length === 3 && req.method === 'DELETE') {
         await deleteDocument(parts[2]);
         return sendJson(res, 200, { ok: true });
+      }
+      if (parts[0] === 'api' && parts[1] === 'documents' && parts[3] === 'answers'
+        && parts.length === 5 && req.method === 'PATCH') {
+        const body = await readBody(req);
+        const doc = await readDocument(parts[2]);
+        const targets = [
+          ...(doc.messages || []).filter((item) => item.requestId === parts[4]),
+          ...(doc.annotations || []).filter((item) => item.id === parts[4] || item.requestId === parts[4])
+        ];
+        if (!targets.length) return sendError(res, 404, '问答不存在');
+        targets.forEach((item) => { item.hiddenFromReadingTree = body.hiddenFromReadingTree !== false; });
+        await writeDocument(doc);
+        return sendJson(res, 200, { ok: true, hiddenFromReadingTree: body.hiddenFromReadingTree !== false });
       }
       if (parts[0] === 'api' && parts[1] === 'documents' && parts[3] === 'annotations' && req.method === 'DELETE') {
         const doc = await readDocument(parts[2]);

@@ -262,8 +262,33 @@ body.is-desktop-app .header-more { display: none; }
 /* 预览栏作为容器查询锚点：侧面板开合改变的是栏宽而非窗口宽，
    工具栏的收纳规则（styles.css）按栏宽生效。 */
 .preview-pane { container-type: inline-size; }
-.editor-divider { flex: none; position: relative; width: 1px; background: var(--border); cursor: col-resize; }
-.editor-divider-hit { position: absolute; inset: 0 -5px; cursor: col-resize; }
+.editor-divider {
+  z-index: 4;
+  flex: none;
+  position: relative;
+  width: 1px;
+  background: var(--border);
+  cursor: col-resize;
+}
+.editor-divider-hit {
+  position: absolute;
+  inset: 0 -12px;
+  cursor: col-resize;
+}
+.editor-divider-hit::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 56px;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  transform: translate(-50%, -50%);
+  transition: background 120ms ease;
+}
+.editor-divider:hover .editor-divider-hit::after,
+.editor-divider.is-dragging .editor-divider-hit::after { background: var(--accent); }
 .editor-main.editor-mode-active > .preview-pane,
 .editor-main.editor-mode-active > .editor-divider { display: none !important; }
 .document-sidebar-tools { display: flex; align-items: center; gap: 5px; }

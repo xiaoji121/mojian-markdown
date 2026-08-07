@@ -279,6 +279,8 @@ export class BridgeMethods {
 
 
   _answerNode(doc, answer, isLast) {
+    const row = document.createElement('div');
+    row.className = 'recent-answer-row';
     const child = document.createElement('button');
     child.type = 'button';
     child.className = 'recent-answer-item' +
@@ -298,7 +300,44 @@ export class BridgeMethods {
     childBody.append(childName, childMeta);
     child.append(branch, childBody);
     child.addEventListener('click', () => this.openAnswerDocument(doc.documentId, answer.requestId));
-    return child;
+    const hide = document.createElement('button');
+    hide.type = 'button';
+    hide.className = 'recent-answer-hide';
+    hide.title = '从阅读树移除（保留对话历史）';
+    hide.setAttribute('aria-label', '从阅读树移除 ' + answer.question);
+    hide.textContent = '−';
+    hide.addEventListener('click', (event) => {
+      if (event && event.stopPropagation) event.stopPropagation();
+      this.hideAnswerFromTree(doc, answer);
+    });
+    row.append(child, hide);
+    return row;
+  }
+
+
+  async hideAnswerFromTree(doc, answer) {
+    if (!doc || !doc.documentId || !answer || !answer.requestId) return;
+    const label = answer.question || '该问答';
+    if (typeof window !== 'undefined' && window.confirm
+      && !window.confirm('从阅读树移除「' + label + '」及其子追问？\n\nAgent 对话历史仍会保留。')) return;
+    try {
+      const response = await fetch(bridgeUrl('/api/documents/' + encodeURIComponent(doc.documentId)
+        + '/answers/' + encodeURIComponent(answer.requestId)), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hiddenFromReadingTree: true })
+      });
+      if (!response.ok) throw new Error('hide failed');
+    } catch {
+      this._setStatus('移除失败 · Reading Workspace 不可用');
+      return;
+    }
+    const local = Array.isArray(this.comments)
+      ? this.comments.find((item) => item.id === answer.requestId || item.requestId === answer.requestId)
+      : null;
+    if (local) local.hiddenFromReadingTree = true;
+    this._setStatus('已从阅读树移除 · 对话历史已保留');
+    await this._refreshRecentDocuments();
   }
 
 
@@ -553,6 +592,7 @@ export class BridgeMethods {
         reply: item.reply || '',
         replyAt: item.replyAt,
         answerRequestId: item.answerRequestId || undefined,
+        hiddenFromReadingTree: item.hiddenFromReadingTree === true,
         requestId: item.requestId || item.id || '',
         documentId,
         aiStatus: question ? (answer ? 'answered' : 'pending') : undefined,

@@ -6,13 +6,13 @@
 //    这样「把这篇存到飞书」只需要读文件 + 调 CLI，不必给 agent 写文件权限。
 // ② 工作目录 = 文档所属工程根，等价于用户在那个目录下敲 claude/codex。
 // ③ 会话 id 按引擎存在文档记录上；resume 失败（会话文件被清理）就新建会话重试一次。
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { runEngine } from './agent-bridge-engines.js';
 import { projectRootFor } from './agent-bridge-project.js';
 
-export async function prepareAgentContext({ root, doc, engine, env = process.env }) {
+export async function prepareAgentContext({ root, doc, engine, allowWrite = false, env = process.env }) {
   const projectRoot = projectRootFor(doc.localPath);
   const scratchDir = join(root, 'scratch');
   await mkdir(scratchDir, { recursive: true });
@@ -26,9 +26,19 @@ export async function prepareAgentContext({ root, doc, engine, env = process.env
     addDirs: [scratchDir],
     resumeSessionId: (doc.agentSessions && doc.agentSessions[engine]) || '',
     sessionId: randomUUID(),
-    // 写文件默认不给；需要时用环境变量开（配套 UI 见 AGENT_CONNECTOR_PLAN.md 的 Phase 2）
-    allowWrite: env.AGENT_BRIDGE_AGENT_ALLOW_WRITE === '1'
+    // UI 每次请求单独确认；环境变量仅保留给自动化/开发场景。
+    allowWrite: allowWrite === true || env.AGENT_BRIDGE_AGENT_ALLOW_WRITE === '1'
   };
+}
+
+export async function readAgentDocumentUpdate(context, originalContent) {
+  if (!context?.allowWrite || !context.scratchFile) return null;
+  try {
+    const content = await readFile(context.scratchFile, 'utf8');
+    return content !== String(originalContent || '') ? content : null;
+  } catch {
+    return null;
+  }
 }
 
 function connectorHints(doc, context) {
@@ -36,7 +46,7 @@ function connectorHints(doc, context) {
   return [
     '可用连接器（本机 CLI 已登录，直接用 Bash 调用，成功后把返回的链接原样回报）：',
     `- 存入飞书：lark-cli markdown +create --file "${context.scratchFile}" --name "${name}.md" --format json`,
-    `- 存入钉钉：dws doc create --name "${name}" --content-file "${context.scratchFile}" --format json`
+    `- 存入钉钉 Markdown：dws drive upload --file "${context.scratchFile}" --file-name "${name}.md" --format json（不要加 --convert）`
   ];
 }
 
@@ -52,6 +62,14 @@ export function agentPrompt(body, doc, context) {
   if (doc.localPath) lines.push(`文档原始路径：${doc.localPath}`);
   if (context.projectRoot) {
     lines.push(`所属工程根目录（也是你的工作目录，可读其中代码与说明文件获取上下文）：${context.projectRoot}`);
+  }
+  if (context.allowWrite) {
+    lines.push(
+      `本次已获写入授权。若用户要求修改当前或原文档，唯一允许直接修改的当前文档工作副本：${context.scratchFile}`,
+      '墨笺会把该工作副本自动同步回当前编辑器和已关联的本地原文件；不要改写 UUID 文件名，也不要另建副本。'
+    );
+  } else {
+    lines.push('本次未获写入授权：禁止修改任何文件。');
   }
   lines.push('', ...connectorHints(doc, context));
   lines.push(
@@ -71,7 +89,7 @@ export function agentPrompt(body, doc, context) {
 }
 
 // 跑一轮 agent。resume 失败且还没吐出任何内容时，重建会话重试一次并通知前端。
-export async function runAgentTurn({ engine, prompt, context, env = process.env, onDelta, onSessionReset }) {
+export async function runAgentTurn({ engine, prompt, context, env = process.env, onDelta, onProgress, onSessionReset }) {
   let streamed = false;
   let captured = '';
   const run = (resumeSessionId, sessionId) => runEngine(engine, prompt, (delta) => {
@@ -84,11 +102,14 @@ export async function runAgentTurn({ engine, prompt, context, env = process.env,
     allowWrite: context.allowWrite,
     sessionId,
     resumeSessionId,
-    onSession: (id) => { captured = id; }
+    onSession: (id) => { captured = id; },
+    onProgress
   });
 
   try {
+    if (onProgress) onProgress({ label: '正在准备工程上下文', state: 'running' });
     const answer = await run(context.resumeSessionId, context.sessionId);
+    if (onProgress) onProgress({ label: '回答已生成', state: 'done' });
     return { answer, sessionId: captured || context.resumeSessionId || context.sessionId };
   } catch (error) {
     // 已经流出内容就不能重来了（前端无法回退已渲染的片段），如实报错。
@@ -96,6 +117,7 @@ export async function runAgentTurn({ engine, prompt, context, env = process.env,
     onSessionReset();
     const freshSessionId = randomUUID();
     const answer = await run('', freshSessionId);
+    if (onProgress) onProgress({ label: '回答已生成', state: 'done' });
     return { answer, sessionId: captured || freshSessionId };
   }
 }

@@ -45,7 +45,8 @@ export class ReadingMapMethods {
       requestId: item.requestId,
       question: item.question || '未命名问题',
       kind: item.engine === 'codex' ? 'Codex' : 'AI',
-      parentRequestId: item.parentRequestId
+      parentRequestId: item.parentRequestId,
+      hiddenFromReadingTree: item.hiddenFromReadingTree === true
     }));
     annotations
       .filter((item) => item.type !== 'ai' && item.reply && String(item.reply).trim())
@@ -53,9 +54,21 @@ export class ReadingMapMethods {
         requestId: item.id,
         question: item.note || item.question || item.quote || '未命名想法',
         kind: '摘录',
-        parentRequestId: item.answerRequestId
+        parentRequestId: item.answerRequestId,
+        hiddenFromReadingTree: item.hiddenFromReadingTree === true
       }));
-    return nodes;
+    const hidden = new Set(nodes.filter((node) => node.hiddenFromReadingTree).map((node) => node.requestId));
+    let changed = true;
+    while (changed) {
+      changed = false;
+      nodes.forEach((node) => {
+        if (node.parentRequestId && hidden.has(node.parentRequestId) && !hidden.has(node.requestId)) {
+          hidden.add(node.requestId);
+          changed = true;
+        }
+      });
+    }
+    return nodes.filter((node) => !hidden.has(node.requestId));
   }
 
 

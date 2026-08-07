@@ -1,7 +1,7 @@
-// 飞书 / 钉钉连接器：把当前 Markdown 发布成在线文档，借它们现成的承载与分享能力。
+// 飞书 / 钉钉连接器：飞书创建在线文档；钉钉上传原始 Markdown 文件到钉盘。
 // 走本机已登录的官方 CLI，凭据全程留在本机，墨笺不接触任何 token：
 //   飞书 —— `lark-cli markdown +create`，该 shortcut 自带回查真实访问 URL；
-//   钉钉 —— `dws doc create --content-file`，长/多行内容走文件避免 shell 转义。
+//   钉钉 —— `dws drive upload --file`，保留 .md 文件，不转换成在线文档。
 // 命令与前置参数可用环境变量覆盖（AGENT_BRIDGE_{LARK,DWS}_{COMMAND,ARGS}），
 // 便于自定义安装路径与测试注入假 CLI。
 // 与 Agent 模式的分工：这里是确定性路径（可预期、可测），Agent 那条是柔性路径。
@@ -17,6 +17,7 @@ const CONNECTORS = {
     envArgs: 'AGENT_BRIDGE_LARK_ARGS',
     command: 'lark-cli',
     baseArgs: ['markdown', '+create'],
+    nameFlag: '--name',
     fileFlag: '--file',
     folderFlag: '--folder-token',
     // lark-cli 拒收绝对路径（"unsafe file path: --file must be a relative path
@@ -29,17 +30,18 @@ const CONNECTORS = {
     missing: '未找到 lark-cli。请先安装并登录飞书 CLI（lark-cli auth login），或设置 AGENT_BRIDGE_LARK_COMMAND。'
   },
   dingtalk: {
-    label: '钉钉',
+    label: '钉钉云盘',
     envCommand: 'AGENT_BRIDGE_DWS_COMMAND',
     envArgs: 'AGENT_BRIDGE_DWS_ARGS',
     command: 'dws',
-    baseArgs: ['doc', 'create'],
-    fileFlag: '--content-file',
+    baseArgs: ['drive', 'upload'],
+    nameFlag: '--file-name',
+    fileFlag: '--file',
     folderFlag: '--folder',
     // dws 接受绝对路径（已实测），保持原样即可
     relativeFile: false,
-    // 钉钉文档名是标题而非文件名，.md 后缀反而碍眼
-    docName: (name) => name.replace(/\.md$/i, ''),
+    // 保留 Markdown 文件格式；不能传 --convert，否则会变成钉钉在线文档。
+    docName: (name) => (/\.(?:md|markdown)$/i.test(name) ? name : `${name}.md`),
     authArgs: ['auth', 'status', '--format', 'json'],
     loginCommand: 'dws auth login',
     missing: '未找到 dws。请先安装并登录钉钉 CLI（dws auth login），或设置 AGENT_BRIDGE_DWS_COMMAND。'
@@ -118,7 +120,7 @@ export function connectorInvocation(target, { name, file, env = process.env, fol
     : [...connector.baseArgs];
   const args = [
     ...base,
-    '--name', connector.docName(String(name || '未命名')),
+    connector.nameFlag, connector.docName(String(name || '未命名')),
     connector.fileFlag, file,
     '--format', 'json'
   ];

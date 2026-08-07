@@ -33,6 +33,25 @@ test('_readingMapMarkdown 生成 mermaid 追问脉络图', () => {
   assert.equal((markdown.match(/-->/g) || []).length, 3);
 });
 
+test('阅读脉络不展示已隐藏问答及其子追问', () => {
+  const editor = Object.create(ReadingMapMethods.prototype);
+  const doc = {
+    fileName: 'note.md',
+    annotations: [],
+    messages: [
+      { requestId: 'q1', question: '隐藏的问题', answer: '答', hiddenFromReadingTree: true },
+      { requestId: 'q2', question: '隐藏分支的追问', answer: '答', parentRequestId: 'q1' },
+      { requestId: 'q3', question: '保留的问题', answer: '答' }
+    ]
+  };
+
+  const markdown = editor._readingMapMarkdown(doc);
+
+  assert.doesNotMatch(markdown, /隐藏的问题/);
+  assert.doesNotMatch(markdown, /隐藏分支的追问/);
+  assert.match(markdown, /保留的问题/);
+});
+
 test('_readingMapMarkdown 对特殊字符与超长问题做安全处理', () => {
   const editor = Object.create(ReadingMapMethods.prototype);
   const doc = {
