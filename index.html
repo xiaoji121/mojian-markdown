@@ -582,7 +582,7 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
   <!-- ===== STATUS BAR ===== -->
   <footer class="app-footer">
     <span ref="{{ saveStatusRef }}" class="save-status">就绪</span>
-    <span ref="{{ footerPathRef }}" class="footer-path" title=""></span>
+    <span ref="{{ footerPathRef }}" class="footer-path" title="" role="button" tabindex="0" onClick="{{ copyFooterPath }}"></span>
     <span class="footer-stats">
       <span class="font-controls">
         <span class="font-controls-label">字号</span>

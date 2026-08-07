@@ -372,6 +372,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       documentListRef: this.documentListRef,
       documentCountRef: this.documentCountRef,
       footerPathRef: this.footerPathRef,
+      copyFooterPath: () => this.copyFooterPath(),
       ...this._readingPathRenderVals(),
       showEditorMode: () => this.setViewMode('editor'),
       showSplitMode: () => this.setViewMode('split'),

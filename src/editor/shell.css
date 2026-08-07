@@ -641,7 +641,11 @@ textarea.md-source {
   color: var(--text-4);
   text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: pointer;
+  transition: color .15s;
 }
+.footer-path:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.footer-path.is-copied { color: var(--good); text-decoration: none; }
 .footer-path:not(.has-path) { display: none; }
 .footer-stats { flex: none; display: flex; align-items: center; gap: 20px; }
 .font-controls { display: flex; align-items: center; gap: 7px; }

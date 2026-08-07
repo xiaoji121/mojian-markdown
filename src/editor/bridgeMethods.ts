@@ -228,8 +228,21 @@ export class BridgeMethods {
       if (doc && doc.localPath) path = doc.localPath;
     }
     el.textContent = path;
-    el.title = path;
+    el.title = path ? path + '（点击复制完整路径）' : '';
     if (el.classList) el.classList.toggle('has-path', !!path);
+  }
+
+  // 点击底部路径复制完整路径（textContent 始终是完整路径，视觉省略不影响）。
+  copyFooterPath() {
+    const el = this.footerPathRef && this.footerPathRef.current;
+    const path = (el && el.textContent) || this.localFilePath || '';
+    if (!path) return;
+    this._copy(path, '已复制完整路径');
+    if (el && el.classList) {
+      el.classList.add('is-copied');
+      clearTimeout(this._footerCopyT);
+      this._footerCopyT = setTimeout(() => el.classList.remove('is-copied'), 1000);
+    }
   }
 
 

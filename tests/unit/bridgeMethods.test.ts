@@ -674,3 +674,36 @@ test('Bridge 未启用或文件未命名时不发起认领请求', async () => {
     globalThis.fetch = previous;
   }
 });
+
+test('点击底部路径复制完整路径并短暂标记已复制', () => {
+  const el = createStubElement();
+  const copied: Array<[string, string]> = [];
+  const editor = Object.create(BridgeMethods.prototype);
+  Object.assign(editor, {
+    footerPathRef: { current: el },
+    localFilePath: null,
+    _copy(text: string, msg: string) { copied.push([text, msg]); }
+  });
+  el.textContent = '/Users/me/writing/drafts/note.md';
+
+  editor.copyFooterPath();
+
+  assert.deepEqual(copied, [['/Users/me/writing/drafts/note.md', '已复制完整路径']]);
+  assert.ok(el.classList.contains('is-copied'), '复制后短暂标记 is-copied');
+});
+
+test('无路径时点击底部路径不触发复制', () => {
+  const el = createStubElement();
+  let called = 0;
+  const editor = Object.create(BridgeMethods.prototype);
+  Object.assign(editor, {
+    footerPathRef: { current: el },
+    localFilePath: null,
+    _copy() { called += 1; }
+  });
+  el.textContent = '';
+
+  editor.copyFooterPath();
+
+  assert.equal(called, 0, '空路径不复制');
+});
