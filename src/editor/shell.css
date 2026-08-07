@@ -201,8 +201,56 @@ button.is-copied {
    关联文件夹是网页版拿不到绝对路径的变通，桌面端永久隐藏；
    宽屏下 ⋯ 菜单因此为空，一并隐藏——窄屏规则用 !important 恢复 ⋯，
    彼时它收纳的是 collapsible 条目（保存/新建/主题）。 */
+.file-menu .desktop-path-menu-item { display: none; }
+body.is-desktop-app .desktop-path-menu-item { display: flex; }
 body.is-desktop-app .folder-menu-item { display: none; }
 body.is-desktop-app .header-more { display: none; }
+
+.file-path-modal-backdrop {
+  position: fixed;
+  z-index: 180;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, .44);
+}
+.file-path-modal {
+  width: min(560px, calc(100vw - 32px));
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-surface);
+  background: var(--bg-2);
+  box-shadow: var(--shadow-lg);
+}
+.file-path-title { display: block; color: var(--text); font: 600 var(--fs-md)/1.4 var(--sans); }
+.file-path-description { margin: 8px 0 14px; color: var(--text-3); font: var(--fs-xs)/1.6 var(--sans); }
+.file-path-input {
+  width: 100%;
+  padding: 10px 11px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-control);
+  outline: none;
+  background: var(--bg-input);
+  color: var(--text-2);
+  font: var(--fs-xs)/1.4 var(--mono);
+}
+.file-path-input:focus { border-color: var(--accent); }
+.file-path-note { display: block; min-height: 1.4em; margin-top: 7px; color: var(--text-4); font: var(--fs-2xs)/1.4 var(--sans); }
+.file-path-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 15px; }
+.file-path-cancel,
+.file-path-submit {
+  padding: 7px 13px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-control);
+  font: 600 var(--fs-xs)/1 var(--sans);
+  cursor: pointer;
+}
+.file-path-cancel { background: transparent; color: var(--text-3); }
+.file-path-submit { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.file-path-cancel:hover { background: var(--bg-3); }
+.file-path-submit:hover { background: var(--accent-2); }
 
 /* ===== 动作按钮金字塔：primary（打开）/ secondary（保存）/ 默认三级 ===== */
 .abtn {

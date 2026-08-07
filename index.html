@@ -359,6 +359,7 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
         <div ref="{{ fileMenuRef }}" class="header-menu file-menu" role="menu" aria-label="文件操作">
           <button class="header-menu-item" role="menuitem" onClick="{{ menuFileNew }}">新建文档</button>
           <button class="header-menu-item" role="menuitem" onClick="{{ menuFileOpen }}">打开…</button>
+          <button class="header-menu-item desktop-path-menu-item" role="menuitem" onClick="{{ menuOpenAbsolutePath }}">输入绝对路径打开…<small class="menu-item-hint">桌面版</small></button>
           <div class="header-menu-separator" role="separator"></div>
           <button class="header-menu-item" role="menuitem" onClick="{{ menuFileSave }}">保存<span class="menu-shortcut">⌘S</span></button>
           <button class="header-menu-item" role="menuitem" onClick="{{ menuFileSaveAs }}">另存为…<span class="menu-shortcut">⌘⇧S</span></button>

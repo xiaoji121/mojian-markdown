@@ -4,6 +4,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('mojianDesktop', {
   openMarkdownFile: () => ipcRenderer.invoke('desktop:open-file'),
+  openMarkdownPath: (path) => ipcRenderer.invoke('desktop:open-file-path', path),
   saveMarkdownFileAs: (suggestedName, content) =>
     ipcRenderer.invoke('desktop:save-file-as', suggestedName, content),
   readFile: (path) => ipcRenderer.invoke('desktop:read-file', path),

@@ -214,6 +214,7 @@ export class EditingFileLayoutMethods {
     desktop.onMenu((action) => {
       if (action === 'new') this.onNew();
       else if (action === 'open') this.onOpen();
+      else if (action === 'open-path') this.onOpenAbsolutePath();
       else if (action === 'save') this.onSave();
       else if (action === 'save-as') this.onSaveAs();
     });
@@ -302,6 +303,86 @@ export class EditingFileLayoutMethods {
         r.readAsText(f);
       };
       inp.click();
+    }
+  }
+
+
+  onOpenAbsolutePath() {
+    const desktop = window.mojianDesktop;
+    if (!desktop || !desktop.openMarkdownPath) {
+      this._setStatus('输入路径打开仅支持桌面版');
+      return;
+    }
+    const { modal, input, note } = this._ensureAbsolutePathDialog();
+    input.value = this.localFilePath || '';
+    note.textContent = '支持 .md、.markdown 和 .txt 文件';
+    modal.style.display = 'flex';
+    setTimeout(() => { input.focus(); input.select(); }, 0);
+  }
+
+
+  _ensureAbsolutePathDialog() {
+    if (this._absolutePathDialog) return this._absolutePathDialog;
+    const modal = document.createElement('div');
+    modal.className = 'file-path-modal-backdrop';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'file-path-title');
+    modal.innerHTML = `<section class="file-path-modal">
+      <strong id="file-path-title" class="file-path-title">输入绝对路径打开</strong>
+      <p class="file-path-description">粘贴 Markdown 文件的完整路径，打开后会继续同步保存到该文件。</p>
+      <input class="file-path-input" type="text" spellcheck="false" autocomplete="off" placeholder="/Users/name/Documents/note.md">
+      <small class="file-path-note">支持 .md、.markdown 和 .txt 文件</small>
+      <div class="file-path-actions"><button type="button" class="file-path-cancel">取消</button>
+      <button type="button" class="file-path-submit" aria-label="打开该路径">打开</button></div>
+    </section>`;
+    const input = modal.querySelector('.file-path-input');
+    const note = modal.querySelector('.file-path-note');
+    modal.querySelector('.file-path-cancel').addEventListener('click', () => this.closeAbsolutePathDialog());
+    modal.querySelector('.file-path-submit').addEventListener('click', () => this.submitAbsolutePathOpen());
+    input.addEventListener('keydown', (event) => this._absolutePathKeydown(event));
+    document.body.appendChild(modal);
+    this._absolutePathDialog = { modal, input, note };
+    return this._absolutePathDialog;
+  }
+
+
+  closeAbsolutePathDialog() {
+    if (this._absolutePathDialog) this._absolutePathDialog.modal.style.display = 'none';
+  }
+
+
+  _absolutePathKeydown(event) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      this.submitAbsolutePathOpen();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      this.closeAbsolutePathDialog();
+    }
+  }
+
+
+  async submitAbsolutePathOpen() {
+    const desktop = window.mojianDesktop;
+    const dialog = this._absolutePathDialog;
+    const input = dialog && dialog.input;
+    const note = dialog && dialog.note;
+    if (!desktop || !desktop.openMarkdownPath || !input) return false;
+    const filePath = input.value.trim();
+    if (!filePath) return;
+    if (note) note.textContent = '正在打开…';
+    try {
+      const picked = await desktop.openMarkdownPath(filePath);
+      if (!picked) throw new Error('文件不存在或不可读');
+      await this._openDesktopFile(picked);
+      this.closeAbsolutePathDialog();
+      return true;
+    } catch (error) {
+      const message = error.message || String(error);
+      if (note) note.textContent = '打开失败 · ' + message;
+      this._setStatus('打开失败 · ' + message);
+      return false;
     }
   }
 

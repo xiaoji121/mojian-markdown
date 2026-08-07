@@ -8,6 +8,7 @@ export interface DesktopSavedFile { path: string; name: string; lastModified: nu
 
 export interface MojianDesktopApi {
   openMarkdownFile(): Promise<DesktopPickedFile | null>;
+  openMarkdownPath(path: string): Promise<DesktopPickedFile | null>;
   saveMarkdownFileAs(suggestedName: string, content: string): Promise<DesktopSavedFile | null>;
   readFile(path: string): Promise<{ content: string; lastModified: number } | null>;
   writeFile(path: string, content: string): Promise<{ lastModified: number }>;

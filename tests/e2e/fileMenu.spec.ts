@@ -38,6 +38,9 @@ test('顶栏文件菜单包含新建、打开、保存与另存为，点击外�
   const fileMenu = page.locator('.file-menu');
   await expect(fileMenu.getByRole('menuitem', { name: '新建文档' })).toBeVisible();
   await expect(fileMenu.getByRole('menuitem', { name: /^打开/ })).toBeVisible();
+  const pathOpen = fileMenu.locator('.desktop-path-menu-item');
+  await expect(pathOpen).toHaveCount(1);
+  await expect(pathOpen).toBeHidden();
   await expect(fileMenu.getByRole('menuitem', { name: /^保存/ })).toBeVisible();
   await expect(fileMenu.getByRole('menuitem', { name: /另存为/ })).toBeVisible();
 

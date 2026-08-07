@@ -393,6 +393,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       toggleFileMenu: () => this.toggleFileMenu(),
       menuFileNew: () => { this.toggleFileMenu(false); this.onNew(); },
       menuFileOpen: () => { this.toggleFileMenu(false); this.onOpen(); },
+      menuOpenAbsolutePath: () => { this.toggleFileMenu(false); this.onOpenAbsolutePath(); },
       menuFileSave: () => { this.toggleFileMenu(false); this.onSave(); },
       menuFileSaveAs: () => { this.toggleFileMenu(false); this.onSaveAs(); },
       menuFolder: () => { this.toggleHeaderMenu(false); this.associateLocalFolder(); },

@@ -7,7 +7,7 @@
 //   3. 应用菜单、macOS「双击 .md 打开」、单实例与命令行参数接管。
 import { app, BrowserWindow, Menu, dialog, ipcMain, shell } from 'electron';
 import { readFile, stat, writeFile } from 'node:fs/promises';
-import { basename, dirname, extname, join, resolve } from 'node:path';
+import { basename, dirname, extname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startAgentBridge } from '../scripts/agent-bridge.js';
 import { readLocalAsset } from './localAssets.js';
@@ -100,6 +100,20 @@ function registerIpcHandlers() {
     return readPickedFile(result.filePaths[0]);
   });
 
+  ipcMain.handle('desktop:open-file-path', async (_event, inputPath) => {
+    let filePath = String(inputPath || '').trim();
+    if ((filePath.startsWith('"') && filePath.endsWith('"'))
+      || (filePath.startsWith("'") && filePath.endsWith("'"))) filePath = filePath.slice(1, -1).trim();
+    if (!isAbsolute(filePath)) throw new Error('请输入文件的绝对路径');
+    if (!MARKDOWN_EXTENSIONS.has(extname(filePath).toLowerCase())) {
+      throw new Error('仅支持 .md、.markdown 或 .txt 文件');
+    }
+    const normalized = resolve(filePath);
+    const picked = await readPickedFile(normalized);
+    grantPath(normalized);
+    return picked;
+  });
+
   ipcMain.handle('desktop:save-file-as', async (_event, suggestedName, content) => {
     const result = await dialog.showSaveDialog(mainWindow, {
       defaultPath: String(suggestedName || 'document.md'),
@@ -166,6 +180,7 @@ function buildMenu() {
       submenu: [
         { label: '新建', accelerator: 'CmdOrCtrl+N', click: () => sendMenu('new') },
         { label: '打开…', accelerator: 'CmdOrCtrl+O', click: () => sendMenu('open') },
+        { label: '输入绝对路径打开…', click: () => sendMenu('open-path') },
         { label: '保存', accelerator: 'CmdOrCtrl+S', click: () => sendMenu('save') },
         { label: '另存为…', accelerator: 'CmdOrCtrl+Shift+S', click: () => sendMenu('save-as') },
         { type: 'separator' },
