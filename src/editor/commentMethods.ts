@@ -471,19 +471,46 @@ export class CommentMethods {
     labelText.textContent = '找到的回答';
     label.appendChild(labelText);
     const editing = !!(this._openReplyIds && this._openReplyIds.has(c.id));
+    const actions = document.createElement('span');
+    actions.className = 'comment-reply-actions';
+    const documentId = c.documentId || this.bridgeDocumentId;
+    let openReplyButton = null;
+    if (documentId) {
+      const open = document.createElement('button');
+      open.className = 'comment-reply-edit';
+      open.textContent = '打开阅读节点';
+      open.setAttribute('aria-label', '打开找到的回答阅读节点');
+      open.hidden = !(c.reply && c.reply.trim());
+      open.addEventListener('click', () => this._openReplyNode(c));
+      actions.appendChild(open);
+      openReplyButton = open;
+    }
     if (c.reply && c.reply.trim() && !editing) {
       const edit = document.createElement('button');
       edit.className = 'comment-reply-edit';
       edit.textContent = '编辑';
       edit.setAttribute('aria-label', '编辑找到的回答');
       edit.addEventListener('click', () => this._openReplyBox(c.id));
-      label.appendChild(edit);
+      actions.appendChild(edit);
+      label.appendChild(actions);
       const rendered = document.createElement('div');
       rendered.className = 'comment-reply-markdown';
       this._renderSafeMarkdown(rendered, c.reply, []);
       card.appendChild(label);
       card.appendChild(rendered);
       return;
+    }
+    if (editing) {
+      const done = document.createElement('button');
+      done.className = 'comment-reply-edit';
+      done.textContent = '完成';
+      done.setAttribute('aria-label', '完成编辑找到的回答');
+      done.addEventListener('click', () => {
+        this._openReplyIds.delete(c.id);
+        this._renderComments();
+      });
+      actions.appendChild(done);
+      label.appendChild(actions);
     }
     const ta = document.createElement('textarea');
     ta.className = 'comment-note-input comment-reply-input';
@@ -493,10 +520,24 @@ export class CommentMethods {
     const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.max(42, ta.scrollHeight) + 'px'; };
     ta.addEventListener('focus', () => { ta.style.borderColor = 'var(--text-4)'; });
     ta.addEventListener('blur', () => { ta.style.borderColor = 'var(--border-soft)'; });
-    ta.addEventListener('input', () => { c.reply = ta.value; c.replyAt = Date.now(); grow(); this._persist(); });
+    ta.addEventListener('input', () => {
+      c.reply = ta.value;
+      c.replyAt = Date.now();
+      if (openReplyButton) openReplyButton.hidden = !c.reply.trim();
+      grow();
+      this._persist();
+    });
     setTimeout(grow, 0);
     card.appendChild(label);
     card.appendChild(ta);
+  }
+
+
+  async _openReplyNode(c) {
+    const documentId = c && (c.documentId || this.bridgeDocumentId);
+    if (!documentId || !c || !c.id) return;
+    if (typeof this._flushBridgeSync === 'function') await this._flushBridgeSync();
+    await this.openAnswerDocument(documentId, c.id);
   }
 
 

@@ -5,18 +5,30 @@ import { bridgeUrl } from './bridgeClient.ts';
 
 export class AIReadingTreeMethods {
   _appendAIReadingTreeAction(item, message) {
-    if (message.role !== 'assistant' || !message.hiddenFromReadingTree
-      || !message.documentId || !message.requestId) return;
+    if (message.role !== 'assistant' || !message.documentId || !message.requestId
+      || message.pending || message.failed) return;
     const actions = document.createElement('div');
     actions.className = 'ai-message-actions';
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'ai-reading-tree-restore';
-    button.textContent = message.restoringToReadingTree ? '正在恢复…' : '重新加入阅读树';
-    button.disabled = !!message.restoringToReadingTree;
-    button.addEventListener('click', () => this.restoreAIMessageToTree(message));
+    if (message.hiddenFromReadingTree) {
+      button.className = 'ai-reading-tree-restore';
+      button.textContent = message.restoringToReadingTree ? '正在恢复…' : '重新加入阅读树';
+      button.disabled = !!message.restoringToReadingTree;
+      button.addEventListener('click', () => this.restoreAIMessageToTree(message));
+    } else {
+      button.className = 'ai-reading-tree-open';
+      button.textContent = '打开阅读节点';
+      button.addEventListener('click', () => this._openAIReadingNode(message));
+    }
     actions.appendChild(button);
     item.appendChild(actions);
+  }
+
+
+  async _openAIReadingNode(message) {
+    if (!message || !message.documentId || !message.requestId) return;
+    await this.openAnswerDocument(message.documentId, message.requestId);
   }
 
 

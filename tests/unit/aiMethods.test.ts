@@ -313,6 +313,41 @@ test('点击 Agent 生成的 Markdown 入口时用墨笺打开工作区文档', 
   assert.deepEqual(opened, ['doc-generated']);
 });
 
+test('已归档的 AI 回答可直接打开对应阅读节点', async () => {
+  const previousDocument = Object.getOwnPropertyDescriptor(globalThis, 'document');
+  Object.defineProperty(globalThis, 'document', {
+    configurable: true,
+    value: { createElement: () => createStubElement() }
+  });
+  try {
+    const editor = createEditor();
+    const item = createStubElement();
+    const opened: string[] = [];
+    const message = {
+      id: 'a-q1', role: 'assistant', requestId: 'q1', documentId: 'doc-1', text: '回答'
+    };
+    Object.assign(editor, {
+      _appendAIReadingTreeAction: AIReadingTreeMethods.prototype._appendAIReadingTreeAction,
+      _openAIReadingNode: AIReadingTreeMethods.prototype._openAIReadingNode,
+      async openAnswerDocument(documentId: string, requestId: string) {
+        opened.push(documentId + ':' + requestId);
+      }
+    });
+
+    editor._appendAIReadingTreeAction(item, message);
+    const actions = item.children[0] as ReturnType<typeof createStubElement>;
+    const button = actions.children[0] as ReturnType<typeof createStubElement>;
+    assert.equal(button.textContent, '打开阅读节点');
+    button.dispatch('click');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    assert.deepEqual(opened, ['doc-1:q1']);
+  } finally {
+    if (previousDocument) Object.defineProperty(globalThis, 'document', previousDocument);
+    else delete (globalThis as Record<string, unknown>).document;
+  }
+});
+
 test('已移除的历史问答可重新加入阅读树', async () => {
   const previousDocument = Object.getOwnPropertyDescriptor(globalThis, 'document');
   const previousFetch = globalThis.fetch;

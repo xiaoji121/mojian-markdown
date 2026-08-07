@@ -456,6 +456,7 @@
     border-left: 2px solid var(--accent);
   }
   .comment-reply-edit { border:0; background:transparent; color:var(--text-3); cursor:pointer; font:var(--fs-2xs)/1.4 var(--mono); }
+  .comment-reply-actions { display:flex; align-items:center; gap:10px; }
   .comment-reply-edit:hover { color:var(--accent); }
   .comment-reply-markdown { margin:4px 10px 11px; padding:10px 12px; overflow-wrap:anywhere; border:1px solid var(--border-soft); border-left:2px solid var(--accent); border-radius:var(--radius-control); background:var(--bg-input); color:var(--text-2); font:var(--fs-md)/1.65 var(--sans); }
   .comment-reply-markdown > :first-child { margin-top:0; }

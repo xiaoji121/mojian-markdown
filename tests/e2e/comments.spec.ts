@@ -75,7 +75,12 @@ test('想法批注可贴入自己找到的回答，刷新后仍保留', async ({
   await expect(page.locator('.comment-reply-input')).toHaveCount(0);
 
   await page.getByRole('button', { name: '编辑找到的回答' }).click();
-  await expect(page.locator('.comment-reply-input')).toHaveValue(/## 三个方案/);
+  const editingReply = page.locator('.comment-reply-input');
+  await expect(editingReply).toHaveValue(/## 三个方案/);
+  await editingReply.fill('## 更新后的方案\n\n编辑完成后回到预览。');
+  await page.getByRole('button', { name: '完成编辑找到的回答' }).click();
+  await expect(page.locator('.comment-reply-input')).toHaveCount(0);
+  await expect(page.locator('.comment-reply-markdown').getByRole('heading', { name: '更新后的方案' })).toBeVisible();
 });
 
 test('复制全部批注与复制全文+批注在按钮上原地反馈', async ({ page }) => {

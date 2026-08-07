@@ -122,6 +122,7 @@
   margin-top: 10px;
 }
 .ai-message-retry,
+.ai-reading-tree-open,
 .ai-reading-tree-restore {
   padding: 5px 10px;
   border: 1px solid var(--accent);
@@ -132,10 +133,13 @@
   cursor: pointer;
 }
 .ai-message-retry::before { content: '↻'; margin-right: 5px; }
+.ai-reading-tree-open::before { content: '↗'; margin-right: 5px; }
 .ai-reading-tree-restore::before { content: '↩'; margin-right: 5px; }
 .ai-message-retry:hover:not(:disabled),
+.ai-reading-tree-open:hover:not(:disabled),
 .ai-reading-tree-restore:hover:not(:disabled) { background: var(--accent-soft); }
 .ai-message-retry:disabled,
+.ai-reading-tree-open:disabled,
 .ai-reading-tree-restore:disabled { opacity: .55; cursor: default; }
 
 .ai-agent-progress {

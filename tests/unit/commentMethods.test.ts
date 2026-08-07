@@ -28,6 +28,22 @@ test('_commentText 没有回复时不输出回答行', () => {
   assert.doesNotMatch(text, /找到的回答/);
 });
 
+test('打开摘录回答节点前先同步，并以批注 id 打开对应子节点', async () => {
+  const editor = createEditor();
+  const calls: string[] = [];
+  Object.assign(editor, {
+    bridgeDocumentId: 'doc-1',
+    async _flushBridgeSync() { calls.push('flush'); },
+    async openAnswerDocument(documentId: string, requestId: string) {
+      calls.push('open:' + documentId + ':' + requestId);
+    }
+  });
+
+  await editor._openReplyNode({ id: 'annotation-1', reply: '答案' });
+
+  assert.deepEqual(calls, ['flush', 'open:doc-1:annotation-1']);
+});
+
 test('在摘录回答视图创建的批注带上视图标记，主文档视图不带', () => {
   const previous = Object.getOwnPropertyDescriptor(globalThis, 'window');
   Object.defineProperty(globalThis, 'window', { value: { getSelection: () => null }, configurable: true });
