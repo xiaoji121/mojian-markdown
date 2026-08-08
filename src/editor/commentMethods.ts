@@ -59,7 +59,9 @@ export class CommentMethods {
     const startOff = this._offsetOf(prev, range.startContainer, range.startOffset);
     let occ = 0, from = 0;
     while (true) { const f = full.indexOf(quote, from); if (f < 0) break; if (f === startOff) break; occ++; from = f + 1; }
-    this._pending = { quote: quote, occ: occ, start: startOff };
+    const fragment = document.createElement('div');
+    fragment.appendChild(range.cloneContents());
+    this._pending = { quote: quote, occ: occ, start: startOff, html: fragment.innerHTML };
     const rect = range.getBoundingClientRect();
     bar.style.display = 'flex';
     const w = bar.offsetWidth, h = bar.offsetHeight;

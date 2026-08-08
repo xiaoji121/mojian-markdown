@@ -39,7 +39,7 @@ export interface PersistedEditorState {
   longImageMarks?: boolean;
   comments: Annotation[];
   bridgeDocumentId?: string;
-  /** AI 问答使用的本地 CLI 引擎；缺省为 claude */
+  /** AI 问答使用的渠道；缺省为 codex */
   aiEngine?: 'claude' | 'codex' | 'gemini';
   /** 草稿最后一次持久化的时间戳，用于恢复本地文件关联时判断谁更新 */
   savedAt?: number;

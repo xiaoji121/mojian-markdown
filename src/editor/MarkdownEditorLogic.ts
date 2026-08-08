@@ -125,7 +125,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._mermaidBatch = 0;
     this.aiMessages = [];
     this.aiConversations = [];
-    this.aiEngine = 'claude';
+    this.aiEngine = 'codex';
     this.agentProjectRoot = ''; // Agent 模式下服务端回报的工作目录，仅用于界面提示
     this.publishBusy = false;
     this.lastPublication = null;
@@ -143,6 +143,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.immersiveWide = false;
     this.longImageWidth = DEFAULT_LONG_IMAGE_PRESET;
     this.longImageMarks = true;
+    this.longImageAutoCrop = false;
     this._themeTouched = false;
     this.panelOpen = false;
     this.previewFullscreen = false;
@@ -207,7 +208,9 @@ export function createMarkdownEditorComponent(DCLogic, React) {
         this.activeDocumentId = saved.bridgeDocumentId;
       }
       if (saved.savedAt) this._draftSavedAt = saved.savedAt;
-      if (saved.aiEngine === 'codex' || saved.aiEngine === 'gemini') this.aiEngine = saved.aiEngine;
+      if (saved.aiEngine === 'claude' || saved.aiEngine === 'codex' || saved.aiEngine === 'gemini') {
+        this.aiEngine = saved.aiEngine;
+      }
       if (saved.theme) { this.theme = saved.theme; this._themeTouched = true; }
       if (saved.paperDark) this.paperDark = saved.paperDark;
       if (saved.paperLight) this.paperLight = saved.paperLight;
@@ -399,7 +402,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       menuFolder: () => { this.toggleHeaderMenu(false); this.associateLocalFolder(); },
       openLastPublication: () => this.openLastPublication(),
       toggleOutline: () => this.toggleOutline(),
-      openLongImage: () => this.openLongImage(),
+      openLongImage: () => this.openLongImage(), openSelectionImage: () => this.openSelectionImage(),
       toggleSearch: () => this.toggleSearch(),
       closeSearch: () => this.closeSearch(),
       searchPrev: () => this.searchPrev(),

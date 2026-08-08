@@ -39,6 +39,20 @@ test('输入 Markdown 后预览实时渲染', async ({ page }) => {
   await expect(preview.locator('li')).toHaveCount(2);
 });
 
+test('首次使用时 AI 渠道默认选择 Codex', async ({ page }) => {
+  await expect(page.locator('.ai-engine-chip')).toHaveText('Codex');
+});
+
+test('Mermaid 长节点换行后仍完整展示内容', async ({ page }) => {
+  const label = '关于定投如果未来失业没有固定收入时应该如何调整投入节奏';
+  await setSource(page, '```mermaid\nflowchart TD\n  q0(["关于定投如果未来失业没有固定收入<br/>时应该如何调整投入节奏 · 摘录"])\n```');
+
+  const node = page.locator('.mermaid-rendered .node').first();
+  await expect(node).toBeVisible();
+  await expect(node).toContainText(label + ' · 摘录');
+  await expect(node).not.toContainText('…');
+});
+
 test('字数统计跟随内容更新', async ({ page }) => {
   await setSource(page, '一二三\n四五');
 

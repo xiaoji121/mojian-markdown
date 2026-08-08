@@ -632,7 +632,7 @@ export class BridgeMethods {
       longImageMarks: this.longImageMarks === false ? false : undefined,
       comments: this.comments,
       bridgeDocumentId: this.bridgeDocumentId || undefined,
-      aiEngine: (this.aiEngine && this.aiEngine !== 'claude') ? this.aiEngine : undefined,
+      aiEngine: this.aiEngine || undefined,
       savedAt
     });
     if (syncBridge && this.agentBridgeEnabled) this._scheduleBridgeSync();

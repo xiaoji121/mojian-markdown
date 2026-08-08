@@ -14,9 +14,11 @@ import {
   longImageWidth,
   pickLongImageScale,
   planLongImageTiles,
+  planSafeImagePages,
   longImageDate,
   longImageFileName,
   formatByteSize,
+  buildStoredZip,
   extractPosterCss,
   collectCssVariableNames,
   cssVariableBlock
@@ -24,11 +26,46 @@ import {
 
 // 弹窗里海报缩略图的显示宽度（CSS px），两档宽度共用同一个视觉尺寸。
 const STAGE_WIDTH = 360;
+const PHONE_PAGE_HEIGHT = 1280;
+const PHONE_PAGE_PADDING = 40;
+const POSTER_PAPER_VARIABLES = [
+  '--paper-bg', '--paper-bg-soft', '--paper-pre', '--paper-code', '--paper-border',
+  '--paper-text', '--paper-text-2', '--paper-text-3', '--paper-accent', '--paper-mark',
+  '--paper-sel', '--paper-code-string', '--paper-code-number', '--paper-code-function',
+  '--paper-code-type'
+];
 
 let posterFontCssPromise = null;
 
 export class LongImageMethods {
   openLongImage() {
+    this._longImageSelection = null;
+    this._showLongImage();
+  }
+
+
+  openSelectionImage() {
+    const pending = this._pending;
+    if (!pending || !pending.quote) return;
+    this._longImageSelection = {
+      html: pending.html || this._escapedSelectionText(pending.quote),
+      text: pending.quote
+    };
+    const selection = window.getSelection();
+    if (selection) selection.removeAllRanges();
+    if (this.selBarRef.current) this.selBarRef.current.style.display = 'none';
+    this._showLongImage();
+  }
+
+
+  _escapedSelectionText(text) {
+    const holder = document.createElement('div');
+    holder.textContent = text;
+    return '<p>' + holder.innerHTML.replace(/\n/g, '<br>') + '</p>';
+  }
+
+
+  _showLongImage() {
     const overlay = this._buildLongImageModal();
     overlay.style.display = 'flex';
     this._refreshLongImagePoster();
@@ -51,6 +88,13 @@ export class LongImageMethods {
   toggleLongImageMarks() {
     this.longImageMarks = !this.longImageMarks;
     this._persist();
+    this._refreshLongImagePoster();
+  }
+
+
+  toggleLongImageAutoCrop() {
+    this.longImageAutoCrop = !this.longImageAutoCrop;
+    if (this.longImageAutoCrop && this.longImageWidth !== 'phone') this.longImageWidth = 'phone';
     this._refreshLongImagePoster();
   }
 
@@ -95,7 +139,25 @@ export class LongImageMethods {
     title.textContent = '保存长图';
     const hint = document.createElement('p');
     hint.className = 'longimg-modal-hint';
-    hint.textContent = '排版、字体与纸色都跟随预览；表格和代码会自动折行，不会被裁掉。';
+    hint.textContent = '排版、字体与纸色都跟随预览；手机分页会避开图片、表格、代码块和标题。';
+    const tools = document.createElement('div');
+    tools.className = 'longimg-modal-head-tools';
+    const marks = document.createElement('button');
+    marks.type = 'button';
+    marks.className = 'longimg-mark-toggle';
+    marks.title = '导出时包含划线和批注编号';
+    marks.setAttribute('role', 'switch');
+    marks.setAttribute('aria-label', '导出时包含划线批注');
+    const marksLabel = document.createElement('span');
+    marksLabel.textContent = '划线批注';
+    const marksTrack = document.createElement('span');
+    marksTrack.className = 'longimg-switch-track';
+    marksTrack.setAttribute('aria-hidden', 'true');
+    const marksKnob = document.createElement('span');
+    marksKnob.className = 'longimg-switch-knob';
+    marksTrack.appendChild(marksKnob);
+    marks.append(marksLabel, marksTrack);
+    marks.addEventListener('click', () => this.toggleLongImageMarks());
     const close = document.createElement('button');
     close.type = 'button';
     close.className = 'longimg-modal-close';
@@ -103,7 +165,9 @@ export class LongImageMethods {
     close.title = '关闭（Esc）';
     close.setAttribute('aria-label', '关闭');
     close.addEventListener('click', () => this.closeLongImage());
-    head.append(title, hint, close);
+    tools.append(marks, close);
+    head.append(title, hint, tools);
+    this._longImageMarksEl = marks;
     return head;
   }
 
@@ -118,13 +182,13 @@ export class LongImageMethods {
     widths.setAttribute('role', 'group');
     widths.setAttribute('aria-label', '长图宽度');
     LONG_IMAGE_PRESETS.forEach((preset) => widths.appendChild(this._longImageWidthOption(preset)));
-    const marks = document.createElement('button');
-    marks.type = 'button';
-    marks.className = 'longimg-mark-toggle';
-    marks.textContent = '含划线批注';
-    marks.title = '关掉后导出干净的正文，不带划线和批注编号';
-    marks.addEventListener('click', () => this.toggleLongImageMarks());
-    options.append(widths, marks);
+    const crop = document.createElement('button');
+    crop.type = 'button';
+    crop.className = 'longimg-crop-toggle';
+    crop.textContent = '手机分页';
+    crop.title = '按手机一屏自动裁成多张图片，并避开图片、表格和代码块';
+    crop.addEventListener('click', () => this.toggleLongImageAutoCrop());
+    options.append(widths, crop);
     const meta = document.createElement('span');
     meta.className = 'longimg-modal-meta';
     const save = document.createElement('button');
@@ -134,7 +198,7 @@ export class LongImageMethods {
     save.addEventListener('click', () => this.downloadLongImage());
     foot.append(options, meta, save);
     this._longImageWidthsEl = widths;
-    this._longImageMarksEl = marks;
+    this._longImageCropEl = crop;
     this._longImageMetaEl = meta;
     this._longImageSaveEl = save;
     return foot;
@@ -164,11 +228,17 @@ export class LongImageMethods {
     }
     if (this._longImageMarksEl) {
       this._longImageMarksEl.classList.toggle('is-active', !!this.longImageMarks);
-      this._longImageMarksEl.setAttribute('aria-pressed', this.longImageMarks ? 'true' : 'false');
+      this._longImageMarksEl.setAttribute('aria-checked', this.longImageMarks ? 'true' : 'false');
+    }
+    const paged = !!this.longImageAutoCrop && active === 'phone';
+    if (this._longImageCropEl) {
+      this._longImageCropEl.hidden = active !== 'phone';
+      this._longImageCropEl.classList.toggle('is-active', paged);
+      this._longImageCropEl.setAttribute('aria-pressed', paged ? 'true' : 'false');
     }
     if (this._longImageSaveEl) {
       this._longImageSaveEl.disabled = !!this._longImageBusy;
-      if (!this._longImageBusy) this._longImageSaveEl.textContent = '下载长图';
+      if (!this._longImageBusy) this._longImageSaveEl.textContent = paged ? '下载多图' : '下载长图';
     }
   }
 
@@ -181,6 +251,7 @@ export class LongImageMethods {
     this._ensurePosterStyle();
     const width = longImageWidth(this.longImageWidth || DEFAULT_LONG_IMAGE_PRESET);
     const poster = this._buildPosterNode(width);
+    poster.classList.toggle('is-paged', !!this.longImageAutoCrop && this.longImageWidth === 'phone');
     stage.replaceChildren(poster);
     stage.style.width = width + 'px';
     this._longImagePoster = poster;
@@ -188,7 +259,64 @@ export class LongImageMethods {
     if (document.fonts && document.fonts.ready) {
       try { await document.fonts.ready; } catch {}
     }
-    this._layoutLongImageStage();
+    if (poster.classList.contains('is-paged')) {
+      this._fitPagedAtomicContent(poster);
+      this._longImagePagePlan = planSafeImagePages(
+        poster.offsetHeight,
+        PHONE_PAGE_HEIGHT - PHONE_PAGE_PADDING * 2,
+        this._posterProtectedRanges(poster)
+      );
+      this._renderPagedPreview(poster, this._longImagePagePlan, width);
+    } else {
+      this._longImagePagePlan = null;
+      this._layoutLongImageStage();
+    }
+  }
+
+
+  _fitPagedAtomicContent(poster) {
+    const maxHeight = PHONE_PAGE_HEIGHT - PHONE_PAGE_PADDING * 2;
+    poster.querySelectorAll('img, table, pre, .mermaid-rendered').forEach((element) => {
+      const height = element.getBoundingClientRect().height;
+      if (height > maxHeight) element.style.zoom = String(maxHeight / height);
+    });
+  }
+
+
+  _renderPagedPreview(poster, pages, width) {
+    const stage = this._longImageStageEl;
+    const stack = document.createElement('div');
+    stack.className = 'longimg-page-stack';
+    stack.style.width = width + 'px';
+    pages.forEach((slice, index) => {
+      const page = document.createElement('div');
+      page.className = 'longimg-page-preview';
+      page.style.width = width + 'px';
+      page.style.height = PHONE_PAGE_HEIGHT + 'px';
+      page.style.background = this._posterPaperColor();
+      const viewport = document.createElement('div');
+      viewport.className = 'longimg-page-viewport';
+      viewport.style.top = PHONE_PAGE_PADDING + 'px';
+      viewport.style.height = slice.height + 'px';
+      const clone = poster.cloneNode(true);
+      clone.classList.add('longimg-page-content');
+      clone.style.position = 'absolute';
+      clone.style.left = '0';
+      clone.style.top = -slice.top + 'px';
+      const number = document.createElement('span');
+      number.className = 'longimg-page-number';
+      number.textContent = (index + 1) + ' / ' + pages.length;
+      viewport.appendChild(clone);
+      page.append(viewport, number);
+      stack.appendChild(page);
+    });
+    stage.replaceChildren(stack);
+    const ratio = STAGE_WIDTH / width;
+    stage.style.transform = 'scale(' + ratio + ')';
+    stage.style.width = width + 'px';
+    this._longImageBoxEl.style.width = Math.round(width * ratio) + 'px';
+    this._longImageBoxEl.style.height = Math.round(stack.offsetHeight * ratio) + 'px';
+    this._updateLongImageMeta(width, poster.offsetHeight);
   }
 
 
@@ -211,6 +339,11 @@ export class LongImageMethods {
 
   _updateLongImageMeta(width, height, bytes) {
     if (!this._longImageMetaEl) return;
+    if (this.longImageAutoCrop && this.longImageWidth === 'phone' && this._longImagePoster) {
+      const pages = this._longImagePagePlan || [];
+      this._longImageMetaEl.textContent = '预计 ' + pages.length + ' 张 · 每张 1440 × 2560 px';
+      return;
+    }
     const scale = pickLongImageScale(width, height);
     if (!scale) {
       this._longImageMetaEl.textContent = '文章太长，超出画布上限 · 换「手机」宽度或拆篇再导出';
@@ -232,14 +365,41 @@ export class LongImageMethods {
     poster.style.width = width + 'px';
     // 正文与页眉页脚都按阅读字号缩放（页眉页脚用 em），长图与预览观感一致
     poster.style.fontSize = this.fontSize + 'px';
+    this._snapshotPosterPaper(poster, preview);
     const content = document.createElement('div');
     content.className = 'longimg-prose';
-    content.innerHTML = preview ? preview.innerHTML : '';
+    content.innerHTML = this._longImageSelection
+      ? this._longImageSelection.html
+      : (preview ? preview.innerHTML : '');
+    if (this._longImageSelection) this._normalizeSelectionContent(content);
     if (!this.longImageMarks) this._stripPosterMarks(content);
-    const title = this._takePosterTitle(content);
+    const title = this._longImageSelection ? '摘录' : this._takePosterTitle(content);
     this._posterTitle = title;
     poster.append(this._buildPosterHead(title, content), content, this._buildPosterFoot());
     return poster;
+  }
+
+
+  // Range.cloneContents() 跨多个列表项时会得到一组孤立的 <li>；补回列表容器，
+  // 让选区图片继续保留圆点、缩进等原始 Markdown 结构。
+  _normalizeSelectionContent(content) {
+    const children = Array.from(content.children || []);
+    const listItems = children.filter((child) => child.tagName === 'LI');
+    if (!listItems.length || listItems.length !== children.length) return;
+    const list = document.createElement('ul');
+    listItems.forEach((item) => list.appendChild(item));
+    content.appendChild(list);
+  }
+
+
+  // 把预览区最终生效的纸色直接写到海报节点。这样序列化到隔离的 SVG 后，
+  // 不再依赖 body 上的 data-paper 级联，弹窗预览与下载 PNG 始终同色。
+  _snapshotPosterPaper(poster, preview) {
+    const computed = getComputedStyle(preview || document.body);
+    POSTER_PAPER_VARIABLES.forEach((name) => {
+      const value = (computed.getPropertyValue(name) || '').trim();
+      if (value) poster.style.setProperty(name, value);
+    });
   }
 
 
@@ -414,6 +574,11 @@ export class LongImageMethods {
     this._longImageBusy = true;
     this._syncLongImageControls();
     try {
+      if (this.longImageAutoCrop && this.longImageWidth === 'phone') {
+        await this._downloadPagedLongImages();
+        this.closeLongImage();
+        return;
+      }
       const result = await this._rasterizePoster(this._longImagePoster, (done, total) => {
         if (!this._longImageSaveEl) return;
         this._longImageSaveEl.textContent = total > 1
@@ -435,6 +600,84 @@ export class LongImageMethods {
       this._longImageBusy = false;
       this._syncLongImageControls();
     }
+  }
+
+
+  async _downloadPagedLongImages() {
+    const poster = this._longImagePoster;
+    const width = longImageWidth('phone');
+    const pages = this._longImagePagePlan || [];
+    if (!pages.length) throw new Error('分页预览尚未准备好，请稍后重试');
+    const scale = pickLongImageScale(width, PHONE_PAGE_HEIGHT);
+    const clone = poster.cloneNode(true);
+    await this._inlinePosterImages(clone);
+    const css = (await this._posterFontCss()) + '\n' + (this._posterCssText || '');
+    const markup = new XMLSerializer().serializeToString(clone);
+    const base = longImageFileName(this._posterTitle, longImageDate()).replace(/\.png$/i, '');
+    const files = [];
+    for (let index = 0; index < pages.length; index += 1) {
+      this._longImageSaveEl.textContent = '正在生成 ' + (index + 1) + '/' + pages.length + '…';
+      const image = await this._loadPosterTile(pages[index], { width, scale, css, markup });
+      const canvas = this._pagedImageCanvas(width, scale, image);
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) throw new Error('分页图片导出失败');
+      files.push({
+        name: base + '-' + String(index + 1).padStart(2, '0') + '.png',
+        data: blob
+      });
+    }
+    const zip = await buildStoredZip(files);
+    const zipName = base + '-手机分页.zip';
+    this._saveLongImageBlob(zip, zipName);
+    this._longImageMetaEl.textContent = pages.length + ' 张 · 1440 × 2560 px · ' + formatByteSize(zip.size);
+    this._setStatus('✓ 已保存手机分页图片 · ' + pages.length + ' 张 · ' + zipName);
+  }
+
+
+  _pagedImageCanvas(width, scale, image) {
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(width * scale);
+    canvas.height = Math.round(PHONE_PAGE_HEIGHT * scale);
+    const context = canvas.getContext('2d');
+    context.fillStyle = this._posterPaperColor();
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, Math.round(PHONE_PAGE_PADDING * scale));
+    return canvas;
+  }
+
+
+  _posterProtectedRanges(poster) {
+    const posterRect = poster.getBoundingClientRect();
+    const ratio = posterRect.width / (poster.offsetWidth || posterRect.width || 1);
+    const elements = Array.from(poster.querySelectorAll(
+      'img, table, pre, blockquote, figure, .mermaid-rendered, .longimg-head, .longimg-foot'
+    ));
+    poster.querySelectorAll('h1, h2, h3, h4').forEach((heading) => {
+      if (heading.nextElementSibling) elements.push({
+        getBoundingClientRect: () => {
+          const first = heading.getBoundingClientRect();
+          const next = heading.nextElementSibling.getBoundingClientRect();
+          return { top: first.top, bottom: next.bottom };
+        }
+      });
+    });
+    const rects = elements.map((element) => element.getBoundingClientRect());
+    const walker = document.createTreeWalker(poster, NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode();
+    while (node) {
+      if ((node.nodeValue || '').trim() && !node.parentElement?.closest('svg, style, script')) {
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        rects.push(...Array.from(range.getClientRects()));
+      }
+      node = walker.nextNode();
+    }
+    return rects.map((rect) => {
+      return {
+        top: Math.max(0, (rect.top - posterRect.top) / ratio),
+        bottom: Math.max(0, (rect.bottom - posterRect.top) / ratio)
+      };
+    });
   }
 
 
@@ -474,8 +717,9 @@ export class LongImageMethods {
 
 
   _posterPaperColor() {
-    const value = getComputedStyle(document.body).getPropertyValue('--paper-bg');
-    return (value || '').trim() || '#ffffff';
+    const preview = this.previewRef && this.previewRef.current;
+    const computed = getComputedStyle(preview || document.body);
+    return (computed.backgroundColor || computed.getPropertyValue('--paper-bg') || '').trim() || '#ffffff';
   }
 
 
