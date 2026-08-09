@@ -5,7 +5,7 @@
 //   2. 原生文件对话框与读写——真实绝对路径，授权一次永久有效
 //      （授权清单持久化在 userData，重启后恢复的文档仍可直接同步）；
 //   3. 应用菜单、macOS「双击 .md 打开」、单实例与命令行参数接管。
-import { app, BrowserWindow, Menu, dialog, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, Menu, clipboard, dialog, ipcMain, shell } from 'electron';
 import { readFile, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, extname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -90,6 +90,8 @@ function collectMarkdownArgs(argv, cwd) {
 // ===== IPC =====
 
 function registerIpcHandlers() {
+  ipcMain.handle('desktop:read-clipboard-text', () => clipboard.readText());
+
   ipcMain.handle('desktop:open-file', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
       properties: ['openFile'],

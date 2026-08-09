@@ -53,6 +53,19 @@ test('Mermaid 长节点换行后仍完整展示内容', async ({ page }) => {
   await expect(node).not.toContainText('…');
 });
 
+test('Mermaid 流程图可以独立全屏查看并按 Escape 退出', async ({ page }) => {
+  await setSource(page, '```mermaid\nflowchart LR\n  A[开始] --> B[查看细节]\n```');
+
+  const diagram = page.locator('.mermaid-rendered');
+  await expect(diagram.getByRole('button', { name: '全屏查看流程图' })).toBeVisible();
+  await diagram.getByRole('button', { name: '全屏查看流程图' }).click();
+  await expect(diagram).toHaveClass(/is-fullscreen/);
+  await expect(diagram.getByRole('button', { name: '退出流程图全屏' })).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(diagram).not.toHaveClass(/is-fullscreen/);
+});
+
 test('字数统计跟随内容更新', async ({ page }) => {
   await setSource(page, '一二三\n四五');
 

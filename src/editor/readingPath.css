@@ -1,5 +1,5 @@
 /* 路径成文（阅读脉络 · 选择路径 → AI 成文）的全部样式。
-   交互逻辑见 pathComposeMethods.ts；脉络图本体样式仍在 styles.css 的 mermaid 段。 */
+   交互逻辑见 pathComposeMethods.ts；脉络图本体样式在 diagram.css。 */
 
 /* 路径选择模式：点选节点改为选中，选中态描边盖过 mermaid 内联主题色 */
 .md-preview.is-reading-map.is-path-select-mode .mermaid-rendered .node { cursor: cell; }

@@ -329,6 +329,34 @@ test('取消输入绝对路径时不读取文件', async () => {
   }
 });
 
+test('桌面端聚焦时发现剪贴板中的 Markdown 绝对路径会自动填入询问框', async () => {
+  (globalThis as { window?: unknown }).window = {
+    mojianDesktop: { readClipboardText: async () => '  "/Users/me/notes/阅读笔记.md"  ' }
+  };
+  try {
+    const editor = createEditor(createSource('', 0));
+    const shown: Array<{ path: string; fromClipboard: boolean }> = [];
+    editor.onOpenAbsolutePath = (path: string, options: { fromClipboard: boolean }) => {
+      shown.push({ path, fromClipboard: options.fromClipboard });
+    };
+
+    await editor._checkClipboardMarkdownPath();
+    await editor._checkClipboardMarkdownPath();
+
+    assert.deepEqual(shown, [{ path: '/Users/me/notes/阅读笔记.md', fromClipboard: true }]);
+  } finally {
+    delete (globalThis as { window?: unknown }).window;
+  }
+});
+
+test('剪贴板快捷打开忽略非 Markdown、相对路径和多行内容', async () => {
+  const editor = createEditor(createSource('', 0));
+  assert.equal(editor._clipboardMarkdownPath('notes/readme.md'), '');
+  assert.equal(editor._clipboardMarkdownPath('/Users/me/image.png'), '');
+  assert.equal(editor._clipboardMarkdownPath('/Users/me/a.md\n/Users/me/b.md'), '');
+  assert.equal(editor._clipboardMarkdownPath('C:\\notes\\readme.markdown'), 'C:\\notes\\readme.markdown');
+});
+
 test('桌面端 _initDesktop 给 body 打上 is-desktop-app 标记（CSS 据此隐藏网页版专属 UI）', async () => {
   (globalThis as { window?: unknown }).window = {
     mojianDesktop: {

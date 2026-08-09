@@ -1,0 +1,66 @@
+/* Mermaid 渲染容器与独立全屏查看；节点选择态在 readingPath.css。 */
+.mermaid-rendered {
+  position: relative;
+  margin: 22px 0 30px;
+  overflow-x: auto;
+  border: 1px solid var(--paper-border);
+  border-radius: var(--radius-control);
+  background: var(--paper-pre);
+  padding: 18px;
+}
+.mermaid-rendered svg {
+  display: block;
+  min-width: 620px;
+  max-width: none;
+  height: auto;
+  font-family: var(--sans);
+}
+.mermaid-fullscreen-button {
+  position: sticky;
+  z-index: 2;
+  left: 100%;
+  top: 0;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin: -8px -8px -26px auto;
+  border: 1px solid var(--paper-border);
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--paper-pre) 88%, transparent);
+  color: var(--paper-text-2);
+  font: 20px/1 var(--sans);
+  cursor: pointer;
+}
+.mermaid-fullscreen-button:hover { border-color: var(--paper-accent); color: var(--paper-accent); }
+.mermaid-rendered.is-fullscreen {
+  position: fixed;
+  z-index: 240;
+  inset: 0;
+  margin: 0;
+  padding: 64px 32px 32px;
+  border: 0;
+  border-radius: 0;
+  overflow: auto;
+  background: var(--paper-bg);
+}
+.mermaid-rendered.is-fullscreen svg { min-width: max(620px, calc(100vw - 64px)); }
+.mermaid-rendered.is-fullscreen .mermaid-fullscreen-button {
+  position: fixed;
+  top: 18px;
+  right: 20px;
+  left: auto;
+  margin: 0;
+  font-size: 26px;
+}
+body.mermaid-fullscreen-open { overflow: hidden; }
+.mermaid-rendered.is-loading,
+.mermaid-rendered.has-error {
+  color: var(--paper-text-3);
+  font: var(--fs-sm)/1.7 var(--mono);
+}
+.mermaid-rendered.has-error { border-color: color-mix(in srgb, var(--danger) 65%, var(--paper-border)); }
+
+/* 阅读脉络视图：节点可点击跳到对应子文档（点击委托见 readingMapMethods）。 */
+.md-preview.is-reading-map .mermaid-rendered .node { cursor: pointer; }
+.md-preview.is-reading-map .mermaid-rendered .node:hover { opacity: .75; }

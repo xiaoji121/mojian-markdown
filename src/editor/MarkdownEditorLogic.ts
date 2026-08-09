@@ -255,7 +255,10 @@ export function createMarkdownEditorComponent(DCLogic, React) {
         if (e.shiftKey) this.onSaveAs();
         else this.onSave();
       }
-      if (e.key === 'Escape' && this.previewFullscreen) {
+      if (e.key === 'Escape' && this._fullscreenMermaidHost) {
+        e.preventDefault();
+        this.closeMermaidFullscreen();
+      } else if (e.key === 'Escape' && this.previewFullscreen) {
         e.preventDefault();
         this.togglePreviewFullscreen(false);
       } else if (e.key === 'Escape' && this.outlineOpen) {
@@ -308,6 +311,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
   componentWillUnmount() {
     if (this._keyHandler) window.removeEventListener('keydown', this._keyHandler);
     if (this._resizeHandler) window.removeEventListener('resize', this._resizeHandler);
+    if (this._desktopClipboardFocus) window.removeEventListener('focus', this._desktopClipboardFocus);
+    this.closeMermaidFullscreen();
     if (this._outlineJumpT) clearTimeout(this._outlineJumpT);
     if (this._publishToastT) clearTimeout(this._publishToastT);
     this._disposeReadingPathHelp();

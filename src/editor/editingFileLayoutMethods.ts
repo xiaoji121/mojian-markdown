@@ -221,8 +221,39 @@ export class EditingFileLayoutMethods {
     // 双击关联的 .md 文件 / 菜单打开：主进程读好内容推送过来。
     desktop.onOpenPath((file) => { this._openDesktopFile(file); });
     desktop.consumePendingOpen()
-      .then((file) => { if (file) this._openDesktopFile(file); })
+      .then((file) => { if (file) this._openDesktopFile(file); else if (desktop.readClipboardText) this._checkClipboardMarkdownPath(); })
       .catch(() => {});
+    if (desktop.readClipboardText && window.addEventListener) {
+      this._desktopClipboardFocus = () => this._checkClipboardMarkdownPath();
+      window.addEventListener('focus', this._desktopClipboardFocus);
+    }
+  }
+
+
+  _clipboardMarkdownPath(text) {
+    let value = String(text || '').trim();
+    if (!value || /[\r\n]/.test(value)) return '';
+    if ((value.startsWith('"') && value.endsWith('"'))
+      || (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1).trim();
+    const absolute = value.startsWith('/') || /^[A-Za-z]:[\\/]/.test(value) || /^\\\\/.test(value);
+    if (!absolute || !/\.(?:md|markdown)$/i.test(value)) return '';
+    return value;
+  }
+
+
+  async _checkClipboardMarkdownPath() {
+    const desktop = window.mojianDesktop;
+    if (!desktop?.readClipboardText) return;
+    try {
+      const path = this._clipboardMarkdownPath(await desktop.readClipboardText());
+      if (!path) {
+        this._lastClipboardMarkdownPath = '';
+        return;
+      }
+      if (path === this._lastClipboardMarkdownPath) return;
+      this._lastClipboardMarkdownPath = path;
+      this.onOpenAbsolutePath(path, { fromClipboard: true });
+    } catch {}
   }
 
 
@@ -307,15 +338,22 @@ export class EditingFileLayoutMethods {
   }
 
 
-  onOpenAbsolutePath() {
+  onOpenAbsolutePath(initialPath = '', options = {}) {
     const desktop = window.mojianDesktop;
     if (!desktop || !desktop.openMarkdownPath) {
       this._setStatus('输入路径打开仅支持桌面版');
       return;
     }
     const { modal, input, note } = this._ensureAbsolutePathDialog();
-    input.value = this.localFilePath || '';
-    note.textContent = '支持 .md、.markdown 和 .txt 文件';
+    input.value = initialPath || this.localFilePath || '';
+    const fromClipboard = options.fromClipboard === true;
+    const title = modal.querySelector('.file-path-title');
+    const description = modal.querySelector('.file-path-description');
+    if (title) title.textContent = fromClipboard ? '打开剪贴板中的 Markdown？' : '输入绝对路径打开';
+    if (description) description.textContent = fromClipboard
+      ? '检测到剪贴板中有 Markdown 文件路径，是否用墨笺打开？'
+      : '粘贴 Markdown 文件的完整路径，打开后会继续同步保存到该文件。';
+    note.textContent = fromClipboard ? '路径已自动填入，确认后才会打开文件' : '支持 .md、.markdown 和 .txt 文件';
     modal.style.display = 'flex';
     setTimeout(() => { input.focus(); input.select(); }, 0);
   }

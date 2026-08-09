@@ -56,31 +56,6 @@
   .md-preview pre code .syntax-literal { color: var(--paper-code-number); }
   .md-preview pre code .syntax-function { color: var(--paper-code-function); }
   .md-preview pre code .syntax-type { color: var(--paper-code-type); }
-  .mermaid-rendered {
-    margin: 22px 0 30px;
-    overflow-x: auto;
-    border: 1px solid var(--paper-border);
-    border-radius: var(--radius-control);
-    background: var(--paper-pre);
-    padding: 18px;
-  }
-  .mermaid-rendered svg {
-    display: block;
-    min-width: 620px;
-    max-width: none;
-    height: auto;
-    font-family: var(--sans);
-  }
-  .mermaid-rendered.is-loading,
-  .mermaid-rendered.has-error {
-    color: var(--paper-text-3);
-    font: var(--fs-sm)/1.7 var(--mono);
-  }
-  .mermaid-rendered.has-error { border-color: color-mix(in srgb, var(--danger) 65%, var(--paper-border)); }
-  /* 阅读脉络视图：节点可点击跳到对应子文档（点击委托见 readingMapMethods） */
-  .md-preview.is-reading-map .mermaid-rendered .node { cursor: pointer; }
-  .md-preview.is-reading-map .mermaid-rendered .node:hover { opacity: .75; }
-  /* 路径成文（选择模式、选中描边、操作条、问号浮层）见 readingPath.css */
   .md-preview hr { border: none; border-top: 1px solid var(--paper-border); margin: 36px 0; }
   /* display:block 让超宽表格在自身内部横向滚动（预览区整体 overflow-x 已锁死） */
   .md-preview table { display: block; border-collapse: collapse; width: 100%; max-width: 100%; overflow-x: auto; margin: 20px 0; font-size: 0.9em; }
