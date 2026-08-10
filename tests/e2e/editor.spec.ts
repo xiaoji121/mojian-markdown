@@ -39,6 +39,13 @@ test('输入 Markdown 后预览实时渲染', async ({ page }) => {
   await expect(preview.locator('li')).toHaveCount(2);
 });
 
+test('编辑器左上角品牌链接指向官网并交给外部窗口打开', async ({ page }) => {
+  const brand = page.locator('.brand-title');
+  await expect(brand).toHaveAttribute('href', 'https://yuxizhai.com/md-editor/');
+  await expect(brand).toHaveAttribute('target', '_blank');
+  await expect(page.locator('.brand-mark')).toHaveAttribute('href', 'https://yuxizhai.com/md-editor/');
+});
+
 test('首次使用时 AI 渠道默认选择 Codex', async ({ page }) => {
   await expect(page.locator('.ai-engine-chip')).toHaveText('Codex');
 });

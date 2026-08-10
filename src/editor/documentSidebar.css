@@ -44,7 +44,16 @@
     letter-spacing: .12em;
   }
   .document-sidebar-title { display: flex; align-items: center; gap: 7px; }
-  .document-sidebar-title::before { content: "⌄"; color: var(--accent); font-size: var(--fs-md); }
+  .document-sidebar-caret {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 12px;
+    height: 12px;
+    color: var(--accent);
+  }
+  .document-sidebar-caret svg { display: block; width: 12px; height: 12px; overflow: visible; }
+  .document-sidebar-caret path { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
   .document-count {
     min-width: 18px;
     height: 18px;

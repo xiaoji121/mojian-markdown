@@ -83,6 +83,28 @@ test('想法批注可贴入自己找到的回答，刷新后仍保留', async ({
   await expect(page.locator('.comment-reply-markdown').getByRole('heading', { name: '更新后的方案' })).toBeVisible();
 });
 
+test('找到的回答中的长代码只在代码块内部滚动，不撑破批注卡片', async ({ page }) => {
+  await page.setViewportSize({ width: 560, height: 1000 });
+  await createIdeaComment(page);
+  await page.getByRole('button', { name: '回复', exact: true }).click();
+  await page.locator('.comment-reply-input').fill([
+    '行内 `cmd.Flags().GetString("node-with-a-very-long-name")` 仍需留在卡片内。',
+    '',
+    '```go',
+    'RunE: func(cmd *cobra.Command, args []string) error { return callMCPTool("search_documents_with_a_very_long_name", args) }',
+    '```'
+  ].join('\n'));
+
+  await page.reload();
+  await page.getByRole('button', { name: '批注', exact: true }).click();
+  const card = page.locator('.comment-card');
+  const reply = card.locator('.comment-reply-markdown');
+  await expect(reply.locator('pre')).toBeVisible();
+  expect(await card.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  expect(await reply.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  expect(await reply.locator('pre').evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
+});
+
 test('复制全部批注与复制全文+批注在按钮上原地反馈', async ({ page }) => {
   await createIdeaComment(page);
 

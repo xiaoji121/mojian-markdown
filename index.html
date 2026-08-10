@@ -334,10 +334,10 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
   <header class="app-header">
     <div class="header-brand">
       <span class="brand-dot" aria-hidden="true"></span>
-      <a class="brand-mark" href="#" title="返回首页" aria-label="返回首页">
+      <a class="brand-mark" href="https://yuxizhai.com/md-editor/" target="_blank" rel="noopener" title="在系统浏览器打开墨笺官网" aria-label="在系统浏览器打开墨笺官网">
         <img src="/favicon.svg" alt="">
       </a>
-      <a class="brand-title" href="#" title="返回首页" aria-label="返回首页">墨笺 Markdown</a>
+      <a class="brand-title" href="https://yuxizhai.com/md-editor/" target="_blank" rel="noopener" title="在系统浏览器打开墨笺官网" aria-label="在系统浏览器打开墨笺官网">墨笺 Markdown</a>
       <span class="file-meta">
         <span ref="{{ dirtyDotRef }}" class="dirty-dot"></span>
         <span ref="{{ fileNameRef }}" class="file-name">未命名.md</span>
@@ -384,7 +384,7 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
     <aside ref="{{ documentSidebarRef }}" class="document-sidebar" aria-label="最近阅读文档">
       <div ref="{{ documentSidebarResizeRef }}" class="document-sidebar-resize" title="拖动调整目录宽度" aria-hidden="true"></div>
       <div class="document-sidebar-header">
-        <span class="document-sidebar-title">最近阅读</span>
+        <span class="document-sidebar-title"><span class="document-sidebar-caret" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M2 4.25 6 8.25 10 4.25"></path></svg></span><span class="document-sidebar-title-label">最近阅读</span></span>
         <span class="document-sidebar-tools">
           <span ref="{{ documentCountRef }}" class="document-count">0</span>
           <button class="document-sidebar-close" onClick="{{ closeDocumentSidebar }}" aria-label="关闭最近阅读">&times;</button>

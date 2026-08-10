@@ -1,5 +1,20 @@
 import { test, expect, openEditor } from './fixtures';
 
+test('最近阅读标题的展开图标与文字垂直居中', async ({ page }) => {
+  await openEditor(page);
+  await page.evaluate(() => document.body.classList.add('agent-bridge-enabled'));
+  const caret = page.locator('.document-sidebar-caret');
+  const label = page.locator('.document-sidebar-title-label');
+  await expect(caret).toBeVisible();
+  const caretBox = await caret.boundingBox();
+  const labelBox = await label.boundingBox();
+  expect(caretBox).not.toBeNull();
+  expect(labelBox).not.toBeNull();
+  const caretCenter = caretBox!.y + caretBox!.height / 2;
+  const labelCenter = labelBox!.y + labelBox!.height / 2;
+  expect(Math.abs(caretCenter - labelCenter)).toBeLessThanOrEqual(1);
+});
+
 test('文件菜单的上传操作保持横排标题，并为不可用工具提供原因', async ({ page }) => {
   await openEditor(page);
   await page.locator('body').evaluate((body) => body.classList.add('agent-bridge-enabled'));

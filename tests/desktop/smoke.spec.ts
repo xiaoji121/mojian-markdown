@@ -128,9 +128,16 @@ test('文章链接交给系统浏览器打开，应用窗口不动', async () =>
     await page.locator('.md-source').fill('# 链接\n\n[外部链接](https://example.com/plain)\n');
     await page.locator('.md-preview a', { hasText: '外部链接' }).click();
 
+    // 左上角品牌入口同样交给系统浏览器，桌面应用自身保持在编辑器。
+    await page.locator('.brand-title').click();
+
     await expect.poll(() => app.evaluate(({ shell }) =>
       (shell as unknown as { _opened: string[] })._opened
-    ), { timeout: 10_000 }).toEqual(['https://example.com/blank', 'https://example.com/plain']);
+    ), { timeout: 10_000 }).toEqual([
+      'https://example.com/blank',
+      'https://example.com/plain',
+      'https://yuxizhai.com/md-editor/'
+    ]);
 
     // 窗口数量不变，编辑器仍在原地。
     expect(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1);
