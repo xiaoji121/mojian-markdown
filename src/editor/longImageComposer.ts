@@ -59,6 +59,137 @@ export interface LongImageTile {
   height: number;
 }
 
+export interface ProtectedImageRange {
+  top: number;
+  bottom: number;
+}
+
+/**
+ * 按固定手机屏高规划裁切点；切点落入图片、表格等保护区时，退到该区顶部，
+ * 让完整内容从下一页开始。单个元素本身高过整页时无法无损避开，只能正常切分。
+ */
+export function planSafeImagePages(
+  height: number,
+  pageHeight: number,
+  protectedRanges: ProtectedImageRange[] = []
+): LongImageTile[] {
+  const total = Math.max(1, height);
+  const size = Math.max(1, pageHeight);
+  const ranges = mergeProtectedRanges(protectedRanges, total);
+  const pages: LongImageTile[] = [];
+  let top = 0;
+  while (top < total) {
+    let bottom = Math.min(top + size, total);
+    const crossing = ranges.find((range) => range.top < bottom && range.bottom > bottom);
+    if (crossing && crossing.top > top + Math.min(120, size * 0.15)) bottom = crossing.top;
+    if (bottom <= top) bottom = Math.min(top + size, total);
+    pages.push({ top, height: bottom - top });
+    top = bottom;
+  }
+  return pages;
+}
+
+function mergeProtectedRanges(ranges: ProtectedImageRange[], total: number): ProtectedImageRange[] {
+  const sorted = ranges
+    .map((range) => ({ top: Math.max(0, range.top), bottom: Math.min(total, range.bottom) }))
+    .filter((range) => range.bottom > range.top)
+    .sort((a, b) => a.top - b.top);
+  const merged: ProtectedImageRange[] = [];
+  sorted.forEach((range) => {
+    const last = merged[merged.length - 1];
+    if (last && range.top <= last.bottom) last.bottom = Math.max(last.bottom, range.bottom);
+    else merged.push({ ...range });
+  });
+  return merged;
+}
+
+export interface ZipEntry {
+  name: string;
+  data: Blob | Uint8Array;
+}
+
+/** 无压缩 ZIP：PNG 本身已压缩，再 deflate 只会增加耗时；单包下载也不会触发多文件拦截。 */
+export async function buildStoredZip(files: ZipEntry[]): Promise<Blob> {
+  const encoder = new TextEncoder();
+  const entries = await Promise.all(files.map(async (file) => {
+    const bytes = file.data instanceof Uint8Array
+      ? file.data
+      : new Uint8Array(await file.data.arrayBuffer());
+    return { name: encoder.encode(file.name), bytes, crc: crc32(bytes), offset: 0 };
+  }));
+  const localParts: BlobPart[] = [];
+  let offset = 0;
+  entries.forEach((entry) => {
+    entry.offset = offset;
+    const header = zipLocalHeader(entry.name.length, entry.bytes.length, entry.crc);
+    localParts.push(toArrayBuffer(header), toArrayBuffer(entry.name), toArrayBuffer(entry.bytes));
+    offset += header.length + entry.name.length + entry.bytes.length;
+  });
+  const centralOffset = offset;
+  const centralParts: BlobPart[] = [];
+  entries.forEach((entry) => {
+    const header = zipCentralHeader(entry.name.length, entry.bytes.length, entry.crc, entry.offset);
+    centralParts.push(toArrayBuffer(header), toArrayBuffer(entry.name));
+    offset += header.length + entry.name.length;
+  });
+  const end = zipEndHeader(entries.length, offset - centralOffset, centralOffset);
+  return new Blob([...localParts, ...centralParts, toArrayBuffer(end)], { type: 'application/zip' });
+}
+
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
+}
+
+function zipLocalHeader(nameLength: number, size: number, crc: number): Uint8Array {
+  const bytes = new Uint8Array(30);
+  const view = new DataView(bytes.buffer);
+  view.setUint32(0, 0x04034b50, true);
+  view.setUint16(4, 20, true);
+  view.setUint16(6, 0x0800, true); // UTF-8 文件名
+  view.setUint32(14, crc, true);
+  view.setUint32(18, size, true);
+  view.setUint32(22, size, true);
+  view.setUint16(26, nameLength, true);
+  return bytes;
+}
+
+function zipCentralHeader(nameLength: number, size: number, crc: number, offset: number): Uint8Array {
+  const bytes = new Uint8Array(46);
+  const view = new DataView(bytes.buffer);
+  view.setUint32(0, 0x02014b50, true);
+  view.setUint16(4, 20, true);
+  view.setUint16(6, 20, true);
+  view.setUint16(8, 0x0800, true);
+  view.setUint32(16, crc, true);
+  view.setUint32(20, size, true);
+  view.setUint32(24, size, true);
+  view.setUint16(28, nameLength, true);
+  view.setUint32(42, offset, true);
+  return bytes;
+}
+
+function zipEndHeader(count: number, size: number, offset: number): Uint8Array {
+  const bytes = new Uint8Array(22);
+  const view = new DataView(bytes.buffer);
+  view.setUint32(0, 0x06054b50, true);
+  view.setUint16(8, count, true);
+  view.setUint16(10, count, true);
+  view.setUint32(12, size, true);
+  view.setUint32(16, offset, true);
+  return bytes;
+}
+
+function crc32(bytes: Uint8Array): number {
+  let crc = 0xffffffff;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit += 1) crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
 export function planLongImageTiles(
   height: number,
   scale: number,

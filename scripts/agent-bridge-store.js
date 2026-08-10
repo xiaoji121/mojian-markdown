@@ -25,7 +25,12 @@ function normalizeDocument(input, existing = null) {
     createdAt: existing?.createdAt || now,
     updatedAt: now,
     annotations: existing?.annotations || [],
-    messages: existing?.messages || []
+    messages: existing?.messages || [],
+    // 前端每次编辑防抖后都会重新 upsert，这两项必须携带过去，否则被悄悄抹掉：
+    // agentSessions —— Agent 模式按引擎记的会话 id（续接的唯一依据）；
+    // publications —— 发布到飞书/钉钉的回链记录。
+    agentSessions: existing?.agentSessions || undefined,
+    publications: existing?.publications || undefined
   };
 }
 

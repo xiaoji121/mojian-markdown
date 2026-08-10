@@ -63,12 +63,24 @@ test('想法批注可贴入自己找到的回答，刷新后仍保留', async ({
   const replyInput = page.locator('.comment-reply-input');
   await expect(replyInput).toBeVisible();
   await expect(replyInput).toBeFocused();
-  await replyInput.fill('这是我从别处找到的答案');
+  await replyInput.fill('## 三个方案\n\n**关键：** 逐年拨款。\n\n| 方案 | 结果 |\n| --- | --- |\n| 每年拨款 | 更稳健 |');
 
   await page.reload();
   await expect(page.locator('.md-source')).toBeVisible();
   await page.getByRole('button', { name: '批注', exact: true }).click();
-  await expect(page.locator('.comment-reply-input')).toHaveValue('这是我从别处找到的答案');
+  const answer = page.locator('.comment-reply-markdown');
+  await expect(answer.getByRole('heading', { name: '三个方案' })).toBeVisible();
+  await expect(answer.locator('strong')).toHaveText('关键：');
+  await expect(answer.locator('table')).toContainText('更稳健');
+  await expect(page.locator('.comment-reply-input')).toHaveCount(0);
+
+  await page.getByRole('button', { name: '编辑找到的回答' }).click();
+  const editingReply = page.locator('.comment-reply-input');
+  await expect(editingReply).toHaveValue(/## 三个方案/);
+  await editingReply.fill('## 更新后的方案\n\n编辑完成后回到预览。');
+  await page.getByRole('button', { name: '完成编辑找到的回答' }).click();
+  await expect(page.locator('.comment-reply-input')).toHaveCount(0);
+  await expect(page.locator('.comment-reply-markdown').getByRole('heading', { name: '更新后的方案' })).toBeVisible();
 });
 
 test('复制全部批注与复制全文+批注在按钮上原地反馈', async ({ page }) => {

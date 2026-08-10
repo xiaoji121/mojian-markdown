@@ -194,6 +194,42 @@ test('桌面端把预览中的相对路径图片替换为 data URL，绝对与 d
   }
 });
 
+test('桌面端把失效的 localhost 图片地址按当前文档目录重新解析', async () => {
+  const calls: string[] = [];
+  (globalThis as { window?: unknown }).window = {
+    mojianDesktop: {
+      readAsset: async (_doc: string, src: string) => {
+        calls.push(src);
+        return { dataUrl: 'data:image/jpeg;base64,LOCAL' };
+      }
+    }
+  };
+  try {
+    const local = {
+      src: 'http://localhost:4173/assets/brain-os/judgment-loop.jpg',
+      getAttribute: () => 'http://localhost:4173/assets/brain-os/judgment-loop.jpg'
+    };
+    const remote = {
+      src: 'https://cdn.example.com/diagram.jpg',
+      getAttribute: () => 'https://cdn.example.com/diagram.jpg'
+    };
+    const context = {
+      localFilePath: '/Users/me/project/note.md',
+      _localImageCache: new Map<string, string>(),
+      _hydrateLocalImages: ViewMethods.prototype._hydrateLocalImages
+    };
+
+    context._hydrateLocalImages({ querySelectorAll: () => [local, remote] });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    assert.deepEqual(calls, ['assets/brain-os/judgment-loop.jpg']);
+    assert.equal(local.src, 'data:image/jpeg;base64,LOCAL');
+    assert.equal(remote.src, 'https://cdn.example.com/diagram.jpg');
+  } finally {
+    delete (globalThis as { window?: unknown }).window;
+  }
+});
+
 test('网页版或未关联本地文件时不改写图片', () => {
   const img = { src: './a.png', getAttribute: () => './a.png' };
   const context = {

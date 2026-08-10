@@ -134,3 +134,20 @@ test('存在多份历史同名副本时，优先复用带问答记录的那份',
     assert.equal(doc.messages.length, 1);
   });
 });
+
+// 前端每次编辑防抖后都会 upsert 同一篇文档；Agent 会话 id 与发布记录
+// 若不在归一化时携带过去，会被下一次同步悄悄抹掉。
+test('upsertDocument 保留已有的 Agent 会话 id 与发布记录', async () => {
+  await withStore(async (store) => {
+    const created = await store.upsertDocument({ fileName: 'note.md', content: '# hi' });
+    created.agentSessions = { claude: 'session-1' };
+    created.publications = [{ target: 'feishu', url: 'https://x/1', at: '2026-08-06T00:00:00.000Z' }];
+    await store.writeDocument(created);
+
+    const again = await store.upsertDocument({ fileName: 'note.md', content: '# hi 改了一个字' });
+
+    assert.deepEqual(again.agentSessions, { claude: 'session-1' });
+    assert.equal(again.publications.length, 1);
+    assert.equal(again.publications[0].url, 'https://x/1');
+  });
+});

@@ -186,6 +186,39 @@ test('最近文档下渲染「摘录回答」子节点，点击打开对应回�
   }
 });
 
+test('追问节点提供「从阅读树移除」操作', () => {
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'document');
+  Object.defineProperty(globalThis, 'document', {
+    value: { createElement: () => createStubElement() },
+    configurable: true
+  });
+  try {
+    const editor = Object.create(BridgeMethods.prototype);
+    const hidden: Array<[string, string]> = [];
+    Object.assign(editor, {
+      bridgeDocumentId: null,
+      activeAnswerRequestId: null,
+      openAnswerDocument() {},
+      hideAnswerFromTree(doc: { documentId: string }, answer: { requestId: string }) {
+        hidden.push([doc.documentId, answer.requestId]);
+      }
+    });
+    const node = editor._answerNode(
+      { documentId: 'doc-1' },
+      { requestId: 'q1', question: '临时问题', engine: 'codex', updatedAt: '2026-08-07T01:00:00.000Z' },
+      true
+    );
+
+    const remove = findByClass(node, 'recent-answer-hide');
+    assert.ok(remove, '问答节点应有隐藏操作');
+    remove!.dispatch!('click', { stopPropagation() {} });
+    assert.deepEqual(hidden, [['doc-1', 'q1']]);
+  } finally {
+    if (previous) Object.defineProperty(globalThis, 'document', previous);
+    else delete (globalThis as Record<string, unknown>).document;
+  }
+});
+
 function findAllByClass(
   el: { className?: string; children?: unknown[] },
   cls: string,
@@ -366,7 +399,8 @@ test('_commentsFromBridge 透传批注上的回复内容与视图标记', () => 
 
   const comments = editor._commentsFromBridge(
     [
-      { id: 'a1', type: 'idea', quote: '原文', note: '想法', reply: '贴进来的答案', replyAt: 1753600000000 },
+      { id: 'a1', type: 'idea', quote: '原文', note: '想法', reply: '贴进来的答案', replyAt: 1753600000000,
+        hiddenFromReadingTree: true },
       { id: 'a2', type: 'marker', quote: '答案里的划线', answerRequestId: 'r-1' }
     ],
     [],
@@ -375,6 +409,7 @@ test('_commentsFromBridge 透传批注上的回复内容与视图标记', () => 
 
   assert.equal(comments[0].reply, '贴进来的答案');
   assert.equal(comments[0].replyAt, 1753600000000);
+  assert.equal(comments[0].hiddenFromReadingTree, true);
   assert.equal(comments[0].answerRequestId, undefined);
   assert.equal(comments[1].answerRequestId, 'r-1');
 });
@@ -673,4 +708,37 @@ test('Bridge 未启用或文件未命名时不发起认领请求', async () => {
   } finally {
     globalThis.fetch = previous;
   }
+});
+
+test('点击底部路径复制完整路径并短暂标记已复制', () => {
+  const el = createStubElement();
+  const copied: Array<[string, string]> = [];
+  const editor = Object.create(BridgeMethods.prototype);
+  Object.assign(editor, {
+    footerPathRef: { current: el },
+    localFilePath: null,
+    _copy(text: string, msg: string) { copied.push([text, msg]); }
+  });
+  el.textContent = '/Users/me/writing/drafts/note.md';
+
+  editor.copyFooterPath();
+
+  assert.deepEqual(copied, [['/Users/me/writing/drafts/note.md', '已复制完整路径']]);
+  assert.ok(el.classList.contains('is-copied'), '复制后短暂标记 is-copied');
+});
+
+test('无路径时点击底部路径不触发复制', () => {
+  const el = createStubElement();
+  let called = 0;
+  const editor = Object.create(BridgeMethods.prototype);
+  Object.assign(editor, {
+    footerPathRef: { current: el },
+    localFilePath: null,
+    _copy() { called += 1; }
+  });
+  el.textContent = '';
+
+  editor.copyFooterPath();
+
+  assert.equal(called, 0, '空路径不复制');
 });

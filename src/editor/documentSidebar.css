@@ -81,8 +81,8 @@
   }
   .recent-list-more:hover { background: var(--bg-2); color: var(--accent); }
   .recent-document-group { margin-bottom: 2px; position: relative; }
-  /* 悬停操作区：右侧一排按钮，渐隐背景把文件名裁在按钮之前，避免糊在一起。
-     容器本身不拦截指针（让文件名可点开），各按钮自行恢复 pointer-events。 */
+  /* 悬停操作区：右侧一排不透明按钮浮在标题尾部；标题平时使用完整行宽，
+     悬停时由浮层干净遮住尾字。容器不拦截指针，各按钮自行恢复。 */
   .recent-document-actions {
     position: absolute;
     top: 0;
@@ -91,15 +91,17 @@
     display: none;
     align-items: center;
     gap: 2px;
-    padding: 0 6px 0 28px;
-    background: linear-gradient(90deg, transparent, var(--bg-2) 34%);
+    padding: 0 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-2);
     border-radius: var(--radius-control);
+    box-shadow: -8px 0 12px color-mix(in srgb, var(--bg) 72%, transparent);
     pointer-events: none;
   }
   .recent-document-group:hover .recent-document-actions { display: flex; }
   /* 当前项底色不同，遮罩尾色跟随，避免色块接缝 */
   .recent-document-group:has(.is-active) .recent-document-actions {
-    background: linear-gradient(90deg, transparent, var(--accent-soft) 34%);
+    background: color-mix(in srgb, var(--accent-soft) 86%, var(--bg-2));
   }
   .recent-document-actions button {
     flex: none;
@@ -109,10 +111,10 @@
     align-items: center;
     justify-content: center;
     padding: 0;
-    border: 0;
+    border: 1px solid var(--border-soft);
     border-radius: var(--radius-control);
-    background: transparent;
-    color: var(--text-4);
+    background: var(--bg);
+    color: var(--text-3);
     cursor: pointer;
     pointer-events: auto;
   }
@@ -127,7 +129,7 @@
     display: flex;
     align-items: center;
     gap: 9px;
-    padding: 9px 9px;
+    padding: 9px;
     border: 1px solid transparent;
     border-radius: var(--radius-control);
     background: transparent;
@@ -179,12 +181,13 @@
     padding-left: 8px;
     border-left: 1px solid var(--border-faint);
   }
+  .recent-answer-row { position: relative; }
   .recent-answer-item {
     width: 100%;
     display: flex;
     align-items: flex-start;
     gap: 5px;
-    padding: 7px 8px 7px 0;
+    padding: 7px 32px 7px 0;
     border: 0;
     border-radius: var(--radius-control);
     background: transparent;
@@ -194,6 +197,28 @@
   }
   .recent-answer-item:hover { background: var(--bg-2); color: var(--text-2); }
   .recent-answer-item.is-active { background: var(--accent-soft); color: var(--text); }
+  .recent-answer-hide {
+    position: absolute;
+    top: 6px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-control);
+    background: var(--bg-1);
+    color: var(--text-4);
+    font: var(--fs-md)/1 var(--sans);
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .recent-answer-row:hover .recent-answer-hide,
+  .recent-answer-row:focus-within .recent-answer-hide { opacity: 1; pointer-events: auto; }
+  .recent-answer-hide:hover { background: var(--bg-3); color: var(--accent); }
+  @media (hover: none) {
+    .recent-answer-hide { opacity: 1; pointer-events: auto; }
+  }
   .recent-answer-branch { flex: none; color: var(--border); font: var(--fs-xs)/1.4 var(--mono); }
   .recent-answer-body { min-width: 0; display: flex; flex: 1; flex-direction: column; gap: 4px; }
   .recent-answer-body strong {

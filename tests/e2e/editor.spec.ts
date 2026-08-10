@@ -39,6 +39,33 @@ test('输入 Markdown 后预览实时渲染', async ({ page }) => {
   await expect(preview.locator('li')).toHaveCount(2);
 });
 
+test('首次使用时 AI 渠道默认选择 Codex', async ({ page }) => {
+  await expect(page.locator('.ai-engine-chip')).toHaveText('Codex');
+});
+
+test('Mermaid 长节点换行后仍完整展示内容', async ({ page }) => {
+  const label = '关于定投如果未来失业没有固定收入时应该如何调整投入节奏';
+  await setSource(page, '```mermaid\nflowchart TD\n  q0(["关于定投如果未来失业没有固定收入<br/>时应该如何调整投入节奏 · 摘录"])\n```');
+
+  const node = page.locator('.mermaid-rendered .node').first();
+  await expect(node).toBeVisible();
+  await expect(node).toContainText(label + ' · 摘录');
+  await expect(node).not.toContainText('…');
+});
+
+test('Mermaid 流程图可以独立全屏查看并按 Escape 退出', async ({ page }) => {
+  await setSource(page, '```mermaid\nflowchart LR\n  A[开始] --> B[查看细节]\n```');
+
+  const diagram = page.locator('.mermaid-rendered');
+  await expect(diagram.getByRole('button', { name: '全屏查看流程图' })).toBeVisible();
+  await diagram.getByRole('button', { name: '全屏查看流程图' }).click();
+  await expect(diagram).toHaveClass(/is-fullscreen/);
+  await expect(diagram.getByRole('button', { name: '退出流程图全屏' })).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(diagram).not.toHaveClass(/is-fullscreen/);
+});
+
 test('字数统计跟随内容更新', async ({ page }) => {
   await setSource(page, '一二三\n四五');
 
@@ -74,6 +101,61 @@ test('视图切换在编辑、分屏、预览三种布局间生效', async ({ pa
   await expect(main).not.toHaveClass(/editor-mode-active|preview-mode-active/);
   await expect(source).toBeVisible();
   await expect(preview).toBeVisible();
+});
+
+test('分屏分隔条拖拽顺畅且热区不遮挡相邻滚动条', async ({ page }) => {
+  const divider = page.locator('.editor-divider');
+  const hitArea = page.locator('.editor-divider-hit');
+  const sourcePane = page.locator('.source-pane');
+  const dividerBox = await divider.boundingBox();
+  const hitBox = await hitArea.boundingBox();
+  const before = await sourcePane.boundingBox();
+
+  expect(dividerBox).not.toBeNull();
+  expect(hitBox).not.toBeNull();
+  expect(before).not.toBeNull();
+  // 热区只略宽于视觉线，不能再覆盖两侧滚动条。
+  expect(hitBox!.width).toBeLessThanOrEqual(9);
+
+  // 从视觉细线右侧 3px 处开始仍可轻松拖动。
+  const startX = dividerBox!.x + dividerBox!.width / 2 + 3;
+  const startY = dividerBox!.y + dividerBox!.height / 2;
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + 80, startY);
+  await page.mouse.up();
+
+  const after = await sourcePane.boundingBox();
+  expect(after).not.toBeNull();
+  expect(after!.width).toBeGreaterThan(before!.width + 50);
+
+  // 拖动留下的分屏比例不能限制单栏模式；切到预览后应重新占满主体。
+  await page.locator('.view-mode-option[data-mode="preview"]').click();
+  const [mainBox, previewBox] = await Promise.all([
+    page.locator('.editor-main').boundingBox(),
+    page.locator('.preview-pane').boundingBox()
+  ]);
+  expect(mainBox).not.toBeNull();
+  expect(previewBox).not.toBeNull();
+  expect(previewBox!.width).toBeGreaterThanOrEqual(mainBox!.width - 1);
+});
+
+test('分屏线采用整高反馈且滚动条滑块适度加粗', async ({ page }) => {
+  const styles = await page.evaluate(() => {
+    const divider = document.querySelector('.editor-divider')!;
+    const hit = document.querySelector('.editor-divider-hit')!;
+    const thumb = getComputedStyle(document.documentElement, '::-webkit-scrollbar-thumb');
+    return {
+      dividerTransition: getComputedStyle(divider).transitionProperty,
+      shortIndicator: getComputedStyle(hit, '::after').content,
+      thumbBorder: thumb.borderTopWidth
+    };
+  });
+
+  expect(styles.dividerTransition).toContain('background');
+  expect(styles.shortIndicator).toBe('none');
+  expect(styles.thumbBorder).toBe('3px');
+  await expect(page.locator('html')).toHaveCSS('--scrollbar-size', '12px');
 });
 
 test('窄屏分屏模式下预览工具栏按钮不挤压换行', async ({ page }) => {

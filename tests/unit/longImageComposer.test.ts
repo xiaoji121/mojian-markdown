@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   CANVAS_LIMITS,
+  buildStoredZip,
   LONG_IMAGE_PRESETS,
   TILE_DEVICE_HEIGHT,
   collectCssVariableNames,
@@ -12,6 +13,7 @@ import {
   longImageFileName,
   longImageWidth,
   pickLongImageScale,
+  planSafeImagePages,
   planLongImageTiles
 } from '../../src/editor/longImageComposer.ts';
 
@@ -139,4 +141,45 @@ test('变量落定成字面值，取不到值的变量不写进长图', () => {
 
   assert.equal(block, '.longimg-poster{--paper-bg:#1c1a17;}');
   assert.equal(cssVariableBlock('.longimg-poster', [], () => ''), '');
+});
+
+test('手机分页在目标切点遇到表格时把整张表移到下一页', () => {
+  const pages = planSafeImagePages(3000, 1280, [{ top: 1100, bottom: 1600 }]);
+
+  assert.deepEqual(pages, [
+    { top: 0, height: 1100 },
+    { top: 1100, height: 1280 },
+    { top: 2380, height: 620 }
+  ]);
+});
+
+test('手机分页合并重叠保护区，避免图片和标题组合被切开', () => {
+  const pages = planSafeImagePages(2400, 1280, [
+    { top: 1000, bottom: 1180 },
+    { top: 1150, bottom: 1500 }
+  ]);
+
+  assert.equal(pages[0].height, 1000);
+  assert.equal(pages[1].top, 1000);
+});
+
+test('手机分页切点穿过文字行时退到整行上方', () => {
+  const pages = planSafeImagePages(2600, 1280, [{ top: 1268, bottom: 1296 }]);
+
+  assert.equal(pages[0].height, 1268);
+  assert.equal(pages[1].top, 1268);
+});
+
+test('多张分页图片打包成包含全部编号文件的 ZIP', async () => {
+  const zip = await buildStoredZip([
+    { name: '文章-01.png', data: new Blob([new Uint8Array([1, 2, 3])]) },
+    { name: '文章-02.png', data: new Blob([new Uint8Array([4, 5])]) }
+  ]);
+  const bytes = new Uint8Array(await zip.arrayBuffer());
+  const text = new TextDecoder().decode(bytes);
+
+  assert.equal(new DataView(bytes.buffer).getUint32(0, true), 0x04034b50, '以 ZIP 本地文件头开场');
+  assert.match(text, /文章-01\.png/);
+  assert.match(text, /文章-02\.png/);
+  assert.equal(new DataView(bytes.buffer).getUint32(bytes.length - 22, true), 0x06054b50, '以 ZIP 目录结束');
 });

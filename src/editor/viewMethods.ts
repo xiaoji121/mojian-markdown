@@ -1,5 +1,19 @@
 // @ts-nocheck
 
+function localImageSource(src) {
+  if (!src || /^(data:|blob:|file:)/i.test(src)) return '';
+  if (!/^https?:/i.test(src)) return src;
+  try {
+    const url = new URL(src);
+    const localHost = url.hostname === 'localhost'
+      || url.hostname === '127.0.0.1'
+      || url.hostname === '::1';
+    return localHost ? decodeURIComponent(url.pathname).replace(/^\/+/, '') : '';
+  } catch {
+    return '';
+  }
+}
+
 export class ViewMethods {
   _syncViewMode() {
     const split = this.splitRef.current;
@@ -257,11 +271,12 @@ export class ViewMethods {
     const docPath = this.localFilePath;
     root.querySelectorAll('img[src]').forEach((img) => {
       const src = img.getAttribute('src') || '';
-      if (!src || /^(https?:|data:|blob:|file:)/i.test(src)) return;
+      const localSrc = localImageSource(src);
+      if (!localSrc) return;
       const key = docPath + '::' + src;
       const cached = this._localImageCache.get(key);
       if (cached) { img.src = cached; return; }
-      desktop.readAsset(docPath, src).then((asset) => {
+      desktop.readAsset(docPath, localSrc).then((asset) => {
         if (asset && asset.dataUrl) {
           this._localImageCache.set(key, asset.dataUrl);
           img.src = asset.dataUrl;

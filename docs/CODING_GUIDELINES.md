@@ -9,11 +9,13 @@ This project keeps editor behavior grouped by feature. New code should go into t
 - `src/editor/bridgeMethods.ts`: Reading Workspace / Agent Bridge document list and persistence sync.
 - `src/editor/navigationMethods.ts`: source-preview anchoring, scrolling, and highlight flash behavior.
 - `src/editor/commentMethods.ts`: selection toolbar, annotations, comment panel rendering, and copy helpers.
-- `src/editor/aiMethods.ts`: AI panel, AI history, chat streaming, and AI message rendering.
+- `src/editor/aiMethods.ts`: AI panel, AI history, chat streaming, AI message rendering, and per-request project-tool confirmation.
+- `src/editor/connectorMethods.ts`: publishing the current document to Feishu / DingTalk through the bridge (`/api/publish`) and reporting the returned link.
 - `src/editor/longImageMethods.ts`: the "save as long image" modal, poster composition, and SVG/canvas rasterization. `src/editor/longImageComposer.ts`: its pure logic (width presets, scale/tile planning, CSS extraction) — keep new logic testable there rather than in the DOM-facing module.
 - `src/editor/editingFileLayoutMethods.ts`: Markdown formatting commands, local file operations, and resizable layout handles.
 - `src/editor/localFileSyncMethods.ts`: bidirectional sync with the opened local file (write-through autosave, external-change watcher, conflict handling). `src/editor/fileHandleStore.ts`: IndexedDB persistence of file/folder handles (folder handles power the "文件夹名/相对路径" display).
-- `src/editor/styles.css`: editor UI CSS. `src/landing.css`: landing-page CSS.
+- `src/editor/styles.css`: editor UI CSS. `src/landing.css`: landing-page CSS. `src/editor/shell.css`: editor shell layout; `src/editor/aiPanel.css`: AI panel only (split out of `shell.css` when it neared the 800-line cap — must load after it).
+- `scripts/agent-bridge.js`: bridge routing and SSE only. Feature logic lives beside it: `agent-bridge-agent.js` (Agent mode: project context, prompt, session resume/recovery), `agent-bridge-connectors.js` (Feishu/DingTalk CLI publishing), `agent-bridge-project.js` (`localPath` → project root), `agent-bridge-engines.js` (CLI/API engine invocation), `agent-bridge-store.js`, `agent-bridge-settings.js`.
 
 ## Rules For New Work
 

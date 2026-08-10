@@ -18,6 +18,7 @@ export class ReadingMapMethods {
       this.activeAnswerRequestId = null;
       const nodes = this._readingMapNodes(doc);
       this._readingMapIndex = this._readingMapBuildIndex(nodes);
+      this._readingMapTitles = this._readingMapBuildTitles(doc, nodes);
       this._readingMapParents = this._readingMapParentIndex(nodes);
       if (typeof this._resetReadingPathForDocument === 'function') {
         this._resetReadingPathForDocument(doc.documentId);
@@ -45,7 +46,8 @@ export class ReadingMapMethods {
       requestId: item.requestId,
       question: item.question || '未命名问题',
       kind: item.engine === 'codex' ? 'Codex' : 'AI',
-      parentRequestId: item.parentRequestId
+      parentRequestId: item.parentRequestId,
+      hiddenFromReadingTree: item.hiddenFromReadingTree === true
     }));
     annotations
       .filter((item) => item.type !== 'ai' && item.reply && String(item.reply).trim())
@@ -53,16 +55,35 @@ export class ReadingMapMethods {
         requestId: item.id,
         question: item.note || item.question || item.quote || '未命名想法',
         kind: '摘录',
-        parentRequestId: item.answerRequestId
+        parentRequestId: item.answerRequestId,
+        hiddenFromReadingTree: item.hiddenFromReadingTree === true
       }));
-    return nodes;
+    const hidden = new Set(nodes.filter((node) => node.hiddenFromReadingTree).map((node) => node.requestId));
+    let changed = true;
+    while (changed) {
+      changed = false;
+      nodes.forEach((node) => {
+        if (node.parentRequestId && hidden.has(node.parentRequestId) && !hidden.has(node.requestId)) {
+          hidden.add(node.requestId);
+          changed = true;
+        }
+      });
+    }
+    return nodes.filter((node) => !hidden.has(node.requestId));
   }
 
 
-  // mermaid 节点标签：剔除会破坏语法的字符并截断，图里只求认得出，全文看子文档。
+  // mermaid 节点标签：剔除会破坏语法的字符，最多展示两行。
+  // 完整内容仍可通过点击节点打开，图中只保留足够辨认的摘要。
   _mermaidLabel(text) {
     const cleaned = String(text || '').replace(/\s+/g, ' ').replace(/["'`[\]{}()<>|#;]/g, '').trim();
-    return cleaned.length > 18 ? cleaned.slice(0, 18) + '…' : (cleaned || '未命名问题');
+    const characters = Array.from(cleaned || '未命名问题');
+    const visible = characters.length > 36 ? [...characters.slice(0, 35), '…'] : characters;
+    const lines = [];
+    for (let index = 0; index < visible.length; index += 18) {
+      lines.push(visible.slice(index, index + 18).join(''));
+    }
+    return lines.join('<br/>');
   }
 
 
@@ -71,6 +92,24 @@ export class ReadingMapMethods {
     const index = { doc0: '' };
     nodes.forEach((node, i) => { index['q' + i] = node.requestId; });
     return index;
+  }
+
+
+  // 节点 id → 未截断标题，供 SVG 节点使用原生 title 悬停展示。
+  _readingMapBuildTitles(doc, nodes) {
+    const titles = { doc0: String(doc.fileName || doc.title || '未命名文档') };
+    nodes.forEach((node, i) => { titles['q' + i] = String(node.question || '未命名问题'); });
+    return titles;
+  }
+
+
+  _applyReadingMapTitles(host) {
+    if (!host || !host.querySelectorAll || !this._readingMapTitles) return;
+    host.querySelectorAll('.node').forEach((node) => {
+      const match = /(?:^|-)(doc0|q\d+)(?:-|$)/.exec(node.id || '');
+      const title = match && this._readingMapTitles[match[1]];
+      if (title && node.setAttribute) node.setAttribute('title', title);
+    });
   }
 
 

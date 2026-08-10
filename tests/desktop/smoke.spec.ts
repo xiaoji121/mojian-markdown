@@ -12,6 +12,7 @@ test('桌面端启动并与本地文件双向同步', async () => {
   const userData = await mkdtemp(join(tmpdir(), 'mojian-user-'));
   const docDir = await mkdtemp(join(tmpdir(), 'mojian-doc-'));
   const docPath = join(docDir, 'note.md');
+  const absolutePathDoc = join(docDir, '路径打开.md');
   // 文档引用同目录相对路径图片，验证预览能把它换成 data URL 展示。
   const pngBytes = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
@@ -19,6 +20,7 @@ test('桌面端启动并与本地文件双向同步', async () => {
   );
   await writeFile(join(docDir, 'pic.png'), pngBytes);
   await writeFile(docPath, '# 桌面冒烟\n\n初始内容\n\n![流程图](./pic.png)\n');
+  await writeFile(absolutePathDoc, '# 绝对路径打开\n\n通过文件菜单读取\n');
   // 预置授权清单，模拟「此前会话里用户已通过对话框打开过该文件」。
   await writeFile(join(userData, 'granted-paths.json'), JSON.stringify([docPath]));
 
@@ -47,6 +49,17 @@ test('桌面端启动并与本地文件双向同步', async () => {
       headerMore: getComputedStyle(document.querySelector('.header-more')!).display
     }));
     expect(hiddenStates).toEqual({ folderItem: 'none', headerMore: 'none' });
+
+    // 新入口：用户输入绝对路径，主进程校验、授权并读取文件。
+    const pathPreview = await page.evaluate((filePath) =>
+      (window as any).mojianDesktop.openMarkdownPath(filePath), absolutePathDoc);
+    expect(pathPreview).toMatchObject({ path: absolutePathDoc, name: '路径打开.md' });
+    await page.getByRole('button', { name: '文件菜单' }).click();
+    await page.getByRole('menuitem', { name: '输入绝对路径打开…' }).click();
+    await page.locator('.file-path-input').fill(absolutePathDoc);
+    await page.getByRole('button', { name: '打开该路径' }).click();
+    await expect(page.locator('.md-source')).toHaveValue(/通过文件菜单读取/, { timeout: 10_000 });
+    await expect(page.locator('.file-name')).toHaveText('路径打开.md');
 
     // 主进程推送「外部打开」事件（等价于双击 .md / 打开方式）。
     const stat = await readFile(docPath, 'utf8');

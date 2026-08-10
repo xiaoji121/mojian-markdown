@@ -4,8 +4,10 @@
 import { SAMPLE_MARKDOWN } from './sample';
 import { EDITOR_STORAGE_KEY, loadEditorState } from './storage';
 import { AIMethods } from './aiMethods';
+import { AIReadingTreeMethods } from './aiReadingTreeMethods';
 import { BridgeMethods } from './bridgeMethods';
 import { CommentMethods } from './commentMethods';
+import { ConnectorMethods } from './connectorMethods';
 import { DiagramMethods } from './diagramMethods';
 import { EditingFileLayoutMethods } from './editingFileLayoutMethods';
 import { ENABLE_AGENT_BRIDGE } from './featureFlags';
@@ -45,6 +47,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.fileMenuButtonRef = React.createRef();
     this.dirtyDotRef = React.createRef();
     this.saveStatusRef = React.createRef();
+    this.publishToastRef = React.createRef();
     this.countRef = React.createRef();
     this.fontSizeRef = React.createRef();
     this.fullscreenFontSizeRef = React.createRef();
@@ -122,7 +125,10 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._mermaidBatch = 0;
     this.aiMessages = [];
     this.aiConversations = [];
-    this.aiEngine = 'claude';
+    this.aiEngine = 'codex';
+    this.agentProjectRoot = ''; // Agent 模式下服务端回报的工作目录，仅用于界面提示
+    this.publishBusy = false;
+    this.lastPublication = null;
     this.aiHistoryOpen = false;
     this.aiQuote = '';
     this.aiPanelOpen = false;
@@ -137,6 +143,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.immersiveWide = false;
     this.longImageWidth = DEFAULT_LONG_IMAGE_PRESET;
     this.longImageMarks = true;
+    this.longImageAutoCrop = false;
     this._themeTouched = false;
     this.panelOpen = false;
     this.previewFullscreen = false;
@@ -201,7 +208,9 @@ export function createMarkdownEditorComponent(DCLogic, React) {
         this.activeDocumentId = saved.bridgeDocumentId;
       }
       if (saved.savedAt) this._draftSavedAt = saved.savedAt;
-      if (saved.aiEngine === 'codex' || saved.aiEngine === 'gemini') this.aiEngine = saved.aiEngine;
+      if (saved.aiEngine === 'claude' || saved.aiEngine === 'codex' || saved.aiEngine === 'gemini') {
+        this.aiEngine = saved.aiEngine;
+      }
       if (saved.theme) { this.theme = saved.theme; this._themeTouched = true; }
       if (saved.paperDark) this.paperDark = saved.paperDark;
       if (saved.paperLight) this.paperLight = saved.paperLight;
@@ -246,7 +255,10 @@ export function createMarkdownEditorComponent(DCLogic, React) {
         if (e.shiftKey) this.onSaveAs();
         else this.onSave();
       }
-      if (e.key === 'Escape' && this.previewFullscreen) {
+      if (e.key === 'Escape' && this._fullscreenMermaidHost) {
+        e.preventDefault();
+        this.closeMermaidFullscreen();
+      } else if (e.key === 'Escape' && this.previewFullscreen) {
         e.preventDefault();
         this.togglePreviewFullscreen(false);
       } else if (e.key === 'Escape' && this.outlineOpen) {
@@ -299,7 +311,10 @@ export function createMarkdownEditorComponent(DCLogic, React) {
   componentWillUnmount() {
     if (this._keyHandler) window.removeEventListener('keydown', this._keyHandler);
     if (this._resizeHandler) window.removeEventListener('resize', this._resizeHandler);
+    if (this._desktopClipboardFocus) window.removeEventListener('focus', this._desktopClipboardFocus);
+    this.closeMermaidFullscreen();
     if (this._outlineJumpT) clearTimeout(this._outlineJumpT);
+    if (this._publishToastT) clearTimeout(this._publishToastT);
     this._disposeReadingPathHelp();
     this._stopLocalFileWatcher();
     document.body.style.overflow = '';
@@ -326,6 +341,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       fileMenuButtonRef: this.fileMenuButtonRef,
       dirtyDotRef: this.dirtyDotRef,
       saveStatusRef: this.saveStatusRef,
+      publishToastRef: this.publishToastRef,
       countRef: this.countRef,
       fontSizeRef: this.fontSizeRef,
       fullscreenFontSizeRef: this.fullscreenFontSizeRef,
@@ -368,6 +384,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       documentListRef: this.documentListRef,
       documentCountRef: this.documentCountRef,
       footerPathRef: this.footerPathRef,
+      copyFooterPath: () => this.copyFooterPath(),
       ...this._readingPathRenderVals(),
       showEditorMode: () => this.setViewMode('editor'),
       showSplitMode: () => this.setViewMode('split'),
@@ -384,11 +401,13 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       toggleFileMenu: () => this.toggleFileMenu(),
       menuFileNew: () => { this.toggleFileMenu(false); this.onNew(); },
       menuFileOpen: () => { this.toggleFileMenu(false); this.onOpen(); },
+      menuOpenAbsolutePath: () => { this.toggleFileMenu(false); this.onOpenAbsolutePath(); },
       menuFileSave: () => { this.toggleFileMenu(false); this.onSave(); },
       menuFileSaveAs: () => { this.toggleFileMenu(false); this.onSaveAs(); },
       menuFolder: () => { this.toggleHeaderMenu(false); this.associateLocalFolder(); },
+      openLastPublication: () => this.openLastPublication(),
       toggleOutline: () => this.toggleOutline(),
-      openLongImage: () => this.openLongImage(),
+      openLongImage: () => this.openLongImage(), openSelectionImage: () => this.openSelectionImage(),
       toggleSearch: () => this.toggleSearch(),
       closeSearch: () => this.closeSearch(),
       searchPrev: () => this.searchPrev(),
@@ -410,6 +429,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       toggleAIHistory: () => this.toggleAIHistory(),
       sendAIQuestion: () => this.sendAIQuestion(),
       openAISettings: () => this.openAISettings(),
+      menuPublishFeishu: () => { this.toggleFileMenu(false); this.publishToFeishu(); },
+      menuPublishDingtalk: () => { this.toggleFileMenu(false); this.publishToDingtalk(); },
       menuSettings: () => { this.toggleHeaderMenu(false); this.openAISettings(); },
       translateSel: () => this.translateSel(),
       askExplain: () => this.askAIQuick('请用更容易理解的语言解释这段话。'),
@@ -453,7 +474,9 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     DiagramMethods,
     LongImageMethods,
     AIMethods,
+    AIReadingTreeMethods,
     AISettingsMethods,
+    ConnectorMethods,
     TranslateMethods,
     EditingFileLayoutMethods,
     LocalFileSyncMethods

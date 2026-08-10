@@ -1,4 +1,5 @@
   * { box-sizing: border-box; }
+  html { --scrollbar-size: 12px; }
   html, body { margin: 0; padding: 0; height: 100%; }
   /* 主题 token 统一定义在 src/theme/tokens.css（index.html <link> 引入） */
   body {
@@ -6,8 +7,8 @@
     -webkit-font-smoothing: antialiased;
     transition: background .25s ease;
   }
-  /* 轨道保留 10px 便于抓取，滑块用透明边框 + padding-box 裁成约 5px 细条 */
-  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  /* 12px 轨道便于抓取，透明边框把可见滑块控制在约 6px。 */
+  ::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
     background: var(--border);
@@ -55,31 +56,6 @@
   .md-preview pre code .syntax-literal { color: var(--paper-code-number); }
   .md-preview pre code .syntax-function { color: var(--paper-code-function); }
   .md-preview pre code .syntax-type { color: var(--paper-code-type); }
-  .mermaid-rendered {
-    margin: 22px 0 30px;
-    overflow-x: auto;
-    border: 1px solid var(--paper-border);
-    border-radius: var(--radius-control);
-    background: var(--paper-pre);
-    padding: 18px;
-  }
-  .mermaid-rendered svg {
-    display: block;
-    min-width: 620px;
-    max-width: none;
-    height: auto;
-    font-family: var(--sans);
-  }
-  .mermaid-rendered.is-loading,
-  .mermaid-rendered.has-error {
-    color: var(--paper-text-3);
-    font: var(--fs-sm)/1.7 var(--mono);
-  }
-  .mermaid-rendered.has-error { border-color: color-mix(in srgb, var(--danger) 65%, var(--paper-border)); }
-  /* 阅读脉络视图：节点可点击跳到对应子文档（点击委托见 readingMapMethods） */
-  .md-preview.is-reading-map .mermaid-rendered .node { cursor: pointer; }
-  .md-preview.is-reading-map .mermaid-rendered .node:hover { opacity: .75; }
-  /* 路径成文（选择模式、选中描边、操作条、问号浮层）见 readingPath.css */
   .md-preview hr { border: none; border-top: 1px solid var(--paper-border); margin: 36px 0; }
   /* display:block 让超宽表格在自身内部横向滚动（预览区整体 overflow-x 已锁死） */
   .md-preview table { display: block; border-collapse: collapse; width: 100%; max-width: 100%; overflow-x: auto; margin: 20px 0; font-size: 0.9em; }
@@ -340,7 +316,7 @@
     left: 4px;
     width: 1px;
     background: transparent;
-    transition: background .15s;
+    transition: background 120ms ease;
   }
   .ai-resize-handle:hover::after,
   .comments-resize-handle:hover::after { background: var(--accent); }
@@ -442,6 +418,9 @@
     border-radius:var(--radius-control);
   }
   .comment-reply-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin: 0 10px;
     color: var(--text-4);
     font: var(--fs-2xs)/1.4 var(--mono);
@@ -451,6 +430,18 @@
     margin-top: 4px;
     border-left: 2px solid var(--accent);
   }
+  .comment-reply-edit { border:0; background:transparent; color:var(--text-3); cursor:pointer; font:var(--fs-2xs)/1.4 var(--mono); }
+  .comment-reply-actions { display:flex; align-items:center; gap:10px; }
+  .comment-reply-edit:hover { color:var(--accent); }
+  .comment-reply-markdown { margin:4px 10px 11px; padding:10px 12px; overflow-wrap:anywhere; border:1px solid var(--border-soft); border-left:2px solid var(--accent); border-radius:var(--radius-control); background:var(--bg-input); color:var(--text-2); font:var(--fs-md)/1.65 var(--sans); }
+  .comment-reply-markdown > :first-child { margin-top:0; }
+  .comment-reply-markdown > :last-child { margin-bottom:0; }
+  .comment-reply-markdown h1,.comment-reply-markdown h2,.comment-reply-markdown h3 { margin:14px 0 8px; color:var(--text-1); font-weight:650; line-height:1.35; }
+  .comment-reply-markdown h1 { font-size:1.35em; } .comment-reply-markdown h2 { font-size:1.2em; } .comment-reply-markdown h3 { font-size:1.08em; }
+  .comment-reply-markdown p,.comment-reply-markdown ul,.comment-reply-markdown ol,.comment-reply-markdown pre { margin:8px 0; }
+  .comment-reply-markdown table { display:block; max-width:100%; overflow-x:auto; border-collapse:collapse; font-size:.9em; }
+  .comment-reply-markdown th,.comment-reply-markdown td { padding:6px 8px; border:1px solid var(--border); text-align:left; }
+  .comment-reply-markdown code { padding:1px 4px; border-radius:3px; background:var(--code-bg); color:var(--accent); font-family:var(--mono); font-size:.9em; }
   .editor-main.preview-mode-active > .source-pane { display: none !important; }
   .editor-main.preview-mode-active > .preview-pane { display: flex !important; }
   .editor-main.preview-mode-active > .editor-divider { display: none !important; }
@@ -645,6 +636,7 @@
   body:not(.agent-bridge-enabled) .ai-panel,
   body:not(.agent-bridge-enabled) .ai-entry,
   body:not(.agent-bridge-enabled) .settings-entry,
+  body:not(.agent-bridge-enabled) .publish-menu-item,
   body:not(.agent-bridge-enabled) .translate-entry {
     display: none !important;
   }

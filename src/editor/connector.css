@@ -1,0 +1,86 @@
+/* 飞书 / 钉钉上传反馈。固定在视口顶部，避免与底部状态栏争夺注意力。 */
+.publish-toast {
+  position: fixed;
+  z-index: 1200;
+  top: 82px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: min(420px, calc(100vw - 32px));
+  max-width: min(560px, calc(100vw - 32px));
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--border));
+  border-radius: var(--radius-lg);
+  background: var(--tool-bg);
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -12px);
+  visibility: hidden;
+  transition: opacity 160ms ease, transform 160ms ease, visibility 160ms;
+}
+
+.publish-toast.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, 0);
+  visibility: visible;
+}
+
+.publish-toast-icon {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+}
+
+.publish-toast[data-state='loading'] .publish-toast-icon {
+  border-color: var(--accent-soft);
+  border-top-color: var(--accent);
+  animation: publish-toast-spin 800ms linear infinite;
+}
+
+.publish-toast[data-state='success'] .publish-toast-icon {
+  border-color: var(--good);
+  background: var(--good);
+}
+
+.publish-toast[data-state='success'] .publish-toast-icon::after {
+  content: '✓';
+  display: grid;
+  height: 100%;
+  place-items: center;
+  color: var(--accent-ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.publish-toast[data-state='error'] .publish-toast-icon,
+.publish-toast[data-state='warning'] .publish-toast-icon { border-color: var(--danger); }
+
+.publish-toast-copy { flex: 1; min-width: 0; }
+.publish-toast-title,
+.publish-toast-detail { display: block; }
+.publish-toast-title { color: var(--text); font-size: var(--fs-md); }
+.publish-toast-detail { margin-top: 3px; color: var(--text-3); font-size: var(--fs-xs); }
+
+.publish-toast-action {
+  flex: none;
+  padding: 7px 10px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+}
+
+.publish-toast-action:hover { background: var(--accent-soft); }
+
+@keyframes publish-toast-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 600px) {
+  .publish-toast { top: 60px; min-width: 0; width: calc(100vw - 24px); }
+}

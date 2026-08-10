@@ -214,14 +214,46 @@ export class EditingFileLayoutMethods {
     desktop.onMenu((action) => {
       if (action === 'new') this.onNew();
       else if (action === 'open') this.onOpen();
+      else if (action === 'open-path') this.onOpenAbsolutePath();
       else if (action === 'save') this.onSave();
       else if (action === 'save-as') this.onSaveAs();
     });
     // 双击关联的 .md 文件 / 菜单打开：主进程读好内容推送过来。
     desktop.onOpenPath((file) => { this._openDesktopFile(file); });
     desktop.consumePendingOpen()
-      .then((file) => { if (file) this._openDesktopFile(file); })
+      .then((file) => { if (file) this._openDesktopFile(file); else if (desktop.readClipboardText) this._checkClipboardMarkdownPath(); })
       .catch(() => {});
+    if (desktop.readClipboardText && window.addEventListener) {
+      this._desktopClipboardFocus = () => this._checkClipboardMarkdownPath();
+      window.addEventListener('focus', this._desktopClipboardFocus);
+    }
+  }
+
+
+  _clipboardMarkdownPath(text) {
+    let value = String(text || '').trim();
+    if (!value || /[\r\n]/.test(value)) return '';
+    if ((value.startsWith('"') && value.endsWith('"'))
+      || (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1).trim();
+    const absolute = value.startsWith('/') || /^[A-Za-z]:[\\/]/.test(value) || /^\\\\/.test(value);
+    if (!absolute || !/\.(?:md|markdown)$/i.test(value)) return '';
+    return value;
+  }
+
+
+  async _checkClipboardMarkdownPath() {
+    const desktop = window.mojianDesktop;
+    if (!desktop?.readClipboardText) return;
+    try {
+      const path = this._clipboardMarkdownPath(await desktop.readClipboardText());
+      if (!path) {
+        this._lastClipboardMarkdownPath = '';
+        return;
+      }
+      if (path === this._lastClipboardMarkdownPath) return;
+      this._lastClipboardMarkdownPath = path;
+      this.onOpenAbsolutePath(path, { fromClipboard: true });
+    } catch {}
   }
 
 
@@ -306,6 +338,93 @@ export class EditingFileLayoutMethods {
   }
 
 
+  onOpenAbsolutePath(initialPath = '', options = {}) {
+    const desktop = window.mojianDesktop;
+    if (!desktop || !desktop.openMarkdownPath) {
+      this._setStatus('输入路径打开仅支持桌面版');
+      return;
+    }
+    const { modal, input, note } = this._ensureAbsolutePathDialog();
+    input.value = initialPath || this.localFilePath || '';
+    const fromClipboard = options.fromClipboard === true;
+    const title = modal.querySelector('.file-path-title');
+    const description = modal.querySelector('.file-path-description');
+    if (title) title.textContent = fromClipboard ? '打开剪贴板中的 Markdown？' : '输入绝对路径打开';
+    if (description) description.textContent = fromClipboard
+      ? '检测到剪贴板中有 Markdown 文件路径，是否用墨笺打开？'
+      : '粘贴 Markdown 文件的完整路径，打开后会继续同步保存到该文件。';
+    note.textContent = fromClipboard ? '路径已自动填入，确认后才会打开文件' : '支持 .md、.markdown 和 .txt 文件';
+    modal.style.display = 'flex';
+    setTimeout(() => { input.focus(); input.select(); }, 0);
+  }
+
+
+  _ensureAbsolutePathDialog() {
+    if (this._absolutePathDialog) return this._absolutePathDialog;
+    const modal = document.createElement('div');
+    modal.className = 'file-path-modal-backdrop';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'file-path-title');
+    modal.innerHTML = `<section class="file-path-modal">
+      <strong id="file-path-title" class="file-path-title">输入绝对路径打开</strong>
+      <p class="file-path-description">粘贴 Markdown 文件的完整路径，打开后会继续同步保存到该文件。</p>
+      <input class="file-path-input" type="text" spellcheck="false" autocomplete="off" placeholder="/Users/name/Documents/note.md">
+      <small class="file-path-note">支持 .md、.markdown 和 .txt 文件</small>
+      <div class="file-path-actions"><button type="button" class="file-path-cancel">取消</button>
+      <button type="button" class="file-path-submit" aria-label="打开该路径">打开</button></div>
+    </section>`;
+    const input = modal.querySelector('.file-path-input');
+    const note = modal.querySelector('.file-path-note');
+    modal.querySelector('.file-path-cancel').addEventListener('click', () => this.closeAbsolutePathDialog());
+    modal.querySelector('.file-path-submit').addEventListener('click', () => this.submitAbsolutePathOpen());
+    input.addEventListener('keydown', (event) => this._absolutePathKeydown(event));
+    document.body.appendChild(modal);
+    this._absolutePathDialog = { modal, input, note };
+    return this._absolutePathDialog;
+  }
+
+
+  closeAbsolutePathDialog() {
+    if (this._absolutePathDialog) this._absolutePathDialog.modal.style.display = 'none';
+  }
+
+
+  _absolutePathKeydown(event) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      this.submitAbsolutePathOpen();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      this.closeAbsolutePathDialog();
+    }
+  }
+
+
+  async submitAbsolutePathOpen() {
+    const desktop = window.mojianDesktop;
+    const dialog = this._absolutePathDialog;
+    const input = dialog && dialog.input;
+    const note = dialog && dialog.note;
+    if (!desktop || !desktop.openMarkdownPath || !input) return false;
+    const filePath = input.value.trim();
+    if (!filePath) return;
+    if (note) note.textContent = '正在打开…';
+    try {
+      const picked = await desktop.openMarkdownPath(filePath);
+      if (!picked) throw new Error('文件不存在或不可读');
+      await this._openDesktopFile(picked);
+      this.closeAbsolutePathDialog();
+      return true;
+    } catch (error) {
+      const message = error.message || String(error);
+      if (note) note.textContent = '打开失败 · ' + message;
+      this._setStatus('打开失败 · ' + message);
+      return false;
+    }
+  }
+
+
   async onSave() {
     const src = this.sourceRef.current;
     if (!src) return;
@@ -377,6 +496,9 @@ export class EditingFileLayoutMethods {
     const open = typeof force === 'boolean' ? force : !menu.classList.contains('is-open');
     menu.classList.toggle('is-open', open);
     if (button) button.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open && typeof this._refreshConnectorCapabilities === 'function') {
+      this._refreshConnectorCapabilities();
+    }
     if (open && !this._fileMenuDocH) {
       this._fileMenuDocH = (e) => {
         if (menu.contains(e.target)) return;
@@ -460,18 +582,40 @@ export class EditingFileLayoutMethods {
     const div = this.dividerRef.current, split = this.splitRef.current;
     if (!div || !split) return;
     let dragging = false;
+    let pendingX = null;
+    let resizeFrame = 0;
     const left = split.querySelector('.source-pane'), right = split.querySelector('.preview-pane');
     if (!left || !right) return;
-    div.addEventListener('mousedown', (e) => { dragging = true; document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none'; e.preventDefault(); });
+    const applyPendingResize = () => {
+      resizeFrame = 0;
+      if (!dragging || pendingX === null) return;
+      const rect = split.getBoundingClientRect();
+      let ratio = (pendingX - rect.left) / rect.width;
+      ratio = Math.max(0.2, Math.min(0.8, ratio));
+      // 用 grow 表达比例：分屏时仍按 ratio 分配；任一栏隐藏后，剩余栏会自动铺满。
+      left.style.flex = ratio + ' 1 0%';
+      right.style.flex = (1 - ratio) + ' 1 0%';
+    };
+    div.addEventListener('mousedown', (e) => {
+      dragging = true;
+      div.classList.add('is-dragging');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      e.preventDefault();
+    });
     window.addEventListener('mousemove', (e) => {
       if (!dragging) return;
-      const rect = split.getBoundingClientRect();
-      let ratio = (e.clientX - rect.left) / rect.width;
-      ratio = Math.max(0.2, Math.min(0.8, ratio));
-      left.style.flex = '1 1 ' + (ratio * 100) + '%';
-      right.style.flex = '1 1 ' + ((1 - ratio) * 100) + '%';
+      pendingX = e.clientX;
+      if (!resizeFrame) resizeFrame = requestAnimationFrame(applyPendingResize);
     });
-    window.addEventListener('mouseup', () => { dragging = false; document.body.style.cursor = ''; document.body.style.userSelect = ''; });
+    window.addEventListener('mouseup', () => {
+      if (dragging && pendingX !== null) applyPendingResize();
+      dragging = false;
+      pendingX = null;
+      div.classList.remove('is-dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    });
   }
 
 }

@@ -282,6 +282,81 @@ test('桌面端菜单 save-as 动作触发另存为', () => {
   }
 });
 
+test('输入绝对路径后通过桌面端打开 Markdown', async () => {
+  const requested: string[] = [];
+  const picked = {
+    path: '/Users/me/notes/阅读.md', name: '阅读.md', content: '# 阅读', lastModified: 42
+  };
+  (globalThis as { window?: unknown }).window = {
+    mojianDesktop: {
+      openMarkdownPath: async (path: string) => { requested.push(path); return picked; }
+    }
+  };
+  try {
+    const editor = createEditor(createSource('', 0));
+    const opened: unknown[] = [];
+    editor._absolutePathDialog = {
+      input: { value: '  /Users/me/notes/阅读.md  ' },
+      note: { textContent: '' }, modal: { style: { display: 'flex' } }
+    };
+    editor._openDesktopFile = async (file: unknown) => { opened.push(file); };
+    editor._setStatus = (message: string) => { editor.statusMsg = message; };
+
+    await editor.submitAbsolutePathOpen();
+
+    assert.deepEqual(requested, ['/Users/me/notes/阅读.md']);
+    assert.deepEqual(opened, [picked]);
+    assert.equal(editor._absolutePathDialog.modal.style.display, 'none');
+  } finally {
+    delete (globalThis as { window?: unknown }).window;
+  }
+});
+
+test('取消输入绝对路径时不读取文件', async () => {
+  let opened = 0;
+  (globalThis as { window?: unknown }).window = {
+    mojianDesktop: { openMarkdownPath: async () => { opened += 1; return null; } }
+  };
+  try {
+    const editor = createEditor(createSource('', 0));
+    editor._absolutePathDialog = {
+      input: { value: '   ' }, note: { textContent: '' }, modal: { style: { display: 'flex' } }
+    };
+    await editor.submitAbsolutePathOpen();
+    assert.equal(opened, 0);
+  } finally {
+    delete (globalThis as { window?: unknown }).window;
+  }
+});
+
+test('桌面端聚焦时发现剪贴板中的 Markdown 绝对路径会自动填入询问框', async () => {
+  (globalThis as { window?: unknown }).window = {
+    mojianDesktop: { readClipboardText: async () => '  "/Users/me/notes/阅读笔记.md"  ' }
+  };
+  try {
+    const editor = createEditor(createSource('', 0));
+    const shown: Array<{ path: string; fromClipboard: boolean }> = [];
+    editor.onOpenAbsolutePath = (path: string, options: { fromClipboard: boolean }) => {
+      shown.push({ path, fromClipboard: options.fromClipboard });
+    };
+
+    await editor._checkClipboardMarkdownPath();
+    await editor._checkClipboardMarkdownPath();
+
+    assert.deepEqual(shown, [{ path: '/Users/me/notes/阅读笔记.md', fromClipboard: true }]);
+  } finally {
+    delete (globalThis as { window?: unknown }).window;
+  }
+});
+
+test('剪贴板快捷打开忽略非 Markdown、相对路径和多行内容', async () => {
+  const editor = createEditor(createSource('', 0));
+  assert.equal(editor._clipboardMarkdownPath('notes/readme.md'), '');
+  assert.equal(editor._clipboardMarkdownPath('/Users/me/image.png'), '');
+  assert.equal(editor._clipboardMarkdownPath('/Users/me/a.md\n/Users/me/b.md'), '');
+  assert.equal(editor._clipboardMarkdownPath('C:\\notes\\readme.markdown'), 'C:\\notes\\readme.markdown');
+});
+
 test('桌面端 _initDesktop 给 body 打上 is-desktop-app 标记（CSS 据此隐藏网页版专属 UI）', async () => {
   (globalThis as { window?: unknown }).window = {
     mojianDesktop: {

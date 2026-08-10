@@ -137,8 +137,10 @@ export class PathComposeMethods {
 
 
   // mermaid 渲染是异步的（主题切换等也会触发重渲染），完成后补挂选中态。
-  _onMermaidRendered() {
-    if (this._isReadingMapView()) this._applyReadingPathHighlight();
+  _onMermaidRendered(host) {
+    if (!this._isReadingMapView()) return;
+    if (typeof this._applyReadingMapTitles === 'function') this._applyReadingMapTitles(host);
+    this._applyReadingPathHighlight();
   }
 
 

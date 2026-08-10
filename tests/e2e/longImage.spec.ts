@@ -28,6 +28,14 @@ test.beforeEach(async ({ page }) => {
 test('长图弹窗按预览排版渲染海报，首个标题升格为海报标题', async ({ page }) => {
   await page.locator('.longimg-entry').click();
 
+  const headLayout = await page.evaluate(() => {
+    const hint = document.querySelector('.longimg-modal-hint')!.getBoundingClientRect();
+    const stage = document.querySelector('.longimg-stage-wrap')!.getBoundingClientRect();
+    return { hintBottom: hint.bottom, hintHeight: hint.height, stageTop: stage.top };
+  });
+  expect(headLayout.hintBottom).toBeLessThanOrEqual(headLayout.stageTop);
+  expect(headLayout.hintHeight).toBeLessThan(25);
+
   const poster = page.locator('.longimg-poster');
   await expect(poster).toBeVisible();
   await expect(poster.locator('.longimg-title')).toHaveText('长图导出');
@@ -43,6 +51,46 @@ test('长图弹窗按预览排版渲染海报，首个标题升格为海报标�
   const previewFont = await page.locator('.md-preview').evaluate((el) => getComputedStyle(el).fontFamily);
   const posterFont = await poster.locator('.longimg-prose').evaluate((el) => getComputedStyle(el).fontFamily);
   expect(posterFont).toBe(previewFont);
+});
+
+test('长图预览跟随当前阅读纸张颜色', async ({ page }) => {
+  await page.locator('.paper-dot[data-paper="green"]').click();
+  await expect(page.locator('body')).toHaveAttribute('data-paper', 'green');
+  await page.locator('.longimg-entry').click();
+
+  const colors = await page.evaluate(() => ({
+    preview: getComputedStyle(document.querySelector('.md-preview')!).backgroundColor,
+    poster: getComputedStyle(document.querySelector('.longimg-poster')!).backgroundColor,
+    snapshot: (document.querySelector('.longimg-poster') as HTMLElement).style.getPropertyValue('--paper-bg')
+  }));
+
+  expect(colors.preview).toBe('rgb(213, 228, 208)');
+  expect(colors.poster).toBe(colors.preview);
+  expect(colors.snapshot).toBe('#d5e4d0');
+});
+
+test('划词工具条可把选中内容单独生成图片', async ({ page }) => {
+  await page.locator('.md-preview').evaluate((preview) => {
+    const items = preview.querySelectorAll('li');
+    const range = document.createRange();
+    range.setStart(items[0], 0);
+    range.setEnd(items[1], items[1].childNodes.length);
+    const selection = window.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+    preview.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+  });
+  await expect(page.locator('.selection-toolbar')).toBeVisible();
+
+  await page.locator('.selection-image-entry').click();
+
+  const poster = page.locator('.longimg-poster');
+  await expect(poster).toBeVisible();
+  await expect(poster).toContainText('列表第一项');
+  await expect(poster).toContainText('列表第二项');
+  await expect(poster.locator('.longimg-prose > ul > li')).toHaveCount(2);
+  await expect(poster).not.toContainText('引用块也要出现在长图里');
+  await expect(poster.locator('.longimg-title')).toHaveText('摘录');
 });
 
 test('静态长图里表格与代码块折行，不靠横向滚动', async ({ page }) => {
@@ -67,11 +115,71 @@ test('切换宽度档位后海报按新宽度重排', async ({ page }) => {
   await page.locator('.longimg-entry').click();
   const poster = page.locator('.longimg-poster');
   await expect(poster).toHaveCSS('width', '900px');
+  await expect(page.locator('.longimg-crop-toggle')).toBeHidden();
+  const marks = page.locator('.longimg-modal-head .longimg-mark-toggle');
+  await expect(marks).toBeVisible();
+  await expect(marks).toHaveAttribute('role', 'switch');
+  await expect(marks).toHaveAttribute('aria-checked', 'true');
 
   await page.locator('[data-longimg-width="phone"]').click();
 
   await expect(page.locator('.longimg-poster')).toHaveCSS('width', '720px');
   await expect(page.locator('[data-longimg-width="phone"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.longimg-crop-toggle')).toBeVisible();
+});
+
+test('手机分页把长文保存为多张一屏尺寸图片', async ({ page }) => {
+  const sections = Array.from({ length: 14 }, (_, index) =>
+    `## 第 ${index + 1} 节\n\n这是用于手机分页验证的一段正文。内容需要保持清晰易读，并在安全位置换页。`
+  ).join('\n\n');
+  await setSource(page, '# 手机分页测试\n\n' + sections);
+  await page.locator('.longimg-entry').click();
+  await page.locator('[data-longimg-width="phone"]').click();
+  await page.locator('.longimg-crop-toggle').click();
+
+  await expect(page.locator('[data-longimg-width="phone"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.longimg-crop-toggle')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.longimg-save')).toHaveText('下载多图');
+  const previews = page.locator('.longimg-page-preview');
+  expect(await previews.count()).toBeGreaterThan(1);
+  await expect(previews.first()).toHaveCSS('width', '720px');
+  await expect(previews.first()).toHaveCSS('height', '1280px');
+  await expect(previews.first().locator('.longimg-page-number')).toContainText('1 /');
+  const splitLines = await previews.evaluateAll((pageNodes) => pageNodes.flatMap((page, pageIndex) => {
+    const viewport = page.querySelector('.longimg-page-viewport')!;
+    const boundary = viewport.getBoundingClientRect();
+    const walker = document.createTreeWalker(viewport, NodeFilter.SHOW_TEXT);
+    const broken: string[] = [];
+    let node = walker.nextNode();
+    while (node) {
+      if ((node.nodeValue || '').trim()) {
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        for (const rect of Array.from(range.getClientRects())) {
+          const crossesTop = rect.top < boundary.top - 0.5 && rect.bottom > boundary.top + 0.5;
+          const crossesBottom = rect.top < boundary.bottom - 0.5 && rect.bottom > boundary.bottom + 0.5;
+          if (crossesTop || crossesBottom) broken.push(`${pageIndex + 1}:${node.nodeValue}`);
+        }
+      }
+      node = walker.nextNode();
+    }
+    return broken;
+  }));
+  expect(splitLines).toEqual([]);
+
+  const [download] = await Promise.all([
+    page.waitForEvent('download', { timeout: 60_000 }),
+    page.locator('.longimg-save').click()
+  ]);
+  await expect(page.locator('.save-status')).toContainText('已保存手机分页图片', { timeout: 60_000 });
+
+  expect(download.suggestedFilename()).toMatch(/-手机分页\.zip$/);
+  const path = await download.path();
+  const { readFileSync } = await import('node:fs');
+  const zip = readFileSync(path!);
+  expect(zip.readUInt32LE(0)).toBe(0x04034b50);
+  expect(zip.toString('utf8')).toMatch(/-01\.png/);
+  expect(zip.toString('utf8')).toMatch(/-02\.png/);
 });
 
 test('下载长图产出与海报同宽的 PNG', async ({ page }) => {
@@ -94,9 +202,8 @@ test('下载长图产出与海报同宽的 PNG', async ({ page }) => {
   expect(buffer.readUInt32BE(16)).toBe(1800);
   expect(buffer.readUInt32BE(20)).toBeGreaterThan(1000);
 
-  // 生成完成后弹窗自动收起，状态栏给出结果
+  // 生成完成后弹窗自动收起
   await expect(page.locator('.longimg-overlay')).toBeHidden();
-  await expect(page.locator('.save-status')).toContainText('已保存长图');
 });
 
 test('关掉「含划线批注」后长图不带划线痕迹', async ({ page }) => {

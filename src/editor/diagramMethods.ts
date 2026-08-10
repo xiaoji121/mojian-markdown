@@ -7,6 +7,7 @@ let mermaidThemeKey = '';
 
 export class DiagramMethods {
   _renderMermaidDiagrams(root) {
+    this.closeMermaidFullscreen();
     const batch = ++this._mermaidBatch;
     root.querySelectorAll('pre code').forEach((code, index) => {
       const source = code.textContent || '';
@@ -35,6 +36,7 @@ export class DiagramMethods {
       if (batch !== this._mermaidBatch || !host.isConnected) return;
       host.classList.remove('is-loading');
       host.innerHTML = result.svg;
+      this._installMermaidFullscreen(host);
       if (result.bindFunctions) result.bindFunctions(host);
       // 渲染是异步的，阅读脉络的路径选中态要在 SVG 就位后补挂
       if (typeof this._onMermaidRendered === 'function') this._onMermaidRendered(host);
@@ -43,6 +45,41 @@ export class DiagramMethods {
       host.classList.add('has-error');
       host.textContent = 'Mermaid 渲染失败：' + (error?.message || String(error));
     }
+  }
+
+  _installMermaidFullscreen(host) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'mermaid-fullscreen-button';
+    button.setAttribute('aria-label', '全屏查看流程图');
+    button.title = '全屏查看流程图';
+    button.textContent = '⛶';
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      this.toggleMermaidFullscreen(host);
+    });
+    host.appendChild(button);
+  }
+
+  toggleMermaidFullscreen(host, force) {
+    const open = force ?? !host.classList.contains('is-fullscreen');
+    if (open && this._fullscreenMermaidHost && this._fullscreenMermaidHost !== host) {
+      this.toggleMermaidFullscreen(this._fullscreenMermaidHost, false);
+    }
+    host.classList.toggle('is-fullscreen', open);
+    const button = host.querySelector('.mermaid-fullscreen-button');
+    if (button) {
+      const label = open ? '退出流程图全屏' : '全屏查看流程图';
+      button.setAttribute('aria-label', label);
+      button.title = label;
+      button.textContent = open ? '×' : '⛶';
+    }
+    this._fullscreenMermaidHost = open ? host : null;
+    document.body.classList.toggle('mermaid-fullscreen-open', open);
+  }
+
+  closeMermaidFullscreen() {
+    if (this._fullscreenMermaidHost) this.toggleMermaidFullscreen(this._fullscreenMermaidHost, false);
   }
 
   async _loadMermaid() {

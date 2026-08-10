@@ -5,9 +5,9 @@
 //   2. 原生文件对话框与读写——真实绝对路径，授权一次永久有效
 //      （授权清单持久化在 userData，重启后恢复的文档仍可直接同步）；
 //   3. 应用菜单、macOS「双击 .md 打开」、单实例与命令行参数接管。
-import { app, BrowserWindow, Menu, dialog, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, Menu, clipboard, dialog, ipcMain, shell } from 'electron';
 import { readFile, stat, writeFile } from 'node:fs/promises';
-import { basename, dirname, extname, join, resolve } from 'node:path';
+import { basename, dirname, extname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startAgentBridge } from '../scripts/agent-bridge.js';
 import { readLocalAsset } from './localAssets.js';
@@ -90,6 +90,8 @@ function collectMarkdownArgs(argv, cwd) {
 // ===== IPC =====
 
 function registerIpcHandlers() {
+  ipcMain.handle('desktop:read-clipboard-text', () => clipboard.readText());
+
   ipcMain.handle('desktop:open-file', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
       properties: ['openFile'],
@@ -98,6 +100,20 @@ function registerIpcHandlers() {
     if (result.canceled || !result.filePaths.length) return null;
     grantPath(result.filePaths[0]);
     return readPickedFile(result.filePaths[0]);
+  });
+
+  ipcMain.handle('desktop:open-file-path', async (_event, inputPath) => {
+    let filePath = String(inputPath || '').trim();
+    if ((filePath.startsWith('"') && filePath.endsWith('"'))
+      || (filePath.startsWith("'") && filePath.endsWith("'"))) filePath = filePath.slice(1, -1).trim();
+    if (!isAbsolute(filePath)) throw new Error('请输入文件的绝对路径');
+    if (!MARKDOWN_EXTENSIONS.has(extname(filePath).toLowerCase())) {
+      throw new Error('仅支持 .md、.markdown 或 .txt 文件');
+    }
+    const normalized = resolve(filePath);
+    const picked = await readPickedFile(normalized);
+    grantPath(normalized);
+    return picked;
   });
 
   ipcMain.handle('desktop:save-file-as', async (_event, suggestedName, content) => {
@@ -166,6 +182,7 @@ function buildMenu() {
       submenu: [
         { label: '新建', accelerator: 'CmdOrCtrl+N', click: () => sendMenu('new') },
         { label: '打开…', accelerator: 'CmdOrCtrl+O', click: () => sendMenu('open') },
+        { label: '输入绝对路径打开…', click: () => sendMenu('open-path') },
         { label: '保存', accelerator: 'CmdOrCtrl+S', click: () => sendMenu('save') },
         { label: '另存为…', accelerator: 'CmdOrCtrl+Shift+S', click: () => sendMenu('save-as') },
         { type: 'separator' },

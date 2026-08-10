@@ -5,11 +5,14 @@
 import { createServer } from 'node:http';
 import { extname, join, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { readFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { createDocumentStore, normalizeAnnotation } from './agent-bridge-store.js';
 import { createSettingsStore, maskProviderSettings } from './agent-bridge-settings.js';
-import { normalizeEngine, runEngine } from './agent-bridge-engines.js';
+import { normalizeEngine, normalizeMode, runEngine } from './agent-bridge-engines.js';
+import { agentPrompt, prepareAgentContext, readAgentDocumentUpdate, runAgentTurn } from './agent-bridge-agent.js';
+import { importAgentMarkdownArtifacts } from './agent-bridge-artifacts.js';
+import { connectorCapabilities, normalizeTarget, publishDocument } from './agent-bridge-connectors.js';
 import {
   collectPathNodes,
   composePrompt,
@@ -52,6 +55,7 @@ function summarizeDocument(doc) {
       question: item.question || '未命名问题',
       engine: item.engine,
       parentRequestId: item.parentRequestId || undefined,
+      hiddenFromReadingTree: item.hiddenFromReadingTree === true,
       updatedAt: item.answerAt || item.questionAt || doc.updatedAt
     }));
   // 用户把别处找到的答案贴在批注下时，同样作为该文档的子节点展示。
@@ -62,9 +66,24 @@ function summarizeDocument(doc) {
       question: item.note || item.question || item.quote || '未命名想法',
       kind: 'reply',
       parentRequestId: item.answerRequestId || undefined,
+      hiddenFromReadingTree: item.hiddenFromReadingTree === true,
       updatedAt: new Date(item.replyAt || item.ts || doc.updatedAt).toISOString()
     }));
-  const answerDocuments = [...answers, ...replies]
+  const allAnswers = [...answers, ...replies];
+  const hidden = new Set(allAnswers.filter((item) => item.hiddenFromReadingTree).map((item) => item.requestId));
+  let changed = true;
+  while (changed) {
+    changed = false;
+    allAnswers.forEach((item) => {
+      if (item.parentRequestId && hidden.has(item.parentRequestId) && !hidden.has(item.requestId)) {
+        hidden.add(item.requestId);
+        changed = true;
+      }
+    });
+  }
+  const answerDocuments = allAnswers
+    .filter((item) => !hidden.has(item.requestId))
+    .map(({ hiddenFromReadingTree, ...item }) => item)
     .sort((a, b) => String(a.updatedAt).localeCompare(String(b.updatedAt)));
   return {
     documentId: doc.documentId,
@@ -125,12 +144,12 @@ function translatePrompt(text) {
   ].join('\n');
 }
 
-function createRequestHandler({ store, settings, staticDir, cors }) {
+function createRequestHandler({ store, settings, staticDir, cors, root }) {
   const { readDocument, writeDocument, deleteDocument, upsertDocument, listDocuments } = store;
   const corsHeaders = cors
     ? {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS',
+        'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type'
       }
     : {};
@@ -160,9 +179,44 @@ function createRequestHandler({ store, settings, staticDir, cors }) {
     }
   }
 
+  async function runChatEngine({ engine, body, doc, res }) {
+    const engineOptions = engine === 'gemini'
+      ? { gemini: await settings.providerSettings('gemini') }
+      : {};
+    return runEngine(
+      engine,
+      bridgePrompt(body, doc),
+      (delta) => writeSse(res, 'delta', { text: delta }),
+      process.env,
+      engineOptions
+    );
+  }
+
+  // Agent 一轮：会话 id 写回文档，前端下次提问才能续上同一条对话线。
+  async function runAgentChat({ engine, body, doc, context, res }) {
+    const progress = [];
+    const result = await runAgentTurn({
+      engine,
+      prompt: agentPrompt(body, doc, context),
+      context,
+      onDelta: (text) => writeSse(res, 'delta', { text }),
+      onProgress: (item) => {
+        progress.push(item);
+        writeSse(res, 'progress', item);
+      },
+      onSessionReset: () => writeSse(res, 'session-reset', { documentId: doc.documentId })
+    });
+    if (result.sessionId) {
+      doc.agentSessions = { ...(doc.agentSessions || {}), [engine]: result.sessionId };
+    }
+    return { answer: result.answer, progress };
+  }
+
   async function handleChat(req, res) {
     const body = await readBody(req);
     const engine = normalizeEngine(body.engine);
+    // Gemini 是纯文本接口，没有工具也没有会话，Agent 模式对它无意义 → 回落问答。
+    const mode = engine === 'gemini' ? 'chat' : normalizeMode(body.mode);
     const doc = await upsertDocument(body.document || {});
     const requestId = randomUUID();
     // 在子文档视图里追问时，记下父节点，问答树才能逐级嵌套。
@@ -171,6 +225,7 @@ function createRequestHandler({ store, settings, staticDir, cors }) {
     const message = {
       requestId,
       engine,
+      mode,
       question: body.question || '',
       quote: body.selection?.quote || '',
       questionAt: new Date().toISOString(),
@@ -198,21 +253,46 @@ function createRequestHandler({ store, settings, staticDir, cors }) {
       Connection: 'keep-alive',
       ...corsHeaders
     });
+    // Agent 模式：先备好工程上下文与落盘正文，再把会话续接情况告诉前端。
+    const context = mode === 'agent'
+      ? await prepareAgentContext({ root, doc, engine, allowWrite: body.allowWrite === true })
+      : null;
     writeSse(res, 'meta', {
       requestId,
       engine,
+      mode,
       documentId: doc.documentId,
-      documentChars: doc.content.length
+      documentChars: doc.content.length,
+      projectRoot: context?.projectRoot || '',
+      writeAuthorized: !!context?.allowWrite,
+      resumed: !!context?.resumeSessionId
     });
 
     try {
-      const engineOptions = engine === 'gemini'
-        ? { gemini: await settings.providerSettings('gemini') }
-        : {};
-      const answer = await runEngine(engine, bridgePrompt(body, doc), (delta) => {
-        writeSse(res, 'delta', { text: delta });
-      }, process.env, engineOptions);
+      const agentResult = context
+        ? await runAgentChat({ engine, body, doc, context, res })
+        : null;
+      const answer = agentResult
+        ? agentResult.answer
+        : await runChatEngine({ engine, body, doc, res });
       message.answer = answer;
+      if (agentResult) message.progress = agentResult.progress;
+      const updatedContent = context
+        ? await readAgentDocumentUpdate(context, doc.content)
+        : null;
+      if (updatedContent !== null) {
+        doc.content = updatedContent;
+        message.documentUpdated = true;
+        writeSse(res, 'document-updated', {
+          documentId: doc.documentId,
+          fileName: doc.fileName,
+          content: updatedContent
+        });
+      }
+      if (context) {
+        message.artifacts = await importAgentMarkdownArtifacts(answer, context, upsertDocument);
+        if (message.artifacts.length) writeSse(res, 'artifacts', { items: message.artifacts });
+      }
       message.answerAt = new Date().toISOString();
       const annotation = doc.annotations.find((item) => item.requestId === requestId);
       if (annotation) {
@@ -268,6 +348,39 @@ function createRequestHandler({ store, settings, staticDir, cors }) {
     } finally {
       res.end();
     }
+  }
+
+  // 一键发布：把当前文档交给本机已登录的飞书/钉钉 CLI 建成在线文档，回链写进文档记录。
+  // 这条是确定性路径 —— 不让大模型来决定「有没有正确调用 CLI」。
+  async function handlePublish(req, res) {
+    const body = await readBody(req);
+    const target = normalizeTarget(body.target);
+    let doc = null;
+    if (body.documentId) {
+      if (!/^[\w.-]+$/.test(String(body.documentId))) throw new Error('文档不存在，请先保存后再发布');
+      try {
+        doc = await readDocument(String(body.documentId));
+      } catch {
+        throw new Error('文档不存在，请先保存后再发布');
+      }
+    } else {
+      doc = await upsertDocument(body.document || {});
+    }
+    const result = await publishDocument(target, {
+      fileName: doc.fileName,
+      content: doc.content,
+      folder: body.folder || ''
+    });
+    const publication = {
+      target: result.target,
+      label: result.label,
+      name: result.name,
+      url: result.url,
+      at: new Date().toISOString()
+    };
+    doc.publications = [...(doc.publications || []), publication];
+    await writeDocument(doc);
+    return sendJson(res, 200, { ok: true, documentId: doc.documentId, ...publication });
   }
 
   // 连通性验证：优先用请求里的 Key/模型（保存前先测），缺省回落到已保存配置。
@@ -326,6 +439,9 @@ function createRequestHandler({ store, settings, staticDir, cors }) {
     const parts = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
     try {
       if (req.method === 'GET' && url.pathname === '/health') return sendJson(res, 200, { ok: true });
+      if (req.method === 'GET' && url.pathname === '/api/connectors') {
+        return sendJson(res, 200, await connectorCapabilities(process.env));
+      }
       if (req.method === 'GET' && url.pathname === '/api/settings') {
         return sendJson(res, 200, maskProviderSettings(await settings.readSettings()));
       }
@@ -333,8 +449,11 @@ function createRequestHandler({ store, settings, staticDir, cors }) {
         const body = await readBody(req);
         return sendJson(res, 200, maskProviderSettings(await settings.updateProviders(body)));
       }
-      if (req.method === 'POST' && url.pathname === '/api/settings/test') return handleSettingsTest(req, res);
-      if (req.method === 'POST' && url.pathname === '/api/translate') return handleTranslate(req, res);
+      // 下面这些委派处理器都是异步的，必须 await：直接 return promise 的话，
+      // 它们抛出的错误（如请求体 JSON 解析失败、发布目标不支持）会绕过本函数的
+      // catch 变成未处理的 rejection —— 客户端永远等不到响应，进程还可能被拖死。
+      if (req.method === 'POST' && url.pathname === '/api/settings/test') return await handleSettingsTest(req, res);
+      if (req.method === 'POST' && url.pathname === '/api/translate') return await handleTranslate(req, res);
       if (req.method === 'GET' && url.pathname === '/api/documents') {
         const documents = (await listDocuments()).map(summarizeDocument);
         return sendJson(res, 200, { documents });
@@ -349,8 +468,9 @@ function createRequestHandler({ store, settings, staticDir, cors }) {
         const doc = await upsertDocument(body.document || {});
         return sendJson(res, 200, { documentId: doc.documentId, messages: doc.messages || [] });
       }
-      if (req.method === 'POST' && url.pathname === '/api/chat') return handleChat(req, res);
-      if (req.method === 'POST' && url.pathname === '/api/compose') return handleCompose(req, res);
+      if (req.method === 'POST' && url.pathname === '/api/chat') return await handleChat(req, res);
+      if (req.method === 'POST' && url.pathname === '/api/publish') return await handlePublish(req, res);
+      if (req.method === 'POST' && url.pathname === '/api/compose') return await handleCompose(req, res);
       if (req.method === 'GET' && url.pathname === '/api/conversations') {
         const conversations = (await listDocuments()).filter((doc) => doc.messages?.length).map(conversationSummary);
         return sendJson(res, 200, { conversations });
@@ -365,6 +485,19 @@ function createRequestHandler({ store, settings, staticDir, cors }) {
       if (parts[0] === 'api' && parts[1] === 'documents' && parts.length === 3 && req.method === 'DELETE') {
         await deleteDocument(parts[2]);
         return sendJson(res, 200, { ok: true });
+      }
+      if (parts[0] === 'api' && parts[1] === 'documents' && parts[3] === 'answers'
+        && parts.length === 5 && req.method === 'PATCH') {
+        const body = await readBody(req);
+        const doc = await readDocument(parts[2]);
+        const targets = [
+          ...(doc.messages || []).filter((item) => item.requestId === parts[4]),
+          ...(doc.annotations || []).filter((item) => item.id === parts[4] || item.requestId === parts[4])
+        ];
+        if (!targets.length) return sendError(res, 404, '问答不存在');
+        targets.forEach((item) => { item.hiddenFromReadingTree = body.hiddenFromReadingTree !== false; });
+        await writeDocument(doc);
+        return sendJson(res, 200, { ok: true, hiddenFromReadingTree: body.hiddenFromReadingTree !== false });
       }
       if (parts[0] === 'api' && parts[1] === 'documents' && parts[3] === 'annotations' && req.method === 'DELETE') {
         const doc = await readDocument(parts[2]);
@@ -391,7 +524,7 @@ export function startAgentBridge({
 } = {}) {
   const store = createDocumentStore(root);
   const settings = createSettingsStore(root);
-  const server = createServer(createRequestHandler({ store, settings, staticDir, cors }));
+  const server = createServer(createRequestHandler({ store, settings, staticDir, cors, root }));
   return new Promise((resolvePromise, rejectPromise) => {
     server.once('error', rejectPromise);
     server.listen(port, host, () => {

@@ -42,6 +42,40 @@ export class AIMethods {
   }
 
 
+  // ===== 统一提问入口 =====
+  // 普通阅读问题保持只读；只有明确要求操作项目、文件或外部发布时，才按次申请工具权限。
+  _questionNeedsProjectTools(question) {
+    const text = String(question || '').trim();
+    if (!text) return false;
+    if (this._questionNeedsWriteAccess(text)) return true;
+    const action = /(修改|改动|改一下|修复|实现|创建|新建|删除|移除|重命名|写入|保存到|发布到|上传|运行|执行|安装|提交|推送|部署|生成文件|edit|modify|fix|implement|create|delete|rename|write|save|publish|upload|run|execute|install|commit|push|deploy)/i;
+    const target = /(原文|文档|文章|正文|项目|工程|代码|文件|目录|仓库|测试|命令|脚本|README|飞书|钉钉|document|article|project|code|file|folder|directory|repo|test|command|script)/i;
+    return action.test(text) && target.test(text);
+  }
+
+
+  _questionNeedsWriteAccess(question) {
+    const text = String(question || '').trim();
+    const writeAction = /(修改|改动|改一下|改|润色|修复|实现|创建|新建|删除|移除|重命名|写入|写回|替换|整理到|edit|modify|fix|implement|create|delete|rename|write|replace)/i;
+    const target = /(原文|文档|文章|正文|项目|工程|代码|文件|目录|仓库|README|document|article|project|code|file|folder|directory|repo)/i;
+    const contextualShortReply = /(?:直接|帮我|那就|现在|按.+)(?:改|修改|写回)|(?:改|修改|写回)(?:吧|它|这个)/i;
+    return writeAction.test(text) && (target.test(text) || contextualShortReply.test(text));
+  }
+
+
+  _resolveQuestionMode(question, confirmTools = (message) => window.confirm(message)) {
+    if (!this._questionNeedsProjectTools(question)) return 'chat';
+    if (this.aiEngine === 'gemini') {
+      this._setStatus('当前 Gemini 渠道不能操作项目，请切换到 Claude 或 Codex');
+      return null;
+    }
+    const confirmed = confirmTools(this._questionNeedsWriteAccess(question)
+      ? '这条请求需要修改当前文档或项目文件。\n\n是否仅为本次请求授予写入权限？'
+      : '这条请求需要使用项目工具。\n\n是否仅为本次请求授权？');
+    return confirmed ? 'agent' : null;
+  }
+
+
   // 引擎切换入口在顶栏「设置」弹窗里；面板头部只放一枚只读 chip 显示当前引擎。
   _syncAIEngineSwitch() {
     const chip = this.aiEngineChipRef?.current;
@@ -50,17 +84,19 @@ export class AIMethods {
   }
 
 
-  _aiChatRequestBody(question) {
+  _aiChatRequestBody(question, mode = 'chat') {
     return {
       question,
       engine: (this.aiEngine === 'codex' || this.aiEngine === 'gemini') ? this.aiEngine : 'claude',
+      mode: mode === 'agent' ? 'agent' : 'chat',
+      allowWrite: mode === 'agent' && this._questionNeedsWriteAccess(question),
       document: this._documentPayload(),
       // 在子文档视图里追问时带上父节点，服务端把这次问答挂进追问树。
       parentRequestId: (this.previewOverrideMarkdown && this.activeAnswerRequestId) || undefined,
       selection: {
         quote: this.aiQuote,
         occurrence: this.aiOccurrence || 0,
-        surroundingText: this._selectionContext()
+        surroundingText: this.aiQuote ? this._selectionContext() : ''
       }
     };
   }
@@ -259,11 +295,15 @@ export class AIMethods {
       if (item.answer) this.aiMessages.push({
         id: 'a-' + item.requestId, role: 'assistant', text: item.answer,
         requestId: item.requestId, documentId, engine: item.engine,
+        hiddenFromReadingTree: item.hiddenFromReadingTree === true,
+        artifacts: item.artifacts || [], progress: item.progress || [],
         meta: '本地历史 · 已归档至阅读工作区', pending: false
       });
     });
-    const lastQuote = history.length ? history[history.length - 1].quote : '';
-    if (lastQuote) { this.aiQuote = lastQuote; this._renderAIQuote(); }
+    this.aiQuote = '';
+    this.aiOccurrence = 0;
+    this.aiStart = undefined;
+    this._renderAIQuote();
     if (syncComments) this._syncAICommentsFromHistory(documentId, history);
     this._renderAIMessages();
     if (focusRequestId) {
@@ -309,8 +349,33 @@ export class AIMethods {
   _renderAIQuote() {
     const el = this.aiQuoteRef.current;
     if (!el) return;
-    el.textContent = this.aiQuote || '请先在预览中选中文字，再点击「问 AI」。';
+    const context = el.closest && el.closest('.ai-context');
+    if (context) context.classList.toggle('has-quote', Boolean(this.aiQuote));
+    el.textContent = this.aiQuote || (this.aiMessages.length
+      ? '未引用划线内容 · 继续当前对话'
+      : '请先在预览中选中文字，再点击「问 AI」。');
     el.classList.toggle('is-empty', !this.aiQuote);
+  }
+
+
+  _consumeAIQuote() {
+    this.aiQuote = '';
+    this.aiOccurrence = 0;
+    this.aiStart = undefined;
+    this._renderAIQuote();
+  }
+
+
+  _applyAIDocumentUpdate(data) {
+    const source = this.sourceRef.current;
+    if (!data || data.documentId !== this.bridgeDocumentId || !source || typeof data.content !== 'string') return false;
+    source.value = data.content;
+    this._resetEditingHistory();
+    this._renderPreview();
+    this._updateCount();
+    this._setDirty(true);
+    this._autosave();
+    return true;
   }
 
 
@@ -366,9 +431,10 @@ export class AIMethods {
       label.textContent = message.role === 'user' ? '你' : this._aiEngineLabel(message.engine);
       const body = document.createElement('div');
       body.className = 'ai-message-body';
-      if (message.role === 'assistant' && message.text) this._renderSafeMarkdown(body, message.text);
+      if (message.role === 'assistant' && message.text) this._renderSafeMarkdown(body, message.text, message.artifacts);
       else body.textContent = message.text || '正在思考…';
       item.appendChild(label);
+      this._appendAIProgress(item, message);
       if (message.quote && message.role === 'user') {
         const quote = document.createElement('blockquote');
         quote.className = 'ai-message-quote';
@@ -381,13 +447,113 @@ export class AIMethods {
         meta.textContent = message.meta;
         item.appendChild(meta);
       }
+      this._appendAIRetryAction(item, message);
+      this._appendAIReadingTreeAction(item, message);
       list.appendChild(item);
     });
     list.scrollTop = list.scrollHeight;
   }
 
 
-  _renderSafeMarkdown(target, markdown) {
+  _recordAIProgress(message, progress) {
+    if (!progress || !progress.label) return;
+    if (!Array.isArray(message.progress)) message.progress = [];
+    const previous = message.progress[message.progress.length - 1];
+    if (previous && previous.label === progress.label && previous.state === progress.state) return;
+    message.progress.push({ label: String(progress.label), state: progress.state === 'running' ? 'running' : 'done' });
+    if (message.progress.length > 12) message.progress.splice(0, message.progress.length - 12);
+  }
+
+
+  _appendAIProgress(item, message) {
+    if (message.role !== 'assistant' || !Array.isArray(message.progress) || !message.progress.length) return;
+    const details = document.createElement('details');
+    details.className = 'ai-agent-progress';
+    details.open = !!message.pending;
+    const summary = document.createElement('summary');
+    summary.textContent = (message.pending ? '执行中' : '执行过程') + ' · ' + message.progress.length + ' 步';
+    const list = document.createElement('ol');
+    message.progress.forEach((progress) => {
+      const row = document.createElement('li');
+      row.className = progress.state === 'running' && message.pending ? 'is-running' : 'is-done';
+      row.textContent = progress.label;
+      list.appendChild(row);
+    });
+    details.append(summary, list);
+    item.appendChild(details);
+  }
+
+
+  _appendAIRetryAction(item, message) {
+    if (message.role !== 'assistant' || !message.failed || !message.retry) return;
+    const actions = document.createElement('div');
+    actions.className = 'ai-message-actions';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'ai-message-retry';
+    button.textContent = message.retrying ? '正在重试…' : (message.retried ? '已重试' : '重试');
+    button.disabled = !!(message.retrying || message.retried || this.aiBusy);
+    button.addEventListener('click', () => this.retryAIMessage(message.id));
+    actions.appendChild(button);
+    item.appendChild(actions);
+  }
+
+
+  async retryAIMessage(messageId) {
+    if (this.aiBusy) return false;
+    const message = this.aiMessages.find((item) => item.id === messageId);
+    if (!message || !message.failed || !message.retry || message.retrying || message.retried) return false;
+    const retry = message.retry;
+    const input = this.aiInputRef.current;
+    if (!input) return false;
+    message.retrying = true;
+    this.aiQuote = retry.quote || '';
+    this.aiOccurrence = retry.occurrence || 0;
+    this.aiStart = retry.start;
+    this.aiEngine = (retry.engine === 'codex' || retry.engine === 'gemini') ? retry.engine : 'claude';
+    input.value = retry.question;
+    this._renderAIQuote();
+    this._syncAIEngineSwitch();
+    this._renderAIMessages();
+    let sent = false;
+    try {
+      sent = await this.sendAIQuestion() !== false;
+      return sent;
+    } finally {
+      message.retrying = false;
+      message.retried = sent;
+      this._renderAIMessages();
+    }
+  }
+
+
+  _aiRetryContext(question) {
+    return {
+      question,
+      quote: this.aiQuote,
+      occurrence: this.aiOccurrence || 0,
+      start: this.aiStart,
+      engine: this.aiEngine
+    };
+  }
+
+
+  _matchAIMarkdownArtifact(href, artifacts) {
+    if (!href || !Array.isArray(artifacts)) return null;
+    const normalized = (value) => {
+      try { return decodeURIComponent(String(value)).replace(/^\.\//, ''); } catch { return String(value).replace(/^\.\//, ''); }
+    };
+    return artifacts.find((item) => normalized(item.href) === normalized(href)) || null;
+  }
+
+
+  async _openAIMarkdownArtifact(documentId) {
+    if (!documentId) return;
+    await this.openRecentDocument(documentId);
+  }
+
+
+  _renderSafeMarkdown(target, markdown, artifacts) {
     if (!window.marked) {
       target.textContent = markdown;
       return;
@@ -414,6 +580,19 @@ export class AIMethods {
       }
     });
     target.replaceChildren(template.content.cloneNode(true));
+    target.querySelectorAll('a').forEach((link) => {
+      const artifact = this._matchAIMarkdownArtifact(link.getAttribute('href'), artifacts);
+      if (!artifact) return;
+      link.removeAttribute('target');
+      link.removeAttribute('rel');
+      link.setAttribute('href', '#');
+      link.classList.add('ai-local-markdown-link');
+      link.title = '用墨笺打开 ' + artifact.fileName;
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        this._openAIMarkdownArtifact(artifact.documentId);
+      });
+    });
   }
 
 
@@ -429,20 +608,67 @@ export class AIMethods {
   }
 
 
+  _handleAIStreamEvent(event, data, state) {
+    if (event === 'delta' && data?.text) {
+      state.assistant.pending = false;
+      state.assistant.text += data.text;
+      this._renderAIMessages();
+    } else if (event === 'progress' && data) {
+      this._recordAIProgress(state.assistant, data);
+      this._renderAIMessages();
+    } else if (event === 'artifacts' && data) {
+      state.assistant.artifacts = Array.isArray(data.items) ? data.items : [];
+      this._renderAIMessages();
+    } else if (event === 'document-updated' && data) {
+      state.documentUpdated = this._applyAIDocumentUpdate(data);
+      this._renderAIMessages();
+    } else if (event === 'meta' && data) {
+      state.userMessage.requestId = data.requestId;
+      state.userMessage.documentId = data.documentId;
+      state.assistant.requestId = data.requestId;
+      state.assistant.documentId = data.documentId;
+      state.aiComment.requestId = data.requestId;
+      state.aiComment.documentId = data.documentId;
+      this.bridgeDocumentId = data.documentId;
+      this.activeDocumentId = data.documentId;
+      this._persist();
+      if (data.mode === 'agent') {
+        this.agentProjectRoot = data.projectRoot || '';
+        state.contextMeta = '已使用项目工具' +
+          (data.writeAuthorized ? ' · 已获本次写入权限' : '') +
+          (this.agentProjectRoot ? ' · 工程 ' + this.agentProjectRoot : ' · 无工程上下文');
+        state.assistant.meta = state.contextMeta + (data.resumed ? ' · 已续接会话' : ' · 已新建会话');
+      } else {
+        state.contextMeta = '整篇文档已载入' + (data.documentChars ? ' · ' + data.documentChars + ' 字符' : '');
+        state.assistant.meta = state.contextMeta + (data.resumed ? ' · 已继续阅读会话' : ' · 已建立阅读会话');
+      }
+    } else if (event === 'session-reset' && data) {
+      this.aiBridgeOnline = true;
+      state.userMessage.documentId = data.documentId || state.userMessage.documentId;
+      state.assistant.documentId = data.documentId || state.assistant.documentId;
+      state.aiComment.documentId = data.documentId || state.aiComment.documentId;
+      state.assistant.meta = (state.contextMeta ? state.contextMeta + ' · ' : '') + '历史会话已失效，已自动建立新会话';
+      this._setAIStatus('本地 Agent 已连接 · 已重建会话', 'online');
+    } else if (event === 'error' && data) {
+      throw new Error(data.message || 'Agent 回答失败');
+    }
+  }
+
+
   async sendAIQuestion() {
-    if (!this.agentBridgeEnabled) return;
-    if (this.aiBusy) return;
+    if (!this.agentBridgeEnabled) return false;
+    if (this.aiBusy) return false;
     const input = this.aiInputRef.current;
     const question = input ? input.value.trim() : '';
-    if (!question) return;
-    if (!this.aiQuote) {
-      this._setAIStatus('请先选择一段原文', 'offline');
-      return;
-    }
-
+    if (!question) return false;
+    const requestMode = this._resolveQuestionMode(question);
+    if (!requestMode) return false;
+    const requestBody = this._aiChatRequestBody(question, requestMode);
+    const selectedQuote = this.aiQuote;
+    const retryContext = this._aiRetryContext(question);
     const aiComment = {
       id: 'c' + Date.now() + Math.floor(Math.random() * 999),
-      quote: this.aiQuote,
+      quote: selectedQuote,
       occ: this.aiOccurrence || 0,
       start: this.aiStart,
       type: 'ai',
@@ -455,31 +681,36 @@ export class AIMethods {
     if (this.previewOverrideMarkdown && this.activeAnswerRequestId) {
       aiComment.answerRequestId = this.activeAnswerRequestId;
     }
-    this.comments.push(aiComment);
-    this._persist();
-    this._renderPreview();
-    this._renderComments();
+    // 批注靠引用定位，没有引用（Agent 模式直接下指令）就不落批注，只留问答记录。
+    const anchored = !!selectedQuote;
+    if (anchored) {
+      this.comments.push(aiComment);
+      this._persist();
+      this._renderPreview();
+      this._renderComments();
+    }
     const engineLabel = this._aiEngineLabel();
-    const userMessage = this._pushAIMessage('user', question, '', { quote: this.aiQuote });
-    const assistant = this._pushAIMessage('assistant', '', '', { engine: this.aiEngine });
+    const userMessage = this._pushAIMessage('user', question, '', { quote: selectedQuote });
+    const assistant = this._pushAIMessage('assistant', '', '', {
+      engine: this.aiEngine, retry: retryContext
+    });
+    this._consumeAIQuote();
+    const streamState = { userMessage, assistant, aiComment, contextMeta: '', documentUpdated: false };
     let bridgeReached = false;
     if (input) input.value = '';
     this._setAIBusy(true);
-    this._setAIStatus(engineLabel + ' 正在阅读…', 'checking');
-
+    this._setAIStatus(engineLabel + (requestMode === 'agent' ? ' 正在使用项目工具…' : ' 正在阅读…'), 'checking');
     try {
       const response = await fetch(bridgeUrl('/api/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(this._aiChatRequestBody(question))
+        body: JSON.stringify(requestBody)
       });
       if (!response.ok || !response.body) throw new Error('本地 Agent Bridge 无响应');
       bridgeReached = true;
-
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
-      let contextMeta = '';
       while (true) {
         const part = await reader.read();
         if (part.done) break;
@@ -494,36 +725,13 @@ export class AIMethods {
               try { data = JSON.parse(line.slice(5).trim()); } catch (e) {}
             }
           });
-          if (event === 'delta' && data && data.text) {
-            assistant.pending = false;
-            assistant.text += data.text;
-            this._renderAIMessages();
-          } else if (event === 'meta' && data) {
-            userMessage.requestId = data.requestId;
-            userMessage.documentId = data.documentId;
-            assistant.requestId = data.requestId;
-            assistant.documentId = data.documentId;
-            aiComment.requestId = data.requestId;
-            aiComment.documentId = data.documentId;
-            this.bridgeDocumentId = data.documentId;
-            this.activeDocumentId = data.documentId;
-            this._persist();
-            contextMeta = '整篇文档已载入' + (data.documentChars ? ' · ' + data.documentChars + ' 字符' : '');
-            assistant.meta = contextMeta + (data.resumed ? ' · 已继续阅读会话' : ' · 已建立阅读会话');
-          } else if (event === 'session-reset' && data) {
-            this.aiBridgeOnline = true;
-            userMessage.documentId = data.documentId || userMessage.documentId;
-            assistant.documentId = data.documentId || assistant.documentId;
-            aiComment.documentId = data.documentId || aiComment.documentId;
-            assistant.meta = (contextMeta ? contextMeta + ' · ' : '') + '历史会话已失效，已自动建立新会话';
-            this._setAIStatus('本地 Agent 已连接 · 已重建会话', 'online');
-          } else if (event === 'error' && data) {
-            throw new Error(data.message || 'Agent 回答失败');
-          }
+          this._handleAIStreamEvent(event, data, streamState);
         }
       }
       assistant.pending = false;
-      assistant.meta = (contextMeta ? contextMeta + ' · ' : '') + '已归档至阅读工作区';
+      assistant.failed = false;
+      assistant.meta = (streamState.contextMeta ? streamState.contextMeta + ' · ' : '') +
+        (streamState.documentUpdated ? '已更新原文档 · ' : '') + '已归档至阅读工作区';
       this.aiBridgeOnline = true;
       aiComment.answer = assistant.text;
       aiComment.aiStatus = 'answered';
@@ -532,9 +740,12 @@ export class AIMethods {
       this._refreshAIConversations();
       this._refreshRecentDocuments();
       this._setAIStatus('本地 Agent 已连接', 'online');
-      this._setStatus('AI 回答已归档到阅读工作区');
+      this._setStatus(streamState.documentUpdated
+        ? 'Agent 已更新原文档并归档回答'
+        : 'AI 回答已归档到阅读工作区');
     } catch (error) {
       assistant.pending = false;
+      assistant.failed = true;
       const message = error && error.message ? error.message : String(error);
       assistant.text = (bridgeReached ? 'Agent 执行失败：' : '连接失败：') + message;
       assistant.meta = bridgeReached
@@ -551,6 +762,7 @@ export class AIMethods {
       this._renderAIMessages();
       if (input) input.focus();
     }
+    return true;
   }
 
 }
