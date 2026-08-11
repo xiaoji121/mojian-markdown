@@ -4,6 +4,7 @@
 import { SAMPLE_MARKDOWN } from './sample';
 import { EDITOR_STORAGE_KEY, loadEditorState } from './storage';
 import { AIMethods } from './aiMethods';
+import { AIApprovalMethods } from './aiApprovalMethods';
 import { AIReadingTreeMethods } from './aiReadingTreeMethods';
 import { BridgeMethods } from './bridgeMethods';
 import { CommentMethods } from './commentMethods';
@@ -475,6 +476,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     DiagramMethods,
     LongImageMethods,
     AIMethods,
+    AIApprovalMethods,
     AIReadingTreeMethods,
     AISettingsMethods,
     ConnectorMethods,

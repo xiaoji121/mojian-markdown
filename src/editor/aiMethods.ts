@@ -365,19 +365,6 @@ export class AIMethods {
   }
 
 
-  _applyAIDocumentUpdate(data) {
-    const source = this.sourceRef.current;
-    if (!data || data.documentId !== this.bridgeDocumentId || !source || typeof data.content !== 'string') return false;
-    source.value = data.content;
-    this._resetEditingHistory();
-    this._renderPreview();
-    this._updateCount();
-    this._setDirty(true);
-    this._autosave();
-    return true;
-  }
-
-
   _selectionContext() {
     const full = (this.previewRef.current && this.previewRef.current.textContent) || '';
     if (!this.aiQuote) return '';
@@ -447,6 +434,7 @@ export class AIMethods {
         item.appendChild(meta);
       }
       this._appendAIRetryAction(item, message);
+      this._appendAIDocumentUndoAction(item, message);
       this._appendAIReadingTreeAction(item, message);
       list.appendChild(item);
     });
@@ -607,7 +595,7 @@ export class AIMethods {
   }
 
 
-  _handleAIStreamEvent(event, data, state) {
+  async _handleAIStreamEvent(event, data, state) {
     if (event === 'delta' && data?.text) {
       state.assistant.pending = false;
       state.assistant.text += data.text;
@@ -618,8 +606,12 @@ export class AIMethods {
     } else if (event === 'artifacts' && data) {
       state.assistant.artifacts = Array.isArray(data.items) ? data.items : [];
       this._renderAIMessages();
+    } else if (event === 'approval-required' && data) {
+      await this._reviewAIApproval(data, state);
     } else if (event === 'document-updated' && data) {
-      state.documentUpdated = this._applyAIDocumentUpdate(data);
+      state.documentUpdated = this._applyAIDocumentUpdate(data, state.originalContent);
+      state.documentConflict = !state.documentUpdated;
+      state.assistant.documentUndoAvailable = state.documentUpdated;
       this._renderAIMessages();
     } else if (event === 'usage' && data) {
       const total = Number(data.totalTokens) || (Number(data.inputTokens) || 0) + (Number(data.outputTokens) || 0);
@@ -701,7 +693,10 @@ export class AIMethods {
       engine: this.aiEngine, retry: retryContext
     });
     this._consumeAIQuote();
-    const streamState = { userMessage, assistant, aiComment, contextMeta: '', documentUpdated: false };
+    const streamState = {
+      userMessage, assistant, aiComment, contextMeta: '', documentUpdated: false,
+      documentConflict: false, originalContent: requestBody.document.content
+    };
     let bridgeReached = false;
     if (input) input.value = '';
     this._setAIBusy(true);
@@ -731,7 +726,7 @@ export class AIMethods {
               try { data = JSON.parse(line.slice(5).trim()); } catch (e) {}
             }
           });
-          this._handleAIStreamEvent(event, data, streamState);
+          await this._handleAIStreamEvent(event, data, streamState);
         }
       }
       assistant.pending = false;
@@ -748,6 +743,8 @@ export class AIMethods {
       this._setAIStatus('本地 Agent 已连接', 'online');
       this._setStatus(streamState.documentUpdated
         ? 'Agent 已更新原文档并归档回答'
+        : streamState.documentConflict
+          ? 'Agent 已生成修改，但正文期间发生变化，未覆盖你的编辑'
         : 'AI 回答已归档到阅读工作区');
     } catch (error) {
       assistant.pending = false;

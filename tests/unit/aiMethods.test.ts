@@ -185,25 +185,6 @@ test('打开历史对话时不恢复最后一次划线引用', () => {
   assert.equal(editor.aiQuote, '');
 });
 
-test('Agent 更新当前文档后立即替换编辑器正文并触发本地写回', () => {
-  const editor = createEditor();
-  const source = { value: '# 旧内容' };
-  const calls: string[] = [];
-  Object.assign(editor, {
-    bridgeDocumentId: 'doc-1',
-    sourceRef: createRef(source),
-    _resetEditingHistory() { calls.push('history'); },
-    _renderPreview() { calls.push('preview'); },
-    _updateCount() { calls.push('count'); },
-    _setDirty(value: boolean) { calls.push('dirty:' + value); },
-    _autosave() { calls.push('autosave'); }
-  });
-
-  assert.equal(editor._applyAIDocumentUpdate({ documentId: 'doc-1', content: '# 新内容' }), true);
-  assert.equal(source.value, '# 新内容');
-  assert.deepEqual(calls, ['history', 'preview', 'count', 'dirty:true', 'autosave']);
-});
-
 test('普通阅读问题直接按只读问答发送，不弹确认', () => {
   const editor = createEditor();
   let confirmed = false;

@@ -5,7 +5,7 @@
 
 ## 实施进度
 
-已完成首个 Phase 0/Phase 1 闭环：
+已完成 Phase 0/Phase 1 与首个 Phase 2 当前文档写入闭环：
 
 - 接入 AI SDK `ToolLoopAgent`、Google provider 与 OpenAI-compatible provider；
 - 新增 Gemini、Kimi、通义千问、自定义兼容接口四种 API Agent 设置；
@@ -14,9 +14,12 @@
 - 完成目录穿越、软链接逃逸、敏感文件和大文件防护；
 - Bridge 支持 API Agent 的 SSE 文本、工具进度、按文档历史和 token 用量；
 - 用本地 mock OpenAI-compatible 服务验证了流式 tool call 两步闭环；
+- 新增绑定请求、工具和参数摘要的一次性审批票据；
+- 当前文档替换会展示紧凑 diff，并在等待期间检查编辑器正文冲突；
+- 写入使用版本指纹与同目录原子替换，应用后进入编辑器撤销历史并提供一键撤销；
 - 保留原 Claude、Codex 与 Gemini 翻译路径。
 
-尚未完成：真实 Kimi/千问/Gemini Key 的 provider contract 验证、系统安全存储、用户取消、Phase 2 写入/发布审批，以及上下文压缩。
+尚未完成：真实 Kimi/千问及 Gemini 工具调用的 provider contract 验证、系统安全存储、用户取消、飞书/钉钉发布审批，以及上下文压缩。Gemini Key 的连接测试与设置保存已由实际桌面端验证。
 
 ## 1. 目标与非目标
 

@@ -12,6 +12,7 @@ import { createSettingsStore, maskProviderSettings } from './agent-bridge-settin
 import { normalizeEngine, normalizeMode, runEngine } from './agent-bridge-engines.js';
 import { createBuiltinModel } from './agent-bridge-providers.js';
 import { createBuiltinAgentTools } from './agent-bridge-tools.js';
+import { createApprovalBroker } from './agent-bridge-tool-policy.js';
 import { runBuiltinAgent } from './agent-bridge-builtin-agent.js';
 import { agentPrompt, prepareAgentContext, readAgentDocumentUpdate, runAgentTurn } from './agent-bridge-agent.js';
 import { importAgentMarkdownArtifacts } from './agent-bridge-artifacts.js';
@@ -147,7 +148,7 @@ function translatePrompt(text) {
   ].join('\n');
 }
 
-function createRequestHandler({ store, settings, staticDir, cors, root, builtinModelFactory }) {
+function createRequestHandler({ store, settings, staticDir, cors, root, builtinModelFactory, approvalBroker }) {
   const { readDocument, writeDocument, deleteDocument, upsertDocument, listDocuments } = store;
   const corsHeaders = cors
     ? {
@@ -213,8 +214,27 @@ function createRequestHandler({ store, settings, staticDir, cors, root, builtinM
   async function runBuiltinChat({ engine, mode, body, doc, context, requestId, res }) {
     const providerSettings = await settings.providerSettings(engine);
     const model = builtinModelFactory(engine, providerSettings);
+    const requestApproval = async ({ toolName, args, summary, diff }) => {
+      const ticket = approvalBroker.request({ requestId, toolName, args });
+      writeSse(res, 'approval-required', {
+        approvalId: ticket.approvalId,
+        argsHash: ticket.argsHash,
+        toolName,
+        summary,
+        diff
+      });
+      const approved = await ticket.wait();
+      writeSse(res, 'approval-resolved', { approvalId: ticket.approvalId, approved });
+      return approved;
+    };
     const tools = mode === 'agent'
-      ? createBuiltinAgentTools({ projectRoot: context?.projectRoot, scratchFile: context?.scratchFile })
+      ? createBuiltinAgentTools({
+          projectRoot: context?.projectRoot,
+          scratchFile: context?.scratchFile,
+          allowWrite: body.allowWrite === true,
+          requestId,
+          requestApproval
+        })
       : {};
     const result = await runBuiltinAgent({
       model,
@@ -495,6 +515,11 @@ function createRequestHandler({ store, settings, staticDir, cors, root, builtinM
         const body = await readBody(req);
         return sendJson(res, 200, maskProviderSettings(await settings.updateProviders(body)));
       }
+      if (req.method === 'POST' && parts[0] === 'api' && parts[1] === 'approvals' && parts[2]) {
+        const body = await readBody(req);
+        const result = approvalBroker.decide(parts[2], body);
+        return result.ok ? sendJson(res, 200, result) : sendJson(res, 409, result);
+      }
       // 下面这些委派处理器都是异步的，必须 await：直接 return promise 的话，
       // 它们抛出的错误（如请求体 JSON 解析失败、发布目标不支持）会绕过本函数的
       // catch 变成未处理的 rejection —— 客户端永远等不到响应，进程还可能被拖死。
@@ -571,8 +596,9 @@ export function startAgentBridge({
 } = {}) {
   const store = createDocumentStore(root);
   const settings = createSettingsStore(root);
+  const approvalBroker = createApprovalBroker();
   const server = createServer(createRequestHandler({
-    store, settings, staticDir, cors, root, builtinModelFactory
+    store, settings, staticDir, cors, root, builtinModelFactory, approvalBroker
   }));
   return new Promise((resolvePromise, rejectPromise) => {
     server.once('error', rejectPromise);

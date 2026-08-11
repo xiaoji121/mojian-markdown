@@ -1,9 +1,14 @@
-// 内置 Agent 首版只读工具。所有工程文件都先 realpath，再确认仍在工程根内，
-// 防止 ../ 和 symlink 逃逸；敏感文件即使位于工程内也拒绝读取。
+// 内置 Agent 工具。工程读取先 realpath 并确认仍在根内；当前文档写入只有在
+// 本轮授权后才暴露，且执行时仍需一次性审批、版本校验与原子替换。
 import { readdir, readFile, realpath, stat } from 'node:fs/promises';
 import { relative, resolve, sep } from 'node:path';
 import { tool } from 'ai';
 import { z } from 'zod';
+import {
+  atomicReplaceDocument,
+  buildMarkdownDiff,
+  documentVersion
+} from './agent-bridge-document-write.js';
 
 const MAX_FILE_BYTES = 1024 * 1024;
 const MAX_OUTPUT_CHARS = 20_000;
@@ -59,15 +64,24 @@ async function walkFiles(root, dir = root, result = []) {
   return result;
 }
 
-export function createBuiltinAgentTools({ projectRoot, scratchFile }) {
-  return {
+export function createBuiltinAgentTools({
+  projectRoot,
+  scratchFile,
+  allowWrite = false,
+  requestId = '',
+  requestApproval
+}) {
+  const tools = {
     read_current_document: tool({
       description: '分页读取墨笺编辑器中的当前 Markdown 文档',
       inputSchema: z.object({
         offset: z.number().int().min(0).optional(),
         limit: z.number().int().min(1).max(MAX_OUTPUT_CHARS).optional()
       }),
-      execute: async ({ offset, limit }) => pageText(await readTextFile(scratchFile), offset, limit)
+      execute: async ({ offset, limit }) => {
+        const content = await readTextFile(scratchFile);
+        return { ...pageText(content, offset, limit), version: documentVersion(content) };
+      }
     }),
     read_project_file: tool({
       description: '读取当前文档所属工程内的文本文件；不能读取凭据或工程外文件',
@@ -109,4 +123,30 @@ export function createBuiltinAgentTools({ projectRoot, scratchFile }) {
       }
     })
   };
+  if (!allowWrite || typeof requestApproval !== 'function') return tools;
+  tools.replace_current_document = tool({
+    description: '替换墨笺当前 Markdown 文档。必须先读取当前文档并使用返回的最新 version；执行前会让用户确认 diff',
+    inputSchema: z.object({
+      content: z.string().max(MAX_FILE_BYTES),
+      expectedVersion: z.string().min(1),
+      summary: z.string().max(400).optional()
+    }),
+    execute: async ({ content, expectedVersion, summary }) => {
+      const current = await readTextFile(scratchFile);
+      if (documentVersion(current) !== expectedVersion) throw new Error('当前文档版本已变化，请重新读取后再修改');
+      if (current === content) return { applied: false, reason: '正文没有变化', version: expectedVersion };
+      const diff = buildMarkdownDiff(current, content);
+      const approved = await requestApproval({
+        requestId,
+        toolName: 'replace_current_document',
+        args: { expectedVersion, content },
+        summary: String(summary || '替换当前文档'),
+        diff
+      });
+      if (!approved) return { applied: false, reason: '用户未批准这次修改', version: expectedVersion };
+      const result = await atomicReplaceDocument(scratchFile, content, expectedVersion);
+      return { applied: true, ...result, addedLines: diff.addedLines, removedLines: diff.removedLines };
+    }
+  });
+  return tools;
 }

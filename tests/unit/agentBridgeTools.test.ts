@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createBuiltinAgentTools } from '../../scripts/agent-bridge-tools.js';
@@ -42,7 +42,7 @@ test('工程读取拒绝敏感文件、目录逃逸与软链接逃逸', async ()
   });
 });
 
-test('首版工具集不包含写文件或 shell', async () => {
+test('只读配置不包含写文件或 shell', async () => {
   await withProject(async ({ root, scratchFile }) => {
     const tools = createBuiltinAgentTools({ projectRoot: root, scratchFile });
     assert.deepEqual(Object.keys(tools).sort(), [
@@ -54,3 +54,32 @@ test('首版工具集不包含写文件或 shell', async () => {
   });
 });
 
+test('获本轮写入授权后才提供当前文档替换工具，并在执行时逐次审批', async () => {
+  await withProject(async ({ root, scratchFile }) => {
+    const approvals = [];
+    const tools = createBuiltinAgentTools({
+      projectRoot: root,
+      scratchFile,
+      allowWrite: true,
+      requestId: 'request-1',
+      requestApproval: async (details) => {
+        approvals.push(details);
+        return true;
+      }
+    });
+    const current = await tools.read_current_document.execute({ offset: 0, limit: 100 });
+    const result = await tools.replace_current_document.execute({
+      content: '# 已修改\n正文',
+      expectedVersion: current.version,
+      summary: '更新标题'
+    });
+
+    assert.equal(result.applied, true);
+    assert.equal(await readFile(scratchFile, 'utf8'), '# 已修改\n正文');
+    assert.equal(approvals.length, 1);
+    assert.match(approvals[0].diff.preview, /[-+] # /);
+
+    const readOnly = createBuiltinAgentTools({ projectRoot: root, scratchFile });
+    assert.equal(readOnly.replace_current_document, undefined);
+  });
+});
