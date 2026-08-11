@@ -118,10 +118,14 @@ function writeSse(res, event, data) {
   res.write(`data: ${JSON.stringify(data)}\n\n`);
 }
 
-function bridgePrompt(body, doc) {
+export function bridgePrompt(body, doc) {
   const selection = body.selection || {};
+  const capability = body.mode === 'agent' && body.allowWrite === true
+    ? '当前处于受控写入模式。只有 replace_current_document 工具返回 applied=true 后，才能声称修改成功；工具未调用、被拒绝或失败时必须如实说明。'
+    : '当前处于只读问答模式，不能修改文档、文件或外部系统；不得声称已经修改、删除、保存或发布了任何内容。';
   return [
     '你是本地 Markdown 阅读助手。请基于用户选中的原文和整篇文档回答问题。',
+    capability,
     '',
     `文件名：${doc.fileName}`,
     '',

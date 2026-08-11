@@ -137,6 +137,22 @@ test('修改当前文档时逐次确认写权限，并在请求体中授权本�
   assert.equal(editor._aiChatRequestBody('那就直接改吧', 'agent').allowWrite, true);
 });
 
+test('选中原文后说“这段不要了”会进入受控写入而不是只读问答', () => {
+  const editor = createEditor();
+  editor.aiQuote = '首版不做多 Agent 编排';
+  const prompts: string[] = [];
+  const question = '这段不要了，帮我删除了吧';
+
+  const mode = editor._resolveQuestionMode(question, (message: string) => {
+    prompts.push(message);
+    return true;
+  });
+
+  assert.equal(mode, 'agent');
+  assert.match(prompts[0], /写入权限/);
+  assert.equal(editor._aiChatRequestBody(question, mode).allowWrite, true);
+});
+
 test('划线引用发送一次后被消费，后续对话不再携带旧引用', () => {
   const editor = createEditor();
   editor.aiMessages = [{ role: 'user', text: '第一问' }];

@@ -62,7 +62,8 @@ export class AIMethods {
     const writeAction = /(修改|改动|改一下|改|润色|修复|实现|创建|新建|删除|移除|重命名|写入|写回|替换|整理到|edit|modify|fix|implement|create|delete|rename|write|replace)/i;
     const target = /(原文|文档|文章|正文|项目|工程|代码|文件|目录|仓库|README|document|article|project|code|file|folder|directory|repo)/i;
     const contextualShortReply = /(?:直接|帮我|那就|现在|按.+)(?:改|修改|写回)|(?:改|修改|写回)(?:吧|它|这个)/i;
-    return writeAction.test(text) && (target.test(text) || contextualShortReply.test(text));
+    const selectedOriginal = !!String(this.aiQuote || '').trim();
+    return writeAction.test(text) && (target.test(text) || contextualShortReply.test(text) || selectedOriginal);
   }
 
 
