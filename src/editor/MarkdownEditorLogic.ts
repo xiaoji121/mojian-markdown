@@ -208,7 +208,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
         this.activeDocumentId = saved.bridgeDocumentId;
       }
       if (saved.savedAt) this._draftSavedAt = saved.savedAt;
-      if (saved.aiEngine === 'claude' || saved.aiEngine === 'codex' || saved.aiEngine === 'gemini') {
+      if (['claude', 'codex', 'gemini', 'kimi', 'qwen', 'custom'].includes(saved.aiEngine)) {
         this.aiEngine = saved.aiEngine;
       }
       if (saved.theme) { this.theme = saved.theme; this._themeTouched = true; }

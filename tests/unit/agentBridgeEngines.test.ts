@@ -5,10 +5,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { engineInvocation, normalizeEngine, runEngine } from '../../scripts/agent-bridge-engines.js';
 
-test('normalizeEngine 认 codex 与 gemini，其余回退 claude', () => {
+test('normalizeEngine 认本地与 API Agent，其余回退 claude', () => {
   assert.equal(normalizeEngine('codex'), 'codex');
   assert.equal(normalizeEngine('claude'), 'claude');
   assert.equal(normalizeEngine('gemini'), 'gemini');
+  assert.equal(normalizeEngine('kimi'), 'kimi');
+  assert.equal(normalizeEngine('qwen'), 'qwen');
+  assert.equal(normalizeEngine('custom'), 'custom');
   assert.equal(normalizeEngine('gpt'), 'claude');
   assert.equal(normalizeEngine(undefined), 'claude');
 });

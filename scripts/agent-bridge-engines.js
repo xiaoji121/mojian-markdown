@@ -24,7 +24,7 @@ import { join } from 'node:path';
 import { ProxyAgent, fetch as undiciFetch } from 'undici';
 
 export function normalizeEngine(value) {
-  if (value === 'codex' || value === 'gemini') return value;
+  if (['codex', 'gemini', 'kimi', 'qwen', 'custom'].includes(value)) return value;
   return 'claude';
 }
 

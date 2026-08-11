@@ -25,7 +25,10 @@ function createEditor() {
 }
 
 const MASKED = {
-  gemini: { configured: true, apiKeyTail: '3456', model: 'gemini-2.5-pro', proxy: 'http://127.0.0.1:7890' }
+  gemini: { configured: true, apiKeyTail: '3456', model: 'gemini-2.5-pro', proxy: 'http://127.0.0.1:7890', baseURL: '' },
+  kimi: { configured: true, apiKeyTail: '2233', model: 'kimi-k2.5', proxy: '', baseURL: 'https://api.moonshot.cn/v1' },
+  qwen: { configured: false, apiKeyTail: '', model: 'qwen-plus', proxy: '', baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1' },
+  custom: { configured: false, apiKeyTail: '', model: '', proxy: '', baseURL: '' }
 };
 
 function findAll(
@@ -44,7 +47,7 @@ function collectTexts(el: { textContent?: string; children?: unknown[] }, out: s
   return out;
 }
 
-test('设置弹窗按渠道分组列出引擎：本地 Agent（Claude/Codex）与 API Key（Gemini）', async () => {
+test('设置弹窗按渠道分组列出本地 Agent 与四种 API Agent', async () => {
   await withDom(async (body) => {
     const previousFetch = globalThis.fetch;
     globalThis.fetch = (async () => ({ ok: true, json: async () => MASKED })) as typeof fetch;
@@ -64,8 +67,8 @@ test('设置弹窗按渠道分组列出引擎：本地 Agent（Claude/Codex）�
       const options = findAll(overlay, 'ai-channel-option');
       assert.deepEqual(
         options.map((option) => option.dataset.engine),
-        ['claude', 'codex', 'gemini'],
-        '三个引擎选项'
+        ['claude', 'codex', 'gemini', 'kimi', 'qwen', 'custom'],
+        '六个引擎选项'
       );
       const gemini = options.find((option) => option.dataset.engine === 'gemini')!;
       assert.equal(gemini.getAttribute('aria-checked'), 'true', '当前引擎选中');
@@ -121,6 +124,37 @@ test('打开设置弹窗时加载掩码配置回填表单（含代理地址）',
       assert.match(inputs.key.placeholder || '', /3456/);
       assert.equal(inputs.model.value, 'gemini-2.5-pro');
       assert.equal(inputs.proxy.value, 'http://127.0.0.1:7890');
+    } finally {
+      globalThis.fetch = previousFetch;
+    }
+  });
+});
+
+test('切换到千问后表单与保存请求跟随当前提供方', async () => {
+  await withDom(async (body) => {
+    const posts: string[] = [];
+    const previousFetch = globalThis.fetch;
+    globalThis.fetch = (async (_input: unknown, init?: { method?: string; body?: string }) => {
+      if (init?.method === 'POST') posts.push(String(init.body));
+      return { ok: true, json: async () => MASKED };
+    }) as typeof fetch;
+    try {
+      const editor = createEditor();
+      editor.aiEngine = 'gemini';
+      editor.setAIEngine = function (engine: string) {
+        this.aiEngine = engine;
+        this._syncAISettingsEngine();
+      };
+      await editor.openAISettings();
+      const overlay = body.children[0] as ReturnType<typeof createStubElement>;
+      findAll(overlay, 'ai-channel-option').find((item) => item.dataset.engine === 'qwen')!.dispatch('click');
+      assert.equal(editor._aiSettingsInputs.model.value, 'qwen-plus');
+      assert.match(editor._aiSettingsInputs.baseURL.value, /dashscope/);
+      editor._aiSettingsInputs.key.value = 'qwen-new-key';
+      await editor._saveAISettings();
+      const payload = JSON.parse(posts[0]);
+      assert.equal(payload.qwen.apiKey, 'qwen-new-key');
+      assert.equal(payload.gemini, undefined);
     } finally {
       globalThis.fetch = previousFetch;
     }

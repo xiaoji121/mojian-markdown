@@ -1,11 +1,14 @@
 // AI 提供方设置存储：API Key 等配置落在工作区根目录的 settings.json，
 // 全程只在本机流转；对外接口一律走 maskProviderSettings，绝不回传明文 Key。
-// 首批只支持 Gemini；后续新增提供方时扩展 PROVIDER_DEFAULTS 即可。
+// 支持 Gemini 原生接口与三种 OpenAI-compatible 配置。
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
 const PROVIDER_DEFAULTS = {
-  gemini: { model: 'gemini-2.5-flash' }
+  gemini: { model: 'gemini-2.5-flash', baseURL: '' },
+  kimi: { model: 'kimi-k2.5', baseURL: 'https://api.moonshot.cn/v1' },
+  qwen: { model: 'qwen-plus', baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1' },
+  custom: { model: '', baseURL: '' }
 };
 
 export function maskProviderSettings(settings) {
@@ -18,7 +21,8 @@ export function maskProviderSettings(settings) {
       configured: !!apiKey,
       apiKeyTail: apiKey ? apiKey.slice(-4) : '',
       model: saved.model || defaults.model,
-      proxy: saved.proxy || ''
+      proxy: saved.proxy || '',
+      baseURL: saved.baseURL || defaults.baseURL || ''
     };
   }
   return masked;
@@ -40,7 +44,7 @@ export function createSettingsStore(root) {
   async function updateProviders(patch) {
     const settings = await readSettings();
     settings.providers = settings.providers || {};
-    for (const name of Object.keys(PROVIDER_DEFAULTS)) {
+    for (const [name, defaults] of Object.entries(PROVIDER_DEFAULTS)) {
       const incoming = patch?.[name];
       if (!incoming) continue;
       const current = { ...(settings.providers[name] || {}) };
@@ -55,6 +59,12 @@ export function createSettingsStore(root) {
         const proxy = incoming.proxy.trim();
         if (proxy) current.proxy = proxy;
         else delete current.proxy;
+      }
+      if (typeof incoming.baseURL === 'string') {
+        const baseURL = incoming.baseURL.trim();
+        if (baseURL) current.baseURL = baseURL;
+        else if (!defaults.baseURL) delete current.baseURL;
+        else current.baseURL = defaults.baseURL;
       }
       settings.providers[name] = current;
     }

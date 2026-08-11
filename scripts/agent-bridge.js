@@ -10,6 +10,9 @@ import { randomUUID } from 'node:crypto';
 import { createDocumentStore, normalizeAnnotation } from './agent-bridge-store.js';
 import { createSettingsStore, maskProviderSettings } from './agent-bridge-settings.js';
 import { normalizeEngine, normalizeMode, runEngine } from './agent-bridge-engines.js';
+import { createBuiltinModel } from './agent-bridge-providers.js';
+import { createBuiltinAgentTools } from './agent-bridge-tools.js';
+import { runBuiltinAgent } from './agent-bridge-builtin-agent.js';
 import { agentPrompt, prepareAgentContext, readAgentDocumentUpdate, runAgentTurn } from './agent-bridge-agent.js';
 import { importAgentMarkdownArtifacts } from './agent-bridge-artifacts.js';
 import { connectorCapabilities, normalizeTarget, publishDocument } from './agent-bridge-connectors.js';
@@ -144,7 +147,7 @@ function translatePrompt(text) {
   ].join('\n');
 }
 
-function createRequestHandler({ store, settings, staticDir, cors, root }) {
+function createRequestHandler({ store, settings, staticDir, cors, root, builtinModelFactory }) {
   const { readDocument, writeDocument, deleteDocument, upsertDocument, listDocuments } = store;
   const corsHeaders = cors
     ? {
@@ -192,6 +195,38 @@ function createRequestHandler({ store, settings, staticDir, cors, root }) {
     );
   }
 
+  function isBuiltinAgentEngine(engine, mode) {
+    return ['kimi', 'qwen', 'custom'].includes(engine) || (engine === 'gemini' && mode === 'agent');
+  }
+
+  function builtinMessages(doc, prompt, requestId) {
+    const prior = (doc.messages || [])
+      .filter((item) => item.requestId !== requestId && item.answer)
+      .slice(-8)
+      .flatMap((item) => [
+        { role: 'user', content: item.question || '' },
+        { role: 'assistant', content: item.answer || '' }
+      ]);
+    return [...prior, { role: 'user', content: prompt }];
+  }
+
+  async function runBuiltinChat({ engine, mode, body, doc, context, requestId, res }) {
+    const providerSettings = await settings.providerSettings(engine);
+    const model = builtinModelFactory(engine, providerSettings);
+    const tools = mode === 'agent'
+      ? createBuiltinAgentTools({ projectRoot: context?.projectRoot, scratchFile: context?.scratchFile })
+      : {};
+    const result = await runBuiltinAgent({
+      model,
+      messages: builtinMessages(doc, bridgePrompt(body, doc), requestId),
+      tools,
+      onDelta: (text) => writeSse(res, 'delta', { text }),
+      onProgress: (item) => writeSse(res, 'progress', item)
+    });
+    writeSse(res, 'usage', result.usage);
+    return result.answer;
+  }
+
   // Agent 一轮：会话 id 写回文档，前端下次提问才能续上同一条对话线。
   async function runAgentChat({ engine, body, doc, context, res }) {
     const progress = [];
@@ -215,8 +250,8 @@ function createRequestHandler({ store, settings, staticDir, cors, root }) {
   async function handleChat(req, res) {
     const body = await readBody(req);
     const engine = normalizeEngine(body.engine);
-    // Gemini 是纯文本接口，没有工具也没有会话，Agent 模式对它无意义 → 回落问答。
-    const mode = engine === 'gemini' ? 'chat' : normalizeMode(body.mode);
+    const mode = normalizeMode(body.mode);
+    const builtinAgent = isBuiltinAgentEngine(engine, mode);
     const doc = await upsertDocument(body.document || {});
     const requestId = randomUUID();
     // 在子文档视图里追问时，记下父节点，问答树才能逐级嵌套。
@@ -269,12 +304,14 @@ function createRequestHandler({ store, settings, staticDir, cors, root }) {
     });
 
     try {
-      const agentResult = context
+      const agentResult = context && !builtinAgent
         ? await runAgentChat({ engine, body, doc, context, res })
         : null;
-      const answer = agentResult
-        ? agentResult.answer
-        : await runChatEngine({ engine, body, doc, res });
+      const answer = builtinAgent
+        ? await runBuiltinChat({ engine, mode, body, doc, context, requestId, res })
+        : agentResult
+          ? agentResult.answer
+          : await runChatEngine({ engine, body, doc, res });
       message.answer = answer;
       if (agentResult) message.progress = agentResult.progress;
       const updatedContent = context
@@ -289,7 +326,7 @@ function createRequestHandler({ store, settings, staticDir, cors, root }) {
           content: updatedContent
         });
       }
-      if (context) {
+      if (context && !builtinAgent) {
         message.artifacts = await importAgentMarkdownArtifacts(answer, context, upsertDocument);
         if (message.artifacts.length) writeSse(res, 'artifacts', { items: message.artifacts });
       }
@@ -386,21 +423,30 @@ function createRequestHandler({ store, settings, staticDir, cors, root }) {
   // 连通性验证：优先用请求里的 Key/模型（保存前先测），缺省回落到已保存配置。
   async function handleSettingsTest(req, res) {
     const body = await readBody(req);
-    const saved = await settings.providerSettings('gemini');
-    const gemini = {
-      apiKey: body?.gemini?.apiKey || saved.apiKey,
-      model: body?.gemini?.model || saved.model,
-      proxy: body?.gemini?.proxy || saved.proxy
+    const provider = ['gemini', 'kimi', 'qwen', 'custom'].includes(body.provider) ? body.provider : 'gemini';
+    const saved = await settings.providerSettings(provider);
+    const incoming = body?.[provider] || {};
+    const config = {
+      apiKey: incoming.apiKey || saved.apiKey,
+      model: incoming.model || saved.model,
+      baseURL: incoming.baseURL || saved.baseURL,
+      proxy: incoming.proxy || saved.proxy
     };
     let timer = null;
     try {
       const reply = await Promise.race([
-        runEngine('gemini', '连通性测试：请只回复 OK', () => {}, process.env, { gemini }),
+        provider === 'gemini'
+          ? runEngine('gemini', '连通性测试：请只回复 OK', () => {}, process.env, { gemini: config })
+          : runBuiltinAgent({
+              model: builtinModelFactory(provider, config),
+              prompt: '连通性测试：请只回复 OK',
+              tools: {}, onDelta: () => {}
+            }).then((result) => result.answer),
         new Promise((_resolve, reject) => {
           timer = setTimeout(() => reject(new Error('验证超时（15 秒），请检查网络或模型名')), 15_000);
         })
       ]);
-      return sendJson(res, 200, { ok: true, model: gemini.model, reply: String(reply).slice(0, 80) });
+      return sendJson(res, 200, { ok: true, provider, model: config.model, reply: String(reply).slice(0, 80) });
     } catch (error) {
       return sendJson(res, 200, { ok: false, message: error.message || String(error) });
     } finally {
@@ -520,11 +566,14 @@ export function startAgentBridge({
   host = '127.0.0.1',
   root = defaultWorkspaceRoot(),
   staticDir = '',
-  cors = true
+  cors = true,
+  builtinModelFactory = createBuiltinModel
 } = {}) {
   const store = createDocumentStore(root);
   const settings = createSettingsStore(root);
-  const server = createServer(createRequestHandler({ store, settings, staticDir, cors, root }));
+  const server = createServer(createRequestHandler({
+    store, settings, staticDir, cors, root, builtinModelFactory
+  }));
   return new Promise((resolvePromise, rejectPromise) => {
     server.once('error', rejectPromise);
     server.listen(port, host, () => {

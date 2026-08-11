@@ -1,12 +1,19 @@
 // @ts-nocheck
 // 产品级「设置」弹窗（顶栏 ⚙ 进入）。目前只有 AI 渠道一节，按两类渠道组织：
 //   本地 Agent 渠道 —— Claude / Codex，调用本机已登录的 CLI，无需 Key；
-//   API Key 渠道 —— 目前支持 Gemini，Key 保存在本机 Reading Workspace 的
+//   API Agent 渠道 —— Gemini / Kimi / 千问 / 自定义兼容接口，Key 保存在本机 Reading Workspace 的
 //     settings.json，界面上永远只显示尾号掩码，不回显明文。
 // 渠道选择点击即生效（setAIEngine），Key/模型/代理仍需「保存」。
 import { bridgeUrl } from './bridgeClient.ts';
 
-const GEMINI_FALLBACK = { configured: false, apiKeyTail: '', model: 'gemini-2.5-flash', proxy: '' };
+const API_PROVIDER_FALLBACKS = {
+  gemini: { configured: false, apiKeyTail: '', model: 'gemini-2.5-flash', proxy: '', baseURL: '' },
+  kimi: { configured: false, apiKeyTail: '', model: 'kimi-k2.5', proxy: '', baseURL: 'https://api.moonshot.cn/v1' },
+  qwen: { configured: false, apiKeyTail: '', model: 'qwen-plus', proxy: '', baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1' },
+  custom: { configured: false, apiKeyTail: '', model: '', proxy: '', baseURL: '' }
+};
+
+const API_PROVIDER_LABELS = { gemini: 'Gemini', kimi: 'Kimi', qwen: '通义千问', custom: '自定义接口' };
 
 const AI_CHANNELS = [
   {
@@ -20,10 +27,13 @@ const AI_CHANNELS = [
   },
   {
     key: 'api',
-    name: 'API Key 渠道',
-    desc: '使用你自己的 API Key 直连服务商',
+    name: 'API Agent 渠道',
+    desc: '使用自己的 API Key 直连服务商，Agent 模式无需安装 CLI',
     engines: [
-      { engine: 'gemini', name: 'Gemini', desc: 'Google Generative Language API' }
+      { engine: 'gemini', name: 'Gemini', desc: 'Google 原生接口' },
+      { engine: 'kimi', name: 'Kimi', desc: 'Moonshot API' },
+      { engine: 'qwen', name: '通义千问', desc: '阿里云百炼兼容接口' },
+      { engine: 'custom', name: '自定义', desc: 'OpenAI-compatible 接口' }
     ]
   }
 ];
@@ -106,7 +116,7 @@ export class AISettingsMethods {
       options.setAttribute('aria-label', channel.name);
       channel.engines.forEach((item) => options.appendChild(this._aiChannelOption(item)));
       group.append(head, options);
-      if (channel.key === 'api') group.appendChild(this._buildGeminiForm());
+      if (channel.key === 'api') group.appendChild(this._buildProviderForm());
       section.appendChild(group);
     });
     return section;
@@ -139,10 +149,11 @@ export class AISettingsMethods {
       option.classList.toggle('is-active', active);
       option.setAttribute('aria-checked', active ? 'true' : 'false');
     });
+    if (API_PROVIDER_FALLBACKS[this.aiEngine]) this._syncAISettingsForm();
   }
 
 
-  _buildGeminiForm() {
+  _buildProviderForm() {
     const form = document.createElement('div');
     form.className = 'ai-channel-provider-form';
     const key = document.createElement('input');
@@ -155,12 +166,16 @@ export class AISettingsMethods {
     proxy.type = 'text';
     proxy.spellcheck = false;
     proxy.placeholder = '如 http://127.0.0.1:7890，留空自动用系统代理变量';
+    const baseURL = document.createElement('input');
+    baseURL.type = 'text';
+    baseURL.spellcheck = false;
     form.append(
-      this._aiSettingsField('Gemini API Key', key),
+      this._aiSettingsField('API Key', key),
       this._aiSettingsField('模型', model),
+      this._aiSettingsField('接口地址', baseURL),
       this._aiSettingsField('代理地址（可选）', proxy)
     );
-    this._aiSettingsInputs = { key, model, proxy };
+    this._aiSettingsInputs = { key, model, proxy, baseURL };
     return form;
   }
 
@@ -208,14 +223,17 @@ export class AISettingsMethods {
   async _testAISettings() {
     const inputs = this._aiSettingsInputs;
     if (!inputs) return;
+    const provider = this._activeAPIProvider();
     const payload = {
-      gemini: {
+      provider,
+      [provider]: {
         model: String(inputs.model.value || '').trim() || undefined,
+        baseURL: String(inputs.baseURL.value || '').trim() || undefined,
         proxy: String(inputs.proxy.value || '').trim() || undefined
       }
     };
     const key = String(inputs.key.value || '').trim();
-    if (key) payload.gemini.apiKey = key;
+    if (key) payload[provider].apiKey = key;
     this._setAISettingsNote('正在验证连接…', '');
     try {
       const response = await fetch(bridgeUrl('/api/settings/test'), {
@@ -248,30 +266,41 @@ export class AISettingsMethods {
   _syncAISettingsForm() {
     const inputs = this._aiSettingsInputs;
     if (!inputs) return;
-    const gemini = (this.aiProviderSettings && this.aiProviderSettings.gemini) || GEMINI_FALLBACK;
+    const provider = this._activeAPIProvider();
+    const fallback = API_PROVIDER_FALLBACKS[provider];
+    const saved = (this.aiProviderSettings && this.aiProviderSettings[provider]) || fallback;
     this._setAISettingsNote('', '');
     inputs.key.value = '';
-    inputs.key.placeholder = gemini.configured
-      ? '已配置（尾号 ' + gemini.apiKeyTail + '），留空保持不变'
-      : '粘贴 Gemini API Key';
-    inputs.model.value = gemini.model || GEMINI_FALLBACK.model;
-    inputs.proxy.value = gemini.proxy || '';
-    if (this._aiSettingsClearBtn) this._aiSettingsClearBtn.style.display = gemini.configured ? '' : 'none';
+    inputs.key.placeholder = saved.configured
+      ? '已配置（尾号 ' + saved.apiKeyTail + '），留空保持不变'
+      : '粘贴 ' + API_PROVIDER_LABELS[provider] + ' API Key';
+    inputs.model.value = saved.model || fallback.model;
+    inputs.proxy.value = saved.proxy || '';
+    inputs.baseURL.value = saved.baseURL || fallback.baseURL;
+    inputs.baseURL.disabled = provider === 'gemini';
+    if (this._aiSettingsClearBtn) this._aiSettingsClearBtn.style.display = saved.configured ? '' : 'none';
+  }
+
+
+  _activeAPIProvider() {
+    return API_PROVIDER_FALLBACKS[this.aiEngine] ? this.aiEngine : 'gemini';
   }
 
 
   async _saveAISettings() {
     const inputs = this._aiSettingsInputs;
     if (!inputs) return;
+    const provider = this._activeAPIProvider();
     const payload = {
-      gemini: {
+      [provider]: {
         model: String(inputs.model.value || '').trim() || undefined,
+        baseURL: String(inputs.baseURL.value || '').trim(),
         // 代理始终提交：空串 = 显式清除
         proxy: String(inputs.proxy.value || '').trim()
       }
     };
     const key = String(inputs.key.value || '').trim();
-    if (key) payload.gemini.apiKey = key;
+    if (key) payload[provider].apiKey = key;
     try {
       const response = await fetch(bridgeUrl('/api/settings'), {
         method: 'POST',
@@ -281,9 +310,8 @@ export class AISettingsMethods {
       if (!response.ok) throw new Error('设置保存失败');
       this.aiProviderSettings = await response.json();
       this.closeAISettings();
-      const configured = this.aiProviderSettings && this.aiProviderSettings.gemini
-        && this.aiProviderSettings.gemini.configured;
-      this._setStatus(configured ? 'AI 设置已保存 · Gemini 已配置' : 'AI 设置已保存');
+      const configured = this.aiProviderSettings?.[provider]?.configured;
+      this._setStatus(configured ? 'AI 设置已保存 · ' + API_PROVIDER_LABELS[provider] + ' 已配置' : 'AI 设置已保存');
     } catch (error) {
       this._setStatus(error.message || '设置保存失败');
     }
@@ -291,16 +319,17 @@ export class AISettingsMethods {
 
 
   async _clearAIKey() {
+    const provider = this._activeAPIProvider();
     try {
       const response = await fetch(bridgeUrl('/api/settings'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gemini: { apiKey: '' } })
+        body: JSON.stringify({ [provider]: { apiKey: '' } })
       });
       if (!response.ok) throw new Error('清除失败');
       this.aiProviderSettings = await response.json();
       this._syncAISettingsForm();
-      this._setStatus('已清除 Gemini API Key');
+      this._setStatus('已清除 ' + API_PROVIDER_LABELS[provider] + ' API Key');
     } catch (error) {
       this._setStatus(error.message || 'Key 清除失败');
     }

@@ -168,7 +168,9 @@ test('PATCH 问答可从阅读树隐藏整个追问分支，但保留对话历�
 test('/api/settings 读写 Gemini 配置且不回明文 Key', async () => {
   await withBridge({}, async (bridge) => {
     const initial = await (await fetch(`${bridge.url}/api/settings`)).json();
-    assert.deepEqual(initial.gemini, { configured: false, apiKeyTail: '', model: 'gemini-2.5-flash', proxy: '' });
+    assert.deepEqual(initial.gemini, {
+      configured: false, apiKeyTail: '', model: 'gemini-2.5-flash', proxy: '', baseURL: ''
+    });
 
     const saved = await fetch(`${bridge.url}/api/settings`, {
       method: 'POST',
@@ -178,7 +180,8 @@ test('/api/settings 读写 Gemini 配置且不回明文 Key', async () => {
     assert.equal(saved.ok, true);
     const masked = await saved.json();
     assert.deepEqual(masked.gemini, {
-      configured: true, apiKeyTail: '3456', model: 'gemini-2.5-pro', proxy: 'http://127.0.0.1:7890'
+      configured: true, apiKeyTail: '3456', model: 'gemini-2.5-pro',
+      proxy: 'http://127.0.0.1:7890', baseURL: ''
     });
     assert.ok(!JSON.stringify(masked).includes('AIzaSyTest'));
 

@@ -24,18 +24,21 @@ export class AIMethods {
   }
 
 
-  // ===== AI 引擎切换（Claude / Codex / Gemini） =====
+  // ===== AI 引擎切换（本地 CLI / API Agent） =====
 
   _aiEngineLabel(engine) {
     const value = engine || this.aiEngine;
     if (value === 'codex') return 'Codex';
     if (value === 'gemini') return 'Gemini';
+    if (value === 'kimi') return 'Kimi';
+    if (value === 'qwen') return '通义千问';
+    if (value === 'custom') return '自定义 Agent';
     return 'Claude';
   }
 
 
   setAIEngine(engine) {
-    this.aiEngine = (engine === 'codex' || engine === 'gemini') ? engine : 'claude';
+    this.aiEngine = ['codex', 'gemini', 'kimi', 'qwen', 'custom'].includes(engine) ? engine : 'claude';
     this._syncAIEngineSwitch();
     this._persist(false);
     this._setStatus('AI 引擎已切换为 ' + this._aiEngineLabel());
@@ -48,7 +51,7 @@ export class AIMethods {
     const text = String(question || '').trim();
     if (!text) return false;
     if (this._questionNeedsWriteAccess(text)) return true;
-    const action = /(修改|改动|改一下|修复|实现|创建|新建|删除|移除|重命名|写入|保存到|发布到|上传|运行|执行|安装|提交|推送|部署|生成文件|edit|modify|fix|implement|create|delete|rename|write|save|publish|upload|run|execute|install|commit|push|deploy)/i;
+    const action = /(读取|查看|搜索|修改|改动|改一下|修复|实现|创建|新建|删除|移除|重命名|写入|保存到|发布到|上传|运行|执行|安装|提交|推送|部署|生成文件|read|inspect|search|edit|modify|fix|implement|create|delete|rename|write|save|publish|upload|run|execute|install|commit|push|deploy)/i;
     const target = /(原文|文档|文章|正文|项目|工程|代码|文件|目录|仓库|测试|命令|脚本|README|飞书|钉钉|document|article|project|code|file|folder|directory|repo|test|command|script)/i;
     return action.test(text) && target.test(text);
   }
@@ -65,10 +68,6 @@ export class AIMethods {
 
   _resolveQuestionMode(question, confirmTools = (message) => window.confirm(message)) {
     if (!this._questionNeedsProjectTools(question)) return 'chat';
-    if (this.aiEngine === 'gemini') {
-      this._setStatus('当前 Gemini 渠道不能操作项目，请切换到 Claude 或 Codex');
-      return null;
-    }
     const confirmed = confirmTools(this._questionNeedsWriteAccess(question)
       ? '这条请求需要修改当前文档或项目文件。\n\n是否仅为本次请求授予写入权限？'
       : '这条请求需要使用项目工具。\n\n是否仅为本次请求授权？');
@@ -87,7 +86,7 @@ export class AIMethods {
   _aiChatRequestBody(question, mode = 'chat') {
     return {
       question,
-      engine: (this.aiEngine === 'codex' || this.aiEngine === 'gemini') ? this.aiEngine : 'claude',
+      engine: ['codex', 'gemini', 'kimi', 'qwen', 'custom'].includes(this.aiEngine) ? this.aiEngine : 'claude',
       mode: mode === 'agent' ? 'agent' : 'chat',
       allowWrite: mode === 'agent' && this._questionNeedsWriteAccess(question),
       document: this._documentPayload(),
@@ -510,7 +509,7 @@ export class AIMethods {
     this.aiQuote = retry.quote || '';
     this.aiOccurrence = retry.occurrence || 0;
     this.aiStart = retry.start;
-    this.aiEngine = (retry.engine === 'codex' || retry.engine === 'gemini') ? retry.engine : 'claude';
+    this.aiEngine = ['codex', 'gemini', 'kimi', 'qwen', 'custom'].includes(retry.engine) ? retry.engine : 'claude';
     input.value = retry.question;
     this._renderAIQuote();
     this._syncAIEngineSwitch();
@@ -622,6 +621,13 @@ export class AIMethods {
     } else if (event === 'document-updated' && data) {
       state.documentUpdated = this._applyAIDocumentUpdate(data);
       this._renderAIMessages();
+    } else if (event === 'usage' && data) {
+      const total = Number(data.totalTokens) || (Number(data.inputTokens) || 0) + (Number(data.outputTokens) || 0);
+      if (total) {
+        const base = state.contextMeta || state.assistant.meta || '';
+        state.assistant.meta = base + (base ? ' · ' : '') + total + ' tokens';
+        this._renderAIMessages();
+      }
     } else if (event === 'meta' && data) {
       state.userMessage.requestId = data.requestId;
       state.userMessage.documentId = data.documentId;

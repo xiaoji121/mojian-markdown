@@ -40,7 +40,7 @@ export interface PersistedEditorState {
   comments: Annotation[];
   bridgeDocumentId?: string;
   /** AI 问答使用的渠道；缺省为 codex */
-  aiEngine?: 'claude' | 'codex' | 'gemini';
+  aiEngine?: 'claude' | 'codex' | 'gemini' | 'kimi' | 'qwen' | 'custom';
   /** 草稿最后一次持久化的时间戳，用于恢复本地文件关联时判断谁更新 */
   savedAt?: number;
 }

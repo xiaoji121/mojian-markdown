@@ -57,6 +57,16 @@ test('AI 引擎支持 Gemini（API Key 提供方）', () => {
   assert.equal(body.engine, 'gemini');
 });
 
+test('AI 引擎支持 Kimi、千问与自定义兼容提供方', () => {
+  const editor = createEditor();
+  for (const [engine, label] of [['kimi', 'Kimi'], ['qwen', '通义千问'], ['custom', '自定义 Agent']]) {
+    editor.setAIEngine(engine);
+    assert.equal(editor.aiEngine, engine);
+    assert.equal(editor._aiEngineLabel(), label);
+    assert.equal(editor._aiChatRequestBody('解释文档').engine, engine);
+  }
+});
+
 test('问答请求体携带当前引擎', () => {
   const editor = createEditor();
   editor.aiEngine = 'codex';
@@ -211,12 +221,11 @@ test('拒绝项目工具授权时取消请求', () => {
   assert.equal(editor._resolveQuestionMode('运行项目测试', () => false), null);
 });
 
-test('Gemini 遇到项目操作时不发送并提示切换渠道', () => {
+test('API Agent 遇到项目操作时也可在确认后进入 Agent 模式', () => {
   const editor = createEditor();
   editor.aiEngine = 'gemini';
 
-  assert.equal(editor._resolveQuestionMode('把这篇发布到飞书', () => true), null);
-  assert.ok(editor.statuses.some((text: string) => text.includes('Claude') && text.includes('Codex')));
+  assert.equal(editor._resolveQuestionMode('读取项目 README 并解释', () => true), 'agent');
 });
 
 test('失败回答渲染可操作的重试按钮', () => {
@@ -298,6 +307,17 @@ test('Agent 执行进度只保留有限条可见摘要', () => {
   assert.equal(assistant.progress.length, 12);
   assert.equal(assistant.progress[0].label, '步骤 3');
   assert.equal(assistant.progress[11].label, '步骤 14');
+});
+
+test('内置 Agent 的 token 用量显示在回答元信息中', () => {
+  const editor = createEditor();
+  editor._renderAIMessages = () => {};
+  const state = {
+    assistant: { meta: '已使用项目工具' },
+    userMessage: {}, aiComment: {}, contextMeta: '已使用项目工具'
+  };
+  editor._handleAIStreamEvent('usage', { inputTokens: 120, outputTokens: 30, totalTokens: 150 }, state);
+  assert.match(state.assistant.meta, /150 tokens/);
 });
 
 test('点击 Agent 生成的 Markdown 入口时用墨笺打开工作区文档', async () => {
