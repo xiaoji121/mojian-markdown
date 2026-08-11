@@ -6,7 +6,7 @@
 //      （授权清单持久化在 userData，重启后恢复的文档仍可直接同步）；
 //   3. 应用菜单、macOS「双击 .md 打开」、单实例与命令行参数接管。
 import { app, BrowserWindow, Menu, clipboard, dialog, ipcMain, shell } from 'electron';
-import { readFile, stat, writeFile } from 'node:fs/promises';
+import { readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, extname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startAgentBridge } from '../scripts/agent-bridge.js';
@@ -142,6 +142,31 @@ function registerIpcHandlers() {
     assertGranted(filePath);
     await writeFile(String(filePath), String(content ?? ''), 'utf8');
     return { lastModified: (await stat(String(filePath))).mtimeMs };
+  });
+
+  ipcMain.handle('desktop:rename-file', async (_event, filePath, requestedName) => {
+    assertGranted(filePath);
+    const sourcePath = resolve(String(filePath));
+    const nextName = String(requestedName || '').trim();
+    if (!nextName || basename(nextName) !== nextName || !MARKDOWN_EXTENSIONS.has(extname(nextName).toLowerCase())) {
+      throw new Error('请使用有效的 Markdown 文件名');
+    }
+    const targetPath = resolve(dirname(sourcePath), nextName);
+    if (targetPath === sourcePath) return readPickedFile(sourcePath);
+
+    const sourceInfo = await stat(sourcePath);
+    try {
+      const targetInfo = await stat(targetPath);
+      const sameFile = sourceInfo.dev === targetInfo.dev && sourceInfo.ino === targetInfo.ino;
+      if (!sameFile) throw new Error('同名文件已存在，请换一个名称');
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+
+    await rename(sourcePath, targetPath);
+    grantedPaths.delete(sourcePath);
+    grantPath(targetPath);
+    return readPickedFile(targetPath);
   });
 
   // 预览里的相对路径图片：以已授权的文档为根解析读取，返回 data URL。

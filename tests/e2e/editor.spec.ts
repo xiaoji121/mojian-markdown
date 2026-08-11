@@ -39,6 +39,28 @@ test('输入 Markdown 后预览实时渲染', async ({ page }) => {
   await expect(preview.locator('li')).toHaveCount(2);
 });
 
+test('顶栏使用产品图标并支持双击重命名文档', async ({ page }) => {
+  const productIcon = page.locator('.brand-mark');
+  const fileName = page.locator('.file-name');
+
+  await expect(page.locator('.brand-dot')).toHaveCount(0);
+  await expect(productIcon).toBeVisible();
+  await expect(productIcon.locator('img')).toHaveAttribute('src', '/favicon.svg');
+  await expect(fileName).toHaveAttribute('title', /双击重命名/);
+
+  await fileName.dblclick();
+  await expect(fileName).toHaveAttribute('contenteditable', 'true');
+  await expect(fileName).toBeFocused();
+  await fileName.fill('重命名后的笔记');
+  await fileName.press('Enter');
+
+  await expect(fileName).toHaveText('重命名后的笔记.md');
+  await expect(fileName).not.toHaveAttribute('contenteditable', 'true');
+
+  await page.reload();
+  await expect(page.locator('.file-name')).toHaveText('重命名后的笔记.md');
+});
+
 test('首次使用时 AI 渠道默认选择 Codex', async ({ page }) => {
   await expect(page.locator('.ai-engine-chip')).toHaveText('Codex');
 });

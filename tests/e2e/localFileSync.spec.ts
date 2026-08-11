@@ -75,7 +75,9 @@ test('关联文件夹后显示文档的本地相对路径', async ({ page }) => 
   await expect(folderItem.locator('.menu-item-hint')).toContainText('本地路径');
   await folderItem.click();
 
-  await expect(page.locator('.file-name')).toHaveAttribute('title', '我的笔记/阅读/本地笔记.md');
+  await expect(page.locator('.file-name')).toHaveAttribute(
+    'title', '我的笔记/阅读/本地笔记.md\n双击重命名'
+  );
 });
 
 test('本地文件被外部程序修改后编辑器自动更新', async ({ page }) => {

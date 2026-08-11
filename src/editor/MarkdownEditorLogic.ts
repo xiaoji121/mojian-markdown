@@ -236,6 +236,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._resetEditingHistory();
     this._setStatus('就绪 · 自动保存已开启');
     this._applyProps();
+    this._initFileNameEditing();
 
     src.addEventListener('beforeinput', () => this._syncCurrentEditingState());
     src.addEventListener('input', (e) => {

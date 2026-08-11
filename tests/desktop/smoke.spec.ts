@@ -84,6 +84,35 @@ test('桌面端启动并与本地文件双向同步', async () => {
     await expect.poll(() => readFile(docPath, 'utf8'), { timeout: 10_000 })
       .toContain('编辑器写回的内容');
 
+    // 双击顶栏文档名会原地重命名真实文件，并继续保持写回关联。
+    // 改名前刚输入、还没走到防抖自动保存的内容也不能丢。
+    await source.fill('# 即将重命名\n\n尚未自动保存的内容\n');
+    const renamedPath = join(docDir, '重命名后的笔记.md');
+    const fileName = page.locator('.file-name');
+    await fileName.dblclick();
+    await fileName.fill('重命名后的笔记');
+    await fileName.press('Enter');
+    await expect(fileName).toHaveText('重命名后的笔记.md');
+    await expect(fileName).toHaveAttribute('title', renamedPath + '\n双击重命名');
+    await expect.poll(() => readFile(renamedPath, 'utf8'), { timeout: 10_000 })
+      .toContain('尚未自动保存的内容');
+    await expect(readFile(docPath, 'utf8')).rejects.toThrow();
+
+    await source.fill('# 重命名后\n\n仍然会写回新文件\n');
+    await expect.poll(() => readFile(renamedPath, 'utf8'), { timeout: 10_000 })
+      .toContain('仍然会写回新文件');
+
+    // 不允许重命名覆盖同目录下已存在的文件。
+    const occupiedPath = join(docDir, '已存在.md');
+    await writeFile(occupiedPath, '# 不能被覆盖\n');
+    await fileName.dblclick();
+    await fileName.fill('已存在');
+    await fileName.press('Enter');
+    await expect(fileName).toHaveText('重命名后的笔记.md');
+    await expect(page.locator('.save-status')).toContainText('同名文件已存在');
+    expect(await readFile(occupiedPath, 'utf8')).toBe('# 不能被覆盖\n');
+    await expect(readFile(renamedPath, 'utf8')).resolves.toContain('仍然会写回新文件');
+
     // 未授权路径的读写会被主进程拒绝。
     const denied = await page.evaluate(() =>
       (window as any).mojianDesktop.statFile('/etc/hosts').then(() => 'allowed', () => 'denied')
