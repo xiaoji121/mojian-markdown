@@ -204,6 +204,122 @@ export class EditingFileLayoutMethods {
   }
 
 
+  _initFileNameEditing() {
+    const element = this.fileNameRef.current;
+    if (!element || this._fileNameEditingReady) return;
+    this._fileNameEditingReady = true;
+    this._syncFileNameTooltip();
+    element.addEventListener('dblclick', (event) => {
+      event.preventDefault();
+      this._beginFileNameEditing();
+    });
+    element.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        this._finishFileNameEditing(true);
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        this._finishFileNameEditing(false);
+      }
+    });
+    element.addEventListener('blur', () => this._finishFileNameEditing(true));
+  }
+
+
+  _beginFileNameEditing() {
+    const element = this.fileNameRef.current;
+    if (!element || this._fileNameEditing) return;
+    this._fileNameEditing = true;
+    this._fileNameBeforeEditing = this.fileName || '未命名.md';
+    element.setAttribute('contenteditable', 'true');
+    element.setAttribute('role', 'textbox');
+    element.classList.add('is-editing');
+    element.focus();
+    const selection = window.getSelection?.();
+    if (!selection || !document.createRange) return;
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
+
+  _normalizedFileName(name) {
+    const trimmed = String(name || '').replace(/[\r\n]+/g, ' ').trim();
+    if (!trimmed) return '';
+    return /\.(?:md|markdown|txt)$/i.test(trimmed) ? trimmed : trimmed + '.md';
+  }
+
+
+  async _finishFileNameEditing(commit) {
+    const element = this.fileNameRef.current;
+    if (!element || !this._fileNameEditing) return;
+    const previous = this._fileNameBeforeEditing || this.fileName || '未命名.md';
+    const next = commit ? this._normalizedFileName(element.textContent) : previous;
+    this._fileNameEditing = false;
+    element.removeAttribute('contenteditable');
+    element.removeAttribute('role');
+    element.classList.remove('is-editing');
+    if (!next) {
+      element.textContent = previous;
+      this._setStatus('文档名不能为空');
+      return;
+    }
+    if (next === previous) {
+      element.textContent = previous;
+      return;
+    }
+    if (this.fileHandle) {
+      const renamed = await this._renameLocalFile(next);
+      if (!renamed) {
+        element.textContent = previous;
+        return;
+      }
+    }
+    this._setFileName(next);
+    this._persist();
+    this._setStatus('已重命名为 ' + next);
+  }
+
+
+  async _renameLocalFile(nextName) {
+    const handle = this.fileHandle;
+    const desktop = window.mojianDesktop;
+    if (this._saveT) {
+      clearTimeout(this._saveT);
+      this._saveT = null;
+    }
+    this._stopLocalFileWatcher();
+    try {
+      if (handle.desktopPath && desktop?.renameMarkdownFile) {
+        const renamed = await desktop.renameMarkdownFile(handle.desktopPath, nextName);
+        this._setFileName(renamed.name);
+        await this._attachLocalFile(createDesktopFileHandle(renamed.path, renamed.name));
+        await this._maybeWriteThroughLocalFile();
+        if (this.dirty) this._saveT = setTimeout(() => this._autosave(), 600);
+        return true;
+      }
+      if (typeof handle.move === 'function') {
+        await handle.move(nextName);
+        this._setFileName(nextName);
+        await this._attachLocalFile(handle);
+        await this._maybeWriteThroughLocalFile();
+        if (this.dirty) this._saveT = setTimeout(() => this._autosave(), 600);
+        return true;
+      }
+      this._startLocalFileWatcher();
+      if (this.dirty) this._saveT = setTimeout(() => this._autosave(), 600);
+      this._setStatus('当前浏览器不支持原地重命名本地文件');
+      return false;
+    } catch (error) {
+      this._startLocalFileWatcher();
+      if (this.dirty) this._saveT = setTimeout(() => this._autosave(), 600);
+      this._setStatus('重命名失败：' + (error.message || error));
+      return false;
+    }
+  }
+
+
   // ===== 桌面端（Electron）文件能力：原生对话框 + 真实路径，句柄接入既有同步逻辑 =====
 
   _initDesktop() {

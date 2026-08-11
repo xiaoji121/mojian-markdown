@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('mojianDesktop', {
     ipcRenderer.invoke('desktop:save-file-as', suggestedName, content),
   readFile: (path) => ipcRenderer.invoke('desktop:read-file', path),
   writeFile: (path, content) => ipcRenderer.invoke('desktop:write-file', path, content),
+  renameMarkdownFile: (path, name) => ipcRenderer.invoke('desktop:rename-file', path, name),
   statFile: (path) => ipcRenderer.invoke('desktop:stat-file', path),
   readAsset: (docPath, src) => ipcRenderer.invoke('desktop:read-asset', docPath, src),
   consumePendingOpen: () => ipcRenderer.invoke('desktop:consume-pending-open'),

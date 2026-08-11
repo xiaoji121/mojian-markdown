@@ -333,14 +333,13 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
   <!-- ===== HEADER ===== -->
   <header class="app-header">
     <div class="header-brand">
-      <span class="brand-dot" aria-hidden="true"></span>
       <a class="brand-mark" href="#" title="返回首页" aria-label="返回首页">
         <img src="/favicon.svg" alt="">
       </a>
       <a class="brand-title" href="#" title="返回首页" aria-label="返回首页">墨笺 Markdown</a>
       <span class="file-meta">
         <span ref="{{ dirtyDotRef }}" class="dirty-dot"></span>
-        <span ref="{{ fileNameRef }}" class="file-name">未命名.md</span>
+        <span ref="{{ fileNameRef }}" class="file-name" aria-label="文档名称，双击重命名">未命名.md</span>
       </span>
     </div>
     <div class="header-actions">

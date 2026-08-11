@@ -96,7 +96,9 @@ export class LocalFileSyncMethods {
 
   _syncFileNameTooltip() {
     const el = this.fileNameRef?.current;
-    if (el) el.title = this.localFilePath || this.fileName || '';
+    if (!el) return;
+    const location = this.localFilePath || this.fileName || '未命名.md';
+    el.title = location + '\n双击重命名';
   }
 
 

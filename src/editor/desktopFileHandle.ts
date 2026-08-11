@@ -13,6 +13,7 @@ export interface MojianDesktopApi {
   saveMarkdownFileAs(suggestedName: string, content: string): Promise<DesktopSavedFile | null>;
   readFile(path: string): Promise<{ content: string; lastModified: number } | null>;
   writeFile(path: string, content: string): Promise<{ lastModified: number }>;
+  renameMarkdownFile(path: string, name: string): Promise<DesktopSavedFile>;
   statFile(path: string): Promise<{ lastModified: number } | null>;
   readAsset(docPath: string, src: string): Promise<{ dataUrl: string } | null>;
   consumePendingOpen(): Promise<DesktopPickedFile | null>;
