@@ -10,10 +10,11 @@ export interface LongImagePreset {
   hint: string;
 }
 
-// 两档就够：竖屏分享用窄的，长文阅读用与沉浸式阅读一致的版心。
+// 两档就够：手机档用更宽的社交平台版心，避免长图按高度等比展示时两侧留白过大；
+// 标准档与沉浸式阅读版心一致。
 // 再多一档就变成「让用户逐像素纠结」，与设计规范第 5 条相悖。
 export const LONG_IMAGE_PRESETS: LongImagePreset[] = [
-  { id: 'phone', label: '手机', width: 720, hint: '窄版心，适合手机竖屏分享' },
+  { id: 'phone', label: '手机', width: 1080, hint: '宽版心，适合小红书等手机竖屏分享' },
   { id: 'standard', label: '标准', width: 900, hint: '与沉浸式阅读版心一致' }
 ];
 

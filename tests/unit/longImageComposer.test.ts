@@ -34,7 +34,7 @@ function createStyleRule(selectorText: string, cssText: string, variables: strin
 }
 
 test('宽度档位落到已知预设，未知 id 回落到标准档', () => {
-  assert.equal(longImageWidth('phone'), 720);
+  assert.equal(longImageWidth('phone'), 1080);
   assert.equal(longImageWidth('standard'), 900);
   assert.equal(longImageWidth('不存在的档位'), 900);
   assert.equal(LONG_IMAGE_PRESETS.length, 2);

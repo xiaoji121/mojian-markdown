@@ -26,7 +26,8 @@ import {
 
 // 弹窗里海报缩略图的显示宽度（CSS px），两档宽度共用同一个视觉尺寸。
 const STAGE_WIDTH = 360;
-const PHONE_PAGE_HEIGHT = 1280;
+// 小红书等图文流更适合 3:4：相比 9:16，按可用高度等比展示时不会在两侧留下大块空白。
+const PHONE_PAGE_HEIGHT = 1440;
 const PHONE_PAGE_PADDING = 40;
 const POSTER_PAPER_VARIABLES = [
   '--paper-bg', '--paper-bg-soft', '--paper-pre', '--paper-code', '--paper-border',
@@ -78,7 +79,12 @@ export class LongImageMethods {
 
 
   setLongImageWidth(id) {
-    if (this.longImageWidth === id) return;
+    const raisedPhoneFont = id === 'phone' && this.fontSize < 22;
+    if (raisedPhoneFont) this._setFont(22);
+    if (this.longImageWidth === id) {
+      if (raisedPhoneFont) this._refreshLongImagePoster();
+      return;
+    }
     this.longImageWidth = id;
     this._persist();
     this._refreshLongImagePoster();

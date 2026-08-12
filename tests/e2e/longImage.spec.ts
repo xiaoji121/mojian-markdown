@@ -111,7 +111,7 @@ test('静态长图里表格与代码块折行，不靠横向滚动', async ({ pa
   expect(overflow.preWrap).toBe('pre-wrap');
 });
 
-test('切换宽度档位后海报按新宽度重排', async ({ page }) => {
+test('切换手机档后使用更宽的社交版心，并把小字号提升到 22px', async ({ page }) => {
   await page.locator('.longimg-entry').click();
   const poster = page.locator('.longimg-poster');
   await expect(poster).toHaveCSS('width', '900px');
@@ -123,7 +123,9 @@ test('切换宽度档位后海报按新宽度重排', async ({ page }) => {
 
   await page.locator('[data-longimg-width="phone"]').click();
 
-  await expect(page.locator('.longimg-poster')).toHaveCSS('width', '720px');
+  await expect(page.locator('.longimg-poster')).toHaveCSS('width', '1080px');
+  await expect(page.locator('.longimg-poster')).toHaveCSS('font-size', '22px');
+  await expect(page.locator('.font-size-value')).toHaveText('22px');
   await expect(page.locator('[data-longimg-width="phone"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('.longimg-crop-toggle')).toBeVisible();
 });
@@ -142,8 +144,8 @@ test('手机分页把长文保存为多张一屏尺寸图片', async ({ page }) 
   await expect(page.locator('.longimg-save')).toHaveText('下载多图');
   const previews = page.locator('.longimg-page-preview');
   expect(await previews.count()).toBeGreaterThan(1);
-  await expect(previews.first()).toHaveCSS('width', '720px');
-  await expect(previews.first()).toHaveCSS('height', '1280px');
+  await expect(previews.first()).toHaveCSS('width', '1080px');
+  await expect(previews.first()).toHaveCSS('height', '1440px');
   await expect(previews.first().locator('.longimg-page-number')).toContainText('1 /');
   const splitLines = await previews.evaluateAll((pageNodes) => pageNodes.flatMap((page, pageIndex) => {
     const viewport = page.querySelector('.longimg-page-viewport')!;
