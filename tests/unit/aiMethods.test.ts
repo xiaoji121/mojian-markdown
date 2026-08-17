@@ -201,6 +201,27 @@ test('打开历史对话时不恢复最后一次划线引用', () => {
   assert.equal(editor.aiQuote, '');
 });
 
+test('切换到新文档时清空上一篇文档的问答与引用', () => {
+  const editor = createEditor();
+  let rendered = 0;
+  Object.assign(editor, {
+    aiMessages: [{ role: 'assistant', text: '上一篇文档的回答' }],
+    aiQuote: '上一篇文档的划线',
+    aiOccurrence: 2,
+    aiStart: 18,
+    _renderAIMessages() { rendered += 1; },
+    _renderAIQuote() { rendered += 1; }
+  });
+
+  editor._resetAIConversation();
+
+  assert.deepEqual(editor.aiMessages, []);
+  assert.equal(editor.aiQuote, '');
+  assert.equal(editor.aiOccurrence, 0);
+  assert.equal(editor.aiStart, undefined);
+  assert.equal(rendered, 2);
+});
+
 test('普通阅读问题直接按只读问答发送，不弹确认', () => {
   const editor = createEditor();
   let confirmed = false;

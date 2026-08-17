@@ -319,6 +319,16 @@ export class AIMethods {
   }
 
 
+  _resetAIConversation() {
+    this.aiMessages = [];
+    this.aiQuote = '';
+    this.aiOccurrence = 0;
+    this.aiStart = undefined;
+    this._renderAIMessages();
+    this._renderAIQuote();
+  }
+
+
   _syncAICommentsFromHistory(documentId, history) {
     let changed = false;
     history.forEach((item) => {

@@ -447,6 +447,7 @@ export class BridgeMethods {
       this.bridgeDocumentId = doc.documentId;
       this.activeDocumentId = doc.documentId;
       this.comments = this._commentsFromBridge(doc.annotations || [], doc.messages || [], doc.documentId);
+      this._showConversationMessages(doc.documentId, doc.messages || [], null, false);
       this._renderRecentDocuments();
       return doc;
     } catch {

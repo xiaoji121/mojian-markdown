@@ -24,6 +24,7 @@ function createEditor() {
     activeDocumentId: null,
     comments: [],
     recentDocuments: [],
+    _showConversationMessages() {},
     _renderRecentDocuments() {},
     _persist() {}
   });

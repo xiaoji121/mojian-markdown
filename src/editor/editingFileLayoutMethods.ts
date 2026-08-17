@@ -379,6 +379,7 @@ export class EditingFileLayoutMethods {
     const text = this._cleanOpenedMarkdown(picked.content);
     this.bridgeDocumentId = null;
     this.activeDocumentId = null;
+    this._resetAIConversation();
     this._setFileName(picked.name);
     src.value = text;
     this._resetEditingHistory();
@@ -408,6 +409,7 @@ export class EditingFileLayoutMethods {
         const text = this._cleanOpenedMarkdown(await file.text());
         this.bridgeDocumentId = null;
         this.activeDocumentId = null;
+        this._resetAIConversation();
         this._setFileName(file.name);
         this.sourceRef.current.value = text;
         this._resetEditingHistory();
@@ -437,6 +439,7 @@ export class EditingFileLayoutMethods {
           this._resetEditingHistory();
           this.bridgeDocumentId = null;
           this.activeDocumentId = null;
+          this._resetAIConversation();
           this._setFileName(f.name);
           this._detachLocalFile();
           this.comments = [];
@@ -637,6 +640,7 @@ export class EditingFileLayoutMethods {
     this._detachLocalFile();
     this.activeDocumentId = null;
     this.bridgeDocumentId = null;
+    this._resetAIConversation();
     this._setFileName('未命名.md');
     this.comments = [];
     this._renderComments();
