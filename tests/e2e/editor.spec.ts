@@ -75,6 +75,49 @@ test('Mermaid 长节点换行后仍完整展示内容', async ({ page }) => {
   await expect(node).not.toContainText('…');
 });
 
+test('Mermaid 连线上的长文案不会被 SVG 标签边界裁切', async ({ page }) => {
+  const firstLine = '应锁定二进制 SHA /';
+  const secondLine = '版本控制信息完整展示';
+  await setSource(page, `\`\`\`mermaid
+flowchart LR
+  A[用例] -->|${firstLine}<br/>${secondLine}| B[执行器]
+\`\`\``);
+
+  const edgeLabel = page.locator('.mermaid-rendered g.edgeLabel foreignObject').filter({ hasText: firstLine });
+  await expect(edgeLabel).toBeVisible();
+  const overflow = await edgeLabel.evaluate((element) => {
+    const container = element;
+    const text = element.querySelector('p, span') || element;
+    const outer = container.getBoundingClientRect();
+    const inner = text.getBoundingClientRect();
+    const clipped = getComputedStyle(container).overflow !== 'visible';
+    return clipped ? Math.max(inner.right - outer.right, inner.bottom - outer.bottom) : 0;
+  });
+  expect(overflow).toBeLessThanOrEqual(0.5);
+  await expect(edgeLabel).toContainText(secondLine);
+});
+
+test('Mermaid 多行分组标题不会被组内首个节点遮挡', async ({ page }) => {
+  await setSource(page, `\`\`\`mermaid
+flowchart TD
+  subgraph PROJECT["本工程：dws-larkcli-eval（评测编排与竞对<br/>职责）"]
+    CASES["cases/*.yaml<br/>用例、断言、能力覆盖"]
+  end
+\`\`\``);
+
+  const diagram = page.locator('.mermaid-rendered');
+  await expect(diagram.locator('.node')).toBeVisible();
+  await expect(diagram.locator('.cluster-label')).toContainText('本工程：dws-larkcli-eval（评测编排与竞对 · 职责）');
+  const overlap = await diagram.evaluate((root) => {
+    const title = root.querySelector('.cluster-label foreignObject, .cluster-label text')!;
+    const node = root.querySelector('.node')!;
+    const titleRect = title.getBoundingClientRect();
+    const nodeRect = node.getBoundingClientRect();
+    return titleRect.bottom - nodeRect.top;
+  });
+  expect(overlap).toBeLessThanOrEqual(0);
+});
+
 test('Mermaid 流程图可以独立全屏查看并按 Escape 退出', async ({ page }) => {
   await setSource(page, '```mermaid\nflowchart LR\n  A[开始] --> B[查看细节]\n```');
 

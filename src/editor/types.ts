@@ -35,6 +35,10 @@ export interface PersistedEditorState {
   immersiveWide?: boolean;
   /** 保存长图使用的宽度档位（见 longImageComposer 的 LONG_IMAGE_PRESETS） */
   longImageWidth?: string;
+  /** 手机长图独立字号，不影响编辑器阅读字号 */
+  longImagePhoneFontSize?: number;
+  /** 标准长图独立字号，不影响编辑器阅读字号 */
+  longImageStandardFontSize?: number;
   /** 长图是否带上划线批注；缺省为带 */
   longImageMarks?: boolean;
   comments: Annotation[];

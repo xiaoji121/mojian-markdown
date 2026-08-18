@@ -11,6 +11,10 @@
 import {
   LONG_IMAGE_PRESETS,
   DEFAULT_LONG_IMAGE_PRESET,
+  LONG_IMAGE_FONT_MIN,
+  LONG_IMAGE_FONT_MAX,
+  LONG_IMAGE_FONT_STEP,
+  longImageFontSize,
   longImageWidth,
   pickLongImageScale,
   planLongImageTiles,
@@ -23,12 +27,14 @@ import {
   collectCssVariableNames,
   cssVariableBlock
 } from './longImageComposer.ts';
-
+import { drawLongImagePageNumber } from './longImageCanvas.ts';
 // 弹窗里海报缩略图的显示宽度（CSS px），两档宽度共用同一个视觉尺寸。
 const STAGE_WIDTH = 360;
 // 小红书等图文流更适合 3:4：相比 9:16，按可用高度等比展示时不会在两侧留下大块空白。
 const PHONE_PAGE_HEIGHT = 1440;
-const PHONE_PAGE_PADDING = 40;
+const PHONE_PAGE_TOP_PADDING = 40;
+const PHONE_PAGE_CONTINUATION_TOP_PADDING = 88;
+const PHONE_PAGE_BOTTOM_PADDING = 96;
 const POSTER_PAPER_VARIABLES = [
   '--paper-bg', '--paper-bg-soft', '--paper-pre', '--paper-code', '--paper-border',
   '--paper-text', '--paper-text-2', '--paper-text-3', '--paper-accent', '--paper-mark',
@@ -37,13 +43,11 @@ const POSTER_PAPER_VARIABLES = [
 ];
 
 let posterFontCssPromise = null;
-
 export class LongImageMethods {
   openLongImage() {
     this._longImageSelection = null;
     this._showLongImage();
   }
-
 
   openSelectionImage() {
     const pending = this._pending;
@@ -58,13 +62,11 @@ export class LongImageMethods {
     this._showLongImage();
   }
 
-
   _escapedSelectionText(text) {
     const holder = document.createElement('div');
     holder.textContent = text;
     return '<p>' + holder.innerHTML.replace(/\n/g, '<br>') + '</p>';
   }
-
 
   _showLongImage() {
     const overlay = this._buildLongImageModal();
@@ -72,22 +74,33 @@ export class LongImageMethods {
     this._refreshLongImagePoster();
   }
 
-
   closeLongImage() {
     if (this._longImageEl) this._longImageEl.style.display = 'none';
   }
 
-
   setLongImageWidth(id) {
-    const raisedPhoneFont = id === 'phone' && this.fontSize < 22;
-    if (raisedPhoneFont) this._setFont(22);
-    if (this.longImageWidth === id) {
-      if (raisedPhoneFont) this._refreshLongImagePoster();
-      return;
-    }
+    if (this.longImageWidth === id) return;
     this.longImageWidth = id;
     this._persist();
     this._refreshLongImagePoster();
+  }
+
+  adjustLongImageFont(delta) {
+    const key = this.longImageWidth === 'phone'
+      ? 'longImagePhoneFontSize'
+      : 'longImageStandardFontSize';
+    const next = longImageFontSize(this.longImageWidth, this._currentLongImageFontSize() + delta);
+    if (this[key] === next) return;
+    this[key] = next;
+    this._persist(false);
+    this._refreshLongImagePoster();
+  }
+
+  _currentLongImageFontSize() {
+    const value = this.longImageWidth === 'phone'
+      ? this.longImagePhoneFontSize
+      : this.longImageStandardFontSize;
+    return longImageFontSize(this.longImageWidth, value);
   }
 
 
@@ -145,7 +158,7 @@ export class LongImageMethods {
     title.textContent = '保存长图';
     const hint = document.createElement('p');
     hint.className = 'longimg-modal-hint';
-    hint.textContent = '排版、字体与纸色都跟随预览；手机分页会避开图片、表格、代码块和标题。';
+    hint.textContent = '排版与纸色跟随预览；图片字号可单独调节，手机分页会避开图片、表格、代码块和标题。';
     const tools = document.createElement('div');
     tools.className = 'longimg-modal-head-tools';
     const marks = document.createElement('button');
@@ -194,7 +207,8 @@ export class LongImageMethods {
     crop.textContent = '手机分页';
     crop.title = '按手机一屏自动裁成多张图片，并避开图片、表格和代码块';
     crop.addEventListener('click', () => this.toggleLongImageAutoCrop());
-    options.append(widths, crop);
+    const fonts = this._buildLongImageFontControls();
+    options.append(widths, crop, fonts);
     const meta = document.createElement('span');
     meta.className = 'longimg-modal-meta';
     const save = document.createElement('button');
@@ -208,6 +222,31 @@ export class LongImageMethods {
     this._longImageMetaEl = meta;
     this._longImageSaveEl = save;
     return foot;
+  }
+
+
+  _buildLongImageFontControls() {
+    const controls = document.createElement('div');
+    controls.className = 'longimg-font-controls';
+    controls.setAttribute('role', 'group');
+    controls.setAttribute('aria-label', '图片字号');
+    const decrease = document.createElement('button');
+    decrease.type = 'button';
+    decrease.textContent = 'A−';
+    decrease.setAttribute('aria-label', '减小图片字号');
+    decrease.addEventListener('click', () => this.adjustLongImageFont(-LONG_IMAGE_FONT_STEP));
+    const value = document.createElement('span');
+    value.className = 'longimg-font-value';
+    const increase = document.createElement('button');
+    increase.type = 'button';
+    increase.textContent = 'A+';
+    increase.setAttribute('aria-label', '增大图片字号');
+    increase.addEventListener('click', () => this.adjustLongImageFont(LONG_IMAGE_FONT_STEP));
+    controls.append(decrease, value, increase);
+    this._longImageFontDecEl = decrease;
+    this._longImageFontValueEl = value;
+    this._longImageFontIncEl = increase;
+    return controls;
   }
 
 
@@ -237,6 +276,10 @@ export class LongImageMethods {
       this._longImageMarksEl.setAttribute('aria-checked', this.longImageMarks ? 'true' : 'false');
     }
     const paged = !!this.longImageAutoCrop && active === 'phone';
+    const fontSize = this._currentLongImageFontSize();
+    if (this._longImageFontValueEl) this._longImageFontValueEl.textContent = fontSize + 'px';
+    if (this._longImageFontDecEl) this._longImageFontDecEl.disabled = fontSize <= LONG_IMAGE_FONT_MIN;
+    if (this._longImageFontIncEl) this._longImageFontIncEl.disabled = fontSize >= LONG_IMAGE_FONT_MAX;
     if (this._longImageCropEl) {
       this._longImageCropEl.hidden = active !== 'phone';
       this._longImageCropEl.classList.toggle('is-active', paged);
@@ -269,8 +312,9 @@ export class LongImageMethods {
       this._fitPagedAtomicContent(poster);
       this._longImagePagePlan = planSafeImagePages(
         poster.offsetHeight,
-        PHONE_PAGE_HEIGHT - PHONE_PAGE_PADDING * 2,
-        this._posterProtectedRanges(poster)
+        PHONE_PAGE_HEIGHT - PHONE_PAGE_TOP_PADDING - PHONE_PAGE_BOTTOM_PADDING,
+        this._posterProtectedRanges(poster),
+        PHONE_PAGE_HEIGHT - PHONE_PAGE_CONTINUATION_TOP_PADDING - PHONE_PAGE_BOTTOM_PADDING
       );
       this._renderPagedPreview(poster, this._longImagePagePlan, width);
     } else {
@@ -278,17 +322,13 @@ export class LongImageMethods {
       this._layoutLongImageStage();
     }
   }
-
-
   _fitPagedAtomicContent(poster) {
-    const maxHeight = PHONE_PAGE_HEIGHT - PHONE_PAGE_PADDING * 2;
+    const maxHeight = PHONE_PAGE_HEIGHT - PHONE_PAGE_CONTINUATION_TOP_PADDING - PHONE_PAGE_BOTTOM_PADDING;
     poster.querySelectorAll('img, table, pre, .mermaid-rendered').forEach((element) => {
       const height = element.getBoundingClientRect().height;
       if (height > maxHeight) element.style.zoom = String(maxHeight / height);
     });
   }
-
-
   _renderPagedPreview(poster, pages, width) {
     const stage = this._longImageStageEl;
     const stack = document.createElement('div');
@@ -302,7 +342,7 @@ export class LongImageMethods {
       page.style.background = this._posterPaperColor();
       const viewport = document.createElement('div');
       viewport.className = 'longimg-page-viewport';
-      viewport.style.top = PHONE_PAGE_PADDING + 'px';
+      viewport.style.top = (index ? PHONE_PAGE_CONTINUATION_TOP_PADDING : PHONE_PAGE_TOP_PADDING) + 'px';
       viewport.style.height = slice.height + 'px';
       const clone = poster.cloneNode(true);
       clone.classList.add('longimg-page-content');
@@ -347,7 +387,9 @@ export class LongImageMethods {
     if (!this._longImageMetaEl) return;
     if (this.longImageAutoCrop && this.longImageWidth === 'phone' && this._longImagePoster) {
       const pages = this._longImagePagePlan || [];
-      this._longImageMetaEl.textContent = '预计 ' + pages.length + ' 张 · 每张 1440 × 2560 px';
+      const scale = pickLongImageScale(width, PHONE_PAGE_HEIGHT) || 1;
+      this._longImageMetaEl.textContent = '预计 ' + pages.length + ' 张 · 每张 '
+        + Math.round(width * scale) + ' × ' + Math.round(PHONE_PAGE_HEIGHT * scale) + ' px';
       return;
     }
     const scale = pickLongImageScale(width, height);
@@ -367,10 +409,9 @@ export class LongImageMethods {
   _buildPosterNode(width) {
     const preview = this.previewRef.current;
     const poster = document.createElement('div');
-    poster.className = 'longimg-poster';
+    poster.className = 'longimg-poster' + (this.longImageWidth === 'phone' ? ' is-phone' : '');
     poster.style.width = width + 'px';
-    // 正文与页眉页脚都按阅读字号缩放（页眉页脚用 em），长图与预览观感一致
-    poster.style.fontSize = this.fontSize + 'px';
+    poster.style.fontSize = this._currentLongImageFontSize() + 'px';
     this._snapshotPosterPaper(poster, preview);
     const content = document.createElement('div');
     content.className = 'longimg-prose';
@@ -475,7 +516,7 @@ export class LongImageMethods {
     const foot = document.createElement('div');
     foot.className = 'longimg-foot';
     const left = document.createElement('span');
-    left.textContent = '墨笺 Markdown · READ · ANNOTATE · SAVE';
+    left.textContent = '墨笺 Markdown';
     const right = document.createElement('span');
     right.textContent = this.fileName || '';
     foot.append(left, right);
@@ -607,8 +648,6 @@ export class LongImageMethods {
       this._syncLongImageControls();
     }
   }
-
-
   async _downloadPagedLongImages() {
     const poster = this._longImagePoster;
     const width = longImageWidth('phone');
@@ -624,7 +663,7 @@ export class LongImageMethods {
     for (let index = 0; index < pages.length; index += 1) {
       this._longImageSaveEl.textContent = '正在生成 ' + (index + 1) + '/' + pages.length + '…';
       const image = await this._loadPosterTile(pages[index], { width, scale, css, markup });
-      const canvas = this._pagedImageCanvas(width, scale, image);
+      const canvas = this._pagedImageCanvas(width, scale, image, index + 1, pages.length);
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
       if (!blob) throw new Error('分页图片导出失败');
       files.push({
@@ -635,19 +674,21 @@ export class LongImageMethods {
     const zip = await buildStoredZip(files);
     const zipName = base + '-手机分页.zip';
     this._saveLongImageBlob(zip, zipName);
-    this._longImageMetaEl.textContent = pages.length + ' 张 · 1440 × 2560 px · ' + formatByteSize(zip.size);
+    this._longImageMetaEl.textContent = pages.length + ' 张 · ' + Math.round(width * scale) + ' × '
+      + Math.round(PHONE_PAGE_HEIGHT * scale) + ' px · ' + formatByteSize(zip.size);
     this._setStatus('✓ 已保存手机分页图片 · ' + pages.length + ' 张 · ' + zipName);
   }
-
-
-  _pagedImageCanvas(width, scale, image) {
+  _pagedImageCanvas(width, scale, image, pageNumber, pageCount) {
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(width * scale);
     canvas.height = Math.round(PHONE_PAGE_HEIGHT * scale);
     const context = canvas.getContext('2d');
     context.fillStyle = this._posterPaperColor();
     context.fillRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(image, 0, Math.round(PHONE_PAGE_PADDING * scale));
+    const topPadding = pageNumber > 1 ? PHONE_PAGE_CONTINUATION_TOP_PADDING : PHONE_PAGE_TOP_PADDING;
+    context.drawImage(image, 0, Math.round(topPadding * scale));
+    const textColor = getComputedStyle(this.previewRef?.current || document.body).getPropertyValue('--paper-text-3').trim() || '#666666';
+    drawLongImagePageNumber(context, width, PHONE_PAGE_HEIGHT, scale, pageNumber + ' / ' + pageCount, this._posterPaperColor(), textColor);
     return canvas;
   }
 
@@ -661,9 +702,9 @@ export class LongImageMethods {
     poster.querySelectorAll('h1, h2, h3, h4').forEach((heading) => {
       if (heading.nextElementSibling) elements.push({
         getBoundingClientRect: () => {
-          const first = heading.getBoundingClientRect();
-          const next = heading.nextElementSibling.getBoundingClientRect();
-          return { top: first.top, bottom: next.bottom };
+          const first = heading.getBoundingClientRect(), next = heading.nextElementSibling.getBoundingClientRect();
+          const lineHeight = parseFloat(getComputedStyle(heading.nextElementSibling).lineHeight) || 48;
+          return { top: first.top, bottom: Math.min(next.bottom, next.top + lineHeight * 2) };
         }
       });
     });

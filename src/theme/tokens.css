@@ -255,11 +255,11 @@ body[data-paper='snow'][data-paper] {
 
 :root[data-paper='green'],
 body[data-paper='green'][data-paper] {
-  --paper-bg: #d5e4d0;
-  --paper-bg-soft: #cbdcc5;
-  --paper-pre: #c7d8c1;
-  --paper-code: #c3d4bc;
-  --paper-border: #a9c2a2;
+  --paper-bg: #c0edc6;
+  --paper-bg-soft: #b6e5bb;
+  --paper-pre: #b2e1b7;
+  --paper-code: #aeddb2;
+  --paper-border: #94cb98;
   --paper-text: #1f2b1c;
   --paper-text-2: #384733;
   --paper-text-3: #576851;

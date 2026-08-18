@@ -64,9 +64,9 @@ test('长图预览跟随当前阅读纸张颜色', async ({ page }) => {
     snapshot: (document.querySelector('.longimg-poster') as HTMLElement).style.getPropertyValue('--paper-bg')
   }));
 
-  expect(colors.preview).toBe('rgb(213, 228, 208)');
+  expect(colors.preview).toBe('rgb(192, 237, 198)');
   expect(colors.poster).toBe(colors.preview);
-  expect(colors.snapshot).toBe('#d5e4d0');
+  expect(colors.snapshot).toBe('#c0edc6');
 });
 
 test('划词工具条可把选中内容单独生成图片', async ({ page }) => {
@@ -111,10 +111,25 @@ test('静态长图里表格与代码块折行，不靠横向滚动', async ({ pa
   expect(overflow.preWrap).toBe('pre-wrap');
 });
 
-test('切换手机档后使用更宽的社交版心，并把小字号提升到 22px', async ({ page }) => {
+test('静态长图里的 Mermaid 多行连线文案保持完整可见', async ({ page }) => {
+  await setSource(page, `\`\`\`mermaid
+flowchart LR
+  A[用例] -->|派生任务与<br/>断言能力| B[执行器]
+\`\`\``);
+  await expect(page.locator('.md-preview g.edgeLabel foreignObject').filter({ hasText: '派生任务与' })).toBeVisible();
+  await page.locator('.longimg-entry').click();
+
+  const label = page.locator('.longimg-poster g.edgeLabel foreignObject').filter({ hasText: '派生任务与' });
+  await expect(label).toBeVisible();
+  await expect(label).toContainText('断言能力');
+  await expect(label).toHaveCSS('overflow', 'visible');
+});
+
+test('长图字号在弹窗内独立调节，手机档默认 48px 且不改变编辑器字号', async ({ page }) => {
   await page.locator('.longimg-entry').click();
   const poster = page.locator('.longimg-poster');
   await expect(poster).toHaveCSS('width', '900px');
+  await expect(poster).toHaveCSS('font-size', '22px');
   await expect(page.locator('.longimg-crop-toggle')).toBeHidden();
   const marks = page.locator('.longimg-modal-head .longimg-mark-toggle');
   await expect(marks).toBeVisible();
@@ -124,10 +139,61 @@ test('切换手机档后使用更宽的社交版心，并把小字号提升到 2
   await page.locator('[data-longimg-width="phone"]').click();
 
   await expect(page.locator('.longimg-poster')).toHaveCSS('width', '1080px');
-  await expect(page.locator('.longimg-poster')).toHaveCSS('font-size', '22px');
-  await expect(page.locator('.font-size-value')).toHaveText('22px');
+  await expect(page.locator('.longimg-poster')).toHaveCSS('font-size', '48px');
+  await expect(page.locator('.longimg-font-value')).toHaveText('48px');
+  await expect(page.locator('.font-size-value')).toHaveText('16px');
+  await page.getByRole('button', { name: '增大图片字号' }).click();
+  await expect(page.locator('.longimg-poster')).toHaveCSS('font-size', '50px');
+  await expect(page.locator('.longimg-font-value')).toHaveText('50px');
+  await expect(page.locator('.font-size-value')).toHaveText('16px');
   await expect(page.locator('[data-longimg-width="phone"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('.longimg-crop-toggle')).toBeVisible();
+});
+
+test('手机长图使用更舒展的左右页边距，标准档保持原版心', async ({ page }) => {
+  await page.locator('.longimg-entry').click();
+  await expect(page.locator('.longimg-poster')).toHaveCSS('padding-left', '48px');
+  await expect(page.locator('.longimg-poster')).toHaveCSS('padding-right', '48px');
+
+  await page.locator('[data-longimg-width="phone"]').click();
+  await expect(page.locator('.longimg-poster')).toHaveCSS('padding-left', '120px');
+  await expect(page.locator('.longimg-poster')).toHaveCSS('padding-right', '120px');
+});
+
+test('手机长图在 48px 字号下每行最多容纳 17 个汉字或标点', async ({ page }) => {
+  const text = '天地玄黄，宇宙洪荒。日月盈昃，辰宿列张。寒来暑往，秋收冬藏。';
+  await setSource(page, '# 字符行宽测试\n\n' + text);
+  await page.locator('.longimg-entry').click();
+  await page.locator('[data-longimg-width="phone"]').click();
+
+  const lineLengths = await page.locator('.longimg-prose p').evaluate((paragraph) => {
+    const node = paragraph.firstChild!;
+    const lines = new Map<number, number>();
+    for (let index = 0; index < (node.textContent || '').length; index += 1) {
+      const range = document.createRange();
+      range.setStart(node, index);
+      range.setEnd(node, index + 1);
+      const top = Math.round(range.getBoundingClientRect().top);
+      lines.set(top, (lines.get(top) || 0) + 1);
+    }
+    return [...lines.values()];
+  });
+
+  expect(Math.max(...lineLengths)).toBeLessThanOrEqual(17);
+  expect(lineLengths[0]).toBeGreaterThanOrEqual(16);
+});
+
+test('手机长图页脚只保留简短品牌，品牌与文件名都保持单行', async ({ page }) => {
+  await page.locator('.longimg-entry').click();
+  await page.locator('[data-longimg-width="phone"]').click();
+
+  const footer = page.locator('.longimg-foot');
+  await expect(footer.locator('span').first()).toHaveText('墨笺 Markdown');
+  const lines = await footer.locator('span').evaluateAll((spans) => spans.map((span) => {
+    const style = getComputedStyle(span);
+    return span.getBoundingClientRect().height / parseFloat(style.lineHeight);
+  }));
+  expect(lines.every((count) => count <= 1.1)).toBe(true);
 });
 
 test('手机分页把长文保存为多张一屏尺寸图片', async ({ page }) => {
@@ -146,7 +212,20 @@ test('手机分页把长文保存为多张一屏尺寸图片', async ({ page }) 
   expect(await previews.count()).toBeGreaterThan(1);
   await expect(previews.first()).toHaveCSS('width', '1080px');
   await expect(previews.first()).toHaveCSS('height', '1440px');
-  await expect(previews.first().locator('.longimg-page-number')).toContainText('1 /');
+  const pageTopInsets = await previews.locator('.longimg-page-viewport').evaluateAll((viewports) =>
+    viewports.slice(0, 2).map((viewport) => parseFloat((viewport as HTMLElement).style.top))
+  );
+  expect(pageTopInsets).toEqual([40, 88]);
+  const firstPageNumber = previews.first().locator('.longimg-page-number');
+  await expect(firstPageNumber).toContainText('1 /');
+  await expect(firstPageNumber).toHaveCSS('font-size', '24px');
+  const pageNumberGap = await previews.first().evaluate((preview) => {
+    const viewport = preview.querySelector('.longimg-page-viewport')!.getBoundingClientRect();
+    const pageNumber = preview.querySelector('.longimg-page-number')!.getBoundingClientRect();
+    const scale = preview.getBoundingClientRect().width / (preview as HTMLElement).offsetWidth;
+    return (pageNumber.top - viewport.bottom) / scale;
+  });
+  expect(pageNumberGap).toBeGreaterThanOrEqual(20);
   const splitLines = await previews.evaluateAll((pageNodes) => pageNodes.flatMap((page, pageIndex) => {
     const viewport = page.querySelector('.longimg-page-viewport')!;
     const boundary = viewport.getBoundingClientRect();
@@ -182,6 +261,49 @@ test('手机分页把长文保存为多张一屏尺寸图片', async ({ page }) 
   expect(zip.readUInt32LE(0)).toBe(0x04034b50);
   expect(zip.toString('utf8')).toMatch(/-01\.png/);
   expect(zip.toString('utf8')).toMatch(/-02\.png/);
+});
+
+test('下载的手机分页图片包含右下角页码', async ({ page }) => {
+  const sections = Array.from({ length: 12 }, (_, index) =>
+    `## 第 ${index + 1} 节\n\n这是用于验证导出页码的一段正文。`
+  ).join('\n\n');
+  await setSource(page, '# 导出页码测试\n\n' + sections);
+  await page.locator('.longimg-entry').click();
+  await page.locator('[data-longimg-width="phone"]').click();
+  await page.locator('.longimg-crop-toggle').click();
+  await page.evaluate(() => {
+    const calls: string[] = [];
+    const original = CanvasRenderingContext2D.prototype.fillText;
+    CanvasRenderingContext2D.prototype.fillText = function (text, ...args) {
+      calls.push(String(text));
+      return original.call(this, text, ...args);
+    };
+    (window as typeof window & { __longImagePageNumbers?: string[] }).__longImagePageNumbers = calls;
+  });
+
+  const pageCount = await page.locator('.longimg-page-preview').count();
+  const [download] = await Promise.all([
+    page.waitForEvent('download', { timeout: 60_000 }),
+    page.locator('.longimg-save').click()
+  ]);
+  await download.path();
+
+  const drawn = await page.evaluate(() =>
+    (window as typeof window & { __longImagePageNumbers?: string[] }).__longImagePageNumbers || []
+  );
+  expect(drawn).toEqual(Array.from({ length: pageCount }, (_, index) => `${index + 1} / ${pageCount}`));
+});
+
+test('大字号下长段落不会被整体推到下一页，第一页保持充分利用', async ({ page }) => {
+  const longParagraph = Array.from({ length: 60 }, () => '这是一段需要在行间智能分页的正文内容。').join('');
+  await setSource(page, '# 分页利用率\n\n## 长段落标题\n\n' + longParagraph + '\n\n## 下一节\n\n结尾。');
+  await page.locator('.longimg-entry').click();
+  await page.locator('[data-longimg-width="phone"]').click();
+  await page.locator('.longimg-crop-toggle').click();
+
+  const firstViewportHeight = await page.locator('.longimg-page-viewport').first()
+    .evaluate((viewport) => parseFloat((viewport as HTMLElement).style.height));
+  expect(firstViewportHeight).toBeGreaterThan(1200);
 });
 
 test('下载长图产出与海报同宽的 PNG', async ({ page }) => {

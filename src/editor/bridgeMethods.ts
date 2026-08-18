@@ -629,6 +629,8 @@ export class BridgeMethods {
       paperLight: this.paperLight || undefined,
       immersiveWide: this.immersiveWide || undefined,
       longImageWidth: this.longImageWidth || undefined,
+      longImagePhoneFontSize: this.longImagePhoneFontSize,
+      longImageStandardFontSize: this.longImageStandardFontSize,
       longImageMarks: this.longImageMarks === false ? false : undefined,
       comments: this.comments,
       bridgeDocumentId: this.bridgeDocumentId || undefined,

@@ -101,7 +101,9 @@ export class DiagramMethods {
   }
 
   _normalizeMermaidSource(source) {
-    return String(source || '').replace(/→/g, '-->');
+    return String(source || '').replace(/→/g, '-->').split('\n').map((line) => {
+      return /^\s*subgraph\b/i.test(line) ? line.replace(/<br\s*\/?\s*>/gi, ' · ') : line;
+    }).join('\n');
   }
 
   _mermaidThemeVariables() {
