@@ -68,7 +68,7 @@ export class ViewMethods {
       { id: 'parchment', label: '羊皮纸', swatch: '#f9ebcc' },
       { id: 'cream', label: '米黄', swatch: '#f0e9d1' },
       { id: 'snow', label: '清爽白', swatch: '#ffffff' },
-      { id: 'green', label: '豆沙绿', swatch: '#d5e4d0' }
+      { id: 'green', label: '豆沙绿', swatch: '#c0edc6' }
     ];
   }
 

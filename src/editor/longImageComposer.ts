@@ -10,14 +10,18 @@ export interface LongImagePreset {
   hint: string;
 }
 
-// 两档就够：竖屏分享用窄的，长文阅读用与沉浸式阅读一致的版心。
+// 两档就够：手机档用更宽的社交平台版心，避免长图按高度等比展示时两侧留白过大；
+// 标准档与沉浸式阅读版心一致。
 // 再多一档就变成「让用户逐像素纠结」，与设计规范第 5 条相悖。
 export const LONG_IMAGE_PRESETS: LongImagePreset[] = [
-  { id: 'phone', label: '手机', width: 720, hint: '窄版心，适合手机竖屏分享' },
+  { id: 'phone', label: '手机', width: 1080, hint: '宽版心，适合小红书等手机竖屏分享' },
   { id: 'standard', label: '标准', width: 900, hint: '与沉浸式阅读版心一致' }
 ];
 
 export const DEFAULT_LONG_IMAGE_PRESET = 'standard';
+export const LONG_IMAGE_FONT_MIN = 18;
+export const LONG_IMAGE_FONT_MAX = 72;
+export const LONG_IMAGE_FONT_STEP = 2;
 
 export function longImagePreset(id: string): LongImagePreset {
   return LONG_IMAGE_PRESETS.find((preset) => preset.id === id)
@@ -26,6 +30,12 @@ export function longImagePreset(id: string): LongImagePreset {
 
 export function longImageWidth(id: string): number {
   return longImagePreset(id).width;
+}
+
+export function longImageFontSize(presetId: string, value: unknown): number {
+  const fallback = presetId === 'phone' ? 48 : 22;
+  const size = Number(value) || fallback;
+  return Math.max(LONG_IMAGE_FONT_MIN, Math.min(LONG_IMAGE_FONT_MAX, size));
 }
 
 // 浏览器画布既限单边也限总面积，取值保守一档：Chrome 单边上限更高，
@@ -71,16 +81,26 @@ export interface ProtectedImageRange {
 export function planSafeImagePages(
   height: number,
   pageHeight: number,
-  protectedRanges: ProtectedImageRange[] = []
+  protectedRanges: ProtectedImageRange[] = [],
+  continuationPageHeight = pageHeight
 ): LongImageTile[] {
   const total = Math.max(1, height);
-  const size = Math.max(1, pageHeight);
-  const ranges = mergeProtectedRanges(protectedRanges, total);
+  const firstSize = Math.max(1, pageHeight);
+  const nextSize = Math.max(1, continuationPageHeight);
+  const maxSize = Math.max(firstSize, nextSize);
+  // 高过整页的段落或媒体本来就无法完整保留；先排除它，避免切点被迫退到元素顶部，
+  // 同时保留元素内部更细的文字行保护区用于寻找真正安全的行间切点。
+  const ranges = mergeProtectedRanges(
+    protectedRanges.filter((range) => range.bottom - range.top <= maxSize),
+    total
+  );
   const pages: LongImageTile[] = [];
   let top = 0;
   while (top < total) {
+    const size = pages.length ? nextSize : firstSize;
     let bottom = Math.min(top + size, total);
-    const crossing = ranges.find((range) => range.top < bottom && range.bottom > bottom);
+    const crossing = ranges.find((range) => range.top < bottom && range.bottom > bottom
+      && range.bottom - range.top <= size);
     if (crossing && crossing.top > top + Math.min(120, size * 0.15)) bottom = crossing.top;
     if (bottom <= top) bottom = Math.min(top + size, total);
     pages.push({ top, height: bottom - top });

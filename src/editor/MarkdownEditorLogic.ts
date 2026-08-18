@@ -142,6 +142,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.paperLight = '';
     this.immersiveWide = false;
     this.longImageWidth = DEFAULT_LONG_IMAGE_PRESET;
+    this.longImagePhoneFontSize = 48; this.longImageStandardFontSize = 22;
     this.longImageMarks = true;
     this.longImageAutoCrop = false;
     this._themeTouched = false;
@@ -216,6 +217,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       if (saved.paperLight) this.paperLight = saved.paperLight;
       if (saved.immersiveWide) this.immersiveWide = true;
       if (saved.longImageWidth) this.longImageWidth = saved.longImageWidth;
+      if (saved.longImagePhoneFontSize) this.longImagePhoneFontSize = saved.longImagePhoneFontSize;
+      if (saved.longImageStandardFontSize) this.longImageStandardFontSize = saved.longImageStandardFontSize;
       if (saved.longImageMarks === false) this.longImageMarks = false;
       if (saved.paper) {
         // 迁移旧的单份纸色记忆：墨黑归暗色，其余归亮色

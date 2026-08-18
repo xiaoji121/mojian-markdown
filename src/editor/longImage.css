@@ -16,6 +16,7 @@
   color: var(--paper-text-2);
   font-family: var(--paper-font-body);
 }
+.longimg-poster.is-phone { padding-left: 120px; padding-right: 120px; }
 .longimg-poster * { box-sizing: border-box; }
 .longimg-poster .longimg-head { margin-bottom: 40px; }
 .longimg-poster .longimg-brand {
@@ -71,6 +72,14 @@
   font-size: .62em;
   line-height: 1.5;
   letter-spacing: .1em;
+}
+.longimg-poster .longimg-foot span { white-space: nowrap; }
+.longimg-poster .longimg-foot span:first-child { flex: none; }
+.longimg-poster .longimg-foot span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
 }
 .longimg-poster .longimg-missing {
   margin: 20px 0;
@@ -206,14 +215,14 @@
 .longimg-page-preview .longimg-page-content { margin: 0; }
 .longimg-page-number {
   position: absolute;
-  right: 18px;
-  bottom: 12px;
+  right: 32px;
+  bottom: 24px;
   z-index: 2;
-  padding: 3px 8px;
+  padding: 4px 10px;
   border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--paper-bg) 86%, transparent);
   color: var(--paper-text-3);
-  font: 11px/1.4 var(--mono);
+  font: 24px/1.4 var(--mono);
 }
 
 .longimg-modal-foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -252,6 +261,32 @@
   color: var(--accent);
 }
 .longimg-crop-toggle[hidden] { display: none; }
+.longimg-font-controls {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-control);
+  color: var(--text-3);
+  font: var(--fs-xs)/1 var(--mono);
+}
+.longimg-font-controls button {
+  width: 32px;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.longimg-font-controls button:hover:not(:disabled) { background: var(--bg-3); color: var(--text); }
+.longimg-font-controls button:disabled { cursor: default; opacity: .35; }
+.longimg-font-value {
+  min-width: 42px;
+  padding: 0 4px;
+  color: var(--text-2);
+  text-align: center;
+}
 .longimg-mark-toggle {
   display: inline-flex;
   align-items: center;
