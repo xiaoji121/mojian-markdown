@@ -11,6 +11,7 @@ import {
   formatByteSize,
   longImageDate,
   longImageFileName,
+  longImageFontSize,
   longImageWidth,
   pickLongImageScale,
   planSafeImagePages,
@@ -34,10 +35,18 @@ function createStyleRule(selectorText: string, cssText: string, variables: strin
 }
 
 test('宽度档位落到已知预设，未知 id 回落到标准档', () => {
-  assert.equal(longImageWidth('phone'), 720);
+  assert.equal(longImageWidth('phone'), 1080);
   assert.equal(longImageWidth('standard'), 900);
   assert.equal(longImageWidth('不存在的档位'), 900);
   assert.equal(LONG_IMAGE_PRESETS.length, 2);
+});
+
+test('长图字号按档位给独立默认值，并限制在适合图片排版的范围内', () => {
+  assert.equal(longImageFontSize('phone', undefined), 48);
+  assert.equal(longImageFontSize('standard', undefined), 22);
+  assert.equal(longImageFontSize('phone', 50), 50);
+  assert.equal(longImageFontSize('phone', 10), 18);
+  assert.equal(longImageFontSize('phone', 90), 72);
 });
 
 test('倍率取画布上限内的最大档，超长文章降档而不是失败', () => {
@@ -153,6 +162,17 @@ test('手机分页在目标切点遇到表格时把整张表移到下一页', ()
   ]);
 });
 
+test('手机分页支持第一页与后续页使用不同正文高度', () => {
+  const pages = planSafeImagePages(300, 100, [], 80);
+
+  assert.deepEqual(pages, [
+    { top: 0, height: 100 },
+    { top: 100, height: 80 },
+    { top: 180, height: 80 },
+    { top: 260, height: 40 }
+  ]);
+});
+
 test('手机分页合并重叠保护区，避免图片和标题组合被切开', () => {
   const pages = planSafeImagePages(2400, 1280, [
     { top: 1000, bottom: 1180 },
@@ -168,6 +188,16 @@ test('手机分页切点穿过文字行时退到整行上方', () => {
 
   assert.equal(pages[0].height, 1268);
   assert.equal(pages[1].top, 1268);
+});
+
+test('超过一页的保护区不把切点退到标题后，仍优先避开目标处的文字行', () => {
+  const pages = planSafeImagePages(3200, 1360, [
+    { top: 360, bottom: 1900 },
+    { top: 1332, bottom: 1388 }
+  ]);
+
+  assert.equal(pages[0].height, 1332);
+  assert.ok(pages[0].height > 1360 * 0.9, '第一页应充分利用，不能只留下标题');
 });
 
 test('多张分页图片打包成包含全部编号文件的 ZIP', async () => {
