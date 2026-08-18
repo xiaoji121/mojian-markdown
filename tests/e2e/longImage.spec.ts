@@ -90,7 +90,7 @@ test('划词工具条可把选中内容单独生成图片', async ({ page }) => 
   await expect(poster).toContainText('列表第二项');
   await expect(poster.locator('.longimg-prose > ul > li')).toHaveCount(2);
   await expect(poster).not.toContainText('引用块也要出现在长图里');
-  await expect(poster.locator('.longimg-title')).toHaveText('摘录');
+  await expect(poster.locator('.longimg-title')).toHaveText('未命名 - 摘录');
 });
 
 test('静态长图里表格与代码块折行，不靠横向滚动', async ({ page }) => {
