@@ -39,6 +39,16 @@ test('输入 Markdown 后预览实时渲染', async ({ page }) => {
   await expect(preview.locator('li')).toHaveCount(2);
 });
 
+test('LaTeX 行内公式与块级公式正常排版', async ({ page }) => {
+  await setSource(page, '速度 $7\\text{ km/h}$，跑了 $3.5\\text{ 公里}$。\n\n$$\\frac{3.5}{7} = 0.5$$');
+
+  const preview = page.locator('.md-preview');
+  await expect(preview.locator('.katex').first()).toBeVisible();
+  await expect(preview.locator('.katex-display')).toBeVisible();
+  await expect(preview.locator('annotation').first()).toHaveText('7\\text{ km/h}');
+  await expect(preview).not.toContainText('$7\\text{ km/h}$');
+});
+
 test('顶栏使用产品图标并支持双击重命名文档', async ({ page }) => {
   const productIcon = page.locator('.brand-mark');
   const fileName = page.locator('.file-name');
