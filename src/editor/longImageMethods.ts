@@ -420,7 +420,8 @@ export class LongImageMethods {
       : (preview ? preview.innerHTML : '');
     if (this._longImageSelection) this._normalizeSelectionContent(content);
     if (!this.longImageMarks) this._stripPosterMarks(content);
-    const title = this._longImageSelection ? '摘录' : this._takePosterTitle(content);
+    const fileTitle = String(this.fileName || '').replace(/\.md$/i, '') || '未命名';
+    const title = this._longImageSelection ? fileTitle : this._takePosterTitle(content);
     this._posterTitle = title;
     poster.append(this._buildPosterHead(title, content), content, this._buildPosterFoot());
     return poster;

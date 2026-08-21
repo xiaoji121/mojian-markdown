@@ -248,7 +248,7 @@ export function formatByteSize(bytes: number): string {
 
 // 海报要用到的样式：正文排版（.md-preview / .mermaid-rendered）与海报自身
 // （.longimg-poster / .longimg-prose）。弹窗外壳（.longimg-modal…）不进长图。
-const POSTER_SELECTOR = /\.md-preview|\.mermaid-rendered|\.longimg-poster|\.longimg-prose/;
+const POSTER_SELECTOR = /\.md-preview|\.mermaid-rendered|\.katex|\.longimg-poster|\.longimg-prose/;
 
 type StyleRuleVisitor = (rule: { selectorText: string; style: CSSStyleDeclaration }) => void;
 

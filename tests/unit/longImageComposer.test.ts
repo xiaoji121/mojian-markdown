@@ -104,13 +104,15 @@ test('抽取海报样式：把预览选择器改写到海报上，无关规则�
       createStyleRule('.md-preview', 'color: red'),
       createStyleRule('.md-preview pre code', 'font-size: 0.8em'),
       createStyleRule('.app-header', 'height: 54px'),
-      createStyleRule('.mermaid-rendered svg', 'min-width: 620px')
+      createStyleRule('.mermaid-rendered svg', 'min-width: 620px'),
+      createStyleRule('.katex', 'font-size: 1.1em')
     ])
   ]);
 
   assert.match(css, /\.longimg-prose\{color: red\}/);
   assert.match(css, /\.longimg-prose pre code\{font-size: 0\.8em\}/);
   assert.match(css, /\.mermaid-rendered svg\{min-width: 620px\}/);
+  assert.match(css, /\.katex\{font-size: 1\.1em\}/);
   assert.doesNotMatch(css, /app-header/);
   assert.doesNotMatch(css, /\.md-preview/);
 });

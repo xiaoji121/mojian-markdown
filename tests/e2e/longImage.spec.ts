@@ -90,7 +90,7 @@ test('划词工具条可把选中内容单独生成图片', async ({ page }) => 
   await expect(poster).toContainText('列表第二项');
   await expect(poster.locator('.longimg-prose > ul > li')).toHaveCount(2);
   await expect(poster).not.toContainText('引用块也要出现在长图里');
-  await expect(poster.locator('.longimg-title')).toHaveText('摘录');
+  await expect(poster.locator('.longimg-title')).toHaveText('未命名');
 });
 
 test('静态长图里表格与代码块折行，不靠横向滚动', async ({ page }) => {
@@ -109,6 +109,16 @@ test('静态长图里表格与代码块折行，不靠横向滚动', async ({ pa
   expect(overflow.table).toBeLessThanOrEqual(1);
   expect(overflow.pre).toBeLessThanOrEqual(1);
   expect(overflow.preWrap).toBe('pre-wrap');
+});
+
+test('静态长图保留 LaTeX 公式排版', async ({ page }) => {
+  await setSource(page, '# 运动记录\n\n速度 $7\\text{ km/h}$，跑了 $3.5\\text{ 公里}$。');
+  await expect(page.locator('.md-preview .katex').first()).toBeVisible();
+  await page.locator('.longimg-entry').click();
+
+  const formula = page.locator('.longimg-poster .katex').first();
+  await expect(formula).toBeVisible();
+  await expect(formula.locator('annotation')).toHaveText('7\\text{ km/h}');
 });
 
 test('静态长图里的 Mermaid 多行连线文案保持完整可见', async ({ page }) => {

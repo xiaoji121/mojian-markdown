@@ -1,6 +1,7 @@
 // Vite waits for these editor-only styles before evaluating this module, so the
 // mounted editor is styled on its first frame without burdening the landing page.
 import './editor/styles.css';
+import 'katex/dist/katex.min.css';
 import './editor/diagram.css';
 import './editor/documentSidebar.css';
 import './editor/readingPath.css';
@@ -14,9 +15,11 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import { marked } from 'marked';
 import { createMarkdownEditorComponent } from './editor/MarkdownEditorLogic';
+import { configureMarkdownMath } from './editor/markdownMath';
 
 window.React = React;
 window.ReactDOM = ReactDOM;
+configureMarkdownMath(marked);
 window.marked = marked;
 window.createMarkdownEditorComponent = createMarkdownEditorComponent;
 
