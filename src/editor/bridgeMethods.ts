@@ -70,13 +70,21 @@ export class BridgeMethods {
     const list = this.documentListRef.current;
     if (!list) return;
     this._updateFooterPath();
+    this._syncDocumentSidebar();
     list.innerHTML = '';
     const docs = [...this.recentDocuments].sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
     if (this.documentCountRef.current) this.documentCountRef.current.textContent = String(docs.length);
     if (!docs.length) {
       const empty = document.createElement('div');
       empty.className = 'recent-documents-empty';
-      empty.textContent = 'Agent Bridge 未启动，或 Reading Workspace 中还没有文档。';
+      empty.textContent = this._recentDocumentsOffline
+        ? '本地服务未连接，仍可编辑和保存当前文档。'
+        : '还没有最近阅读，打开一篇文档开始。';
+      const action = document.createElement('button');
+      action.className = 'abtn secondary';
+      action.textContent = this._recentDocumentsOffline ? '重新连接' : '打开文档';
+      action.addEventListener('click', () => this._recentDocumentsOffline ? this._refreshRecentDocuments() : this.onOpen());
+      empty.appendChild(action);
       list.appendChild(empty);
       return;
     }
@@ -393,6 +401,7 @@ export class BridgeMethods {
       const response = await fetch(bridgeUrl('/api/documents'));
       if (!response.ok) throw new Error('Reading Workspace unavailable');
       const data = await response.json();
+      this._recentDocumentsOffline = false;
       this.recentDocuments = Array.isArray(data.documents) ? data.documents : [];
       if (!this.bridgeDocumentId && this.fileName && this.fileName !== '未命名.md') {
         const preferred = this._matchRecentDocumentByName(this.fileName);
@@ -403,6 +412,7 @@ export class BridgeMethods {
         }
       }
     } catch {
+      this._recentDocumentsOffline = true;
       this.recentDocuments = [];
     }
     this._renderRecentDocuments();
@@ -438,6 +448,7 @@ export class BridgeMethods {
       const response = await fetch(bridgeUrl('/api/documents'));
       if (!response.ok) return null;
       const data = await response.json();
+      this._recentDocumentsOffline = false;
       this.recentDocuments = Array.isArray(data.documents) ? data.documents : [];
       const preferred = this._matchRecentDocumentByName(fileName);
       if (!preferred) return null;
@@ -602,16 +613,31 @@ export class BridgeMethods {
   }
 
 
+  _syncDocumentSidebar() {
+    const sidebar = this.documentSidebarRef?.current;
+    if (!sidebar) return;
+    const open = this._sidebarExplicitOpen ?? !!this.recentDocuments.length;
+    sidebar.classList.toggle('is-collapsed', !open);
+    if (typeof document !== 'undefined') {
+      document.querySelector?.('.document-toggle')?.setAttribute('aria-expanded', String(open));
+    }
+  }
+
   toggleDocumentSidebar() {
     const sidebar = this.documentSidebarRef.current;
     if (!sidebar) return;
-    sidebar.classList.toggle('is-mobile-open');
+    const mobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches;
+    this._sidebarExplicitOpen = mobile ? !sidebar.classList.contains('is-mobile-open')
+      : sidebar.classList.contains('is-collapsed');
+    sidebar.classList.toggle('is-mobile-open', this._sidebarExplicitOpen);
+    this._syncDocumentSidebar();
   }
-
 
   closeDocumentSidebar() {
     const sidebar = this.documentSidebarRef.current;
+    this._sidebarExplicitOpen = false;
     if (sidebar) sidebar.classList.remove('is-mobile-open');
+    this._syncDocumentSidebar();
   }
 
   // ===== double-click anchoring =====
@@ -620,7 +646,7 @@ export class BridgeMethods {
     const src = this.sourceRef.current;
     const savedAt = Date.now();
     this._draftSavedAt = savedAt;
-    saveEditorState({
+    const saved = saveEditorState({
       content: src ? src.value : '',
       fileName: this.fileName,
       fontSize: this.fontSize,
@@ -638,6 +664,7 @@ export class BridgeMethods {
       savedAt
     });
     if (syncBridge && this.agentBridgeEnabled) this._scheduleBridgeSync();
+    return saved;
   }
 
 

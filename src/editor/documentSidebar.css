@@ -55,7 +55,7 @@
     font: 600 var(--fs-2xs)/18px var(--mono);
     text-align: center;
   }
-  .document-sidebar-close { display: none; }
+  .document-sidebar-close { display: block; border: 0; background: transparent; color: var(--text-3); font-size: var(--fs-xl); cursor: pointer; }
   .recent-document-list { flex: 1; min-height: 0; overflow-y: auto; padding: 8px; }
   /* 固定区 / 最近区分隔标签 */
   .recent-section-label {
@@ -228,7 +228,7 @@
     white-space: nowrap;
   }
   .recent-answer-body small { color: var(--text-4); font: var(--fs-2xs)/1 var(--mono); }
-  .recent-documents-empty { padding: 18px 12px; color: var(--text-4); font: var(--fs-xs)/1.7 var(--sans); }
+  .recent-documents-empty { padding: 18px 12px; color: var(--text-3); font: var(--fs-md)/1.7 var(--sans); }
 
   /* 小屏：侧栏收成抽屉，由「文档」按钮唤出（is-mobile-open 见 toggleDocumentSidebar） */
   @media (max-width: 760px) {
@@ -260,3 +260,8 @@
       cursor: pointer;
     }
   }
+
+  @media (min-width: 761px) {
+    .document-sidebar.is-collapsed { display: none; }
+  }
+  .recent-documents-empty .abtn { margin-top: 16px; }

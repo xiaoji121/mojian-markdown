@@ -33,7 +33,7 @@ async function installFakeSavePicker(page: Page) {
 test('顶栏文件菜单包含新建、打开、保存与另存为，点击外部关闭', async ({ page }) => {
   await openEditor(page);
 
-  await page.getByRole('button', { name: '文件菜单' }).click();
+  await page.getByRole('button', { name: '更多操作' }).click();
   await expect(page.locator('.file-menu')).toHaveClass(/is-open/);
   const fileMenu = page.locator('.file-menu');
   await expect(fileMenu.getByRole('menuitem', { name: '新建文档' })).toBeVisible();
@@ -64,7 +64,7 @@ test('通过文件菜单新建空白文档', async ({ page }) => {
   await setSource(page, '# 旧内容');
   page.on('dialog', (dialog) => dialog.accept());
 
-  await page.getByRole('button', { name: '文件菜单' }).click();
+  await page.getByRole('button', { name: '更多操作' }).click();
   await page.locator('.file-menu').getByRole('menuitem', { name: '新建文档' }).click();
 
   await expect(page.locator('.md-source')).toHaveValue('');
@@ -76,7 +76,7 @@ test('另存为把内容写入新文件并切换关联', async ({ page }) => {
   await openEditor(page);
   await setSource(page, '# 副本内容');
 
-  await page.getByRole('button', { name: '文件菜单' }).click();
+  await page.getByRole('button', { name: '更多操作' }).click();
   await page.locator('.file-menu').getByRole('menuitem', { name: /另存为/ }).click();
 
   await expect(page.locator('.file-name')).toHaveText('另存目标.md');

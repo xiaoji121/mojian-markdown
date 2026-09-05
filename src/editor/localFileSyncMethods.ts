@@ -218,7 +218,8 @@ export class LocalFileSyncMethods {
       this._setStatus('已同步到本地文件 · '
         + String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0'));
     } catch {
-      // 写回失败不打断编辑；保留脏标记，用户仍可 ⌘S 手动保存。
+      // 写回失败不打断编辑；保留脏标记，用户仍可手动保存。
+      this._setStatus('本地文件同步失败 · 请重试保存或另存为');
     } finally {
       this._localWriteBusy = false;
     }

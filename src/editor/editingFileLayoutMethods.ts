@@ -605,30 +605,6 @@ export class EditingFileLayoutMethods {
 
   // ===== 顶栏「文件」下拉菜单 =====
 
-  toggleFileMenu(force) {
-    const menu = this.fileMenuRef.current;
-    const button = this.fileMenuButtonRef.current;
-    if (!menu) return;
-    const open = typeof force === 'boolean' ? force : !menu.classList.contains('is-open');
-    menu.classList.toggle('is-open', open);
-    if (button) button.setAttribute('aria-expanded', open ? 'true' : 'false');
-    if (open && typeof this._refreshConnectorCapabilities === 'function') {
-      this._refreshConnectorCapabilities();
-    }
-    if (open && !this._fileMenuDocH) {
-      this._fileMenuDocH = (e) => {
-        if (menu.contains(e.target)) return;
-        if (button && (e.target === button || button.contains(e.target))) return;
-        this.toggleFileMenu(false);
-      };
-      document.addEventListener('click', this._fileMenuDocH);
-    } else if (!open && this._fileMenuDocH) {
-      document.removeEventListener('click', this._fileMenuDocH);
-      this._fileMenuDocH = null;
-    }
-  }
-
-
   onNew() {
     if (this.dirty && !window.confirm('当前内容尚未保存，确定新建空白文档？')) return;
     if (this.viewMode === 'preview') this.setViewMode('editor');

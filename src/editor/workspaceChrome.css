@@ -1,0 +1,63 @@
+/* 工作区操作层级：顶栏管理文档，阅读工具沿正文版心放置。 */
+.header-brand .document-toggle { flex: none; margin-right: 4px; }
+.file-menu { max-height: min(680px, calc(100dvh - 80px)); overflow-y: auto; }
+.appearance-theme { display: inline-flex; align-items: center; gap: 8px; padding: 0 10px; }
+.reading-toolbar .preview-toolbar-actions { gap: 8px; }
+.reading-toolbar .outline-count { display: none; }
+.reading-toolbar .fullscreen-button-label { display: inline; }
+
+.editor-main.preview-mode-active > .preview-pane > .reading-toolbar,
+.editor-main > .preview-pane-fullscreen > .reading-toolbar {
+  position: absolute;
+  inset: 20px max(32px, calc((100% - 820px) / 2)) auto auto;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: var(--paper-bg);
+}
+.editor-main.preview-mode-active .reading-toolbar > .pane-title,
+.editor-main > .preview-pane-fullscreen > .reading-toolbar > .pane-title { display: none; }
+.editor-main.preview-mode-active > .preview-pane > .md-preview {
+  padding: 80px max(32px, calc((100% - 820px) / 2)) 72px;
+}
+.editor-main > .preview-pane-fullscreen.immersive-wide > .reading-toolbar {
+  right: max(64px, calc((100% - 1240px) / 2));
+}
+.editor-main.preview-mode-active .reading-toolbar > .preview-toolbar-actions > .tbtn,
+.editor-main.preview-mode-active .reading-toolbar .appearance-toggle,
+.preview-pane-fullscreen .reading-toolbar > .preview-toolbar-actions > .tbtn,
+.preview-pane-fullscreen .reading-toolbar .appearance-toggle { color: var(--paper-text-3); }
+.editor-main.preview-mode-active .reading-toolbar .tbtn:hover,
+.preview-pane-fullscreen .reading-toolbar .tbtn:hover { color: var(--paper-accent); }
+.reading-toolbar .appearance-toggle[aria-expanded='true'] { color: var(--accent); }
+/* 工具组随正文滚走；容器边界裁切，避免滚到顶栏上方。 */
+.preview-pane { overflow: hidden; }
+.preview-pane > .reading-toolbar { transition: none; }
+.reading-toolbar.is-scrolled-away { visibility: hidden; pointer-events: none; }
+
+@media (max-width: 760px) {
+  .header-brand { gap: 6px; }
+  .header-brand .document-toggle { margin: 0; }
+  .editor-main.preview-mode-active > .preview-pane > .reading-toolbar,
+  .editor-main > .preview-pane-fullscreen > .reading-toolbar {
+    top: 12px;
+    right: 16px;
+    height: 36px !important;
+    padding: 0 !important;
+    overflow: visible;
+  }
+  .editor-main.preview-mode-active > .preview-pane > .md-preview,
+  .editor-main > .preview-pane-fullscreen > .md-preview { padding-top: 72px !important; }
+  .reading-toolbar .reading-appearance-panel { right: 0; }
+  .reading-toolbar .appearance-label,
+  .reading-toolbar .outline-toggle .action-label,
+  .reading-toolbar .fullscreen-button-label { display: inline !important; }
+}
+@media (max-width: 420px) {
+  .agent-bridge-enabled .header-brand .brand-mark { display: none; }
+  .header-actions { gap: 4px !important; }
+  .view-mode-option { padding-inline: 9px; }
+}

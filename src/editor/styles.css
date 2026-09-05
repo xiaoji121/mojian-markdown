@@ -471,9 +471,6 @@
     }
     .preview-toolbar-actions { gap: 6px; }
   }
-  @container (max-width: 400px) {
-    .preview-toolbar-actions .paper-picker { display: none; }
-  }
 
   @media (max-width: 760px) {
     html:has(body.editor-active), body.editor-active { height: 100%; height: 100dvh; overflow: hidden; }
@@ -502,9 +499,6 @@
     .collapsible-action { display: none !important; }
     .header-more { display: flex !important; }
     .header-menu-item.collapsible-menu-item { display: block; }
-    /* 纸色点收起为当前色，点击展开整排（见 _buildPaperPicker） */
-    .paper-picker .paper-dot:not(.is-active) { display: none; }
-    .paper-picker.is-open .paper-dot { display: block; }
     /* 沉浸式入口只留图标；宽屏切换在小屏无意义
        （需压过 .preview-pane-fullscreen .fullscreen-only-control 的 flex !important） */
     .fullscreen-button-label { display: none !important; }

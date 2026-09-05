@@ -207,50 +207,6 @@ test('未关联文件时保存委托给另存为', async () => {
   assert.equal(saveAsCount, 1);
 });
 
-test('文件菜单开合同步 is-open 与 aria-expanded', () => {
-  const docListeners = new Map<string, unknown[]>();
-  (globalThis as { document?: unknown }).document = {
-    addEventListener(type: string, listener: unknown) {
-      docListeners.set(type, [...(docListeners.get(type) ?? []), listener]);
-    },
-    removeEventListener(type: string, listener: unknown) {
-      docListeners.set(type, (docListeners.get(type) ?? []).filter((item) => item !== listener));
-    }
-  };
-  try {
-    const editor = createEditor(createSource('', 0));
-    const attrs = new Map<string, string>();
-    const classes = new Set<string>();
-    editor.fileMenuRef = {
-      current: {
-        classList: {
-          toggle(name: string, force: boolean) { force ? classes.add(name) : classes.delete(name); },
-          contains(name: string) { return classes.has(name); }
-        },
-        contains() { return false; }
-      }
-    };
-    editor.fileMenuButtonRef = {
-      current: {
-        setAttribute(name: string, value: string) { attrs.set(name, value); },
-        contains() { return false; }
-      }
-    };
-
-    (editor as { toggleFileMenu: (force?: boolean) => void }).toggleFileMenu();
-    assert.equal(classes.has('is-open'), true);
-    assert.equal(attrs.get('aria-expanded'), 'true');
-    assert.equal((docListeners.get('click') ?? []).length, 1);
-
-    (editor as { toggleFileMenu: (force?: boolean) => void }).toggleFileMenu();
-    assert.equal(classes.has('is-open'), false);
-    assert.equal(attrs.get('aria-expanded'), 'false');
-    assert.equal((docListeners.get('click') ?? []).length, 0);
-  } finally {
-    delete (globalThis as { document?: unknown }).document;
-  }
-});
-
 test('桌面端菜单 save-as 动作触发另存为', () => {
   let menuCallback: ((action: string) => void) | null = null;
   (globalThis as { window?: unknown }).window = {
