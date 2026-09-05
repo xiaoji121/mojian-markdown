@@ -20,6 +20,7 @@ export class ViewMethods {
     if (!split) return;
     split.classList.toggle('editor-mode-active', this.viewMode === 'editor');
     split.classList.toggle('preview-mode-active', this.viewMode === 'preview');
+    this._syncReadingToolbarScroll?.();
     const switcher = this.viewModeSwitcherRef.current;
     if (!switcher) return;
     switcher.querySelectorAll('[data-mode]').forEach((button) => {
@@ -30,6 +31,7 @@ export class ViewMethods {
 
   setViewMode(mode) {
     if (!['editor', 'split', 'preview'].includes(mode)) return;
+    if (mode === 'editor' && this.appearanceOpen) this.toggleReadingAppearance(false);
     this.viewMode = mode;
     if (mode !== 'preview' && this.previewOverrideMarkdown) {
       this.previewOverrideMarkdown = '';
@@ -47,7 +49,10 @@ export class ViewMethods {
 
   _applyTheme() {
     try { document.body.setAttribute('data-theme', this.theme); } catch (e) {}
-    if (this.themeIconRef.current) this.themeIconRef.current.textContent = this.theme === 'dark' ? '☾' : '☀';
+    if (this.themeIconRef.current) this.themeIconRef.current.innerHTML = this.theme === 'dark'
+      ? '<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14A8 8 0 0 1 10 4a8 8 0 1 0 10 10Z"/></svg>'
+      : '<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>';
+    if (this.themeLabelRef?.current) this.themeLabelRef.current.textContent = this.theme === 'dark' ? '暗色' : '亮色';
     this._applyPaper();
   }
 
@@ -111,43 +116,53 @@ export class ViewMethods {
       dot.title = '纸色：' + p.label;
       dot.setAttribute('aria-label', '纸色：' + p.label);
       dot.style.background = p.swatch;
-      dot.addEventListener('click', () => {
-        // 小屏下色点收起为当前色：第一次点击先展开整排
-        const collapsed = window.matchMedia && window.matchMedia('(max-width: 760px)').matches;
-        if (collapsed && !picker.classList.contains('is-open')) {
-          picker.classList.add('is-open');
-          return;
-        }
-        this.setPaper(p.id);
-        picker.classList.remove('is-open');
-      });
+      dot.addEventListener('click', () => this.setPaper(p.id));
       picker.appendChild(dot);
     });
     this._applyPaper();
   }
 
-  // ===== 小屏顶栏溢出菜单（⋯） =====
-
-  toggleHeaderMenu(force) {
-    const menu = this.headerMenuRef.current;
-    const more = this.headerMoreRef.current;
-    if (!menu) return;
-    const open = typeof force === 'boolean' ? force : !menu.classList.contains('is-open');
-    menu.classList.toggle('is-open', open);
-    if (more) more.setAttribute('aria-expanded', open ? 'true' : 'false');
-    if (open && !this._headerMenuDocH) {
-      this._headerMenuDocH = (e) => {
-        if (menu.contains(e.target)) return;
-        if (more && (e.target === more || more.contains(e.target))) return;
-        this.toggleHeaderMenu(false);
-      };
-      document.addEventListener('click', this._headerMenuDocH);
-    } else if (!open && this._headerMenuDocH) {
-      document.removeEventListener('click', this._headerMenuDocH);
-      this._headerMenuDocH = null;
-    }
+  // 阅读排版：共享原有纸色、字号和沉浸宽度设置。
+  _initReadingAppearanceRefs(React) {
+    this.paperPickerRef = React.createRef();
+    this.appearancePanelRef = React.createRef();
+    this.appearanceButtonRef = React.createRef();
   }
 
+  _readingAppearanceRenderVals() {
+    return {
+      appearancePanelRef: this.appearancePanelRef,
+      appearanceButtonRef: this.appearanceButtonRef,
+      toggleReadingAppearance: () => this.toggleReadingAppearance()
+    };
+  }
+
+  _initReadingAppearance() {
+    if (this.appearancePanelRef.current) this.appearancePanelRef.current.hidden = true;
+    this._appearanceOutsideH = (event) => {
+      const panel = this.appearancePanelRef.current, button = this.appearanceButtonRef.current;
+      if (!this.appearanceOpen || panel?.contains(event.target) || button?.contains(event.target)) return;
+      this.toggleReadingAppearance(false);
+    };
+    this._appearanceFocusH = this._appearanceOutsideH;
+    document.addEventListener('pointerdown', this._appearanceOutsideH);
+    document.addEventListener('focusin', this._appearanceFocusH);
+  }
+
+  toggleReadingAppearance(force, returnFocus = false) {
+    const panel = this.appearancePanelRef.current, button = this.appearanceButtonRef.current;
+    if (!panel || !button) return;
+    this.appearanceOpen = typeof force === 'boolean' ? force : !this.appearanceOpen;
+    panel.hidden = !this.appearanceOpen;
+    button.setAttribute('aria-expanded', String(this.appearanceOpen));
+    if (returnFocus) button.focus();
+    this._syncReadingToolbarScroll();
+  }
+
+  _disposeReadingAppearance() {
+    document.removeEventListener('pointerdown', this._appearanceOutsideH);
+    document.removeEventListener('focusin', this._appearanceFocusH);
+  }
 
   togglePreviewFullscreen(force) {
     const pane = this.previewPaneRef.current;
@@ -159,10 +174,9 @@ export class ViewMethods {
     pane.classList.toggle('immersive-wide', this.previewFullscreen && this.immersiveWide);
     this._syncFullscreenLayout();
     document.body.style.overflow = this.previewFullscreen ? 'hidden' : '';
-    if (this.previewFullscreen) this._bindImmersiveToolbar();
-    else this._unbindImmersiveToolbar();
+    this._syncReadingToolbarScroll();
     if (this.fullscreenLabelRef.current) {
-      this.fullscreenLabelRef.current.textContent = this.previewFullscreen ? '退出阅读' : '沉浸式阅读';
+      this.fullscreenLabelRef.current.textContent = this.previewFullscreen ? '退出专注' : '专注';
     }
     if (this.fullscreenIconRef.current) {
       this.fullscreenIconRef.current.innerHTML = this.previewFullscreen
@@ -200,42 +214,19 @@ export class ViewMethods {
     btn.setAttribute('aria-pressed', this.immersiveWide ? 'true' : 'false');
   }
 
-  _bindImmersiveToolbar() {
-    if (this._immersiveScrollH) return;
-    const prev = this.previewRef.current;
-    if (!prev) return;
-    this._toolbarPeek = false;
-    this._immersiveScrollH = () => this._updateImmersiveToolbar();
-    this._immersiveMouseH = (e) => {
-      if (!this.previewFullscreen) return;
-      if (e.clientY <= 44) this._toolbarPeek = true;
-      else if (e.clientY > 160) this._toolbarPeek = false;
-      this._updateImmersiveToolbar();
-    };
-    prev.addEventListener('scroll', this._immersiveScrollH);
-    document.addEventListener('mousemove', this._immersiveMouseH);
-    this._updateImmersiveToolbar();
-  }
-
-  _unbindImmersiveToolbar() {
-    const prev = this.previewRef.current;
-    if (prev && this._immersiveScrollH) prev.removeEventListener('scroll', this._immersiveScrollH);
-    if (this._immersiveMouseH) document.removeEventListener('mousemove', this._immersiveMouseH);
-    this._immersiveScrollH = null;
-    this._immersiveMouseH = null;
-    const pane = this.previewPaneRef.current;
-    if (pane) pane.classList.remove('immersive-toolbar-hidden');
-  }
-
-  _updateImmersiveToolbar() {
-    const pane = this.previewPaneRef.current, prev = this.previewRef.current;
+  // 正文仍是独立滚动容器（导出、批注和定位依赖它）；工具组同步同一
+  // 滚动距离，保持位于文章开头，滚出边界后不再接收点击或键盘焦点。
+  _syncReadingToolbarScroll() {
+    const pane = this.previewPaneRef?.current, prev = this.previewRef?.current;
     if (!pane || !prev) return;
-    if (!this.previewFullscreen) { pane.classList.remove('immersive-toolbar-hidden'); return; }
-    const toolbar = pane.querySelector('.pane-toolbar');
-    const keep = prev.scrollTop <= 8
-      || this._toolbarPeek
-      || (toolbar && toolbar.matches(':hover'));
-    pane.classList.toggle('immersive-toolbar-hidden', !keep);
+    const toolbar = pane.querySelector('.reading-toolbar');
+    if (!toolbar) return;
+    const reading = this.previewFullscreen || this.viewMode === 'preview';
+    const offset = reading ? prev.scrollTop : 0;
+    const gone = offset >= toolbar.offsetTop + toolbar.offsetHeight;
+    toolbar.style.transform = offset ? `translateY(${-offset}px)` : '';
+    toolbar.classList.toggle('is-scrolled-away', reading && gone);
+    if (reading && gone && this.appearanceOpen) this.toggleReadingAppearance(false);
   }
 
 
@@ -555,11 +546,11 @@ export class ViewMethods {
   _autosave() {
     const src = this.sourceRef.current;
     if (!src) return;
-    this._persist();
+    const saved = this._persist();
     const t = new Date();
     const hh = String(t.getHours()).padStart(2, '0');
     const mm = String(t.getMinutes()).padStart(2, '0');
-    this._setStatus('已自动保存草稿 · ' + hh + ':' + mm);
+    this._setStatus(saved === false ? '草稿保存失败 · 请保存到文件' : '草稿已保存到此浏览器 · ' + hh + ':' + mm);
     // 打开了本地文件时，草稿同时写穿回本地（异步，不阻塞输入）。
     if (typeof this._maybeWriteThroughLocalFile === 'function') this._maybeWriteThroughLocalFile();
   }
@@ -574,7 +565,7 @@ export class ViewMethods {
     if (prev) prev.style.fontSize = px + 'px';
     if (src) src.style.fontSize = px + 'px';
     if (this.fontSizeRef.current) this.fontSizeRef.current.textContent = px + 'px';
-    if (this.fullscreenFontSizeRef.current) this.fullscreenFontSizeRef.current.textContent = px + 'px';
+    if (this.fullscreenFontSizeRef?.current) this.fullscreenFontSizeRef.current.textContent = px + 'px';
   }
 
 

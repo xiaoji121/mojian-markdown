@@ -14,10 +14,12 @@ export function loadEditorState(): Partial<PersistedEditorState> | null {
   }
 }
 
-export function saveEditorState(state: PersistedEditorState): void {
+export function saveEditorState(state: PersistedEditorState): boolean {
   try {
     localStorage.setItem(EDITOR_STORAGE_KEY, JSON.stringify(state));
+    return true;
   } catch {
     // Local storage can be unavailable in private or restricted contexts.
+    return false;
   }
 }

@@ -73,7 +73,7 @@ body.editor-active { overflow: hidden; }
 .dirty-dot { width: 6px; height: 6px; flex: none; border-radius: 50%; background: var(--text-4); transition: background .2s; }
 .file-name {
   overflow: hidden;
-  color: var(--text-3);
+  color: var(--text-2);
   cursor: text;
   font-family: var(--mono);
   font-size: var(--fs-sm);
@@ -267,9 +267,9 @@ body.is-desktop-app .header-more { display: none; }
   border-radius: var(--radius-control);
   background: transparent;
   color: var(--text-3);
-  font-family: var(--mono);
-  font-size: var(--fs-sm);
-  letter-spacing: 0.03em;
+  font-family: var(--sans);
+  font-size: var(--fs-md);
+  letter-spacing: 0;
   cursor: pointer;
   transition: all .2s;
 }
@@ -287,7 +287,7 @@ body.is-desktop-app .header-more { display: none; }
 /* 纯图标按钮的字形要比文本按钮大：单个符号（☀/⚙/☰/⋯）在 34px 按钮里
    用 14px 会又小又飘，看不清；18px 才与相邻的多字词按钮视觉等重。 */
 .abtn.icon { width: 34px; padding: 0; font-size: 18px; }
-.abtn.document-toggle { display: none; width: 34px; padding: 0; font-size: 18px; }
+.abtn.document-toggle { display: flex; width: 34px; padding: 0; font-size: 18px; }
 /* 主题/设置这类低频图标默认更淡，放大后再加深一档以补足对比度 */
 .abtn.icon.collapsible-action { color: var(--text-2); }
 .abtn-glyph { font-size: var(--fs-lg); }
@@ -363,14 +363,14 @@ body.is-desktop-app .header-more { display: none; }
 /* ===== 工具按钮 ===== */
 .tbtn {
   background: transparent;
-  border: 1px solid var(--border-soft);
+  border: 1px solid transparent;
   border-radius: var(--radius-control);
   color: var(--text-3);
   font-size: var(--fs-md);
   cursor: pointer;
   transition: all .15s;
 }
-.tbtn:hover { border-color: var(--accent); color: var(--accent); }
+.tbtn:hover { background: var(--accent-soft); color: var(--accent); }
 .tbtn:disabled { cursor: not-allowed; opacity: .38; }
 .tbtn:disabled:hover { border-color: var(--border); color: var(--text-3); }
 .source-toolbar-leading { display: flex; flex: none; align-items: center; gap: 14px; }
@@ -603,8 +603,8 @@ textarea.md-source {
   gap: 6px;
   height: 27px;
   padding: 0 9px;
-  font-family: var(--mono);
-  font-size: var(--fs-xs);
+  font-family: var(--sans);
+  font-size: var(--fs-md);
   white-space: nowrap;
 }
 .tbtn.font-btn { width: 27px; height: 27px; font-family: var(--read); line-height: 1; }

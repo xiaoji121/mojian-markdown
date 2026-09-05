@@ -33,7 +33,7 @@ async function installFakeLocalFile(page: Page, content: string) {
 }
 
 async function openFakeLocalFile(page: Page) {
-  await page.getByRole('button', { name: '文件菜单' }).click();
+  await page.getByRole('button', { name: '更多操作' }).click();
   await page.locator('.file-menu').getByRole('menuitem', { name: /^打开/ }).click();
   await expect(page.locator('.md-source')).toHaveValue(/原始内容/);
   // 正文会先出现，随后才完成工作区认领与本地句柄初始化；等打开流程真正结束再编辑。

@@ -22,6 +22,7 @@ import { PreviewSearchMethods } from './previewSearchMethods';
 import { ReadingMapMethods } from './readingMapMethods';
 import { TranslateMethods } from './translateMethods';
 import { SearchReplaceMethods } from './searchReplaceMethods';
+import { WorkspaceMenuMethods } from './workspaceMenuMethods';
 import { ViewMethods } from './viewMethods';
 
 export function createMarkdownEditorComponent(DCLogic, React) {
@@ -50,11 +51,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.publishToastRef = React.createRef();
     this.countRef = React.createRef();
     this.fontSizeRef = React.createRef();
-    this.fullscreenFontSizeRef = React.createRef();
-    this.paperPickerRef = React.createRef();
+    this._initReadingAppearanceRefs(React);
     this.immersiveWideRef = React.createRef();
-    this.headerMoreRef = React.createRef();
-    this.headerMenuRef = React.createRef();
     this.fontSize = 16;
     this.searchBarRef = React.createRef();
     this.searchInputRef = React.createRef();
@@ -96,6 +94,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.aiSendRef = React.createRef();
     this.aiEngineChipRef = React.createRef();
     this.themeIconRef = React.createRef();
+    this.themeLabelRef = React.createRef();
     this.viewModeSwitcherRef = React.createRef();
     this.documentSidebarRef = React.createRef();
     this.documentSidebarResizeRef = React.createRef();
@@ -237,7 +236,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._renderPreview();
     this._updateCount();
     this._resetEditingHistory();
-    this._setStatus('就绪 · 自动保存已开启');
+    this._setStatus('编辑后自动保存草稿到此浏览器');
+    this._initReadingAppearance();
     this._applyProps();
     this._initFileNameEditing();
 
@@ -248,11 +248,17 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       this._touch();
     });
     prev.addEventListener('click', (e) => this._openPreviewLink(e));
-    prev.addEventListener('scroll', () => this._syncActiveOutlineItem());
+    prev.addEventListener('scroll', () => { this._syncActiveOutlineItem(); this._syncReadingToolbarScroll(); });
     src.addEventListener('dblclick', () => this._onSourceDbl());
     prev.addEventListener('dblclick', (e) => this._onPreviewDbl(e));
     src.addEventListener('keydown', (e) => this._sourceKeydown(e));
     this._keyHandler = (e) => {
+      if (this._handleWorkspaceMenuKey(e)) return;
+      if (e.key === 'Escape' && this.appearanceOpen) {
+        e.preventDefault();
+        this.toggleReadingAppearance(false, true);
+        return;
+      }
       if (this._handleSearchShortcut(e)) return;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
@@ -320,6 +326,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     if (this._outlineJumpT) clearTimeout(this._outlineJumpT);
     if (this._publishToastT) clearTimeout(this._publishToastT);
     this._disposeReadingPathHelp();
+    this._disposeReadingAppearance();
+    this.toggleFileMenu(false);
     this._stopLocalFileWatcher();
     document.body.style.overflow = '';
   }
@@ -348,12 +356,11 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       publishToastRef: this.publishToastRef,
       countRef: this.countRef,
       fontSizeRef: this.fontSizeRef,
-      fullscreenFontSizeRef: this.fullscreenFontSizeRef,
       paperPickerRef: this.paperPickerRef,
+      ...this._readingAppearanceRenderVals(),
       immersiveWideRef: this.immersiveWideRef,
-      headerMoreRef: this.headerMoreRef,
-      headerMenuRef: this.headerMenuRef,
       themeIconRef: this.themeIconRef,
+      themeLabelRef: this.themeLabelRef,
       searchBarRef: this.searchBarRef,
       searchInputRef: this.searchInputRef,
       replaceInputRef: this.replaceInputRef,
@@ -400,15 +407,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       toggleTheme: () => this.toggleTheme(),
       togglePreviewFullscreen: () => this.togglePreviewFullscreen(),
       toggleImmersiveWide: () => this.toggleImmersiveWide(),
-      toggleHeaderMenu: () => this.toggleHeaderMenu(),
-      menuTheme: () => { this.toggleTheme(); this.toggleHeaderMenu(false); },
-      toggleFileMenu: () => this.toggleFileMenu(),
-      menuFileNew: () => { this.toggleFileMenu(false); this.onNew(); },
-      menuFileOpen: () => { this.toggleFileMenu(false); this.onOpen(); },
-      menuOpenAbsolutePath: () => { this.toggleFileMenu(false); this.onOpenAbsolutePath(); },
-      menuFileSave: () => { this.toggleFileMenu(false); this.onSave(); },
-      menuFileSaveAs: () => { this.toggleFileMenu(false); this.onSaveAs(); },
-      menuFolder: () => { this.toggleHeaderMenu(false); this.associateLocalFolder(); },
+      ...this._workspaceMenuRenderVals(),
       openLastPublication: () => this.openLastPublication(),
       toggleOutline: () => this.toggleOutline(),
       openLongImage: () => this.openLongImage(), openSelectionImage: () => this.openSelectionImage(),
@@ -435,7 +434,6 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       openAISettings: () => this.openAISettings(),
       menuPublishFeishu: () => { this.toggleFileMenu(false); this.publishToFeishu(); },
       menuPublishDingtalk: () => { this.toggleFileMenu(false); this.publishToDingtalk(); },
-      menuSettings: () => { this.toggleHeaderMenu(false); this.openAISettings(); },
       translateSel: () => this.translateSel(),
       askExplain: () => this.askAIQuick('请用更容易理解的语言解释这段话。'),
       askContext: () => this.askAIQuick('这段话在全文上下文中起什么作用？'),
@@ -468,6 +466,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
   applyPrototypeMethods(
     Component,
     ViewMethods,
+    WorkspaceMenuMethods,
     BridgeMethods,
     ReadingMapMethods,
     PathComposeMethods,

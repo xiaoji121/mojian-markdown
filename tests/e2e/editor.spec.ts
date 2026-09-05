@@ -147,14 +147,12 @@ test('字数统计跟随内容更新', async ({ page }) => {
   await expect(page.locator('.word-count')).toHaveText('5 字 · 2 行');
 });
 
-test('顶栏纯图标按钮（主题/设置）字形足够大，不糊成小点', async ({ page }) => {
-  // 单字符图标（☀/⚙）与相邻的多字词按钮不同，14px 时在 34px 按钮里又小又飘，
-  // 桌面端看不清。要求字形明显大于文本按钮的 12px。
-  const glyphSize = (selector: string) =>
-    page.locator(selector).evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
-
-  expect(await glyphSize('.abtn.icon.collapsible-action:not(.settings-entry)')).toBeGreaterThanOrEqual(17);
-  expect(await glyphSize('.settings-entry.collapsible-action')).toBeGreaterThanOrEqual(17);
+test('主题移入排版后仍有清晰图标与足够的点击区域', async ({ page }) => {
+  await page.getByRole('button', { name: '阅读排版', exact: true }).click();
+  const theme = page.getByRole('button', { name: '切换亮色或暗黑主题' });
+  const bounds = await theme.boundingBox();
+  expect(bounds!.height).toBeGreaterThanOrEqual(32);
+  await expect(theme.locator('svg')).toHaveCSS('width', '16px');
 });
 
 test('视图切换在编辑、分屏、预览三种布局间生效', async ({ page }) => {
@@ -282,6 +280,7 @@ test('主题切换写入 data-theme 并可来回切换', async ({ page }) => {
   const initial = await body.getAttribute('data-theme');
   const other = initial === 'dark' ? 'light' : 'dark';
 
+  await page.getByRole('button', { name: '阅读排版', exact: true }).click();
   await page.getByRole('button', { name: '切换亮色或暗黑主题' }).click();
   await expect(body).toHaveAttribute('data-theme', other);
 

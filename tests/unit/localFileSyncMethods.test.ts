@@ -211,3 +211,13 @@ test('文件内容与编辑器一致时仅更新基线，不打扰用户', async
   assert.equal(editor._localFileConflict, false);
   assert.equal(editor.persisted, 0);
 });
+
+test('本地自动同步失败时明确提示并保留未保存状态', async () => {
+  const handle = createFakeHandle('old');
+  handle.createWritable = async () => { throw new Error('disk unavailable'); };
+  const editor = createEditor(handle, 'new');
+  editor.dirty = true;
+  await editor._maybeWriteThroughLocalFile();
+  assert.match(editor.statuses.at(-1), /本地文件同步失败/);
+  assert.equal(editor.dirty, true);
+});
