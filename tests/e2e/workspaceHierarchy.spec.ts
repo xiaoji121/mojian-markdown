@@ -82,3 +82,33 @@ test('滚动后从更多菜单打开排版，会回到工具组所在的文章�
   await expect.poll(() => page.locator('.md-preview').evaluate((element) => element.scrollTop)).toBe(0);
   await expect(page.locator('.reading-appearance-panel')).toBeVisible();
 });
+
+test('桌面模式切换以窗口居中，不受文档名与侧栏影响', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openEditor(page);
+  const switcher = page.getByRole('group', { name: '编辑器视图' });
+  const center = async () => { const b = await switcher.boundingBox(); return b!.x + b!.width / 2; };
+  expect(await center()).toBeCloseTo(720, 0);
+  await page.locator('.file-name').evaluate((el) => { el.textContent = '很长的文档名称_'.repeat(20) + '.md'; });
+  await page.locator('body').evaluate((el) => el.classList.add('agent-bridge-enabled'));
+  const left = await page.locator('.header-brand').boundingBox();
+  const middle = await switcher.boundingBox();
+  expect(left!.x + left!.width).toBeLessThan(middle!.x);
+  expect(await center()).toBeCloseTo(720, 0);
+  await page.getByRole('button', { name: '最近阅读', exact: true }).click();
+  expect(await center()).toBeCloseTo(720, 0);
+});
+
+test('窄屏顶栏三组内容不重叠，模式切换仍可用', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openEditor(page);
+  await page.locator('body').evaluate((el) => el.classList.add('agent-bridge-enabled'));
+  const left = await page.locator('.header-brand').boundingBox();
+  const middle = await page.getByRole('group', { name: '编辑器视图' }).boundingBox();
+  const right = await page.locator('.header-actions').boundingBox();
+  expect(left!.x + left!.width).toBeLessThanOrEqual(middle!.x);
+  expect(middle!.x + middle!.width).toBeLessThanOrEqual(right!.x);
+  expect(right!.x + right!.width).toBeLessThanOrEqual(390);
+  await page.locator('[data-mode="preview"]').click();
+  await expect(page.locator('.md-source')).toBeHidden();
+});

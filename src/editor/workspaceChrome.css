@@ -61,3 +61,13 @@
   .header-actions { gap: 4px !important; }
   .view-mode-option { padding-inline: 9px; }
 }
+
+/* 两侧等宽轨道保证模式切换相对窗口居中，长文件名在左侧省略。 */
+.app-header { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+.app-header > .header-brand { min-width: 0; }
+.app-header > .view-mode-switcher { justify-self: center; }
+.app-header > .header-actions { justify-self: end; }
+.header-brand .brand-title { overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 1000px) {
+  .app-header { grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; }
+}

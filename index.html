@@ -343,12 +343,13 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
         <span ref="{{ fileNameRef }}" class="file-name" aria-label="文档名称，双击重命名">未命名.md</span>
       </span>
     </div>
-    <div class="header-actions">
       <span ref="{{ viewModeSwitcherRef }}" class="view-mode-switcher" role="group" aria-label="编辑器视图">
         <button class="view-mode-option" data-mode="editor" onClick="{{ showEditorMode }}" aria-pressed="false" title="仅显示 Markdown 原文">编辑</button>
         <button class="view-mode-option split-mode-option" data-mode="split" onClick="{{ showSplitMode }}" aria-pressed="true" title="同时显示原文和预览">分屏</button>
         <button class="view-mode-option" data-mode="preview" onClick="{{ showPreviewMode }}" aria-pressed="false" title="阅读与批注文章">阅读</button>
       </span>
+    <div class="header-actions">
+
       <button class="abtn" onClick="{{ toggleComments }}" aria-label="批注"><span class="action-label">批注</span> <span ref="{{ commentCountRef }}" class="count-badge">0</span></button>
       <button class="abtn ai-entry" onClick="{{ toggleAI }}" aria-label="AI 助手" title="打开 AI 阅读助手"><span class="action-label">AI 助手</span><span class="accent-star">✦</span></button>
       <span class="file-menu-wrap">
