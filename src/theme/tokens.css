@@ -287,6 +287,101 @@ textarea.md-source:focus-visible,
   outline: none;
 }
 
+/* 编辑器工作区：参考 Otty 的蓝灰层次与克制强调色。
+   限定在 editor-active，首页与浏览器扩展继续使用各自的墨笺配色。
+   纸面仍单独选择；这里只重定义编辑器中的「墨黑」。 */
+body.editor-active {
+  --radius-control: 7px;
+  --radius-surface: 10px;
+  --editor-ink: #272934;
+}
+
+body.editor-active[data-theme='dark'] {
+  --bg: #272934;
+  --bg-2: #40434f;
+  --bg-3: #323540;
+  --bg-input: #292c36;
+  --bg-source: #2b2d38;
+  --pre-bg: #232530;
+  --code-bg: #363945;
+  --quote-bg: #2c2f3a;
+  --th-bg: #363945;
+  --border: #444753;
+  --border-soft: #3c3f4b;
+  --border-faint: #343742;
+  --text: #e9eaf0;
+  --text-2: #c9cbd6;
+  --text-3: #a2a5b4;
+  --text-4: #858998;
+  --accent: #b7b0e3;
+  --accent-2: #cbc5ed;
+  --accent-ink: #252330;
+  --accent-soft: rgba(183, 176, 227, .12);
+  --mark-bg: rgba(183, 176, 227, .22);
+  --sel: rgba(183, 176, 227, .28);
+  --header-bg: #2d303b;
+  --tool-bg: #363945;
+  --tool-border: #4b4e5c;
+  --tool-text: #e9eaf0;
+  --tool-divider: #4b4e5c;
+  --tool-hover: rgba(183, 176, 227, .14);
+  --good: #a3be9a;
+  --danger: #e09696;
+  --info: #a1c8dc;
+}
+
+body.editor-active[data-theme='light'] {
+  --bg: #f6f7f9;
+  --bg-2: #e1e3e9;
+  --bg-3: #edeef2;
+  --bg-input: #ffffff;
+  --bg-source: #f3f4f7;
+  --pre-bg: #eceef3;
+  --code-bg: #e7e9ef;
+  --quote-bg: #eceef3;
+  --th-bg: #e1e3e9;
+  --border: #d4d7e0;
+  --border-soft: #dfe1e8;
+  --border-faint: #e5e7ed;
+  --text: #30333f;
+  --text-2: #515563;
+  --text-3: #686e7e;
+  --text-4: #777d8d;
+  --accent: #71649d;
+  --accent-2: #61548b;
+  --accent-ink: #ffffff;
+  --accent-soft: rgba(113, 100, 157, .09);
+  --mark-bg: rgba(113, 100, 157, .18);
+  --sel: rgba(113, 100, 157, .2);
+  --header-bg: #edeef2;
+  --tool-bg: #ffffff;
+  --tool-border: #d4d7e0;
+  --tool-text: #30333f;
+  --tool-divider: #dfe1e8;
+  --tool-hover: rgba(113, 100, 157, .09);
+  --shadow-sm: 0 1px 3px rgba(35, 39, 55, .06);
+  --shadow-md: 0 4px 12px rgba(35, 39, 55, .06), 0 16px 40px rgba(35, 39, 55, .1);
+  --shadow-lg: 0 12px 40px rgba(35, 39, 55, .12);
+}
+
+body.editor-active[data-paper='ink'] {
+  --paper-bg: var(--editor-ink);
+  --paper-bg-soft: #2b2d38;
+  --paper-pre: #232530;
+  --paper-code: #333642;
+  --paper-border: #414450;
+  --paper-text: #e9eaf0;
+  --paper-text-2: #c9cbd6;
+  --paper-text-3: #a2a5b4;
+  --paper-accent: #b7b0e3;
+  --paper-mark: rgba(183, 176, 227, .22);
+  --paper-sel: rgba(183, 176, 227, .28);
+  --paper-code-string: #a3be9a;
+  --paper-code-number: #d6b38a;
+  --paper-code-function: #c6bee7;
+  --paper-code-type: #a1c8dc;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

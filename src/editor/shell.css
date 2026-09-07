@@ -35,28 +35,28 @@ body.editor-active { overflow: hidden; }
 /* ===== header ===== */
 .app-header {
   flex: none;
-  height: 54px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  padding: 0 20px;
-  border-bottom: 1px solid var(--border);
+  gap: 20px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border-faint);
   background: var(--header-bg);
 }
 .header-brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
 .brand-mark {
   display: block;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   flex: none;
 }
 .brand-mark img { display: block; width: 100%; height: 100%; }
 .brand-title {
   color: var(--text);
-  font-family: var(--read);
-  font-weight: 700;
-  font-size: var(--fs-2xl);
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: var(--fs-md);
   letter-spacing: -0.01em;
   white-space: nowrap;
   text-decoration: none;
@@ -67,7 +67,7 @@ body.editor-active { overflow: hidden; }
   gap: 8px;
   margin-left: 6px;
   padding-left: 14px;
-  border-left: 1px solid var(--border);
+  border-left: 1px solid var(--border-soft);
   min-width: 0;
 }
 .dirty-dot { width: 6px; height: 6px; flex: none; border-radius: 50%; background: var(--text-4); transition: background .2s; }
@@ -75,7 +75,7 @@ body.editor-active { overflow: hidden; }
   overflow: hidden;
   color: var(--text-2);
   cursor: text;
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: var(--fs-sm);
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -96,15 +96,15 @@ body.editor-active { overflow: hidden; }
   align-items: center;
   gap: 2px;
   padding: 3px;
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-pill);
-  background: var(--bg-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-surface);
+  background: var(--bg);
 }
 .view-mode-option {
   height: 27px;
   padding: 0 12px;
   border: 0;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: transparent;
   color: var(--text-3);
   font: var(--fs-sm)/1 var(--sans);
@@ -113,9 +113,9 @@ body.editor-active { overflow: hidden; }
 }
 .view-mode-option:hover { color: var(--text); }
 .view-mode-option[aria-pressed="true"] {
-  background: var(--bg);
+  background: var(--bg-2);
   color: var(--text);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
   font-weight: 600;
 }
 
@@ -347,17 +347,16 @@ body.is-desktop-app .header-more { display: none; }
   gap: 10px;
   height: 42px;
   padding: 0 16px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-2);
+  border-bottom: 1px solid transparent;
+  background: var(--paper-bg-soft);
   overflow: hidden; /* 兜底：极窄时在本栏内裁切，不溢出叠到相邻面板 */
 }
 .pane-title {
   flex: none;
   color: var(--text-3);
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: var(--fs-xs);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 /* ===== 工具按钮 ===== */
@@ -385,7 +384,7 @@ body.is-desktop-app .header-more { display: none; }
 .tbtn.history-action:not(:disabled):hover { color: var(--accent); }
 .history-action-icon { width: 17px; height: 17px; }
 .tbtn.history-action:disabled {
-  border-color: var(--border);
+  border-color: transparent;
   color: var(--text-2);
   opacity: .58;
 }

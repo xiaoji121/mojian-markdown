@@ -69,7 +69,7 @@ export class ViewMethods {
 
   PAPERS() {
     return [
-      { id: 'ink', label: '墨黑', swatch: '#1c1a17' },
+      { id: 'ink', label: '墨黑', swatch: 'var(--editor-ink, #1c1a17)' },
       { id: 'parchment', label: '羊皮纸', swatch: '#f9ebcc' },
       { id: 'cream', label: '米黄', swatch: '#f0e9d1' },
       { id: 'snow', label: '清爽白', swatch: '#ffffff' },

@@ -8,7 +8,7 @@
     display: flex;
     flex-direction: column;
     min-width: 0;
-    border-right: 1px solid var(--border);
+    border-right: 1px solid var(--border-faint);
     background: var(--bg-3);
   }
   .document-sidebar-resize {
@@ -38,25 +38,25 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 13px 0 15px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid transparent;
     color: var(--text-3);
-    font: var(--fs-xs)/1 var(--mono);
-    letter-spacing: .12em;
+    font: 500 var(--fs-xs)/1 var(--sans);
+    letter-spacing: .04em;
   }
   .document-sidebar-title { display: flex; align-items: center; gap: 7px; }
-  .document-sidebar-title::before { content: "⌄"; color: var(--accent); font-size: var(--fs-md); }
+  .document-sidebar-title::before { content: none; }
   .document-count {
     min-width: 18px;
     height: 18px;
     padding: 0 5px;
     border-radius: var(--radius-pill);
-    background: var(--accent-soft);
-    color: var(--accent);
+    background: transparent;
+    color: var(--text-3);
     font: 600 var(--fs-2xs)/18px var(--mono);
     text-align: center;
   }
   .document-sidebar-close { display: block; border: 0; background: transparent; color: var(--text-3); font-size: var(--fs-xl); cursor: pointer; }
-  .recent-document-list { flex: 1; min-height: 0; overflow-y: auto; padding: 8px; }
+  .recent-document-list { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 10px; }
   /* 固定区 / 最近区分隔标签 */
   .recent-section-label {
     padding: 10px 8px 4px;
@@ -98,10 +98,11 @@
     box-shadow: -8px 0 12px color-mix(in srgb, var(--bg) 72%, transparent);
     pointer-events: none;
   }
-  .recent-document-group:hover .recent-document-actions { display: flex; }
+  .recent-document-group:hover .recent-document-actions,
+  .recent-document-group:focus-within .recent-document-actions { display: flex; }
   /* 当前项底色不同，遮罩尾色跟随，避免色块接缝 */
   .recent-document-group:has(.is-active) .recent-document-actions {
-    background: color-mix(in srgb, var(--accent-soft) 86%, var(--bg-2));
+    background: var(--bg-2);
   }
   .recent-document-actions button {
     flex: none;
@@ -129,7 +130,7 @@
     display: flex;
     align-items: center;
     gap: 9px;
-    padding: 9px;
+    padding: 11px 9px;
     border: 1px solid transparent;
     border-radius: var(--radius-control);
     background: transparent;
@@ -139,11 +140,11 @@
   }
   .recent-document-item:hover { background: var(--bg-2); color: var(--text-2); }
   .recent-document-item.is-active {
-    border-color: var(--border);
-    background: var(--accent-soft);
+    border-color: transparent;
+    background: var(--bg-2);
     color: var(--text);
   }
-  .recent-document-icon { flex: none; color: var(--accent); font: var(--fs-md)/1 var(--mono); }
+  .recent-document-icon { flex: none; color: var(--text-3); font: var(--fs-md)/1 var(--mono); }
   .recent-document-icon.is-pinned { color: var(--accent); }
   .recent-document-body { min-width: 0; display: flex; flex: 1; flex-direction: column; gap: 4px; }
   .recent-document-body strong {
@@ -152,7 +153,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .recent-document-body small { color: var(--text-4); font: var(--fs-2xs)/1 var(--mono); }
+  .recent-document-body small { color: var(--text-3); font: var(--fs-2xs)/1.4 var(--sans); }
   /* 阅读脉络入口：在悬停操作区里与删除/固定同排 */
   .recent-document-map { font: var(--fs-md)/1 var(--mono); }
   .recent-document-map:hover { background: var(--bg-2); color: var(--accent); }
