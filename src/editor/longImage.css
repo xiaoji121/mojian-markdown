@@ -91,6 +91,114 @@
   font-size: .7em;
   text-align: center;
 }
+.longimg-poster .longimg-comment-stack {
+  display: grid;
+  gap: .6em;
+  margin: .65em 0 1.5em;
+}
+.longimg-poster .longimg-prose > p + .longimg-comment-stack,
+.longimg-poster .longimg-prose > blockquote + .longimg-comment-stack {
+  margin-top: -.55em;
+}
+.longimg-poster li > .longimg-comment-stack,
+.longimg-poster td > .longimg-comment-stack,
+.longimg-poster th > .longimg-comment-stack {
+  margin: .7em 0 .45em;
+}
+.longimg-poster .longimg-comment-card {
+  position: relative;
+  break-inside: avoid;
+  padding: .85em 1em .9em 1.15em;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--paper-accent) 22%, var(--paper-border));
+  border-left: 3px solid color-mix(in srgb, var(--paper-accent) 68%, transparent);
+  border-radius: 0 var(--radius-control) var(--radius-control) 0;
+  background: color-mix(in srgb, var(--paper-accent) 7%, var(--paper-bg));
+  color: var(--paper-text-2);
+  font-size: .78em;
+  line-height: 1.75;
+}
+.longimg-poster .longimg-comment-card::after {
+  content: '“';
+  position: absolute;
+  top: -.2em;
+  right: .25em;
+  color: color-mix(in srgb, var(--paper-accent) 18%, transparent);
+  font-family: Georgia, serif;
+  font-size: 4em;
+  line-height: 1;
+}
+.longimg-poster .longimg-comment-label {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: .65em;
+  margin-bottom: .35em;
+  color: var(--paper-accent);
+  font-family: var(--mono);
+  font-size: .7em;
+  font-weight: 700;
+  letter-spacing: .1em;
+}
+.longimg-poster .longimg-comment-label::before {
+  content: '';
+  width: 1.8em;
+  height: 1px;
+  background: currentColor;
+  opacity: .7;
+}
+.longimg-poster .longimg-comment-note {
+  position: relative;
+  z-index: 1;
+  white-space: pre-wrap;
+}
+.longimg-poster .longimg-comment-reply {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: .65em;
+  margin-top: .65em;
+  padding-top: .65em;
+  border-top: 1px solid var(--paper-border);
+  color: var(--paper-text-3);
+}
+.longimg-poster .longimg-comment-reply > span:first-child {
+  color: var(--paper-accent);
+  font-family: var(--mono);
+  font-size: .74em;
+  letter-spacing: .08em;
+}
+.longimg-poster .longimg-restored-mark {
+  cursor: default;
+  border-radius: 2px;
+}
+.longimg-poster .longimg-restored-mark.is-marker,
+.longimg-poster .longimg-restored-mark.is-idea,
+.longimg-poster .longimg-restored-mark.is-ai { background: var(--paper-mark); }
+.longimg-poster .longimg-restored-mark.is-wavy,
+.longimg-poster .longimg-restored-mark.is-straight {
+  text-decoration-line: underline;
+  text-decoration-color: var(--paper-accent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}
+.longimg-poster .longimg-restored-mark.is-wavy { text-decoration-style: wavy; }
+.longimg-poster .longimg-restored-mark.is-straight { text-decoration-style: solid; }
+.longimg-poster .longimg-restored-badge {
+  display: inline-block;
+  min-width: 1.15em;
+  height: 1.15em;
+  margin-left: .2em;
+  padding: 0 .25em;
+  border-radius: var(--radius-pill);
+  background: var(--paper-accent);
+  color: var(--paper-bg);
+  font: 700 .55em/1.15em var(--mono);
+  text-align: center;
+  vertical-align: super;
+}
 
 /* 正文：抄自预览的排版，只改掉「滚动容器」相关的几条。
    静态图没有滚动条，凡是靠横向滚动兜住的宽内容都得改成折行，否则直接被裁掉。 */

@@ -28,6 +28,7 @@ import {
   cssVariableBlock
 } from './longImageComposer.ts';
 import { drawLongImagePageNumber } from './longImageCanvas.ts';
+import { appendLongImageAnnotations } from './longImageAnnotations.ts';
 // 弹窗里海报缩略图的显示宽度（CSS px），两档宽度共用同一个视觉尺寸。
 const STAGE_WIDTH = 360;
 // 小红书等图文流更适合 3:4：相比 9:16，按可用高度等比展示时不会在两侧留下大块空白。
@@ -54,7 +55,8 @@ export class LongImageMethods {
     if (!pending || !pending.quote) return;
     this._longImageSelection = {
       html: pending.html || this._escapedSelectionText(pending.quote),
-      text: pending.quote
+      text: pending.quote,
+      commentIds: pending.commentIds || []
     };
     const selection = window.getSelection();
     if (selection) selection.removeAllRanges();
@@ -102,15 +104,11 @@ export class LongImageMethods {
       : this.longImageStandardFontSize;
     return longImageFontSize(this.longImageWidth, value);
   }
-
-
   toggleLongImageMarks() {
     this.longImageMarks = !this.longImageMarks;
     this._persist();
     this._refreshLongImagePoster();
   }
-
-
   toggleLongImageAutoCrop() {
     this.longImageAutoCrop = !this.longImageAutoCrop;
     if (this.longImageAutoCrop && this.longImageWidth !== 'phone') this.longImageWidth = 'phone';
@@ -164,7 +162,7 @@ export class LongImageMethods {
     const marks = document.createElement('button');
     marks.type = 'button';
     marks.className = 'longimg-mark-toggle';
-    marks.title = '导出时包含划线和批注编号';
+    marks.title = '导出时包含划线、编号和批注内容';
     marks.setAttribute('role', 'switch');
     marks.setAttribute('aria-label', '导出时包含划线批注');
     const marksLabel = document.createElement('span');
@@ -419,7 +417,10 @@ export class LongImageMethods {
       ? this._longImageSelection.html
       : (preview ? preview.innerHTML : '');
     if (this._longImageSelection) this._normalizeSelectionContent(content);
-    if (!this.longImageMarks) this._stripPosterMarks(content);
+    if (this.longImageMarks) {
+      appendLongImageAnnotations(content, this.comments, this._longImageSelection?.commentIds);
+    }
+    else this._stripPosterMarks(content);
     const fileTitle = String(this.fileName || '').replace(/\.md$/i, '') || '未命名';
     const title = this._longImageSelection ? fileTitle : this._takePosterTitle(content);
     this._posterTitle = title;
@@ -698,7 +699,7 @@ export class LongImageMethods {
     const posterRect = poster.getBoundingClientRect();
     const ratio = posterRect.width / (poster.offsetWidth || posterRect.width || 1);
     const elements = Array.from(poster.querySelectorAll(
-      'img, table, pre, blockquote, figure, .mermaid-rendered, .longimg-head, .longimg-foot'
+      'img, table, pre, blockquote, figure, .mermaid-rendered, .longimg-comment-card, .longimg-head, .longimg-foot'
     ));
     poster.querySelectorAll('h1, h2, h3, h4').forEach((heading) => {
       if (heading.nextElementSibling) elements.push({
