@@ -97,6 +97,70 @@ test('划词工具条可把选中内容单独生成图片', async ({ page }) => 
   await expect(poster.locator('.longimg-title')).toHaveText('未命名');
 });
 
+test('选中段落生成图片时，批注以思考卡片跟在对应内容下方', async ({ page }) => {
+  await setSource(page, '# 批注定位\n\n批注之前。需要批注的关键句。批注之后还要继续阅读。');
+  const selectFirstParagraph = async (target = '') => {
+    await page.locator('.md-preview p').first().evaluate((paragraph, selectedText) => {
+      const range = document.createRange();
+      if (selectedText) {
+        const walker = document.createTreeWalker(paragraph, NodeFilter.SHOW_TEXT);
+        let text = walker.nextNode();
+        while (text && !(text.textContent || '').includes(selectedText)) text = walker.nextNode();
+        const start = text!.textContent!.indexOf(selectedText);
+        range.setStart(text!, start);
+        range.setEnd(text!, start + selectedText.length);
+      } else {
+        range.selectNodeContents(paragraph);
+      }
+      const selection = window.getSelection()!;
+      selection.removeAllRanges();
+      selection.addRange(range);
+      paragraph.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+    }, target);
+    await expect(page.locator('.selection-toolbar')).toBeVisible();
+  };
+
+  await selectFirstParagraph('需要批注的关键句。');
+  await page.getByRole('button', { name: /写想法/ }).click();
+  await page.locator('.comment-note-input').first().fill('这里的关键不是记住答案，而是留下自己的判断。');
+  await expect(page.locator('.md-preview [data-comment-id]')).toHaveCount(1);
+
+  await selectFirstParagraph();
+  await page.locator('.selection-image-entry').click();
+
+  const card = page.locator('.longimg-poster .longimg-comment-card');
+  await expect(page.locator('.longimg-poster [data-comment-id]')).toHaveCount(1);
+  await expect(card).toHaveCount(1);
+  await expect(card.locator('.longimg-comment-label')).toHaveText('我的批注 · 01');
+  await expect(card.locator('.longimg-comment-note'))
+    .toHaveText('这里的关键不是记住答案，而是留下自己的判断。');
+  const placement = await page.locator('.longimg-prose').evaluate((prose) => {
+    const mark = prose.querySelector('[data-comment-id]')!.getBoundingClientRect();
+    const note = prose.querySelector('.longimg-comment-card')!.getBoundingClientRect();
+    const style = getComputedStyle(prose.querySelector('.longimg-comment-card')!);
+    const walker = document.createTreeWalker(prose, NodeFilter.SHOW_TEXT);
+    let suffix = walker.nextNode();
+    while (suffix && !(suffix.textContent || '').includes('批注之后')) suffix = walker.nextNode();
+    const suffixRange = document.createRange();
+    suffixRange.selectNodeContents(suffix!);
+    return {
+      markBottom: mark.bottom,
+      noteTop: note.top,
+      noteBottom: note.bottom,
+      suffixTop: suffixRange.getBoundingClientRect().top,
+      sameFlow: note.parentElement?.parentElement === mark.parentElement,
+      fontSize: parseFloat(style.fontSize)
+    };
+  });
+  expect(placement.noteTop).toBeGreaterThanOrEqual(placement.markBottom);
+  expect(placement.suffixTop).toBeGreaterThanOrEqual(placement.noteBottom);
+  expect(placement.sameFlow).toBe(true);
+  expect(placement.fontSize).toBeLessThan(22);
+
+  await page.locator('.longimg-mark-toggle').click();
+  await expect(page.locator('.longimg-poster .longimg-comment-card')).toHaveCount(0);
+});
+
 test('静态长图里表格与代码块折行，不靠横向滚动', async ({ page }) => {
   await page.getByRole('button', { name: '更多操作', exact: true }).click();
   await page.getByRole('menuitem', { name: '导出长图', exact: true }).click();

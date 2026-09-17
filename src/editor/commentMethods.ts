@@ -61,7 +61,11 @@ export class CommentMethods {
     while (true) { const f = full.indexOf(quote, from); if (f < 0) break; if (f === startOff) break; occ++; from = f + 1; }
     const fragment = document.createElement('div');
     fragment.appendChild(range.cloneContents());
-    this._pending = { quote: quote, occ: occ, start: startOff, html: fragment.innerHTML };
+    const commentIds = new Set();
+    prev.querySelectorAll('[data-comment-id]').forEach((mark) => {
+      try { if (range.intersectsNode(mark)) commentIds.add(mark.getAttribute('data-comment-id')); } catch (e) {}
+    });
+    this._pending = { quote: quote, occ: occ, start: startOff, html: fragment.innerHTML, commentIds: [...commentIds] };
     const rect = range.getBoundingClientRect();
     bar.style.display = 'flex';
     const w = bar.offsetWidth, h = bar.offsetHeight;
