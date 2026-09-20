@@ -3,7 +3,6 @@
 .file-menu { max-height: min(680px, calc(100dvh - 80px)); overflow-y: auto; }
 .appearance-theme { display: inline-flex; align-items: center; gap: 8px; padding: 0 10px; }
 .reading-toolbar .preview-toolbar-actions { gap: 8px; }
-.reading-toolbar .outline-count { display: none; }
 .reading-toolbar .fullscreen-button-label { display: inline; }
 
 .editor-main.preview-mode-active > .preview-pane > .reading-toolbar,
@@ -53,7 +52,6 @@
   .editor-main > .preview-pane-fullscreen > .md-preview { padding-top: 72px !important; }
   .reading-toolbar .reading-appearance-panel { right: 0; }
   .reading-toolbar .appearance-label,
-  .reading-toolbar .outline-toggle .action-label,
   .reading-toolbar .fullscreen-button-label { display: inline !important; }
 }
 @media (max-width: 420px) {

@@ -10,7 +10,7 @@ test('阅读工具属于正文，不再形成第二条通栏', async ({ page }) 
   expect(bounds!.width).toBeLessThan(500);
   await expect(tools.locator('.pane-title')).toBeHidden();
   await expect(tools.locator('.preview-toolbar-hint')).toHaveCount(0);
-  await expect(tools.getByRole('button')).toHaveCount(3);
+  await expect(tools.getByRole('button')).toHaveCount(2);
   const title = await page.locator('.md-preview h1').boundingBox();
   expect(title!.y).toBeGreaterThan(bounds!.y + bounds!.height);
   await page.locator('[data-mode="split"]').click();

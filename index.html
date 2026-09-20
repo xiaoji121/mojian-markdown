@@ -469,10 +469,6 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
               <span class="appearance-note">排版偏好会自动记住</span>
             </span>
           </span>
-          <button ref="{{ outlineButtonRef }}" class="tbtn tool-pill outline-toggle" onClick="{{ toggleOutline }}"
-            title="查看文章大纲" aria-label="查看文章大纲" aria-expanded="false">
-            <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h1M4 12h1M4 18h1"></path></svg><span class="action-label">大纲</span><span ref="{{ outlineCountRef }}" class="outline-count">0</span>
-          </button>
           <button class="tbtn tool-pill fullscreen-only-control" onClick="{{ toggleComments }}" title="显示批注" aria-label="显示批注">
             <span class="fullscreen-comments-label">批注</span>
             <span ref="{{ previewCommentCountRef }}" class="count-badge">0</span>
@@ -491,13 +487,13 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
         <button class="tbtn search-tool search-close" onClick="{{ closePreviewSearch }}" title="关闭（Esc）" aria-label="关闭预览搜索">&times;</button>
       </div>
       <div ref="{{ previewRef }}" class="md-preview" contentEditable="false" spellCheck="false"></div>
-      <aside ref="{{ outlinePanelRef }}" class="outline-panel" aria-label="文章大纲">
-        <div class="outline-header">
-          <span>文章大纲</span>
-          <button class="outline-close" onClick="{{ toggleOutline }}" title="关闭大纲" aria-label="关闭大纲">&times;</button>
+      <nav ref="{{ outlinePanelRef }}" class="outline-rail" aria-label="文章大纲" hidden>
+        <div ref="{{ outlineMarkersRef }}" class="outline-markers"></div>
+        <div class="outline-popover" role="tooltip">
+          <div ref="{{ outlinePreviewTitleRef }}" class="outline-preview-title"></div>
+          <div ref="{{ outlinePreviewSummaryRef }}" class="outline-preview-summary"></div>
         </div>
-        <nav ref="{{ outlineListRef }}" class="outline-list" aria-label="文章标题导航"></nav>
-      </aside>
+      </nav>
       <!-- 阅读脉络 · 路径成文操作条（仅脉络视图可见） -->
       <div ref="{{ readingPathBarRef }}" class="reading-path-bar" role="toolbar" aria-label="按阅读路径成文">
         <button ref="{{ readingPathModeRef }}" class="tbtn tool-pill reading-path-mode" onClick="{{ toggleReadingPathMode }}"

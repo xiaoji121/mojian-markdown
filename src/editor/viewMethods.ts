@@ -397,57 +397,105 @@ export class ViewMethods {
 
   _renderOutline() {
     const preview = this.previewRef.current;
-    const list = this.outlineListRef.current;
-    if (!preview || !list) return;
+    const rail = this.outlinePanelRef.current;
+    const markers = this.outlineMarkersRef.current;
+    if (!preview || !rail || !markers) return;
     const headings = Array.from(preview.querySelectorAll('h1,h2,h3,h4,h5,h6'));
     const used = new Set();
-    list.innerHTML = '';
+    markers.innerHTML = '';
+    markers.onpointerleave = () => this._clearOutlineHover();
+    markers.onfocusout = (event) => {
+      if (!markers.contains(event.relatedTarget)) this._clearOutlineHover();
+    };
     headings.forEach((heading, index) => {
       heading.id = this._outlineSlug(heading.textContent, index, used);
       heading.dataset.outlineIndex = String(index);
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'outline-item outline-level-' + heading.tagName.slice(1);
-      button.dataset.outlineTarget = heading.id;
-      button.textContent = heading.textContent.trim() || '未命名标题';
-      button.title = button.textContent;
-      button.addEventListener('click', () => {
-        this._outlineJumpTarget = heading.id;
-        this._scrollPreviewTo(heading);
-        this._setActiveOutlineItem(heading.id);
-        clearTimeout(this._outlineJumpT);
-        this._outlineJumpT = setTimeout(() => {
-          this._outlineJumpTarget = '';
-          this._syncActiveOutlineItem();
-        }, 700);
-        if (window.matchMedia && window.matchMedia('(max-width: 760px)').matches) {
-          this.toggleOutline(false);
-        }
-      });
-      list.appendChild(button);
+      const title = heading.textContent.trim() || '未命名标题';
+      const summary = this._outlineSummary(heading);
+      const marker = this._outlineControl(heading, title, summary, index);
+      markers.appendChild(marker);
     });
-    if (!headings.length) {
-      const empty = document.createElement('div');
-      empty.className = 'outline-empty';
-      empty.textContent = '当前文章还没有标题。使用 #、## 等 Markdown 标题后，大纲会自动生成。';
-      list.appendChild(empty);
-    }
-    if (this.outlineCountRef.current) {
-      this.outlineCountRef.current.textContent = String(headings.length);
-    }
-    if (this.outlineButtonRef.current) {
-      this.outlineButtonRef.current.disabled = headings.length === 0;
-      this.outlineButtonRef.current.title = headings.length ? '查看文章大纲' : '当前文章没有标题';
-    }
+    rail.hidden = headings.length === 0;
     this._syncActiveOutlineItem();
   }
 
 
+  _outlineSummary(heading) {
+    const parts = [];
+    let node = heading.nextElementSibling;
+    while (node && !/^H[1-6]$/.test(node.tagName) && parts.length < 2) {
+      const listItems = Array.from(node.querySelectorAll?.(':scope > li') || []);
+      const text = (listItems.length ? listItems.map((item) => item.textContent).join(' · ') : node.textContent)
+        .replace(/\s+/g, ' ').trim();
+      if (text) parts.push(text);
+      node = node.nextElementSibling;
+    }
+    const summary = parts.join(' · ') || '这一段暂时没有正文内容。';
+    return summary.length > 140 ? summary.slice(0, 137).trimEnd() + '…' : summary;
+  }
+
+
+  _outlineControl(heading, title, summary, index) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'outline-marker';
+    button.dataset.outlineTarget = heading.id;
+    button.dataset.outlineTitle = title;
+    button.dataset.outlineIndex = String(index);
+    button.title = title;
+    button.setAttribute('aria-label', '跳到：' + title);
+    button.addEventListener('pointerenter', () => this._previewOutlineSection(title, summary, index));
+    button.addEventListener('focus', () => this._previewOutlineSection(title, summary, index));
+    button.addEventListener('click', () => this._jumpToOutlineHeading(heading));
+    return button;
+  }
+
+
+  _previewOutlineSection(title, summary, index) {
+    if (this.outlinePreviewTitleRef.current) this.outlinePreviewTitleRef.current.textContent = title;
+    if (this.outlinePreviewSummaryRef.current) this.outlinePreviewSummaryRef.current.textContent = summary;
+    const markers = this.outlineMarkersRef.current;
+    if (!markers) return;
+    markers.classList.add('is-hovering');
+    markers.querySelectorAll('.outline-marker').forEach((marker, markerIndex) => {
+      marker.dataset.hoverDistance = String(Math.min(3, Math.abs(markerIndex - index)));
+    });
+  }
+
+
+  _clearOutlineHover() {
+    const markers = this.outlineMarkersRef.current;
+    if (!markers) return;
+    markers.classList.remove('is-hovering');
+    markers.querySelectorAll('.outline-marker').forEach((marker) => {
+      delete marker.dataset.hoverDistance;
+    });
+  }
+
+
+  _jumpToOutlineHeading(heading) {
+    this._outlineJumpTarget = heading.id;
+    this._scrollPreviewTo(heading);
+    this._setActiveOutlineItem(heading.id);
+    clearTimeout(this._outlineJumpT);
+    this._outlineJumpT = setTimeout(() => {
+      this._outlineJumpTarget = '';
+      this._syncActiveOutlineItem();
+    }, 700);
+  }
+
+
   _setActiveOutlineItem(targetId) {
-    const list = this.outlineListRef.current;
-    if (!list) return;
-    list.querySelectorAll('.outline-item').forEach((item) => {
-      item.classList.toggle('is-active', item.dataset.outlineTarget === targetId);
+    const rail = this.outlinePanelRef.current;
+    if (!rail) return;
+    const markers = Array.from(rail.querySelectorAll('.outline-marker'));
+    const activeIndex = markers.findIndex((item) => item.dataset.outlineTarget === targetId);
+    markers.forEach((item, index) => {
+      const active = item.dataset.outlineTarget === targetId;
+      item.classList.toggle('is-active', active);
+      item.classList.toggle('is-nearby', activeIndex >= 0 && Math.abs(index - activeIndex) <= 1);
+      if (active) item.setAttribute('aria-current', 'location');
+      else item.removeAttribute('aria-current');
     });
   }
 
@@ -478,20 +526,6 @@ export class ViewMethods {
     });
     this._setActiveOutlineItem(active.id);
   }
-
-
-  toggleOutline(force) {
-    this.outlineOpen = typeof force === 'boolean' ? force : !this.outlineOpen;
-    const panel = this.outlinePanelRef.current;
-    const button = this.outlineButtonRef.current;
-    if (panel) panel.classList.toggle('is-open', this.outlineOpen);
-    if (button) {
-      button.classList.toggle('is-active', this.outlineOpen);
-      button.setAttribute('aria-expanded', this.outlineOpen ? 'true' : 'false');
-    }
-    if (this.outlineOpen) this._syncActiveOutlineItem();
-  }
-
 
   _openPreviewLink(event) {
     const target = event.target && event.target.closest ? event.target.closest('a') : null;

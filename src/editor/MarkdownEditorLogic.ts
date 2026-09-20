@@ -33,10 +33,10 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.previewRef = React.createRef();
     this.previewTitleRef = React.createRef();
     this.previewPaneRef = React.createRef();
-    this.outlineButtonRef = React.createRef();
     this.outlinePanelRef = React.createRef();
-    this.outlineListRef = React.createRef();
-    this.outlineCountRef = React.createRef();
+    this.outlineMarkersRef = React.createRef();
+    this.outlinePreviewTitleRef = React.createRef();
+    this.outlinePreviewSummaryRef = React.createRef();
     this.undoButtonRef = React.createRef();
     this.redoButtonRef = React.createRef();
     this.fullscreenIconRef = React.createRef();
@@ -147,7 +147,6 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._themeTouched = false;
     this.panelOpen = false;
     this.previewFullscreen = false;
-    this.outlineOpen = false;
     this.viewMode = 'split';
     this._pending = null;
     this.fileHandle = null;
@@ -271,9 +270,6 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       } else if (e.key === 'Escape' && this.previewFullscreen) {
         e.preventDefault();
         this.togglePreviewFullscreen(false);
-      } else if (e.key === 'Escape' && this.outlineOpen) {
-        e.preventDefault();
-        this.toggleOutline(false);
       }
     };
     window.addEventListener('keydown', this._keyHandler);
@@ -338,10 +334,10 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       previewRef: this.previewRef,
       previewTitleRef: this.previewTitleRef,
       previewPaneRef: this.previewPaneRef,
-      outlineButtonRef: this.outlineButtonRef,
       outlinePanelRef: this.outlinePanelRef,
-      outlineListRef: this.outlineListRef,
-      outlineCountRef: this.outlineCountRef,
+      outlineMarkersRef: this.outlineMarkersRef,
+      outlinePreviewTitleRef: this.outlinePreviewTitleRef,
+      outlinePreviewSummaryRef: this.outlinePreviewSummaryRef,
       undoButtonRef: this.undoButtonRef,
       redoButtonRef: this.redoButtonRef,
       fullscreenIconRef: this.fullscreenIconRef,
@@ -409,7 +405,6 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       toggleImmersiveWide: () => this.toggleImmersiveWide(),
       ...this._workspaceMenuRenderVals(),
       openLastPublication: () => this.openLastPublication(),
-      toggleOutline: () => this.toggleOutline(),
       openLongImage: () => this.openLongImage(), openSelectionImage: () => this.openSelectionImage(),
       toggleSearch: () => this.toggleSearch(),
       closeSearch: () => this.closeSearch(),

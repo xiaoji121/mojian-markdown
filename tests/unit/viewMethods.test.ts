@@ -151,6 +151,37 @@ test('view modes map to editor-only, split, and preview-only layouts', () => {
   assert.equal(classList.contains('preview-mode-active'), true);
 });
 
+test('大纲摘要只提取当前标题后的前两段，并在下一个标题处停止', () => {
+  const nextHeading = { tagName: 'H2', textContent: '下一节', nextElementSibling: null };
+  const second = {
+    tagName: 'UL',
+    textContent: '甲乙',
+    querySelectorAll: () => [{ textContent: '甲' }, { textContent: '乙' }],
+    nextElementSibling: nextHeading
+  };
+  const first = {
+    tagName: 'P',
+    textContent: '  第一段   摘要  ',
+    querySelectorAll: () => [],
+    nextElementSibling: second
+  };
+  const heading = { nextElementSibling: first };
+
+  assert.equal(
+    ViewMethods.prototype._outlineSummary.call({}, heading),
+    '第一段 摘要 · 甲 · 乙'
+  );
+});
+
+test('空段落的大纲摘要使用明确的占位说明', () => {
+  const heading = { nextElementSibling: { tagName: 'H2', textContent: '下一节' } };
+
+  assert.equal(
+    ViewMethods.prototype._outlineSummary.call({}, heading),
+    '这一段暂时没有正文内容。'
+  );
+});
+
 test('桌面端把预览中的相对路径图片替换为 data URL，绝对与 data 路径不动', async () => {
   const calls: string[] = [];
   (globalThis as { window?: unknown }).window = {
