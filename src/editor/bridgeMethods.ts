@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { t, getLocale } from './i18n.ts';
 import { saveEditorState } from './storage.ts';
+import { isPristineSample } from './sample.ts';
 import { bridgeUrl } from './bridgeClient.ts';
 
 // 固定文档集按「机器」存本地：多台电脑用途不同，各自挑要固定的文档，不进同步的工作区。
@@ -406,7 +407,8 @@ export class BridgeMethods {
       const data = await response.json();
       this._recentDocumentsOffline = false;
       this.recentDocuments = Array.isArray(data.documents) ? data.documents : [];
-      if (!this.bridgeDocumentId && this.fileName && this.fileName !== '未命名.md') {
+      if (!this._initialSample && !this.bridgeDocumentId && this.fileName && this.fileName !== '未命名.md'
+        && !isPristineSample(this.sourceRef?.current?.value || '', this.fileName)) {
         const preferred = this._matchRecentDocumentByName(this.fileName);
         if (preferred) {
           this.bridgeDocumentId = preferred.documentId;
@@ -427,7 +429,8 @@ export class BridgeMethods {
   // 直接恢复最近更新的一篇；示例文档只留给还没有任何记录的全新用户。
   async _maybeOpenLatestRecentDocument() {
     if (!this._startedWithSample || this.dirty || this.fileHandle) return;
-    if (this.bridgeDocumentId || this.fileName !== '未命名.md') return;
+    if (this.bridgeDocumentId || this.fileName !== (this._initialSample?.fileName || '未命名.md')) return;
+    if (this._initialSample && this.sourceRef.current?.value !== this._initialSample.markdown) return;
     if (!this.recentDocuments.length) return;
     const latest = [...this.recentDocuments]
       .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))[0];
@@ -470,12 +473,21 @@ export class BridgeMethods {
 
   async openRecentDocument(documentId, { restoring = false } = {}) {
     if (!this.sourceRef.current) return;
+    const generation = this._documentOpenGeneration = (this._documentOpenGeneration || 0) + 1;
+    const initial = { content: this.sourceRef.current.value, name: this.fileName,
+      revision: this._documentEditRevision || 0, bridgeId: this.bridgeDocumentId };
+    const stale = () => generation !== this._documentOpenGeneration || (restoring && (
+      this.dirty || this.fileHandle || this.sourceRef.current?.value !== initial.content
+      || this.fileName !== initial.name || this.bridgeDocumentId !== initial.bridgeId
+      || (this._documentEditRevision || 0) !== initial.revision));
     try {
       await this._flushBridgeSync();
+      if (stale()) return;
       const response = await fetch(bridgeUrl('/api/documents/') + encodeURIComponent(documentId));
       if (!response.ok) throw new Error(t("文档读取失败"));
       const data = await response.json();
       const doc = data.document;
+      if (stale()) return;
       this.bridgeDocumentId = doc.documentId;
       this.activeDocumentId = doc.documentId;
       this.activeAnswerRequestId = null;
@@ -502,7 +514,7 @@ export class BridgeMethods {
       // 需要在此补齐相对路径图片的替换。
       this._hydrateLocalImages(this.previewRef.current);
     } catch (error) {
-      this._setStatus(error.message || t("Reading Workspace 文档读取失败"));
+      if (!stale()) this._setStatus(error.message || t("Reading Workspace 文档读取失败"));
     }
   }
 
@@ -684,6 +696,7 @@ export class BridgeMethods {
 
   _scheduleBridgeSync() {
     if (!this.sourceRef.current || !this.fileName || this.fileName === '未命名.md') return;
+    if (!this.bridgeDocumentId && !this.fileHandle && isPristineSample(this.sourceRef.current.value, this.fileName)) return;
     clearTimeout(this._bridgeSyncT);
     this._bridgeSyncT = setTimeout(() => {
       this._bridgeSyncT = null;

@@ -769,3 +769,21 @@ test('flush waits an already running bridge sync before sending the newest annot
     assert.equal(requests[1].annotations[0].note, 'latest annotation');
   } finally { release(); clearTimeout(ctx._bridgeSyncT); globalThis.fetch = previous; }
 });
+
+test('pristine localized samples are not published by preference persistence', async () => {
+  const { getSample } = await import('../../src/editor/sample.ts');
+  for (const locale of ['en', 'ja'] as const) {
+    const sample = getSample(locale, 'Win32');
+    const editor = createEditor();
+    editor.fileName = sample.fileName;
+    editor.sourceRef = { current: { value: sample.markdown } };
+    editor._scheduleBridgeSync();
+    const scheduled = editor._bridgeSyncT;
+    clearTimeout(scheduled);
+    assert.ok(!scheduled, 'unchanged sample must not create a workspace record');
+    editor.sourceRef.current.value += '\nMy note';
+    editor._scheduleBridgeSync();
+    assert.ok(editor._bridgeSyncT, 'a genuine edited document can be saved');
+    clearTimeout(editor._bridgeSyncT);
+  }
+});

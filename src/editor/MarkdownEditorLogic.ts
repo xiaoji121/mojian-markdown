@@ -1,9 +1,9 @@
 // @ts-nocheck
 // The DC runtime supplies its base class dynamically; keep this factory lightweight.
 import { LocaleMethods } from './localeMethods';
-import { t } from './i18n';
+import { getLocale, t } from './i18n';
 import { DesktopStateMethods } from "./desktopStateMethods";
-import { SAMPLE_MARKDOWN } from './sample';
+import { getSample } from './sample';
 import { EDITOR_STORAGE_KEY, loadEditorState, getEditorStorageError } from './storage';
 import { AIMethods } from './aiMethods';
 import { AIReadinessMethods } from './aiReadinessMethods';
@@ -172,7 +172,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
   get LS_KEY() { return EDITOR_STORAGE_KEY; }
 
   SAMPLE() {
-    return SAMPLE_MARKDOWN;
+    return getSample(getLocale(), navigator.platform).markdown;
   }
 
   componentDidMount() { this._waitLibs(0); }
@@ -194,14 +194,16 @@ export function createMarkdownEditorComponent(DCLogic, React) {
 
     if (window.marked.setOptions) window.marked.setOptions({ gfm: true, breaks: true });
     document.body.classList.toggle('agent-bridge-enabled', this.agentBridgeEnabled);
-    let initial = this.SAMPLE();
-    let name = '未命名.md';
     // 未持久化过主题时跟随系统外观
     this.theme = this.props.theme
       || (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
     const saved = loadEditorState();
     this._initLocale(saved);
     this._startedWithSample = !getEditorStorageError() && !(saved && typeof saved.content === 'string');
+    const sample = getSample(getLocale(), navigator.platform);
+    let initial = sample.markdown;
+    let name = sample.fileName;
+    this._initialSample = this._startedWithSample ? sample : null;
     if (saved && typeof saved.content === 'string') {
       initial = this._cleanOpenedMarkdown(saved.content);
       if (saved.fileName) name = saved.fileName;
