@@ -22,7 +22,9 @@ export async function importedFontScenario(session, closeWindow) {
   const saved = await createReadingFontStore(join(session.root, '用户 数据')).load();
   expect(saved.status).toBe('available');
   expect(saved.dataUrl).toBe('data:font/woff2;base64,' + bytes.toString('base64'));
-  await test.info().attach('imported-font-native.png', { body: await page.screenshot(), contentType: 'image/png' });
+  const screenshot = test.info().outputPath('imported-font-native.png');
+  await page.screenshot({ path: screenshot });
+  await test.info().attach('imported-font-native', { path: screenshot, contentType: 'image/png' });
   await rename(file, moved); // App copy must remain usable without the original path.
   await closeWindow(app);
   ({ app, page } = await session.launch());

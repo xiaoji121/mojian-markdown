@@ -6,6 +6,7 @@ import { createInstallerSession, validateInstallerInputs } from '../../scripts/i
 import { mockCliEnv } from '../helpers/mockCli';
 import { closeEditorWindow } from './restartScenarios';
 import { freezeRendererClock } from './freezeRendererClock';
+import { importedFontScenario } from './importedFontScenario';
 
 // These tests run only against deliberately separate TEST installers. The normal
 // desktop suite skips them. The CLI wrapper rejects missing inputs, so a CI
@@ -147,6 +148,8 @@ test('TEST installer preserves an unnamed draft across restart and Windows upgra
   try {
     await stage('Installing TEST package');
     await installer.install();
+    await stage('Verifying native imported font pixels, app-local bytes and restart');
+    await importedFontScenario({ root: fixture.root, launch }, closeEditorWindow);
     await stage('Launching installed TEST package');
     let current = await launch();
     expect(current.version).toMatch(/\.1$/);
