@@ -594,6 +594,9 @@
     background: rgba(0, 0, 0, .45);
   }
   .ai-settings-modal {
+    box-sizing: border-box;
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
     width: min(420px, calc(100vw - 32px));
     display: flex;
     flex-direction: column;
@@ -623,7 +626,7 @@
   .ai-settings-note { min-height: 1.5em; color: var(--text-4); font-size: var(--fs-xs); }
   .ai-settings-note[data-state="ok"] { color: var(--accent); }
   .ai-settings-note[data-state="error"] { color: var(--danger); }
-  .ai-settings-actions { display: flex; align-items: center; gap: 8px; }
+  .ai-settings-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   .ai-settings-actions .spacer { flex: 1; }
   /* AI 渠道分组（本地 Agent / API Key），选项为 radio 风格按钮 */
   .ai-settings-overline { color: var(--text-3); font: var(--fs-2xs)/1.4 var(--mono); letter-spacing: .1em; }

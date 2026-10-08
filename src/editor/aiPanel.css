@@ -170,3 +170,9 @@
   vertical-align: 2px;
   text-decoration: none;
 }
+
+/* Optional AI setup never overlays or disables the editor. */
+.ai-readiness { padding: 10px 16px; border-bottom: 1px solid var(--border); font-size: 12px; line-height: 1.6; }
+.ai-readiness p { margin: 0 0 8px; }
+.ai-readiness-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.ai-readiness-actions button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }

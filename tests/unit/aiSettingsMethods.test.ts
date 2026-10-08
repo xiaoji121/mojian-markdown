@@ -301,3 +301,196 @@ test('blank desktop model is a valid preserve operation across structured clone'
     assert.equal(received.gemini.model, '');
   });
 });
+
+const SETTINGS = { providers: MASKED, secureStorage: { available: true, status: 'available' } };
+
+test('connection test explicitly targets Gemini and keeps Google/cost/saved-proxy disclosure visible', async () => {
+  await withDom(async () => {
+    const editor = createEditor();
+    editor.aiEngine = 'codex';
+    editor._requestAISettings = async (operation) => operation === 'test' ? { ok: true } : SETTINGS;
+    await editor.openAISettings();
+    const disclosure = findAll(editor._aiSettingsEl, 'ai-settings-disclosure')[0];
+    assert.ok(disclosure, 'privacy and cost disclosure is separate from the transient result');
+    for (const text of ['Gemini', 'Google', '费用', '已保存', '点击']) assert.ok(disclosure.textContent.includes(text));
+    assert.equal(findAll(editor._aiSettingsEl, 'ai-settings-test')[0].textContent, '测试 Gemini 连接');
+    const before = disclosure.textContent;
+    await editor._testAISettings();
+    assert.equal(disclosure.textContent, before);
+    assert.match(editor._aiSettingsNote.textContent, /Gemini.*连接成功/);
+    assert.equal(editor.aiEngine, 'codex');
+  });
+});
+
+for (const field of ['key', 'model', 'proxy']) {
+  test(`${field} edits invalidate both a completed and an in-flight Gemini test`, async () => {
+    await withDom(async () => {
+      const editor = createEditor();
+      editor._requestAISettings = async (operation) => operation === 'test' ? { ok: true } : SETTINGS;
+      await editor.openAISettings();
+      await editor._testAISettings();
+      editor._aiSettingsInputs[field].value = 'changed';
+      editor._aiSettingsInputs[field].dispatch('input');
+      assert.notEqual(editor._aiSettingsNote.getAttribute('data-state'), 'ok');
+      assert.match(editor._aiSettingsNote.textContent, /重新测试/);
+      let finish;
+      editor._requestAISettings = () => new Promise(resolve => { finish = resolve; });
+      const pending = editor._testAISettings();
+      editor._aiSettingsInputs[field].value = 'changed-again';
+      editor._aiSettingsInputs[field].dispatch('input');
+      finish({ ok: true });
+      await pending;
+      assert.notEqual(editor._aiSettingsNote.getAttribute('data-state'), 'ok');
+      assert.match(editor._aiSettingsNote.textContent, /重新测试/);
+    });
+  });
+}
+
+test('Gemini test coalesces repeated clicks through close/reopen and ignores late success', async () => {
+  await withDom(async () => {
+    const editor = createEditor();
+    let finish; let calls = 0;
+    editor._requestAISettings = (operation) => operation === 'load' ? Promise.resolve(SETTINGS)
+      : (calls++, new Promise(resolve => { finish = resolve; }));
+    await editor.openAISettings();
+    const pending = editor._testAISettings();
+    await editor._testAISettings();
+    assert.equal(calls, 1);
+    editor.closeAISettings();
+    await editor.openAISettings();
+    await editor._testAISettings();
+    assert.equal(calls, 1, 'reopening cannot create another billable request while the original is pending');
+    editor._aiSettingsInputs.key.value = 'FAKE-new-key';
+    finish({ ok: true });
+    await pending;
+    assert.notEqual(editor._aiSettingsNote.getAttribute('data-state'), 'ok');
+    assert.equal(editor._aiSettingsInputs.key.value, 'FAKE-new-key');
+    assert.equal(editor._aiSettingsBusy, false);
+  });
+});
+
+test('settings exposes an accessible dialog and live status', async () => {
+  await withDom(async () => {
+    const editor = createEditor();
+    editor._buildAISettingsModal();
+    const dialog = findAll(editor._aiSettingsEl, 'ai-settings-modal')[0];
+    assert.equal(dialog.getAttribute('role'), 'dialog');
+    assert.equal(dialog.getAttribute('aria-modal'), 'true');
+    assert.equal(editor._aiSettingsNote.getAttribute('role'), 'status');
+    let prevented = false;
+    editor._aiSettingsEl.dispatch('keydown', { key: 'Escape', preventDefault() { prevented = true; }, stopPropagation() {} });
+    assert.equal(prevented, true);
+    assert.equal(editor._aiSettingsEl.style.display, 'none');
+  });
+});
+
+test('settings close refreshes an open AI panel and resumes setup without testing a provider', async () => {
+  await withDom(async () => {
+    const editor = createEditor();
+    editor._buildAISettingsModal();
+    editor.aiPanelOpen = true;
+    let refreshed = 0; let resumed = 0;
+    editor._refreshAIReadiness = () => { refreshed++; };
+    editor._resumeAISetup = () => { resumed++; };
+    editor._requestAISettings = () => { throw new Error('Closing must not start a settings/provider operation'); };
+    editor.closeAISettings();
+    assert.equal(refreshed, 1);
+    assert.equal(resumed, 1);
+  });
+});
+
+for (const operation of ['_saveAISettings', '_clearAIKey', '_migrateAIKey']) {
+  test(`${operation} refreshes previously loaded readiness even when the panel is hidden`, async () => {
+    await withDom(async () => {
+      const editor = createEditor();
+      editor._buildAISettingsModal();
+      editor.aiReadiness = {};
+      let refreshed = 0;
+      editor._refreshAIReadiness = () => { refreshed++; };
+      editor._requestAISettings = async () => SETTINGS;
+      await editor[operation]();
+      assert.equal(refreshed, 1);
+    });
+  });
+}
+
+test('rejected stale Gemini test cannot replace the edited configuration prompt', async () => {
+  await withDom(async () => {
+    const editor = createEditor();
+    editor._requestAISettings = async () => SETTINGS;
+    await editor.openAISettings();
+    let reject;
+    editor._requestAISettings = () => new Promise((_resolve, fail) => { reject = fail; });
+    const pending = editor._testAISettings();
+    editor._aiSettingsInputs.model.value = 'gemini-new';
+    editor._aiSettingsInputs.model.dispatch('input');
+    reject(new Error('outdated network failure'));
+    await pending;
+    assert.match(editor._aiSettingsNote.textContent, /重新测试/);
+    assert.equal(editor._aiSettingsNote.getAttribute('data-state'), '');
+  });
+});
+
+test('keyboard focus wraps inside settings and skips hidden or disabled controls', async () => {
+  await withDom(async () => {
+    const editor = createEditor();
+    editor._buildAISettingsModal();
+    let focused = '';
+    const first = { getClientRects: () => [1], focus() { focused = 'first'; } };
+    const last = { getClientRects: () => [1], focus() { focused = 'last'; } };
+    const hidden = { getClientRects: () => [], focus() { assert.fail('hidden control received focus'); } };
+    const disabled = { disabled: true, getClientRects: () => [1], focus() { assert.fail('disabled control received focus'); } };
+    editor._aiSettingsDialog.querySelectorAll = () => [hidden, first, disabled, last, hidden];
+    let prevented = 0;
+    const key = { key: 'Tab', shiftKey: false, preventDefault() { prevented++; } };
+    document.activeElement = last;
+    editor._handleAISettingsKey(key);
+    assert.equal(focused, 'first');
+    document.activeElement = first;
+    editor._handleAISettingsKey({ ...key, shiftKey: true });
+    assert.equal(focused, 'last');
+    assert.equal(prevented, 2);
+  });
+});
+
+test('close returns focus to the opener or visible menu button when the opener was hidden', async () => {
+  await withDom(async () => {
+    const editor = createEditor();
+    let focused = '';
+    editor._aiSettingsReturnFocus = { isConnected: true, getClientRects: () => [1], focus() { focused = 'opener'; } };
+    editor.fileMenuButtonRef = { current: { focus() { focused = 'menu'; } } };
+    editor.closeAISettings();
+    assert.equal(focused, 'opener');
+    editor._aiSettingsReturnFocus.getClientRects = () => [];
+    editor.closeAISettings();
+    assert.equal(focused, 'menu');
+  });
+});
+
+for (const index of [0, 1, 2, 3]) {
+  test(`busy settings move focus before disabling action ${index}`, async () => {
+    await withDom(async () => {
+      const editor = createEditor();
+      editor._buildAISettingsModal();
+      const action = editor._aiSettingsActionBtns[index];
+      const close = findAll(editor._aiSettingsEl, 'abtn').find(button => button.textContent === '关闭');
+      close.focus = () => { document.activeElement = close; };
+      let disabled = false;
+      Object.defineProperty(action, 'disabled', {
+        get: () => disabled,
+        set(value) {
+          // Chromium drops keyboard focus to body when the active button is disabled.
+          disabled = value;
+          if (value && document.activeElement === action) document.activeElement = document.body;
+        }
+      });
+      document.activeElement = action;
+      editor._setAISettingsBusy(true);
+      assert.equal(document.activeElement, close, 'Escape and Tab must still originate within the dialog');
+      assert.equal(disabled, true);
+      assert.notEqual(close.disabled, true);
+      editor._setAISettingsBusy(false);
+      assert.equal(document.activeElement, close, 'reenabling controls must not move focus again');
+    });
+  });
+}

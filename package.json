@@ -19,7 +19,7 @@
     "preview": "vite preview",
     "check:size": "node scripts/check-code-size.js",
     "test": "node --experimental-strip-types --test \"tests/unit/*.test.ts\"",
-    "test:cli": "node --experimental-strip-types --test tests/unit/agentBridgeProcess.test.ts tests/unit/agentBridgeWindows.test.ts tests/unit/agentBridgeEngines.test.ts tests/unit/agentBridgeConnectors.test.ts tests/unit/devWithBridge.test.ts",
+    "test:cli": "node --experimental-strip-types --test tests/unit/agentBridgeProcess.test.ts tests/unit/agentBridgeWindows.test.ts tests/unit/agentBridgeEngines.test.ts tests/unit/agentBridgeConnectors.test.ts tests/unit/devWithBridge.test.ts tests/unit/agentBridgeReadiness.test.ts tests/unit/agentBridgeSettingsTest.test.ts",
     "test:watch": "node --experimental-strip-types --test --watch \"tests/unit/*.test.ts\"",
     "test:coverage": "node --experimental-strip-types --experimental-test-coverage --test \"tests/unit/*.test.ts\"",
     "test:e2e": "playwright test",

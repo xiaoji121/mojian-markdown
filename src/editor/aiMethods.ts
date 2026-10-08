@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { bridgeUrl } from './bridgeClient.ts';
+import { aiRequestContext } from './aiReadinessMethods.ts';
 
 export class AIMethods {
   aiAsk() {
@@ -39,6 +40,7 @@ export class AIMethods {
     this._syncAIEngineSwitch();
     this._persist(false);
     this._setStatus('AI 引擎已切换为 ' + this._aiEngineLabel());
+    this._renderAIReadiness?.();
   }
 
 
@@ -164,19 +166,10 @@ export class AIMethods {
 
 
   async _checkAIBridge() {
-    this._setAIStatus('正在连接本地 Agent…', 'checking');
-    try {
-      const response = await fetch(bridgeUrl('/health'), {
-        signal: AbortSignal.timeout ? AbortSignal.timeout(1800) : undefined
-      });
-      if (!response.ok) throw new Error('Bridge unavailable');
-      this.aiBridgeOnline = true;
-      this._setAIStatus('本地 Agent 已连接', 'online');
+    await this._refreshAIReadiness();
+    if (this.aiBridgeOnline) {
       this._refreshAIConversations();
       this._refreshRecentDocuments();
-    } catch (e) {
-      this.aiBridgeOnline = false;
-      this._setAIStatus('本地 Agent 未启动', 'offline');
     }
   }
 
@@ -194,6 +187,7 @@ export class AIMethods {
     const aside = this.aiPanelRef.current;
     if (!aside) return;
     this.aiPanelOpen = (show === undefined || show === null) ? !this.aiPanelOpen : show;
+    if (!this.aiPanelOpen) this._aiActionEpoch = (this._aiActionEpoch || 0) + 1;
     aside.style.display = this.aiPanelOpen ? 'flex' : 'none';
     if (this.aiPanelOpen) this._applyAIPanelWidth(this.aiPanelWidth);
     if (this.aiPanelOpen && this.panelOpen) {
@@ -202,6 +196,7 @@ export class AIMethods {
     }
     this._syncFullscreenLayout();
     if (this.aiPanelOpen) {
+      this._refreshAIReadiness?.();
       this._refreshAIConversations();
       if (!this.aiMessages.length) this._loadCurrentDocumentHistory();
     }
@@ -501,7 +496,7 @@ export class AIMethods {
 
 
   async retryAIMessage(messageId) {
-    if (this.aiBusy) return false;
+    if (this.aiBusy || this._aiPreflightBusy) return false;
     const message = this.aiMessages.find((item) => item.id === messageId);
     if (!message || !message.failed || !message.retry || message.retrying || message.retried) return false;
     const retry = message.retry;
@@ -658,10 +653,21 @@ export class AIMethods {
 
   async sendAIQuestion() {
     if (!this.agentBridgeEnabled) return false;
-    if (this.aiBusy) return false;
+    if (this.aiBusy || this._aiPreflightBusy) return false;
     const input = this.aiInputRef.current;
     const question = input ? input.value.trim() : '';
     if (!question) return false;
+    if (this._ensureAIReady) {
+      this._aiPreflightBusy = true;
+      const engine = this.aiEngine;
+      const epoch = this._aiActionEpoch;
+      const context = aiRequestContext(this);
+      let ready;
+      try { ready = await this._ensureAIReady(engine); }
+      finally { this._aiPreflightBusy = false; }
+      if (!ready || epoch !== this._aiActionEpoch || engine !== this.aiEngine
+        || input.value.trim() !== question || context !== aiRequestContext(this)) return false;
+    }
     const requestMode = this._resolveQuestionMode(question);
     if (!requestMode) return false;
     const requestBody = this._aiChatRequestBody(question, requestMode);

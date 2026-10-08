@@ -19,5 +19,9 @@ export async function testAiConnection(settings, payload, engine = runEngine) {
     // policy governs stored and test requests alike.
     await engine('gemini', '连通性测试：请只回复 OK', () => {}, process.env, { gemini, timeoutMs: 15_000 });
     return { ok: true };
-  } catch { return { ok: false, message: '连接失败。请检查密钥、安全存储、模型和网络设置。' }; }
+  } catch (error) {
+    return { ok: false, message: error?.code === 'ETIMEDOUT'
+      ? 'Gemini 连接测试超时（15 秒）。请检查网络或已保存的代理后重试。'
+      : 'Gemini 连接失败。请检查密钥、安全存储、模型和网络设置。' };
+  }
 }

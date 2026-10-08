@@ -10,6 +10,7 @@ import { randomUUID } from 'node:crypto';
 import { createDocumentStore, normalizeAnnotation } from './agent-bridge-store.js';
 import { authorizeDesktopRequest } from './agent-bridge-security.js';
 import { createSettingsStore, maskProviderSettings } from './agent-bridge-settings.js';
+import { readAiReadiness } from './agent-bridge-readiness.js';
 import { normalizeEngine, normalizeMode, runEngine } from './agent-bridge-engines.js';
 import { agentPrompt, prepareAgentContext, readAgentDocumentUpdate, runAgentTurn } from './agent-bridge-agent.js';
 import { importAgentMarkdownArtifacts } from './agent-bridge-artifacts.js';
@@ -145,7 +146,7 @@ function translatePrompt(text) {
   ].join('\n');
 }
 
-function createRequestHandler({ store, settings, staticDir, cors, root, desktopCapability, getOrigin }) {
+function createRequestHandler({ store, settings, staticDir, cors, root, desktopCapability, getOrigin, readinessOptions }) {
   const { readDocument, writeDocument, deleteDocument, upsertDocument, listDocuments } = store;
   const corsHeaders = cors
     ? {
@@ -391,21 +392,18 @@ function createRequestHandler({ store, settings, staticDir, cors, root, desktopC
     const gemini = {
       apiKey: body?.gemini?.apiKey || saved.apiKey,
       model: body?.gemini?.model || saved.model,
-      proxy: body?.gemini?.proxy || saved.proxy
+      // Match desktop testing: proxy edits must be saved before testing.
+      proxy: saved.proxy
     };
-    let timer = null;
     try {
-      const reply = await Promise.race([
-        runEngine('gemini', '连通性测试：请只回复 OK', () => {}, process.env, { gemini }),
-        new Promise((_resolve, reject) => {
-          timer = setTimeout(() => reject(new Error('验证超时（15 秒），请检查网络或模型名')), 15_000);
-        })
-      ]);
+      const reply = await runEngine('gemini', '连通性测试：请只回复 OK', () => {}, process.env, {
+        gemini, timeoutMs: 15_000
+      });
       return sendJson(res, 200, { ok: true, model: gemini.model, reply: String(reply).slice(0, 80) });
     } catch (error) {
-      return sendJson(res, 200, { ok: false, message: error.message || String(error) });
-    } finally {
-      clearTimeout(timer);
+      const message = error.code === 'ETIMEDOUT' ? '验证超时（15 秒），请求已取消。请检查网络或模型名。'
+        : error.message || String(error);
+      return sendJson(res, 200, { ok: false, message });
     }
   }
 
@@ -444,6 +442,10 @@ function createRequestHandler({ store, settings, staticDir, cors, root, desktopC
       }
       if (desktopCapability && url.pathname.startsWith('/api/settings')) return sendError(res, 403, 'Use desktop settings IPC');
       if (req.method === 'GET' && url.pathname === '/health') return sendJson(res, 200, { ok: true });
+      if (req.method === 'GET' && url.pathname === '/api/readiness') {
+        res.setHeader('Cache-Control', 'no-store');
+        return sendJson(res, 200, await readAiReadiness({ ...readinessOptions, settings }));
+      }
       if (req.method === 'GET' && url.pathname === '/api/connectors') {
         return sendJson(res, 200, await connectorCapabilities(process.env));
       }
@@ -527,12 +529,15 @@ export function startAgentBridge({
   staticDir = '',
   cors = true,
   settingsStore,
+  readinessOptions,
   desktopCapability = ''
 } = {}) {
   const store = createDocumentStore(root);
   const settings = settingsStore || createSettingsStore(root);
   let origin = '';
-  const server = createServer(createRequestHandler({ store, settings, staticDir, cors, root, desktopCapability, getOrigin: () => origin }));
+  const server = createServer(createRequestHandler({
+    store, settings, staticDir, cors, root, desktopCapability, readinessOptions, getOrigin: () => origin
+  }));
   return new Promise((resolvePromise, rejectPromise) => {
     server.once('error', rejectPromise);
     server.listen(port, host, () => {

@@ -349,3 +349,6 @@ registerRestartScenarios('development Electron');
 
 import { registerSecureSettingsScenario } from './secureSettingsScenario';
 registerSecureSettingsScenario('Source Electron');
+
+import { registerAIReadinessScenario } from './aiReadinessScenario';
+registerAIReadinessScenario('Source Electron');

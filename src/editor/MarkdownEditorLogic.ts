@@ -4,6 +4,7 @@ import { DesktopStateMethods } from "./desktopStateMethods";
 import { SAMPLE_MARKDOWN } from './sample';
 import { EDITOR_STORAGE_KEY, loadEditorState, getEditorStorageError } from './storage';
 import { AIMethods } from './aiMethods';
+import { AIReadinessMethods } from './aiReadinessMethods';
 import { AIReadingTreeMethods } from './aiReadingTreeMethods';
 import { BridgeMethods } from './bridgeMethods';
 import { CommentMethods } from './commentMethods';
@@ -91,6 +92,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.aiQuoteRef = React.createRef();
     this.aiInputRef = React.createRef();
     this.aiStatusRef = React.createRef();
+    this.aiReadinessRef = React.createRef();
     this.aiSendRef = React.createRef();
     this.aiEngineChipRef = React.createRef();
     this.themeIconRef = React.createRef();
@@ -394,6 +396,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       aiQuoteRef: this.aiQuoteRef,
       aiInputRef: this.aiInputRef,
       aiStatusRef: this.aiStatusRef,
+      aiReadinessRef: this.aiReadinessRef,
       aiSendRef: this.aiSendRef,
       aiEngineChipRef: this.aiEngineChipRef,
       viewModeSwitcherRef: this.viewModeSwitcherRef,
@@ -483,6 +486,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     DiagramMethods,
     LongImageMethods,
     AIMethods,
+    AIReadinessMethods,
     AIReadingTreeMethods,
     AISettingsMethods,
     ConnectorMethods,
