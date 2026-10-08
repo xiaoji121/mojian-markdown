@@ -73,9 +73,10 @@ test('落地页包含桌面端介绍区块', async ({ page }) => {
   const desktop = page.locator('#desktop');
   await expect(desktop).toBeVisible();
   await expect(desktop.locator('h2')).toHaveText(/桌面/);
-  // 六项桌面端能力卡片
-  await expect(desktop.locator('.workflow-item')).toHaveCount(6);
-  await expect(desktop).toContainText('双向同步');
+  // Explicit desktop testing and optional AI requirements.
+  await expect(desktop.locator('.edition-card')).toHaveCount(2);
+  await expect(desktop).toContainText('测试');
+  await expect(desktop).toContainText('AI 配置');
   await expect(desktop).toContainText('npm run desktop');
   // 完整版卡片提供跳转入口，且锚点真的落在桌面端区块（不被 hash 处理拉回顶部）
   await page.locator('#editions a[href="#desktop"]').click();
