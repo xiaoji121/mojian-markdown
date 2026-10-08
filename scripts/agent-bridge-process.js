@@ -1,7 +1,7 @@
 // CLI 进程边界：Windows 的 npm .cmd 只读取已知 Node shim，直接启动 JS，绝不经过 cmd.exe。
 import { spawn } from 'node:child_process';
-import { readFileSync, statSync } from 'node:fs';
-import { win32 } from 'node:path';
+import { accessSync, constants, readFileSync, statSync } from 'node:fs';
+import { posix, win32 } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 function isFile(file) {
@@ -101,14 +101,18 @@ function nodeForShim(command, env, cwd, runtime) {
   ), { code: 'ECLI_NODE_NOT_FOUND', path: command });
 }
 
+function cliRuntime(runtime) {
+  return {
+    platform: process.platform, cwd: process.cwd(), execPath: process.execPath,
+    electron: !!process.versions.electron, isFile, readFile: readFileSync, access: accessSync, ...runtime
+  };
+}
+
 // runtime 仅用于跨平台测试；正常调用保留真实平台、文件系统和进程语义。
 export function resolveCliInvocation(command, args = [], options = {}, runtime = {}) {
   const { processTree = false, ...spawnOptions } = options;
   const resolvedOptions = { windowsHide: true, ...spawnOptions, shell: false, windowsVerbatimArguments: false };
-  const context = {
-    platform: process.platform, cwd: process.cwd(), execPath: process.execPath,
-    electron: !!process.versions.electron, isFile, readFile: readFileSync, ...runtime
-  };
+  const context = cliRuntime(runtime);
   if (context.platform !== 'win32') {
     if (processTree) resolvedOptions.detached = true;
     return { command, args, options: resolvedOptions };
@@ -124,6 +128,42 @@ export function resolveCliInvocation(command, args = [], options = {}, runtime =
     command: nodeForShim(executable, env, cwd, context),
     args: [entrypoint, ...args], options: resolvedOptions
   };
+}
+
+function probePosixCommand(command, env, cwd, runtime) {
+  // Match spawn's PATH fallback and keep relative PATH entries relative to cwd.
+  const directories = command.includes('/') ? [''] : String(env.PATH ?? '/usr/bin:/bin').split(':');
+  let unavailable = false;
+  for (const directory of directories) {
+    const candidate = posix.resolve(cwd, directory, command);
+    try {
+      if (!runtime.isFile(candidate)) continue;
+      runtime.access(candidate, constants.X_OK);
+      return 'found';
+    } catch (error) {
+      if (!['ENOENT', 'ENOTDIR'].includes(error?.code)) unavailable = true;
+    }
+  }
+  return unavailable ? 'unavailable' : 'missing';
+}
+
+// Read-only discovery: never execute a CLI, query login, or return local paths.
+// Windows shares the same npm shim validation and Node resolution as launch.
+export function probeCliExecutable(command, options = {}, runtime = {}) {
+  try {
+    const context = cliRuntime(runtime);
+    const env = options.env || process.env;
+    const cwd = options.cwd instanceof URL ? fileURLToPath(options.cwd) : (options.cwd || context.cwd);
+    if (typeof command !== 'string' || !command || command.includes('\0')) return 'unavailable';
+    if (context.platform !== 'win32') return probePosixCommand(command, env, cwd, context);
+    const executable = resolveWindowsCommand(command, env, cwd, context.isFile);
+    if (!executable) return 'missing';
+    if (!/\.(exe|com|cmd|bat)$/i.test(executable)) return 'unsupported';
+    const invocation = resolveCliInvocation(executable, [], { env, cwd }, context);
+    return context.isFile(invocation.command) ? 'found' : 'unavailable';
+  } catch (error) {
+    return error?.code === 'ECLI_UNSUPPORTED_SHIM' ? 'unsupported' : 'unavailable';
+  }
 }
 
 const processGroups = new WeakSet();

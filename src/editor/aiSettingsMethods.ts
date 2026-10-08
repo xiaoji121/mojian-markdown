@@ -27,6 +27,8 @@ const AI_CHANNELS = [
 
 export class AISettingsMethods {
   async openAISettings() {
+    if (this._aiSettingsEl?.style.display === 'flex') return;
+    this._aiSettingsReturnFocus = document.activeElement;
     const epoch = this._aiSettingsEpoch = (this._aiSettingsEpoch || 0) + 1;
     const overlay = this._buildAISettingsModal();
     // 先加载回填、再展示：异步回填会重置 Key 输入框，
@@ -35,6 +37,8 @@ export class AISettingsMethods {
     if (epoch !== this._aiSettingsEpoch) return;
     this._syncAISettingsEngine();
     overlay.style.display = 'flex';
+    this._aiChannelOptions?.find((option) => option.dataset.engine === this.aiEngine)?.focus?.();
+    if (!overlay.contains?.(document.activeElement)) this._aiSettingsDialog?.focus?.();
   }
 
 
@@ -42,6 +46,12 @@ export class AISettingsMethods {
     this._aiSettingsEpoch = (this._aiSettingsEpoch || 0) + 1;
     if (this._aiSettingsInputs) this._aiSettingsInputs.key.value = '';
     if (this._aiSettingsEl) this._aiSettingsEl.style.display = 'none';
+    const previous = this._aiSettingsReturnFocus;
+    const target = previous?.isConnected && previous.getClientRects?.().length
+      ? previous : this.fileMenuButtonRef?.current;
+    target?.focus?.();
+    if (this.aiPanelOpen) this._refreshAIReadiness?.();
+    this._resumeAISetup?.();
   }
 
 
@@ -82,6 +92,10 @@ export class AISettingsMethods {
     overlay.className = 'ai-settings-overlay';
     const modal = document.createElement('div');
     modal.className = 'ai-settings-modal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'AI 设置');
+    modal.setAttribute('tabindex', '-1');
     const title = document.createElement('strong');
     title.className = 'ai-settings-title';
     title.textContent = '设置';
@@ -94,16 +108,43 @@ export class AISettingsMethods {
 
     const note = document.createElement('div');
     note.className = 'ai-settings-note';
+    note.setAttribute('role', 'status');
+    note.setAttribute('aria-live', 'polite');
+    const disclosure = document.createElement('p');
+    disclosure.className = 'ai-settings-disclosure ai-settings-hint';
+    disclosure.textContent = '“测试 Gemini 连接”只验证 Gemini，不验证所选的 Claude / Codex。仅点击测试才会将 Key 发送给 Google，可能产生 API 使用费用；使用已保存的代理（留空时使用系统代理变量）。修改代理后请先保存。测试最长等待 15 秒；打开设置和保存不会联网。';
 
-    modal.append(title, overline, hint, this._buildAIChannelSection(), note, this._buildAISettingsActions());
+    modal.append(title, overline, hint, this._buildAIChannelSection(), disclosure, note, this._buildAISettingsActions());
     overlay.appendChild(modal);
     if (overlay.addEventListener) {
       overlay.addEventListener('mousedown', (e) => { if (e.target === overlay) this.closeAISettings(); });
+      overlay.addEventListener('keydown', (e) => this._handleAISettingsKey(e));
     }
     document.body.appendChild(overlay);
     this._aiSettingsEl = overlay;
     this._aiSettingsNote = note;
+    this._aiSettingsDialog = modal;
     return overlay;
+  }
+
+  _handleAISettingsKey(event) {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.closeAISettings();
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const controls = [...this._aiSettingsDialog.querySelectorAll('button, input, [tabindex="0"]')]
+      .filter((element) => !element.disabled && element.getClientRects().length);
+    const first = controls[0], last = controls[controls.length - 1];
+    const active = document.activeElement;
+    if (!first) { event.preventDefault(); this._aiSettingsDialog.focus(); }
+    else if (event.shiftKey && (active === first || !controls.includes(active))) {
+      event.preventDefault(); last.focus();
+    } else if (!event.shiftKey && (active === last || !controls.includes(active))) {
+      event.preventDefault(); first.focus();
+    }
   }
 
 
@@ -184,6 +225,9 @@ export class AISettingsMethods {
       this._aiSettingsField('代理地址（可选）', proxy)
     );
     this._aiSettingsInputs = { key, model, proxy };
+    Object.values(this._aiSettingsInputs).forEach((input) => {
+      input.addEventListener('input', () => this._invalidateAISettingsTest());
+    });
     return form;
   }
 
@@ -194,7 +238,7 @@ export class AISettingsMethods {
     const testBtn = document.createElement('button');
     testBtn.type = 'button';
     testBtn.className = 'tbtn ai-settings-test';
-    testBtn.textContent = '测试连接';
+    testBtn.textContent = '测试 Gemini 连接';
     testBtn.addEventListener('click', () => this._testAISettings());
     const clear = document.createElement('button');
     clear.type = 'button';
@@ -223,12 +267,18 @@ export class AISettingsMethods {
     this._aiSettingsMigrateBtn = migrate;
     this._aiSettingsActionBtns = [testBtn, clear, migrate, save];
     this._aiSettingsClearBtn = clear;
+    this._aiSettingsCloseBtn = close;
     return actions;
   }
 
 
   _setAISettingsBusy(value) {
     this._aiSettingsBusy = value;
+    // Disabling Chromium's focused button sends focus to body, outside this
+    // dialog's Escape/Tab handlers. Move it to the enabled Close button first.
+    if (value && this._aiSettingsActionBtns?.includes(document.activeElement)) {
+      (this._aiSettingsCloseBtn || this._aiSettingsDialog)?.focus?.();
+    }
     (this._aiSettingsActionBtns || []).forEach((button) => { button.disabled = value; });
   }
 
@@ -239,30 +289,37 @@ export class AISettingsMethods {
     note.setAttribute('data-state', state || '');
   }
 
+  _invalidateAISettingsTest() {
+    this._aiSettingsFormRevision = (this._aiSettingsFormRevision || 0) + 1;
+    if (this._aiSettingsTestStarted) this._setAISettingsNote('Gemini 配置已更改，请重新测试。', '');
+  }
 
-  // 用表单当前值验证连通性（Key 留空时服务端回落到已保存的），保存前即可测。
+  // Test the typed key/model, but use the saved proxy. Never test on open/save.
   async _testAISettings() {
     if (this._aiSettingsBusy) return;
     const epoch = this._aiSettingsEpoch;
     const inputs = this._aiSettingsInputs;
     if (!inputs) return;
+    const revision = this._aiSettingsFormRevision || 0;
+    this._aiSettingsTestStarted = true;
     const payload = {
       gemini: {
-        model: String(inputs.model.value || '').trim(),
-        proxy: String(inputs.proxy.value || '').trim() || undefined
+        model: String(inputs.model.value || '').trim()
       }
     };
     const key = String(inputs.key.value || '').trim();
     if (key) payload.gemini.apiKey = key;
     this._setAISettingsBusy(true);
-    this._setAISettingsNote('正在验证连接…', '');
+    this._setAISettingsNote('正在验证 Gemini 连接…', '');
     try {
       const result = await this._requestAISettings('test', payload);
-      if (epoch !== this._aiSettingsEpoch) return;
-      if (result.ok) this._setAISettingsNote('✓ 连接成功' + (result.model ? ' · ' + result.model : ''), 'ok');
+      if (epoch !== this._aiSettingsEpoch || revision !== (this._aiSettingsFormRevision || 0)) return;
+      if (result.ok) this._setAISettingsNote('✓ Gemini 连接成功' + (result.model ? ' · ' + result.model : ''), 'ok');
       else this._setAISettingsNote('✗ ' + (result.message || '验证失败'), 'error');
     } catch (error) {
-      if (epoch === this._aiSettingsEpoch) this._setAISettingsNote('✗ ' + (error.message || '验证失败'), 'error');
+      if (epoch === this._aiSettingsEpoch && revision === (this._aiSettingsFormRevision || 0)) {
+        this._setAISettingsNote('✗ ' + (error.message || '验证失败'), 'error');
+      }
     } finally { this._setAISettingsBusy(false); }
   }
 
@@ -285,16 +342,18 @@ export class AISettingsMethods {
   _syncAISettingsForm() {
     const inputs = this._aiSettingsInputs;
     if (!inputs) return;
+    this._aiSettingsTestStarted = false;
+    this._aiSettingsFormRevision = (this._aiSettingsFormRevision || 0) + 1;
     const gemini = (this.aiProviderSettings && this.aiProviderSettings.gemini) || GEMINI_FALLBACK;
     const secure = this._aiSecureStorage;
     const legacy = gemini.credentialStatus === 'migration-required';
     const disclosure = this._aiSettingsLoadError ? '设置读取失败；未覆盖原有文件。'
       : legacy ? '发现旧明文 Key。点击“同意迁移”才会用系统安全存储加密并替换原文件；不会联网，也不会保留明文备份。'
       : secure ? (secure.available
-        ? '保存会使用本机系统安全存储加密 Key；保存不联网。测试连接会将 Key 发送给 Google（经已保存的代理）。'
+        ? '保存会使用本机系统安全存储加密 Key；保存不联网。'
         : ({ unsupported: '此平台暂不支持密钥安全存储。', locked: '系统安全存储已锁定或拒绝访问。', unavailable: '系统安全存储暂不可用。' }[secure.status]
           || '系统安全存储暂不可用。') + '不会回退为明文；普通编辑不受影响。')
-        : '命令行网页版将 Key 以明文保存在本机 settings.json；保存不联网。测试连接会联系服务商。';
+        : '命令行网页版将 Key 以明文保存在本机 settings.json；保存不联网。';
     this._setAISettingsNote(disclosure, this._aiSettingsLoadError ? 'error' : '');
     if (this._aiSettingsMigrateBtn) this._aiSettingsMigrateBtn.style.display = legacy ? '' : 'none';
     inputs.key.value = '';
@@ -325,6 +384,8 @@ export class AISettingsMethods {
       this._setAISettingsBusy(true);
       inputs.key.value = '';
       const result = await this._requestAISettings('save', payload);
+      if (this.aiReadiness && !this.aiPanelOpen) this._refreshAIReadiness?.();
+      else if (epoch !== this._aiSettingsEpoch && this.aiPanelOpen) this._refreshAIReadiness?.();
       if (epoch !== this._aiSettingsEpoch) return;
       this._acceptAISettings(result);
       this.closeAISettings();
@@ -343,6 +404,7 @@ export class AISettingsMethods {
     this._setAISettingsBusy(true);
     try {
       const result = await this._requestAISettings('migrate', { consent: true });
+      if (this.aiReadiness || this.aiPanelOpen) this._refreshAIReadiness?.();
       if (epoch !== this._aiSettingsEpoch) return;
       this._acceptAISettings(result);
       this._syncAISettingsForm();
@@ -358,6 +420,7 @@ export class AISettingsMethods {
     if (this._aiSettingsInputs) this._aiSettingsInputs.key.value = '';
     try {
       const result = await this._requestAISettings('save', { gemini: { apiKey: '' } });
+      if (this.aiReadiness || this.aiPanelOpen) this._refreshAIReadiness?.();
       if (epoch !== this._aiSettingsEpoch) return;
       this._acceptAISettings(result);
       this._syncAISettingsForm();

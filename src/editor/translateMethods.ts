@@ -2,6 +2,7 @@
 // 划词翻译：调用用户在 AI 设置里配置的 Gemini Key（/api/translate），
 // 译文流式渲染到选区附近的浮层；未配置 Key 时浮层里给「去配置」入口。
 import { bridgeUrl } from './bridgeClient.ts';
+import { describeAIReadiness } from './aiReadinessMethods.ts';
 
 export class TranslateMethods {
   async translateSel() {
@@ -20,6 +21,18 @@ export class TranslateMethods {
     popover.style.left = anchor.left;
     popover.style.top = anchor.top;
     popover.style.display = 'flex';
+    const epoch = this._translateEpoch = (this._translateEpoch || 0) + 1;
+    this._translateBody.textContent = '正在检查 Gemini…';
+    if (this._ensureAIReady) {
+      const ready = await this._ensureAIReady('gemini');
+      if (epoch !== this._translateEpoch) return;
+      if (!ready) {
+        this._translateBody.textContent = describeAIReadiness(this.aiReadiness, 'gemini').text;
+        this._showTranslateSetup();
+        this._clampTranslatePopover();
+        return;
+      }
+    }
     this._translateBody.textContent = '正在翻译…';
     this._clampTranslatePopover();
     await this._streamTranslation(p.quote);
@@ -119,7 +132,41 @@ export class TranslateMethods {
 
 
   _hideTranslatePopover() {
+    this._translateEpoch = (this._translateEpoch || 0) + 1;
     if (this._translatePopoverEl) this._translatePopoverEl.style.display = 'none';
+  }
+
+
+  _showTranslateSetup() {
+    const config = document.createElement('button');
+    config.type = 'button';
+    config.className = 'tbtn translate-open-settings';
+    config.textContent = '配置 Gemini';
+    config.addEventListener('click', () => {
+      this._translateSetupReturn = true;
+      this._hideTranslatePopover(); this.openAISettings();
+    });
+    this._translateActions.appendChild(config);
+    const close = document.createElement('button');
+    close.type = 'button'; close.className = 'tbtn'; close.textContent = '继续编辑';
+    close.addEventListener('click', () => this._hideTranslatePopover());
+    this._translateActions.appendChild(close);
+  }
+
+
+  _resumeAISetup() {
+    if (!this._translateSetupReturn) return;
+    this._translateSetupReturn = false;
+    const pop = this._translatePopoverEl;
+    if (!pop) return;
+    pop.style.display = 'flex';
+    this._translateBody.textContent = '划词翻译使用 Gemini。配置完成后，可重新翻译。';
+    this._translateActions.innerHTML = '';
+    const retry = document.createElement('button');
+    retry.type = 'button'; retry.className = 'tbtn'; retry.textContent = '重新翻译';
+    retry.addEventListener('click', () => this.translateSel());
+    this._translateActions.appendChild(retry);
+    this._clampTranslatePopover();
   }
 
 

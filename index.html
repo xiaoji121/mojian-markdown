@@ -561,6 +561,7 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
           <button class="ai-quick" onClick="{{ askChallenge }}">质疑假设</button>
         </div>
       </div>
+      <div ref="{{ aiReadinessRef }}" class="ai-readiness"></div>
       <div ref="{{ aiMessagesRef }}" class="ai-messages" aria-live="polite"></div>
       <div class="ai-composer">
         <textarea ref="{{ aiInputRef }}" class="ai-input" rows="3" placeholder="提问或描述要完成的事情…（Enter 发送，Shift+Enter 换行）"></textarea>
