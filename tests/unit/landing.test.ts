@@ -19,3 +19,12 @@ test('locale routes support deployment base and preserve historic root', () => {
   assert.equal(localeFromPath('/md-editor/'), null);
   assert.equal(localeHref('/md-editor/en/', 'ja'), '/md-editor/ja/');
 });
+test('Vite dev fallback uses the original locale URL, not rewritten index.html', async () => {
+  const { landingPages } = await import('../../scripts/landing-pages.ts');
+  const plugin = landingPages();
+  const transform = plugin.transformIndexHtml as { handler: Function };
+  const html = '<html lang="zh-CN"><head><!-- landing-meta:start --><!-- landing-meta:end --></head><body><main id="landing-page"></main></body></html>';
+  const localized = transform.handler(html, { path: '/index.html', originalUrl: '/ja/?source=test' });
+  assert.match(localized, /<html lang="ja"/);
+  assert.match(localized, /href="https:\/\/yuxizhai.com\/md-editor\/ja\/"/);
+});

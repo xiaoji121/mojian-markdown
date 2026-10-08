@@ -12,7 +12,7 @@ export function localizePage(html: string, path: string): string {
 export function landingPages(): Plugin {
   return {
     name: 'prerender-landing-locales',
-    transformIndexHtml: { order: 'pre', handler(html, context) { return localizePage(html, context.path); } },
+    transformIndexHtml: { order: 'pre', handler(html, context) { return localizePage(html, context.originalUrl?.split('?')[0] ?? context.path); } },
     generateBundle: { order: 'post', handler(_options, bundle) {
       const index = bundle['index.html'];
       if (!index || index.type !== 'asset') throw new Error('Missing landing entry HTML');
