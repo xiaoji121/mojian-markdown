@@ -16,6 +16,7 @@ export function registerAIReadinessScenario(label: string, executablePath?: stri
     const documentPath = join(root, '没有 AI 也能编辑.md');
     await writeFile(documentPath, '# First run\n\nhello world\n');
     await writeFile(join(userData, 'granted-paths.json'), JSON.stringify([documentPath]));
+    console.info('[readiness fixture] launch isolated app');
     const app = await electron.launch({ executablePath,
       args: [...(executablePath ? [] : ['.']), documentPath, '--disable-background-networking',
         '--proxy-server=http://127.0.0.1:9', '--proxy-bypass-list=localhost;127.0.0.1;[::1]'],
@@ -25,6 +26,7 @@ export function registerAIReadinessScenario(label: string, executablePath?: stri
         AGENT_BRIDGE_DWS_COMMAND: join(root, 'mojian-test-missing-dws') }
     });
     try {
+      console.info('[readiness fixture] install loopback guard');
       await app.evaluate(() => {
         const net = process.getBuiltinModule('net');
         const connect = net.Socket.prototype.connect;
@@ -36,13 +38,16 @@ export function registerAIReadinessScenario(label: string, executablePath?: stri
           return connect.apply(this, args);
         };
       });
+      console.info('[readiness fixture] wait for first window');
       const page = await app.firstWindow();
       await page.route('**/*', route => ['127.0.0.1', 'localhost'].includes(new URL(route.request().url()).hostname)
         ? route.continue() : route.abort());
       let providerRequests = 0;
       page.on('request', request => { if (/\/api\/(chat|translate|settings\/test)$/.test(new URL(request.url()).pathname)) providerRequests++; });
+      console.info('[readiness fixture] open linked document');
       const source = page.locator('.md-source');
       await expect(source).toHaveValue(/First run/);
+      console.info('[readiness fixture] open AI panel');
       await page.getByRole('button', { name: 'AI 助手', exact: true }).click();
       await page.locator('.ai-readiness').getByRole('button', { name: '配置 AI', exact: true }).click();
       await page.getByRole('radio', { name: /Codex/ }).click();
@@ -53,9 +58,11 @@ export function registerAIReadinessScenario(label: string, executablePath?: stri
       await expect(page.locator('.ai-input')).toHaveValue('Keep this unsent question');
       await page.getByRole('button', { name: '继续编辑，不使用 AI', exact: true }).click();
       await expect(page.locator('.ai-panel')).toBeHidden();
+      console.info('[readiness fixture] edit and save without AI');
       await source.fill('# Still editing\n\nhello world\n');
       await expect(page.locator('.md-preview h1')).toHaveText('Still editing');
       await expect.poll(() => readFile(documentPath, 'utf8')).toContain('Still editing');
+      console.info('[readiness fixture] open AI panel');
       await page.getByRole('button', { name: 'AI 助手', exact: true }).click();
       await page.locator('.ai-readiness').getByRole('button', { name: '配置 AI', exact: true }).click();
       await page.getByRole('radio', { name: /Claude/ }).click();
@@ -69,6 +76,7 @@ export function registerAIReadinessScenario(label: string, executablePath?: stri
       await expect(page.getByRole('dialog', { name: 'AI 设置' })).toBeVisible();
       await page.keyboard.press('Escape');
       await expect(page.locator('.ai-readiness').getByRole('button', { name: '配置 AI', exact: true })).toBeFocused();
+      console.info('[readiness fixture] translation setup return');
       await page.locator('.md-preview p').first().evaluate(element => {
         const range = document.createRange(); range.selectNodeContents(element);
         const selection = window.getSelection()!;
@@ -83,6 +91,14 @@ export function registerAIReadinessScenario(label: string, executablePath?: stri
       await expect(page.getByRole('button', { name: '重新翻译', exact: true })).toBeVisible();
       expect(providerRequests).toBe(0);
       await expect(access(marker)).rejects.toThrow();
-    } finally { await app.close(); await rm(root, { recursive: true, force: true }); }
+    } finally {
+      // This scenario verifies readiness, not window-close durability (covered
+      // by restartScenarios). Force fixture teardown so a pending native dialog
+      // cannot swallow the original assertion and its diagnostic stack.
+      console.info('[readiness fixture] teardown');
+      await app.evaluate(({ app }) => app.exit(0)).catch(() => {});
+      await app.close().catch(() => {});
+      await rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+    }
   });
 }
