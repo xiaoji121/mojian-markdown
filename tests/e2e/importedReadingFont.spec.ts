@@ -23,6 +23,7 @@ async function installFontFixture(page, project = false) {
           if (mode === 'cancel') return { status: 'cancelled' };
           candidate = { status: 'candidate', token: 'fixture-token', fileName: 'OFL Source Serif fixture.woff2',
             dataUrl: mode === 'invalid' ? 'data:font/woff2;base64,AAAA' : mode === 'italic' ? italicDataUrl : dataUrl };
+          if (mode === 'delayed') return new Promise(resolve => { (window as any).finishFontChoice = () => resolve(candidate); });
           return candidate;
         }
         if (operation === 'commit' && candidate?.token === payload?.token) {
@@ -61,12 +62,14 @@ test('imported font decodes, preserves exact glyphs, persists and exports withou
   await page.getByRole('menuitem', { name: '导出长图', exact: true }).click();
   await expect(page.locator('.longimg-save')).toBeEnabled();
   await page.evaluate(() => {
-    const create = URL.createObjectURL.bind(URL);
+    const descriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src')!;
     (window as any).fontExportSvg = [];
-    URL.createObjectURL = (value: Blob) => {
-      if (value.type.startsWith('image/svg+xml')) (window as any).fontExportSvg.push(value.text());
-      return create(value);
-    };
+    Object.defineProperty(HTMLImageElement.prototype, 'src', { configurable: true, get: descriptor.get,
+      set(value: string) {
+        if (value.startsWith('data:image/svg+xml')) (window as any).fontExportSvg.push(decodeURIComponent(value.slice(value.indexOf(',') + 1)));
+        descriptor.set!.call(this, value);
+      }
+    });
   });
   const download = page.waitForEvent('download'); await page.locator('.longimg-save').click();
   const first = await download; expect(first.suggestedFilename()).toMatch(/\.png$/);
@@ -74,7 +77,7 @@ test('imported font decodes, preserves exact glyphs, persists and exports withou
   expect(firstBytes.subarray(1, 4).toString()).toBe('PNG');
   expect(firstBytes.length).toBeGreaterThan(5000);
   const firstSvg = await page.evaluate(() => Promise.all((window as any).fontExportSvg));
-  expect(firstSvg.join('')).toContain(dataUrl);
+  expect(firstSvg.join('').includes(dataUrl)).toBe(true);
   expect(firstSvg.join('')).toContain('Mojian Imported Reading Font');
   await page.evaluate(() => localStorage.setItem('fixture-font-mode', 'italic'));
   await openAppearance(page); await page.locator('.reading-font-import').click();
@@ -89,8 +92,8 @@ test('imported font decodes, preserves exact glyphs, persists and exports withou
   expect(nextBytes.equals(firstBytes)).toBe(false);
   const nextSvg = await page.evaluate(() => Promise.all((window as any).fontExportSvg));
   const importedFace = nextSvg.join('').match(/@font-face\s*\{[^}]*Mojian Imported Reading Font[^}]*\}/)?.[0];
-  expect(importedFace).toContain(italicDataUrl);
-  expect(importedFace).not.toContain(dataUrl);
+  expect(importedFace?.includes(italicDataUrl)).toBe(true);
+  expect(importedFace?.includes(dataUrl)).toBe(false);
 });
 
 test('cancel and malformed fonts do not replace the old font; removing only clears app copy', async ({ page }) => {
@@ -119,4 +122,29 @@ test('project font has a distinct choice and never replaces an explicit system p
   await page.locator('.reading-font-select').selectOption('project-jinkai');
   await expect(page.locator('.reading-font-project-status')).toContainText('cejk-subset.woff2');
   await expect(page.locator('.reading-font-note')).toBeHidden();
+});
+
+
+test('a newer explicit system choice wins while a font import is pending', async ({ page }) => {
+  await installFontFixture(page); await openEditor(page); await openAppearance(page);
+  await page.evaluate(() => localStorage.setItem('fixture-font-mode', 'delayed'));
+  await page.locator('.reading-font-import').click();
+  await expect(page.locator('.reading-font-import')).toBeDisabled();
+  await page.locator('.reading-font-select').selectOption('system-serif');
+  await page.evaluate(() => (window as any).finishFontChoice());
+  await expect(page.locator('.reading-font-import')).toBeEnabled();
+  await expect(page.locator('body')).toHaveAttribute('data-reading-font', 'system-serif');
+  expect(await page.evaluate(() => localStorage.getItem('fixture-font-copy'))).not.toBeNull();
+});
+
+test('font activation never rewrites or removes similarly marked user-authored styles', async ({ page }) => {
+  await installFontFixture(page); await openEditor(page);
+  await setSource(page, '# User content\n\n<style data-user-reading-font="imported">/* user-owned */</style>\n\nReading.');
+  await openAppearance(page); await page.locator('.reading-font-import').click();
+  await expect(page.locator('body')).toHaveAttribute('data-reading-font', 'imported-font');
+  await expect(page.locator('.md-preview style[data-user-reading-font]')).toHaveText('/* user-owned */');
+  expect(await page.locator('head style[data-user-reading-font="imported"]').textContent()).toContain(dataUrl);
+  await page.locator('.reading-font-remove').click();
+  await expect(page.locator('.reading-font-import-status')).toContainText('原文件不变');
+  await expect(page.locator('.md-preview style[data-user-reading-font]')).toHaveText('/* user-owned */');
 });

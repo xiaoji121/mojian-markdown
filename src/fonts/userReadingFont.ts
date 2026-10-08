@@ -7,6 +7,7 @@ export type FontApi = (operation: 'load' | 'project' | 'choose' | 'commit' | 'ca
 const families = { project: 'Mojian Project Reading Font', imported: 'Mojian Imported Reading Font' };
 const state: Record<UserFontKind, UserFontResult> = { project: { status: 'unavailable' }, imported: { status: 'unavailable' } };
 const listeners = new Set<() => void>();
+const ownedStyles: Partial<Record<UserFontKind, HTMLStyleElement>> = {};
 let started: Promise<void> | null = null;
 let revision = 0;
 const versions: Record<UserFontKind, number> = { project: 0, imported: 0 };
@@ -32,8 +33,11 @@ export async function activateReadingFont(kind: UserFontKind, result: UserFontRe
   if (version !== versions[kind]) return;
   await prepareReadingFont(kind, result);
   if (version !== versions[kind]) return;
-  let style = document.querySelector<HTMLStyleElement>(`style[data-user-reading-font="${kind}"]`);
-  if (!style) { style = document.createElement('style'); style.dataset.userReadingFont = kind; document.head.appendChild(style); }
+  let style = ownedStyles[kind];
+  if (!style?.isConnected) {
+    style = document.createElement('style'); style.dataset.userReadingFont = kind;
+    document.head.appendChild(style); ownedStyles[kind] = style;
+  }
   style.textContent = `@font-face { font-family: '${families[kind]}'; src: url("${result.dataUrl}"); font-style: normal; font-weight: 400; font-display: swap; }`;
   revision++;
   const loaded = await document.fonts.load(`16px "${families[kind]}"`);
@@ -44,7 +48,8 @@ export async function activateReadingFont(kind: UserFontKind, result: UserFontRe
 }
 export function clearReadingFont(kind: UserFontKind, result: UserFontResult = { status: 'unavailable' }) {
   versions[kind]++;
-  document.querySelector(`style[data-user-reading-font="${kind}"]`)?.remove();
+  ownedStyles[kind]?.remove();
+  delete ownedStyles[kind];
   state[kind] = result;
   revision++;
   notify();
