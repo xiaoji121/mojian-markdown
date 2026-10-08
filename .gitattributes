@@ -1,0 +1,3 @@
+# Preserve the exact upstream font bytes and copyright/license text on every OS.
+src/fonts/source-serif-4/*.woff2 -text
+public/fonts/source-serif-4/LICENSE.md -text

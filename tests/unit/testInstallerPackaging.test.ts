@@ -32,3 +32,22 @@ test('effective builder config does not inherit broad files or production associ
   assert.ok(patterns.includes('desktop/preload.cjs'));
   assert.equal(config.mac.target.length, 1);
 });
+
+test('archive font inspection reads nested assets with native path separators', async () => {
+  const { mkdtemp, mkdir, writeFile, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join, win32 } = await import('node:path');
+  const { createPackage } = await import('@electron/asar');
+  const { readArchiveFile } = await import('../../scripts/test-installer-archive.mjs');
+  const root = await mkdtemp(join(tmpdir(), 'font-asar-'));
+  try {
+    await mkdir(join(root, 'input', 'dist', 'assets'), { recursive: true });
+    await writeFile(join(root, 'input', 'dist', 'assets', 'font.woff2'), 'official-font-fixture');
+    const archive = join(root, 'app.asar');
+    await createPackage(join(root, 'input'), archive);
+    assert.equal(readArchiveFile(archive, 'dist/assets/font.woff2').toString(), 'official-font-fixture');
+    let extractedPath = '';
+    readArchiveFile(archive, 'dist/assets/font.woff2', (_archive, path) => { extractedPath = path; return Buffer.alloc(0); }, win32.join);
+    assert.equal(extractedPath, 'dist\\assets\\font.woff2');
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
