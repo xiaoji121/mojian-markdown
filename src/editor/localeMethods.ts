@@ -2,12 +2,17 @@
 import { detectLocalReadingFont, READING_FONT_OFFICIAL_URL } from '../fonts/localReadingFont.ts';
 import { detectLocale, getLocale, isLocale, setLocale, t } from './i18n.ts';
 
+import { localeFromPath } from '../landing/route.ts';
 import { translateChrome } from './localeChrome.ts';
 
 export class LocaleMethods {
   _initLocale(saved) {
-    setLocale(isLocale(saved?.locale) ? saved.locale : detectLocale(navigator.language));
-    document.documentElement.lang = getLocale();
+    const landingLocale = window.mojianDesktop ? document.documentElement.dataset.desktopLandingLocale : localeFromPath(window.location.pathname);
+    setLocale(isLocale(saved?.locale) ? saved.locale : isLocale(landingLocale) ? landingLocale : detectLocale(navigator.language));
+    if (window.location.hash === '#editor') {
+      document.documentElement.lang = getLocale();
+      document.title = getLocale() === 'en' ? 'Mojian Markdown' : '墨笺 Markdown';
+    }
     this._localeSelect = document.querySelector('.interface-language');
     if (this._localeSelect) {
       this._localeSelect.value = getLocale();
@@ -27,7 +32,10 @@ export class LocaleMethods {
   _changeLocale(value) {
     if (!isLocale(value) || value === getLocale()) return;
     setLocale(value);
-    document.documentElement.lang = getLocale();
+    if (window.location.hash === '#editor') {
+      document.documentElement.lang = getLocale();
+      document.title = getLocale() === 'en' ? 'Mojian Markdown' : '墨笺 Markdown';
+    }
     translateChrome(document);
     this._applyTheme();
     this._buildPaperPicker();

@@ -1,3 +1,6 @@
+import { initLandingNavigation } from './landing/navigation';
+import { syncDesktopLanding } from './landing/desktopLanding';
+
 let editorEntryPromise: Promise<unknown> | null = null;
 
 function loadEditorEntry() {
@@ -6,8 +9,10 @@ function loadEditorEntry() {
 }
 
 function loadEditorForCurrentRoute() {
+  syncDesktopLanding();
   if (window.location.hash === '#editor') void loadEditorEntry();
 }
 
+initLandingNavigation();
 loadEditorForCurrentRoute();
 window.addEventListener('hashchange', loadEditorForCurrentRoute);

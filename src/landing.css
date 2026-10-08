@@ -440,3 +440,35 @@ body.editor-active #landing-page { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .landing-button:hover { transform: none; }
 }
+
+/* Locale links remain readable without JavaScript and at narrow/zoomed widths. */
+.landing-nav { position: sticky; height: auto; min-height: 72px; flex-wrap: wrap; padding-top: 12px; padding-bottom: 12px; }
+.landing-languages { display: flex; gap: 4px 12px; flex-wrap: wrap; }
+.landing-languages a { color: var(--landing-muted); padding: 8px 2px; text-underline-offset: 5px; }
+.landing-languages a[aria-current] { color: var(--landing-accent); text-decoration-thickness: 2px; }
+#landing-page a:focus-visible { outline: 2px solid var(--landing-accent); outline-offset: 4px; }
+#landing-page .landing-hero { padding-top: 48px; }
+#landing-page .hero-product { grid-template-columns: 1fr 1fr; }
+#landing-page .hero-source, #landing-page .hero-preview { min-width: 0; }
+#landing-page .hero-source pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+#landing-page .hero-preview { border-right: 0; }
+#landing-page .landing-button { white-space: normal; text-align: center; line-height: 1.4; padding-top: 10px; padding-bottom: 10px; }
+#landing-page .edition-card { overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+  .landing-nav { gap: 8px; }
+  .landing-languages { order: 3; flex-basis: 100%; justify-content: center; }
+  .landing-brand-name { font-size: 18px; }
+  .landing-open { margin-left: auto; }
+  #landing-page .hero-product { grid-template-columns: 1fr; }
+  #landing-page .hero-source { display: none; }
+}
+@media (max-width: 380px) { .landing-open { flex-basis: 100%; } }
+/* Long Latin product names and translated headings must reflow at 200% zoom. */
+#landing-page h1, #landing-page h2, #landing-page h3 { overflow-wrap: anywhere; }
+#landing-page .edition-card a:not(.landing-button) { color: var(--landing-accent); text-underline-offset: 3px; }
+@media (max-width: 760px) {
+  /* Decorative preview text must not compete with the primary copy on phones. */
+  #landing-page .hero-product { display: none; }
+  #landing-page .landing-hero { min-height: 0; padding-bottom: 72px; }
+  #landing-page .landing-copy { padding-top: 12px; }
+}

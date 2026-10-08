@@ -145,6 +145,14 @@ test('输入 Markdown 后预览实时渲染', async ({ page }) => {
 - `aiReadinessScenario.ts` runs in both source Electron and the isolated Windows package. The fake CLI writes a marker if accidentally invoked; readiness must never create it. The scenario covers a missing channel, continued file editing/write-through/preview, channel switching, rechecking and unverified login text without provider requests.
 - This tranche depends on the merged persistence, shell-free CLI and desktop credential boundaries (#21–24). It does not install CLIs, log in, test live accounts, validate real Keychain/DPAPI, produce signed installers or authorize a release. Runtime launch/authentication can still fail after filesystem discovery; only an explicit question or Gemini test contacts a provider.
 
+## Localized landing pages
+
+- `landing.test.ts` checks four-language copy rendering, share metadata and base-aware routes. `scripts/check-landing-build.mjs` checks the emitted `/zh-CN/`, `/zh-TW/`, `/en/` and `/ja/` HTML, canonical/hreflang, and bundled asset paths after `npm run build` or `npm run build:bridge`.
+- The existing public base is `https://yuxizhai.com/md-editor/` (README). These routes are build outputs; a PR does not deploy them. Root `/` and `#editor` links remain supported.
+- `npx playwright test --config playwright.landing.config.ts` tests the built output with JavaScript disabled, browser Back/Forward, explicit versus saved language, pending draft preservation, native-root language navigation (preload-presence mock), keyboard access, and 200% CSS zoom on a narrow viewport. The Interface locales workflow uploads screenshots from the actual app alongside its native locale/restart tests.
+- Browser locale links use same-document navigation after JavaScript loads, retaining a mounted editor and unsaved debounce state. A fresh editor uses its saved UI language first, then an explicit route language, then browser language. Landing language never rewrites a saved document or an existing editor's language.
+- Electron keeps landing locale changes in root-document hashes rather than widening native navigation/IPC trust. Browser preload mocks do not replace the real native tests, and these checks do not establish installer signing, SmartScreen/Gatekeeper acceptance, or real AI-provider readiness.
+
 ## Localized first-open samples
 
 - `sample.test.ts` covers Simplified/Traditional Chinese, English and Japanese example content, localized initial filenames, Windows/Linux Ctrl hints, macOS Command hints, and literal fenced-code interpolation.

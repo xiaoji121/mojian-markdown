@@ -3,52 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="墨笺 Markdown 是源码开放的 Markdown 阅读与评注工作台：实时预览、划线批注、本地缓存与导入导出；本地完整版还包含最近阅读列表与 AI 问答，另有 Electron 桌面端支持本地文件双向同步。本站为线上体验版。">
 <meta name="robots" content="index, follow">
-<meta name="author" content="墨笺 Markdown">
-<meta name="application-name" content="墨笺 Markdown">
 <meta name="theme-color" content="#1a1b1d">
-<title>墨笺 Markdown｜阅读、批注与本地保存</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<meta property="og:type" content="website">
-<meta property="og:locale" content="zh_CN">
-<meta property="og:site_name" content="墨笺 Markdown">
-<meta property="og:title" content="墨笺 Markdown｜阅读、批注与本地保存">
-<meta property="og:description" content="源码开放的 Markdown 阅读与评注工作台：实时预览、划线批注、本地缓存；本地完整版含最近阅读列表与 AI 问答。">
-<meta property="og:image" content="/og-image.png">
-<meta property="og:image:type" content="image/png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="墨笺 Markdown 编辑器界面预览">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="墨笺 Markdown｜阅读、批注与本地保存">
-<meta name="twitter:description" content="直接编辑、实时预览、划线批注，把 Markdown 变成可复用的学习材料。">
-<meta name="twitter:image" content="/og-image.png">
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "墨笺 Markdown",
-  "applicationCategory": "ProductivityApplication",
-  "operatingSystem": "Web, macOS",
-  "description": "墨笺 Markdown 是源码开放的 Markdown 阅读与评注工作台，支持实时预览、划线批注、本地缓存与导入导出；本地完整版包含最近阅读列表与 AI 问答。",
-  "inLanguage": "zh-CN",
-  "isAccessibleForFree": true,
-  "license": "https://polyformproject.org/licenses/noncommercial/1.0.0",
-  "sameAs": ["https://github.com/xiaoji121/mojian-markdown"],
-  "featureList": [
-    "Markdown 实时编辑与预览",
-    "预览区划线批注",
-    "浏览器本地缓存",
-    "Markdown 文件导入导出",
-    "全文与批注复制",
-    "预览保存为可分享长图",
-    "最近阅读列表（本地完整版）",
-    "AI 问答（本地完整版）",
-    "桌面端应用：本地文件双向同步与文件关联（Electron，源码构建）"
-  ]
-}
-</script>
+<!-- landing-meta:start -->
+<!-- Rendered at dev/build time; each locale has real HTML metadata. -->
+<!-- landing-meta:end -->
 <link rel="stylesheet" href="/src/theme/tokens.css">
 <link rel="stylesheet" href="/src/landing.css">
 <script>
@@ -57,8 +17,11 @@
     var wasEditing = document.body.classList.contains('editor-active');
     document.body.classList.toggle('editor-active', editing);
     document.title = editing
-      ? '墨笺 Markdown'
-      : '墨笺 Markdown｜阅读、批注与本地保存';
+      ? ((document.querySelector('.interface-language')?.value || document.documentElement.dataset.landingLocale) === 'en' ? 'Mojian Markdown' : '墨笺 Markdown')
+      : document.documentElement.dataset.landingTitle;
+    document.documentElement.lang = editing
+      ? (document.querySelector('.interface-language')?.value || document.documentElement.dataset.landingLocale)
+      : document.documentElement.dataset.landingLocale;
     // 只在进出编辑器时回到顶部；落地页内部锚点（#editions/#desktop）交给浏览器定位。
     if (editing !== wasEditing) window.scrollTo(0, 0);
   }
@@ -83,228 +46,7 @@
     } catch (e) {}
   })();
 </script>
-<main id="landing-page">
-  <nav class="landing-nav" aria-label="首页导航">
-    <a class="landing-brand" href="#" aria-label="墨笺首页">
-      <span class="landing-brand-mark">墨</span>
-      <span class="landing-brand-name">墨笺 Markdown</span>
-    </a>
-    <span class="landing-nav-note">READ · ANNOTATE · SAVE</span>
-    <a class="landing-button" href="#editor">打开编辑器</a>
-  </nav>
-
-  <section class="landing-hero" aria-label="墨笺 Markdown 产品介绍">
-    <div class="hero-product" aria-hidden="true">
-      <div class="hero-sidebar">
-        <span class="sidebar-title">最近阅读</span>
-        <span class="doc active">产品方案.md<small>3 批注 · 2 问答</small></span>
-        <span class="child">└ 问答：目标用户是谁？</span>
-        <span class="doc">学习笔记.md<small>8 批注 · 已归档</small></span>
-        <span class="doc">接口设计.md<small>5 批注 · 1 问答</small></span>
-      </div>
-      <div class="hero-source">
-        <span class="pane-label">Markdown 原文</span>
-        <pre>## 产品愿景
-
-通过阅读、划线和评注，
-把一篇 Markdown 变成可复用的学习资产。
-
-> 重点不是写完，
-> 而是读懂、评注、沉淀。</pre>
-      </div>
-      <div class="hero-preview">
-        <span class="pane-label">预览 · 仅阅读</span>
-        <h2>产品愿景</h2>
-        <p>通过阅读、划线和提问，把一篇 Markdown 变成可复用的学习资产。</p>
-        <p><mark>重点不是写完，而是读懂、评注、沉淀。</mark></p>
-        <div class="comment-pop">
-          <strong>批注 03</strong>
-          <span>这句话可以作为章节结论。</span>
-        </div>
-      </div>
-      <div class="hero-ai">
-        <span class="pane-label">AI 阅读助手</span>
-        <p class="quote">“重点不是写完，而是读懂、评注、沉淀。”</p>
-        <p class="answer">这句话强调阅读的产出是理解而不是文本。这次问答会和批注一起归档进阅读工作区，之后可以随时回看。</p>
-      </div>
-    </div>
-
-    <div class="landing-copy">
-      <span class="landing-eyebrow">Source-Available Markdown Reading Workspace</span>
-      <h1>墨笺 Markdown</h1>
-      <p class="landing-lead">
-        直接编辑、实时预览、划线批注；配合本地 Agent Bridge，还能把每篇文档的阅读记录和 AI 问答沉淀成自己的阅读工作区。
-      </p>
-      <div class="landing-actions">
-        <a class="landing-button primary" href="#editor">在线体验编辑与批注</a>
-        <a class="landing-button ghost" href="https://github.com/xiaoji121/mojian-markdown" target="_blank" rel="noopener">GitHub 源码仓库 ↗</a>
-      </div>
-      <p class="landing-demo-note">
-        当前站点是<strong>线上体验版</strong>：包含编辑、预览、批注和本地缓存；左侧最近阅读列表与 AI 问答依赖本地 Agent Bridge，需<a href="#editions">本地运行源码完整版</a>。
-      </p>
-      <div class="landing-trust" aria-label="关键条件">
-        <span>非商业许可</span>
-        <span>无需安装</span>
-        <span>浏览器本地缓存</span>
-        <span>可导入导出</span>
-      </div>
-    </div>
-  </section>
-
-  <section id="workflow" class="landing-section workflow-section">
-    <div class="landing-wrap">
-      <div class="landing-section-head">
-        <span class="landing-eyebrow">Workflow</span>
-        <h2>从打开文档，到形成自己的理解。</h2>
-      </div>
-      <div class="workflow-grid">
-        <article class="workflow-item">
-          <span>01</span>
-          <h3>直接编辑，实时生效</h3>
-          <p>Markdown 原文和预览同步更新，预览区也可以直接编辑，接近所见即所得。</p>
-        </article>
-        <article class="workflow-item">
-          <span>02</span>
-          <h3>双击双向定位</h3>
-          <p>双击 Markdown 内容可定位预览位置；双击预览内容，也能回到对应原文。</p>
-        </article>
-        <article class="workflow-item">
-          <span>03</span>
-          <h3>划线批注</h3>
-          <p>选中文字后添加马克笔、波浪线、直线或想法，把评注集中收进批注面板。</p>
-        </article>
-        <article class="workflow-item">
-          <span>04</span>
-          <h3>本地缓存，随时继续</h3>
-          <p>当前文章、文件名、字号、主题和批注会保存在浏览器本地，下次打开页面可以继续阅读。</p>
-        </article>
-        <article class="workflow-item">
-          <span>05</span>
-          <span class="full-tag">完整版</span>
-          <h3>选中即问 AI</h3>
-          <p>选中一段原文向 AI 提问，回答会结合整篇文档；每次问答自动归档为该文档的子节点。</p>
-        </article>
-        <article class="workflow-item">
-          <span>06</span>
-          <span class="full-tag">完整版</span>
-          <h3>最近阅读列表</h3>
-          <p>本地 Agent Bridge 维护阅读工作区：读过的文档和问答记录都在左侧列表里，随时重新打开。</p>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <section class="landing-section study-section">
-    <div class="landing-wrap study-layout">
-      <div>
-        <span class="landing-eyebrow">For Study</span>
-        <h2>让 Markdown 变成可以评注的学习材料。</h2>
-        <p>墨笺适合阅读方案、接口文档、论文笔记和课程材料。你可以在原文上留下疑问、理解和反例，把一次阅读变成后续可回看的学习材料。</p>
-      </div>
-      <div class="study-panel" aria-label="评注示例">
-        <div class="study-row"><b>原文</b><span>用户无法切换组织管控</span></div>
-        <div class="study-row mark"><b>批注</b><span>这里需要确认权限边界和灰度范围。</span></div>
-        <div class="study-row ai"><b>整理</b><span>复制全文和批注后，可继续放进自己的知识库或 AI 工具里处理。</span></div>
-      </div>
-    </div>
-  </section>
-
-  <section id="editions" class="landing-section editions-section">
-    <div class="landing-wrap">
-      <div class="landing-section-head">
-        <span class="landing-eyebrow">Editions · Source Available</span>
-        <h2>线上是体验版，完整能力在源码版里。</h2>
-      </div>
-      <div class="edition-grid">
-        <article class="edition-card">
-          <span class="edition-tag">线上体验版 · 当前站点</span>
-          <h3>打开网页就能用</h3>
-          <p>纯静态应用，不需要 Node、Agent Bridge 或 Claude。文章和批注写入浏览器 <code>localStorage</code>，重要内容建议用「保存」或「复制全文+批注」导出备份。</p>
-          <ul class="edition-list">
-            <li class="yes">直接编辑与实时预览</li>
-            <li class="yes">双击双向定位</li>
-            <li class="yes">划线批注与批注面板</li>
-            <li class="yes">预览保存为长图</li>
-            <li class="yes">本地缓存、导入导出</li>
-            <li class="no">最近阅读列表</li>
-            <li class="no">AI 问答</li>
-          </ul>
-          <a class="landing-button" href="#editor">打开体验版</a>
-        </article>
-        <article class="edition-card full">
-          <span class="edition-tag accent">源码完整版 · 本地运行</span>
-          <h3>体验版全部能力，加上你的阅读工作区</h3>
-          <p>克隆仓库在本地运行：Agent Bridge 会维护最近阅读列表，配合 <code>claude</code> CLI 获得 AI 问答。非商业使用按 PolyForm Noncommercial 1.0.0 授权，商业使用需取得书面许可。</p>
-          <ul class="edition-list">
-            <li class="yes">体验版全部功能</li>
-            <li class="yes">最近阅读列表：文档与问答随时回看</li>
-            <li class="yes">AI 问答：结合选中原文与整篇文档回答</li>
-            <li class="yes">问答自动归档为文档子节点</li>
-          </ul>
-          <pre class="edition-code">git clone https://github.com/xiaoji121/mojian-markdown
-cd mojian-markdown &amp;&amp; npm install &amp;&amp; npm run dev</pre>
-          <a class="landing-button primary" href="https://github.com/xiaoji121/mojian-markdown" target="_blank" rel="noopener">前往 GitHub ↗</a>
-          <p class="edition-desktop-link">更喜欢独立应用？<a href="#desktop">看看桌面端 ↓</a></p>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <section id="desktop" class="landing-section desktop-section">
-    <div class="landing-wrap">
-      <div class="landing-section-head">
-        <span class="landing-eyebrow">Desktop · Electron</span>
-        <h2>装进桌面，和本地文件真正长在一起。</h2>
-        <p class="desktop-note">桌面端随源码仓库提供，能力与源码完整版一致，并补上浏览器给不了的本地体验（当前在 macOS 上构建与验证）。</p>
-      </div>
-      <div class="workflow-grid">
-        <article class="workflow-item">
-          <span>OPEN</span>
-          <h3>双击 .md 直接打开</h3>
-          <p>系统级文件关联与原生打开 / 保存对话框，拿到真实文件路径，不受浏览器沙箱限制。</p>
-        </article>
-        <article class="workflow-item">
-          <span>SYNC</span>
-          <h3>本地文件双向同步</h3>
-          <p>外部程序改动秒级自动重载，编辑自动写穿回文件；有冲突时以你的显式保存为准。</p>
-        </article>
-        <article class="workflow-item">
-          <span>RESUME</span>
-          <h3>重启接续上次阅读</h3>
-          <p>启动即恢复最近一篇文档，并重建与本地文件的同步关联，批注和问答一起回来。</p>
-        </article>
-        <article class="workflow-item">
-          <span>IMAGES</span>
-          <h3>本地图片直接预览</h3>
-          <p><code>../assets/图.png</code> 这类相对路径引用，按文档所在目录解析后直接在预览里显示。</p>
-        </article>
-        <article class="workflow-item">
-          <span>BRIDGE</span>
-          <h3>内嵌 Agent Bridge</h3>
-          <p>最近阅读列表与 AI 问答开箱即用，不需要再单独启动本地服务。</p>
-        </article>
-        <article class="workflow-item">
-          <span>NATIVE</span>
-          <h3>原生菜单与快捷键</h3>
-          <p>文件菜单（新建 / 打开 / 保存 / 另存为）与系统快捷键一致，文件授权一次永久有效。</p>
-        </article>
-      </div>
-      <div class="desktop-run">
-        <pre class="edition-code">git clone https://github.com/xiaoji121/mojian-markdown
-cd mojian-markdown &amp;&amp; npm install
-npm run desktop          # 构建并启动桌面端
-npm run build:desktop    # 打包安装程序（macOS）</pre>
-        <p class="desktop-run-note">暂未提供现成安装包——签名、Windows 构建与自动更新在<a href="https://github.com/xiaoji121/mojian-markdown/blob/main/docs/DESKTOP_ROADMAP.md" target="_blank" rel="noopener">公开路线图</a>中推进。</p>
-      </div>
-    </div>
-  </section>
-
-  <footer class="landing-wrap landing-footer">
-    <span>© 2026 Dongming Ji · 保留未明确授予的权利</span>
-    <span>为认真阅读和评注 Markdown 的人而做。</span>
-    <a class="landing-footer-link" href="https://github.com/xiaoji121/mojian-markdown/blob/main/LICENSING.md" target="_blank" rel="noopener">非商业许可与商业授权说明 ↗</a>
-  </footer>
-</main>
+<main id="landing-page"></main>
 
 <template id="__bundler_thumbnail" data-bg-color="#14110d">
   <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">

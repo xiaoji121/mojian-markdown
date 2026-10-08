@@ -26,6 +26,8 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: node --experimental-strip-types --test tests/unit/i18n.test.ts tests/unit/desktopLocale.test.ts tests/unit/aiLocale.test.ts tests/unit/featureMessages.test.ts tests/unit/localReadingFont.test.ts
       - run: npm run build:bridge
+      - name: Verify prerendered locale HTML and asset paths
+        run: node scripts/check-landing-build.mjs
       - name: Install CJK system fonts for screenshots
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y fonts-noto-cjk
@@ -42,6 +44,9 @@ jobs:
       - name: Web locale persistence and layout screenshots
         if: runner.os == 'Linux'
         run: npx playwright test tests/e2e/interfaceLocale.spec.ts tests/e2e/local-reading-font.spec.ts tests/e2e/localized-sample.spec.ts --output=test-results/web
+      - name: Built landing locale navigation and no-JS screenshots
+        if: runner.os == 'Linux'
+        run: npx playwright test --config playwright.landing.config.ts --output=test-results/landing
       - uses: actions/upload-artifact@v4
         if: always()
         with:
