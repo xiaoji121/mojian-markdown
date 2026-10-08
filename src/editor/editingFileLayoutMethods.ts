@@ -570,7 +570,8 @@ export class EditingFileLayoutMethods {
   async onSaveAs() {
     const save = () => this._saveAsSnapshot();
     try {
-      if (this._queueLocalFileWrite) await this._queueLocalFileWrite(save);
+      // Browser pickers need the original user gesture; native dialogs do not.
+      if (window.mojianDesktop && this._queueLocalFileWrite) await this._queueLocalFileWrite(save);
       else await save();
     } catch (e) { this._setStatus('另存为失败：' + (e.message || e)); }
   }

@@ -380,3 +380,13 @@ test('desktop Save As keeps newer typing dirty after dialog/disk delay', async (
     assert.equal(written, 'old'); assert.deepEqual(captured, { content: 'newer typing', dirty: true });
   } finally { release(); globalThis.window = previous; }
 });
+
+test('browser Save As invokes its picker immediately in the user gesture', async () => {
+  const previous = globalThis.window; globalThis.window = {};
+  const ctx = createEditor(createSource('draft', 0)); let opened = false;
+  ctx._saveAsSnapshot = () => { opened = true; return Promise.resolve(); };
+  ctx._queueLocalFileWrite = () => { throw new Error('picker must not wait behind pending disk writes'); };
+  ctx._setStatus = () => {};
+  try { const saving = ctx.onSaveAs(); assert.equal(opened, true); await saving; }
+  finally { globalThis.window = previous; }
+});

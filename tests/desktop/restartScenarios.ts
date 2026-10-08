@@ -2,6 +2,7 @@ import { _electron as electron, expect, test, type ElectronApplication, type Pag
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import type { ChildProcess } from 'node:child_process';
 
 // Share the exact regression flows between development Electron and the real
 // Windows package. Each test owns a fresh profile, workspace, and credential-free
@@ -12,7 +13,7 @@ async function createSession(executablePath?: string) {
   const home = join(root, 'empty-home');
   const emptyPath = join(root, 'empty-bin');
   await Promise.all([mkdir(userData), mkdir(home), mkdir(emptyPath)]);
-  let current: ElectronApplication | undefined;
+  let child: ChildProcess | undefined;
   const env: Record<string, string> = {};
   for (const key of ['SystemRoot', 'SYSTEMROOT', 'WINDIR', 'COMSPEC', 'TEMP', 'TMP',
     'DISPLAY', 'WAYLAND_DISPLAY', 'XDG_RUNTIME_DIR', 'DBUS_SESSION_BUS_ADDRESS', 'LANG']) {
@@ -27,10 +28,11 @@ async function createSession(executablePath?: string) {
   return {
     root,
     async launch() {
-      current = await electron.launch({
+      const current = await electron.launch({
         ...(executablePath ? { executablePath, cwd: root } : {}),
         args: executablePath ? [] : ['.'], env
       });
+      child = current.process();
       if (executablePath) expect(await current.evaluate(({ app }) => app.isPackaged)).toBe(true);
       const page = await current.firstWindow();
       await expect(page.locator('.md-source')).toBeVisible({ timeout: 15_000 });
@@ -38,13 +40,18 @@ async function createSession(executablePath?: string) {
     },
     async dispose() {
       // Forced cleanup is only for failures; every tested restart uses real close.
-      const child = current?.process();
-      if (child && child.exitCode === null && child.signalCode === null) {
-        const exited = new Promise<void>((resolve) => child.once('exit', () => resolve()));
-        child.kill('SIGKILL');
-        await exited;
+      try {
+        if (child && child.exitCode === null && child.signalCode === null) {
+          const exited = new Promise<void>((resolve) => child!.once('exit', () => resolve()));
+          child.kill('SIGKILL');
+          await exited;
+        }
+        await rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+      } catch (error) {
+        // Windows antivirus/Chromium may hold a profile briefly after exit. Keep
+        // the test's actual assertion failure visible rather than replacing it.
+        test.info().annotations.push({ type: 'cleanup', description: String(error) });
       }
-      await rm(root, { recursive: true, force: true });
     }
   };
 }
@@ -93,11 +100,17 @@ async function openSettings(page: Page) {
 
 async function addAnnotation(page: Page) {
   const paragraph = page.locator('.md-preview p').first();
-  const box = (await paragraph.boundingBox())!;
-  await page.mouse.move(box.x + 2, box.y + box.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(box.x + Math.min(box.width - 4, 160), box.y + box.height / 2, { steps: 6 });
-  await page.mouse.up();
+  // DOM range avoids font-dependent mouse coordinates on Windows; the actual
+  // selection event, annotation toolbar and note editor still run normally.
+  await paragraph.evaluate((element) => {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    const selection = window.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+    element.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+  });
+  await expect(page.locator('.selection-toolbar')).toBeVisible();
   await page.getByRole('button', { name: /写想法/ }).click();
   await expect(page.locator('.comments-panel .comment-quote')).toHaveCount(1);
   await page.locator('.comment-note-input').fill('重启后保留的想法');
@@ -137,6 +150,11 @@ export function registerRestartScenarios(label: string, executablePath?: string)
       await openSettings(page);
       await expect(page.getByRole('radio', { name: /Gemini/ })).toHaveAttribute('aria-checked', 'true');
       await closeEditorWindow(app);
+    } catch (error) {
+      await test.info().attach('original failure', {
+        body: String(error instanceof Error ? error.stack : error), contentType: 'text/plain'
+      }).catch(() => {});
+      throw error;
     } finally {
       await session.dispose();
     }
@@ -179,6 +197,11 @@ export function registerRestartScenarios(label: string, executablePath?: string)
       ({ app, page } = await session.launch());
       await expect(page.locator('.md-source')).toHaveValue(content);
       await closeEditorWindow(app);
+    } catch (error) {
+      await test.info().attach('original failure', {
+        body: String(error instanceof Error ? error.stack : error), contentType: 'text/plain'
+      }).catch(() => {});
+      throw error;
     } finally {
       await session.dispose();
     }
@@ -205,6 +228,11 @@ export function registerRestartScenarios(label: string, executablePath?: string)
       await writeFile(path, '# 外部更新\n\n再次启动后仍然监视同一个文件\n', 'utf8');
       await expect(page.locator('.md-source')).toHaveValue(/仍然监视同一个文件/, { timeout: 10_000 });
       await closeEditorWindow(app);
+    } catch (error) {
+      await test.info().attach('original failure', {
+        body: String(error instanceof Error ? error.stack : error), contentType: 'text/plain'
+      }).catch(() => {});
+      throw error;
     } finally {
       await session.dispose();
     }
