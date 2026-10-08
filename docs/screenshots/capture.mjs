@@ -1,7 +1,8 @@
 // Capture the actual app; only document content and Bridge responses are fixtures.
 import { chromium, expect } from '@playwright/test';
 import { createServer } from 'vite';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { marked } from 'marked';
 import { execFileSync } from 'node:child_process';
 
 const output = process.env.SCREENSHOT_OUTPUT || 'docs/images';
@@ -45,7 +46,7 @@ const quote = '阅读的价值，不在于记住每一句话，而在于建立�
 const stamp = '2026-10-08T08:30:00.000Z';
 const documentId = 'readme-demo';
 const doc = { documentId, fileName: '阅读与思考.md', title: '阅读与思考', content: markdown,
-  updatedAt: stamp, annotationCount: 1, questionCount: 0, answerDocuments: [] };
+  updatedAt: stamp, annotationCount: 0, questionCount: 0, answerDocuments: [] };
 const state = { content: markdown, fileName: doc.fileName, fontSize: 18, theme: 'dark',
   paperDark: 'ink', paperLight: 'parchment', comments: [], aiEngine: 'codex',
   bridgeDocumentId: documentId, aiPanelWidth: 420 };
@@ -67,10 +68,14 @@ try {
       providers: { codex: { executable: 'found' }, claude: { executable: 'missing' },
         gemini: { configured: false, storage: 'plaintext' } } });
     if (url.pathname === '/api/documents' && route.request().method() === 'GET') return json({ documents: [doc] });
-    if (url.pathname === '/api/documents') return json({ documentId });
+    if (url.pathname === '/api/documents') {
+      doc.annotationCount = route.request().postDataJSON()?.annotations?.length || 0;
+      return json({ documentId });
+    }
     if (url.pathname === '/api/history') return json({ documentId, messages: [] });
     if (url.pathname === '/api/conversations') return json({ conversations: [] });
     if (url.pathname === '/api/chat') {
+      doc.questionCount = 1;
       const answer = '**演示回答（非实时 AI 输出）**\n\n可以用三个动作，把阅读转化为自己的理解：\n\n1. **提出问题**：先明确想从文章中获得什么。\n2. **连接证据**：对照上下文，说明观点为什么成立。\n3. **用自己的话复述**：写下一个能在明天尝试的小行动。\n\n划线保留线索，批注记录思考；两者一起，才能让重读更有收获。';
       const event = (name, data) => `event: ${name}\ndata: ${JSON.stringify(data)}\n\n`;
       return route.fulfill({ contentType: 'text/event-stream', body:
@@ -136,6 +141,16 @@ try {
   await expect(page.getByRole('button', { name: '发送', exact: true })).toBeEnabled();
   await capture('ai-reading-assistant');
   if (errors.length) throw new Error(errors.join('\n'));
+  // Check the README as rendered HTML, with real repository-relative image URLs.
+  const readme = await context.newPage();
+  await readme.setContent('<base href="http://127.0.0.1:4750/"><style>body{max-width:960px;margin:40px auto;font:16px/1.6 sans-serif}img{max-width:100%}table{width:100%}td{vertical-align:top}pre{white-space:pre-wrap}</style>' + marked.parse(await readFile('README.md', 'utf8')));
+  const images = readme.locator('img');
+  await expect(images).toHaveCount(6);
+  for (const image of await images.all()) {
+    await expect.poll(() => image.evaluate((img) => img.complete && img.naturalWidth === 1440 && img.naturalHeight === 960)).toBe(true);
+  }
+  await readme.screenshot({ path: `${output}/readme-preview.jpg`, fullPage: true, type: 'jpeg', quality: 85 });
+
   await writeFile(`${output}/capture-manifest.json`, JSON.stringify({ sourceCommit:
     execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), viewport: { width: 1440, height: 960 },
     browser: await browser.version(), files: captured, syntheticData: true, liveAI: false }, null, 2) + '\n');

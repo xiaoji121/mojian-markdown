@@ -1,0 +1,18 @@
+{
+  "sourceCommit": "71c0614e4a7845fd6cfd919a0ccfa886ca11f9b0",
+  "viewport": {
+    "width": 1440,
+    "height": 960
+  },
+  "browser": "149.0.7827.55",
+  "files": [
+    "editor-split-view",
+    "selection-toolbar",
+    "annotation-panel",
+    "immersive-parchment",
+    "immersive-green",
+    "ai-reading-assistant"
+  ],
+  "syntheticData": true,
+  "liveAI": false
+}
