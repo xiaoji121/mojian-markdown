@@ -1,0 +1,111 @@
+name: Unsigned TEST installers
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-installers-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  installers:
+    name: TEST ${{ matrix.platform }} ${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: win
+            arch: x64
+            runner: windows-2025
+          - platform: mac
+            arch: arm64
+            runner: macos-15
+          - platform: mac
+            arch: x64
+            runner: macos-15-intel
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 35
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Verify native architecture and set TEST versions
+        shell: bash
+        run: |
+          node -e "if(process.arch !== '${{ matrix.arch }}') throw Error('Runner architecture mismatch')"
+          echo "TEST_VERSION=1.0.0-test.${GITHUB_RUN_NUMBER}.1" >> "$GITHUB_ENV"
+          echo "UPGRADE_VERSION=1.0.0-test.${GITHUB_RUN_NUMBER}.2" >> "$GITHUB_ENV"
+      - name: Use stable npm
+        run: |
+          npm install -g npm@11.12.1
+          npm config set registry https://registry.npmmirror.com
+          npm config set replace-registry-host always
+      - name: Install clean locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Packaging contracts
+        run: node --experimental-strip-types --test tests/unit/desktopPackaging.test.ts tests/unit/testInstallerPackaging.test.ts
+      - name: Build frontend without font downloads
+        run: npm run build:bridge
+      - name: Gather complete license texts
+        run: node scripts/test-installer-notices.mjs
+      - name: Build unsigned installer (never publish)
+        shell: bash
+        run: npx electron-builder --config desktop/electron-builder.test.cjs --${{ matrix.platform }} --${{ matrix.arch }} --publish never -c.extraMetadata.version="$TEST_VERSION"
+      - name: Build newer Windows upgrade candidate (never publish)
+        if: matrix.platform == 'win'
+        shell: bash
+        run: npx electron-builder --config desktop/electron-builder.test.cjs --win --x64 --publish never -c.extraMetadata.version="$UPGRADE_VERSION"
+      - name: Audit real packaged contents
+        shell: bash
+        run: |
+          if [ '${{ matrix.platform }}' = win ]; then
+            node scripts/test-installer-audit.mjs release/win-unpacked/resources
+          elif [ '${{ matrix.arch }}' = arm64 ]; then
+            node scripts/test-installer-audit.mjs 'release/mac-arm64/Mojian Markdown TEST.app/Contents/Resources'
+          else
+            node scripts/test-installer-audit.mjs 'release/mac/Mojian Markdown TEST.app/Contents/Resources'
+          fi
+      - name: Install, launch, persist, restart and upgrade/uninstall smoke
+        shell: bash
+        run: |
+          ext=dmg
+          if [ '${{ matrix.platform }}' = win ]; then ext=exe; fi
+          export MOJIAN_INSTALLER_PATH="$GITHUB_WORKSPACE/release/Mojian-Markdown-${TEST_VERSION}-TEST-${{ matrix.platform }}-${{ matrix.arch }}.${ext}"
+          if [ '${{ matrix.platform }}' = win ]; then
+            export MOJIAN_UPGRADE_INSTALLER_PATH="$GITHUB_WORKSPACE/release/Mojian-Markdown-${UPGRADE_VERSION}-TEST-win-x64.exe"
+          fi
+          node scripts/installer-smoke.mjs
+      - name: Produce SHA-256 and scope disclosure
+        env:
+          GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/test-installer-artifacts.mjs
+      - name: Upload verified unsigned TEST installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mojian-Markdown-TEST-${{ env.TEST_VERSION }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ github.run_attempt }}
+          path: |
+            release/*-TEST-*.exe
+            release/*-TEST-*.dmg
+            release/SHA256SUMS.txt
+            release/TEST-BUILD.txt
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-installer-evidence-${{ matrix.platform }}-${{ matrix.arch }}
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
