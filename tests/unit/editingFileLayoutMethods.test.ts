@@ -145,7 +145,7 @@ test('另存为总是弹出保存对话框并接上新文件句柄（桌面端�
     // 已有关联句柄也不允许原地写入：另存为必须走对话框
     editor.fileHandle = { createWritable: () => { throw new Error('另存为不应原地写入'); } };
     const attached: Array<{ desktopPath?: string }> = [];
-    editor._attachLocalFile = async (handle: { desktopPath?: string }) => { attached.push(handle); };
+    editor._attachLocalFile = async (handle: { desktopPath?: string }) => { attached.push(handle); editor.fileHandle = handle; };
     editor._setFileName = (name: string) => { editor.fileName = name; };
     editor._setDirty = () => {};
     editor._autosave = () => {};
@@ -342,4 +342,41 @@ test('_cleanOpenedMarkdown 把不换行空格归一化为普通空格', async ()
   const cleaned = editor._cleanOpenedMarkdown('Wealth\u00A0is\u00A0assets\u00A0that\u00A0earn');
 
   assert.equal(cleaned, 'Wealth is assets that earn');
+});
+
+test('manual save never marks typing during disk I/O as saved', async () => {
+  const src = createSource('old', 0); const ctx = createEditor(src);
+  let release; const blocked = new Promise((resolve) => { release = resolve; });
+  let disk = '', captured;
+  ctx.dirty = true; ctx.fileName = 'note.md';
+  ctx.fileHandle = { async createWritable() { return {
+    async write(value) { disk = value; }, async close() { await blocked; }
+  }; } };
+  ctx._setDirty = (value) => { ctx.dirty = value; };
+  ctx._setStatus = () => {}; ctx._updateLocalFileBaseline = async () => {};
+  ctx._autosave = () => { captured = { content: src.value, dirty: ctx.dirty }; };
+  const saving = ctx.onSave();
+  await new Promise((resolve) => setImmediate(resolve));
+  src.value = 'new typed while saving'; release(); await saving;
+  assert.equal(disk, 'old');
+  assert.deepEqual(captured, { content: 'new typed while saving', dirty: true });
+});
+
+test('desktop Save As keeps newer typing dirty after dialog/disk delay', async () => {
+  const src = createSource('old', 0); const ctx = createEditor(src);
+  let release; const blocked = new Promise((resolve) => { release = resolve; });
+  const previous = globalThis.window; let written, captured;
+  globalThis.window = { mojianDesktop: { async saveMarkdownFileAs(_name, value) {
+    written = value; await blocked; return { path: '/note.md', name: 'note.md' };
+  } } };
+  ctx.fileName = '未命名.md'; ctx._setFileName = (name) => { ctx.fileName = name; };
+  ctx._attachLocalFile = async (handle) => { ctx.fileHandle = handle; };
+  ctx._setDirty = (value) => { ctx.dirty = value; }; ctx._setStatus = () => {};
+  ctx._autosave = () => { captured = { content: src.value, dirty: ctx.dirty }; };
+  try {
+    const saving = ctx.onSaveAs();
+    await new Promise((resolve) => setImmediate(resolve));
+    src.value = 'newer typing'; release(); await saving;
+    assert.equal(written, 'old'); assert.deepEqual(captured, { content: 'newer typing', dirty: true });
+  } finally { release(); globalThis.window = previous; }
 });

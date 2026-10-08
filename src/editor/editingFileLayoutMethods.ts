@@ -545,35 +545,51 @@ export class EditingFileLayoutMethods {
   async onSave() {
     const src = this.sourceRef.current;
     if (!src) return;
-    if (this.fileHandle && this.fileHandle.createWritable) {
+    const handle = this.fileHandle;
+    if (!handle || !handle.createWritable) { await this.onSaveAs(); return; }
+    const content = src.value;
+    const save = async () => {
       try {
-        const w = await this.fileHandle.createWritable();
-        await w.write(src.value); await w.close();
-        // 手动保存即用户显式决定以编辑器内容为准：更新基线并解除冲突状态。
+        const w = await handle.createWritable();
+        await w.write(content); await w.close();
+        if (this.fileHandle !== handle) return;
         await this._updateLocalFileBaseline();
+        if (this.fileHandle !== handle) return;
         this._localFileConflict = false;
-        this._setDirty(false); this._autosave();
-        this._setStatus('✓ 已保存到 ' + this.fileName);
+        this._setDirty(src.value !== content);
+        this._autosave();
+        this._setStatus(this.dirty ? '已保存较早版本 · 最新修改仍待同步' : '✓ 已保存到 ' + this.fileName);
       } catch (e) { this._setStatus('保存失败：' + (e.message || e)); }
-      return;
-    }
-    // 还没有落盘目标：保存即另存为。
-    await this.onSaveAs();
+    };
+    if (this._queueLocalFileWrite) await this._queueLocalFileWrite(save);
+    else await save();
   }
 
 
   // 另存为：无视已关联的句柄，总是让用户挑一个新目标，保存后切换到新文件继续编辑。
   async onSaveAs() {
+    const save = () => this._saveAsSnapshot();
+    try {
+      if (this._queueLocalFileWrite) await this._queueLocalFileWrite(save);
+      else await save();
+    } catch (e) { this._setStatus('另存为失败：' + (e.message || e)); }
+  }
+
+  async _saveAsSnapshot() {
     const src = this.sourceRef.current;
     if (!src) return;
     const content = src.value;
+    const originalHandle = this.fileHandle, originalName = this.fileName;
+    const sameDocument = () => this.fileHandle === originalHandle && this.fileName === originalName;
     const suggested = this.fileName && this.fileName !== '未命名.md' ? this.fileName : 'document.md';
     if (window.mojianDesktop) {
       const saved = await window.mojianDesktop.saveMarkdownFileAs(suggested, content);
-      if (!saved) return;
+      if (!saved || !sameDocument()) return;
       this._setFileName(saved.name);
-      await this._attachLocalFile(createDesktopFileHandle(saved.path, saved.name));
-      this._setDirty(false);
+      const nextHandle = createDesktopFileHandle(saved.path, saved.name);
+      await this._attachLocalFile(nextHandle);
+      if (this.fileHandle !== nextHandle) return;
+      this._setDirty(src.value !== content);
       this._autosave();
       this._setStatus('✓ 已保存到 ' + saved.name);
       return;
@@ -586,9 +602,11 @@ export class EditingFileLayoutMethods {
         });
         const w = await handle.createWritable();
         await w.write(content); await w.close();
+        if (!sameDocument()) return;
         this._setFileName(handle.name);
         await this._attachLocalFile(handle);
-        this._setDirty(false); this._autosave();
+        if (this.fileHandle !== handle) return;
+        this._setDirty(src.value !== content); this._autosave();
         this._setStatus('✓ 已保存到 ' + handle.name);
       } catch (e) {}
       return;
@@ -599,7 +617,7 @@ export class EditingFileLayoutMethods {
     a.download = suggested;
     a.click();
     URL.revokeObjectURL(a.href);
-    this._setDirty(false);
+    this._setDirty(src.value !== content);
     this._setStatus('✓ 已下载 ' + a.download);
   }
 

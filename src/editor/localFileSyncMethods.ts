@@ -193,8 +193,12 @@ export class LocalFileSyncMethods {
 
 
   _maybeWriteThroughLocalFile() {
+    return this._queueLocalFileWrite(() => this._writeThroughLocalFile());
+  }
+
+  _queueLocalFileWrite(work) {
     const previous = this._localWritePromise || Promise.resolve();
-    const pending = previous.catch(() => {}).then(() => this._writeThroughLocalFile());
+    const pending = previous.catch(() => {}).then(work);
     this._localWritePromise = pending;
     return pending.finally(() => {
       if (this._localWritePromise === pending) this._localWritePromise = null;
