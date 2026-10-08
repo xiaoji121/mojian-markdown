@@ -1,4 +1,8 @@
 export const viewMessages: Record<string, [string, string, string]> = {
+  "阅读字体": ["閱讀字體", "Reading font", "本文フォント"],
+  "系统默认": ["系統預設", "System default", "システム標準"],
+  "系统衬线": ["系統襯線", "System serif", "システム明朝体"],
+  "本机仓耳今楷 04": ["本機倉耳今楷 04", "Local JinKai 04", "ローカル JinKai 04"],
   "暗色": [
     "深色",
     "Dark",

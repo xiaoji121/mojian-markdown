@@ -20,12 +20,12 @@ test('synchronously loaded styles hide the raw editor template on first paint', 
   assert.match(landingStyles, /x-dc\s*\{\s*display:\s*none\s*!important;\s*\}/);
 });
 
-test('shared reading styles prefer local Canger without downloading a font', async () => {
+test('shared reading styles keep JinKai local-only alongside licensed bundled fonts', async () => {
   const [tokens, landingStyles] = await Promise.all([
     readProjectFile('src/theme/tokens.css'),
     readProjectFile('src/landing.css')
   ]);
   assert.match(tokens, /@font-face[\s\S]*local\("TsangerJinKai04-W04"\)/);
-  assert.match(tokens, /--read:\s*'Mojian Local JinKai 04'/);
+  assert.match(tokens, /--read-local:\s*'Mojian Local JinKai 04'/);
   assert.doesNotMatch(landingStyles, /cejk-subset\.woff2/);
 });

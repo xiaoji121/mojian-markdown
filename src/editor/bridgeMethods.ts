@@ -655,6 +655,7 @@ export class BridgeMethods {
       content: src ? src.value : '',
       fileName: this.fileName,
       fontSize: this.fontSize,
+      readingFont: this.readingFont,
       theme: this.theme,
       paperDark: this.paperDark || undefined,
       paperLight: this.paperLight || undefined,

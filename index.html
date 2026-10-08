@@ -460,6 +460,13 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
             <span ref="{{ appearancePanelRef }}" id="reading-appearance-panel" class="reading-appearance-panel" role="region" aria-label="阅读排版设置" data-i18n-aria-label="阅读排版设置" hidden>
               <span class="appearance-heading"><span data-i18n="阅读排版">阅读排版</span></span>
               <span class="appearance-row"><span><span data-i18n="界面主题">界面主题</span></span><button class="tbtn appearance-theme" onClick="{{ toggleTheme }}" title="切换亮色或暗黑主题" data-i18n-title="切换亮色或暗黑主题" aria-label="切换亮色或暗黑主题" data-i18n-aria-label="切换亮色或暗黑主题"><span ref="{{ themeIconRef }}"></span><span ref="{{ themeLabelRef }}"><span data-i18n="亮色">亮色</span></span></button></span>
+              <label class="reading-font-field"><span data-i18n="阅读字体">阅读字体</span><select class="reading-font-select" aria-label="阅读字体" data-i18n-aria-label="阅读字体">
+                <option value="system-default" data-i18n="系统默认">系统默认</option>
+                <option value="system-serif" data-i18n="系统衬线">系统衬线</option>
+                <option value="source-serif-4">Source Serif 4</option>
+                <option value="local-jinkai" data-i18n="本机仓耳今楷 04">本机仓耳今楷 04</option>
+              </select></label>
+              <span class="reading-font-preview">Read · 阅读 · 閱讀 · 読む<br><strong>Bold 粗体</strong> · <em>Italic 斜体</em> · <strong><em>Both</em></strong> · <code>code()</code></span>
               <span class="appearance-row"><span><span data-i18n="字号">字号</span></span><span class="appearance-font-controls">
                 <button class="tbtn font-btn font-dec" onClick="{{ fontDec }}" aria-label="缩小字号" data-i18n-aria-label="缩小字号">A−</button>
                 <span ref="{{ fontSizeRef }}" class="font-size-value">16px</span>
@@ -467,7 +474,7 @@ npm run build:desktop    # 打包安装程序（macOS）</pre>
               </span></span>
               <span class="appearance-row"><span><span data-i18n="纸色">纸色</span></span><span ref="{{ paperPickerRef }}" class="paper-picker" role="group" aria-label="选择纸色" data-i18n-aria-label="选择纸色"></span></span>
               <span class="appearance-row appearance-width"><span><span data-i18n="沉浸阅读宽度">沉浸阅读宽度</span></span><button ref="{{ immersiveWideRef }}" class="tbtn tool-pill immersive-wide-toggle" onClick="{{ toggleImmersiveWide }}" title="切换为宽屏阅读" data-i18n-title="切换为宽屏阅读" aria-pressed="false"><span data-i18n="宽屏">宽屏</span></button></span>
-              <span class="appearance-note reading-font-note"><strong data-i18n="推荐字体：仓耳今楷 04">推荐字体：仓耳今楷 04</strong><span class="reading-font-status" role="status"></span><span data-i18n="前往仓耳官网查看许可并自行安装，安装后重启应用。">前往仓耳官网查看许可并自行安装，安装后重启应用。</span> <a class="reading-font-link" target="_blank" rel="noopener noreferrer" data-i18n="字体官网">字体官网</a></span>
+              <span class="appearance-note reading-font-note"><strong data-i18n="本机仓耳今楷 04">本机仓耳今楷 04</strong><span class="reading-font-status" role="status"></span><span data-i18n="前往仓耳官网查看许可并自行安装，安装后重启应用。">前往仓耳官网查看许可并自行安装，安装后重启应用。</span> <a class="reading-font-link" target="_blank" rel="noopener noreferrer" data-i18n="字体官网">字体官网</a></span>
               <span class="appearance-note"><span data-i18n="排版偏好会自动记住">排版偏好会自动记住</span></span>
             </span>
           </span>

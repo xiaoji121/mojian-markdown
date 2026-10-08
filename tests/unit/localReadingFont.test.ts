@@ -33,7 +33,7 @@ test('shared CSS matches local-only probe and defaults without changing saved se
   const css = readFileSync(new URL('../../src/theme/tokens.css', import.meta.url), 'utf8');
   assert.ok(css.includes(`font-family: '${LOCAL_READING_FONT_FAMILY}'`));
   for (const name of LOCAL_READING_FONT_SOURCE.matchAll(/local\("([^"]+)"\)/g)) assert.ok(css.includes(`local("${name[1]}")`));
-  assert.match(css, /--read: 'Mojian Local JinKai 04'/);
+  assert.match(css, /--read-local: 'Mojian Local JinKai 04'/);
   const landing = readFileSync(new URL('../../src/landing.css', import.meta.url), 'utf8');
   assert.ok(!landing.includes('/fonts/canger-jinkai-04/'));
 });

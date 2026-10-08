@@ -10,6 +10,7 @@ const numberFields = ['fontSize', 'longImagePhoneFontSize', 'longImageStandardFo
 const booleanFields = ['immersiveWide', 'longImageMarks', 'dirty'];
 const choices = {
   locale: desktopLocales,
+  readingFont: ['system-default', 'system-serif', 'source-serif-4', 'local-jinkai'],
   theme: ['dark', 'light'], aiEngine: ['claude', 'codex', 'gemini'],
   paper: ['ink', 'parchment', 'cream', 'snow', 'green'],
   paperDark: ['ink', 'parchment', 'cream', 'snow', 'green'],

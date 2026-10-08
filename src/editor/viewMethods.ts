@@ -241,6 +241,7 @@ export class ViewMethods {
     if (typeof this._syncReadingPathBar === 'function') this._syncReadingPathBar();
     this._syncPreviewEditable();
     prev.innerHTML = window.marked.parse ? window.marked.parse(markdown) : window.marked(markdown);
+    this._syncReadingScript?.();
     this._renderMermaidDiagrams(prev);
     this._highlightCodeBlocks(prev);
     this._hydrateLocalImages(prev);

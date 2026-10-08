@@ -40,7 +40,8 @@ const POSTER_PAPER_VARIABLES = [
   '--paper-bg', '--paper-bg-soft', '--paper-pre', '--paper-code', '--paper-border',
   '--paper-text', '--paper-text-2', '--paper-text-3', '--paper-accent', '--paper-mark',
   '--paper-sel', '--paper-code-string', '--paper-code-number', '--paper-code-function',
-  '--paper-code-type'
+  '--paper-code-type', '--read', '--paper-font-body', '--paper-font-heading',
+  '--paper-line-height', '--paper-letter-spacing'
 ];
 
 let posterFontCssPromise = null;
@@ -147,7 +148,6 @@ export class LongImageMethods {
     return overlay;
   }
 
-
   _buildLongImageHead() {
     const head = document.createElement('div');
     head.className = 'longimg-modal-head';
@@ -188,7 +188,6 @@ export class LongImageMethods {
     return head;
   }
 
-
   _buildLongImageFoot() {
     const foot = document.createElement('div');
     foot.className = 'longimg-modal-foot';
@@ -222,7 +221,6 @@ export class LongImageMethods {
     return foot;
   }
 
-
   _buildLongImageFontControls() {
     const controls = document.createElement('div');
     controls.className = 'longimg-font-controls';
@@ -247,7 +245,6 @@ export class LongImageMethods {
     return controls;
   }
 
-
   _longImageWidthOption(preset) {
     const option = document.createElement('button');
     option.type = 'button';
@@ -258,7 +255,6 @@ export class LongImageMethods {
     option.addEventListener('click', () => this.setLongImageWidth(preset.id));
     return option;
   }
-
 
   _syncLongImageControls() {
     const active = this.longImageWidth || DEFAULT_LONG_IMAGE_PRESET;
@@ -284,7 +280,7 @@ export class LongImageMethods {
       this._longImageCropEl.setAttribute('aria-pressed', paged ? 'true' : 'false');
     }
     if (this._longImageSaveEl) {
-      this._longImageSaveEl.disabled = !!this._longImageBusy;
+      this._longImageSaveEl.disabled = !!(this._longImageBusy || this._longImagePreparing);
       if (!this._longImageBusy) this._longImageSaveEl.textContent = paged ? t("下载多图") : t("下载长图");
     }
   }
@@ -294,6 +290,7 @@ export class LongImageMethods {
   async _refreshLongImagePoster() {
     const stage = this._longImageStageEl;
     if (!stage) return;
+    this._longImagePreparing = true;
     this._syncLongImageControls();
     this._ensurePosterStyle();
     const width = longImageWidth(this.longImageWidth || DEFAULT_LONG_IMAGE_PRESET);
@@ -306,6 +303,7 @@ export class LongImageMethods {
     if (document.fonts && document.fonts.ready) {
       try { await document.fonts.ready; } catch {}
     }
+    if (this._longImagePoster !== poster) return;
     if (poster.classList.contains('is-paged')) {
       this._fitPagedAtomicContent(poster);
       this._longImagePagePlan = planSafeImagePages(
@@ -319,6 +317,8 @@ export class LongImageMethods {
       this._longImagePagePlan = null;
       this._layoutLongImageStage();
     }
+    this._longImagePreparing = false;
+    this._syncLongImageControls();
   }
   _fitPagedAtomicContent(poster) {
     const maxHeight = PHONE_PAGE_HEIGHT - PHONE_PAGE_CONTINUATION_TOP_PADDING - PHONE_PAGE_BOTTOM_PADDING;
@@ -363,7 +363,6 @@ export class LongImageMethods {
     this._updateLongImageMeta(width, poster.offsetHeight);
   }
 
-
   _layoutLongImageStage() {
     const stage = this._longImageStageEl;
     const box = this._longImageBoxEl;
@@ -379,7 +378,6 @@ export class LongImageMethods {
     box.style.height = Math.round(height * ratio) + 'px';
     this._updateLongImageMeta(width, height);
   }
-
 
   _updateLongImageMeta(width, height, bytes) {
     if (!this._longImageMetaEl) return;
@@ -401,7 +399,6 @@ export class LongImageMethods {
     if (bytes) parts.push(formatByteSize(bytes));
     this._longImageMetaEl.textContent = parts.join(' · ');
   }
-
 
   _buildPosterNode(width) {
     const preview = this.previewRef.current;
@@ -427,7 +424,6 @@ export class LongImageMethods {
     return poster;
   }
 
-
   // Range.cloneContents() 跨多个列表项时会得到一组孤立的 <li>；补回列表容器，
   // 让选区图片继续保留圆点、缩进等原始 Markdown 结构。
   _normalizeSelectionContent(content) {
@@ -439,7 +435,6 @@ export class LongImageMethods {
     content.appendChild(list);
   }
 
-
   // 把预览区最终生效的纸色直接写到海报节点。这样序列化到隔离的 SVG 后，
   // 不再依赖 body 上的 data-paper 级联，弹窗预览与下载 PNG 始终同色。
   _snapshotPosterPaper(poster, preview) {
@@ -449,7 +444,6 @@ export class LongImageMethods {
       if (value) poster.style.setProperty(name, value);
     });
   }
-
 
   // 正文首个 h1 升格为海报标题，避免长图顶部出现两个标题。
   _takePosterTitle(content) {
@@ -464,14 +458,12 @@ export class LongImageMethods {
     return String(this.fileName || '').replace(/\.md$/i, '') || t("未命名");
   }
 
-
   _stripPosterMarks(content) {
     content.querySelectorAll('[data-comment-badge]').forEach((badge) => badge.remove());
     content.querySelectorAll('[data-comment-id]').forEach((span) => {
       span.replaceWith(...span.childNodes);
     });
   }
-
 
   _buildPosterHead(title, content) {
     const head = document.createElement('div');
@@ -491,7 +483,6 @@ export class LongImageMethods {
     return head;
   }
 
-
   _posterMetaText(content) {
     const parts = [t("{count} 字", { count: this._posterWordCount(content).toLocaleString(getLocale()) })];
     if (this.longImageMarks) {
@@ -504,14 +495,12 @@ export class LongImageMethods {
     return parts.join(' · ');
   }
 
-
   // 只数正文：mermaid 渲染出的 SVG 里塞着整段 <style>，textContent 会把 CSS 也算成字。
   _posterWordCount(content) {
     const clone = content.cloneNode(true);
     clone.querySelectorAll('svg, style, script').forEach((node) => node.remove());
     return (clone.textContent || '').replace(/\s/g, '').length;
   }
-
 
   _buildPosterFoot() {
     const foot = document.createElement('div');
@@ -545,12 +534,10 @@ export class LongImageMethods {
     this._posterStyleEl.textContent = this._posterCssText;
   }
 
-
   _posterFontCss() {
     if (!posterFontCssPromise) posterFontCssPromise = this._buildPosterFontCss();
     return posterFontCssPromise;
   }
-
 
   async _buildPosterFontCss() {
     const faces = [];
@@ -559,24 +546,22 @@ export class LongImageMethods {
       try { rules = sheet.cssRules; } catch { continue; }
       for (const rule of Array.from(rules || [])) {
         if (rule && rule.style && !rule.selectorText && /^@font-face/.test(rule.cssText || '')) {
-          faces.push(rule.cssText);
+          faces.push({ css: rule.cssText, base: sheet.href || document.baseURI });
         }
       }
     }
-    const inlined = await Promise.all(faces.map((face) => this._inlineFontFace(face)));
+    const inlined = await Promise.all(faces.map((face) => this._inlineFontFace(face.css, face.base)));
     return inlined.filter(Boolean).join('\n');
   }
 
-
   // 字体文件取不回来时整条 @font-face 丢掉，让 font-family 回退链接管系统楷体，
   // 而不是留一条指向取不到的 URL、在 SVG 里渲染成默认无衬线。
-  async _inlineFontFace(cssText) {
+  async _inlineFontFace(cssText, baseUrl = document.baseURI) {
     const match = /url\((['"]?)([^'")]+)\1\)/.exec(cssText);
     if (!match) return cssText;
-    const dataUrl = await this._fetchAsDataUrl(match[2]);
+    const dataUrl = await this._fetchAsDataUrl(new URL(match[2], baseUrl).href);
     return dataUrl ? cssText.replace(match[0], 'url(' + dataUrl + ')') : '';
   }
-
 
   async _fetchAsDataUrl(url) {
     try {
@@ -593,7 +578,6 @@ export class LongImageMethods {
       return '';
     }
   }
-
 
   // 取不回来的图（跨源、断链）换成一块占位：宁可写明缺图，也不留一段错位空白。
   async _inlinePosterImages(root) {
@@ -618,7 +602,7 @@ export class LongImageMethods {
   // ===== 光栅化与下载 =====
 
   async downloadLongImage() {
-    if (this._longImageBusy || !this._longImagePoster) return;
+    if (this._longImageBusy || this._longImagePreparing || !this._longImagePoster) return;
     this._longImageBusy = true;
     this._syncLongImageControls();
     try {
@@ -692,7 +676,6 @@ export class LongImageMethods {
     return canvas;
   }
 
-
   _posterProtectedRanges(poster) {
     const posterRect = poster.getBoundingClientRect();
     const ratio = posterRect.width / (poster.offsetWidth || posterRect.width || 1);
@@ -727,7 +710,6 @@ export class LongImageMethods {
     });
   }
 
-
   _saveLongImageBlob(blob, name) {
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -736,8 +718,8 @@ export class LongImageMethods {
     URL.revokeObjectURL(link.href);
   }
 
-
   async _rasterizePoster(poster, onProgress) {
+    if (document.fonts?.ready) await document.fonts.ready;
     const width = poster.offsetWidth;
     const height = poster.offsetHeight;
     const scale = pickLongImageScale(width, height);
@@ -762,13 +744,11 @@ export class LongImageMethods {
     return { canvas, width, height, scale };
   }
 
-
   _posterPaperColor() {
     const preview = this.previewRef && this.previewRef.current;
     const computed = getComputedStyle(preview || document.body);
     return (computed.backgroundColor || computed.getPropertyValue('--paper-bg') || '').trim() || '#ffffff';
   }
-
 
   // 一片切片 = 一张按设备像素定尺、viewBox 回到 CSS px 的 SVG：
   // viewBox 缩放让 foreignObject 里的文字直接以输出分辨率光栅化，不是放大位图。
