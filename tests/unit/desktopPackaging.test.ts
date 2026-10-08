@@ -5,7 +5,7 @@ import { dirname, matchesGlob, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
-const config = readFileSync(resolve(root, 'desktop/electron-builder.yml'), 'utf8');
+const config = readFileSync(resolve(root, 'desktop/electron-builder.yml'), 'utf8').replaceAll('\r\n', '\n');
 // This config uses a plain YAML string list. Reject other shapes rather than
 // silently ignoring a future FileSet or other packaging configuration change.
 const fileList = config.match(/^files:\s*\n((?:[ \t]+.*\n)*)/m)?.[1];
