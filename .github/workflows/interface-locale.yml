@@ -41,7 +41,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Web locale persistence and layout screenshots
         if: runner.os == 'Linux'
-        run: npx playwright test tests/e2e/interfaceLocale.spec.ts tests/e2e/local-reading-font.spec.ts --output=test-results/web
+        run: npx playwright test tests/e2e/interfaceLocale.spec.ts tests/e2e/local-reading-font.spec.ts tests/e2e/localized-sample.spec.ts --output=test-results/web
       - uses: actions/upload-artifact@v4
         if: always()
         with:

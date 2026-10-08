@@ -269,3 +269,48 @@ test('a real desktop file named 未命名.md restores by path', async () => {
   try { await ctx._restoreLocalFileLink(); assert.equal(restored, true); }
   finally { globalThis.window = previous; }
 });
+
+for (const newer of ['edit', 'open']) {
+  test(`slow recent file reattachment preserves a newer ${newer}`, async () => {
+    let resolveRead!: (value: unknown) => void;
+    let started!: () => void;
+    const reading = new Promise<void>(resolve => { started = resolve; });
+    const finish = new Promise(resolve => { resolveRead = resolve; });
+    const oldWindow = globalThis.window;
+    globalThis.window = { mojianDesktop: {
+      statFile: async () => ({ lastModified: 2000 }),
+      readFile: async () => { started(); return finish; }
+    } } as any;
+    try {
+      const editor = createEditor(null, '# Workspace');
+      let watched = 0;
+      editor._startLocalFileWatcher = () => { watched++; };
+      const pending = editor._reattachLocalFileForDocument({ fileName: 'note.md', localPath: '/tmp/note.md' });
+      await reading;
+      if (newer === 'edit') { editor.sourceRef.current.value = '# My edit'; editor._documentEditRevision = 1; }
+      else { editor._documentOpenGeneration = 1; editor.fileName = 'next.md'; }
+      const content = editor.sourceRef.current.value;
+      resolveRead({ content: '# Older disk', lastModified: 2000 });
+      await pending;
+      assert.equal(editor.sourceRef.current.value, content);
+      assert.equal(editor.fileHandle, null);
+      assert.equal(editor.localFilePath, null);
+      assert.equal(watched, 0);
+      assert.equal(editor.persisted, 0);
+    } finally {
+      if (oldWindow) globalThis.window = oldWindow;
+      else delete (globalThis as any).window;
+    }
+  });
+}
+
+test('fresh localized sample does not inspect an unrelated saved file handle', async () => {
+  const editor = createEditor(null, '# Sample');
+  editor.fileName = 'Untitled.md';
+  editor._initialSample = { markdown: '# Sample', fileName: 'Untitled.md' };
+  const old = globalThis.indexedDB;
+  let opens = 0;
+  globalThis.indexedDB = { open() { opens++; throw new Error('must not open'); } } as any;
+  try { await editor._restoreLocalFileLink(); assert.equal(opens, 0); }
+  finally { if (old) globalThis.indexedDB = old; else delete (globalThis as any).indexedDB; }
+});

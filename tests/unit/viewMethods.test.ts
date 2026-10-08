@@ -56,7 +56,7 @@ test('摘录回答等 override 视图下渲染预览时也应用批注高亮', (
   try {
     let highlighted = 0;
     const context = {
-      sourceRef: createRef({ value: '# 原文' }),
+      sourceRef: createRef(Object.assign(createStubElement(), { value: '# 原文' })),
       previewRef: createRef(createStubElement()),
       previewOverrideMarkdown: '# 摘录回答',
       _syncPreviewEditable() {},
@@ -86,7 +86,7 @@ test('脉络视图给预览容器打上 is-reading-map 标记，子文档视图�
   try {
     const preview = createStubElement();
     const context = {
-      sourceRef: createRef({ value: '# 原文' }),
+      sourceRef: createRef(Object.assign(createStubElement(), { value: '# 原文' })),
       previewRef: createRef(preview),
       previewOverrideMarkdown: '# 阅读脉络',
       activeAnswerRequestId: null,

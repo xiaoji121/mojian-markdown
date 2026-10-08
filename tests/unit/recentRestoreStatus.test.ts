@@ -66,3 +66,60 @@ test('automatic and manual opens retain their respective success labels', async 
     assert.equal(manual.status, '已从 Reading Workspace 打开 · note.md');
   });
 });
+
+for (const change of ['edit', 'empty', 'rename', 'file', 'newer-open']) {
+  test(`slow initial restore cannot overwrite ${change}`, async () => {
+    const original = globalThis.fetch;
+    const started = deferred(), finish = deferred();
+    globalThis.fetch = (async () => {
+      started.resolve(); await finish.promise;
+      return { ok: true, json: async () => ({ document: {
+        documentId: 'doc-1', fileName: 'old.md', content: '# Old', annotations: [], messages: []
+      } }) };
+    }) as typeof fetch;
+    try {
+      const editor = editorForRestore(async () => {});
+      editor.sourceRef.current.value = '# Sample';
+      const pending = editor._maybeOpenLatestRecentDocument();
+      await started.promise;
+      if (change === 'edit') { editor.sourceRef.current.value = '# My edit'; editor.dirty = true; }
+      if (change === 'empty') editor.sourceRef.current.value = '';
+      if (change === 'rename') editor.fileName = 'mine.md';
+      if (change === 'file') editor.fileHandle = {};
+      if (change === 'newer-open') editor._documentOpenGeneration++;
+      const content = editor.sourceRef.current.value;
+      finish.resolve(); await pending;
+      assert.equal(editor.sourceRef.current.value, content);
+      assert.notEqual(editor.fileName, 'old.md');
+      assert.equal(editor.status, '');
+    } finally { globalThis.fetch = original; }
+  });
+}
+
+test('localized initial filename still permits recent document recovery', async () => {
+  await withDocumentFetch(true, async () => {
+    const editor = editorForRestore(async () => {});
+    editor.fileName = 'Untitled.md';
+    editor._initialSample = { fileName: 'Untitled.md', markdown: '# Sample' };
+    editor.sourceRef.current.value = '# Sample';
+    await editor._maybeOpenLatestRecentDocument();
+    assert.equal(editor.sourceRef.current.value, '# Restored');
+  });
+});
+
+test('same-name localized sample never adopts a workspace record before restoring it', async () => {
+  const original = globalThis.fetch;
+  const doc = { documentId: 'doc-1', fileName: 'Untitled.md', content: '# Existing work', updatedAt: '2026-10-08' };
+  globalThis.fetch = (async (url) => ({ ok: true, json: async () => String(url).endsWith('/api/documents')
+    ? { documents: [doc] } : { document: doc } })) as typeof fetch;
+  try {
+    const editor = editorForRestore(async () => {});
+    editor.fileName = 'Untitled.md';
+    editor._initialSample = { fileName: 'Untitled.md', markdown: '# Sample' };
+    editor.sourceRef.current.value = '# Sample';
+    await editor._refreshRecentDocuments();
+    assert.equal(editor.bridgeDocumentId, null, 'sample must not be linked to existing user work');
+    await editor._maybeOpenLatestRecentDocument();
+    assert.equal(editor.sourceRef.current.value, '# Existing work');
+  } finally { globalThis.fetch = original; }
+});

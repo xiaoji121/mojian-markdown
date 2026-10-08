@@ -244,7 +244,8 @@ export class LocalFileSyncMethods {
   // ===== 恢复持久化的句柄 =====
 
   async _restoreLocalFileLink() {
-    if (this.fileHandle) return;
+    // A fresh example is not a saved file, even if an old handle has its name.
+    if (this._initialSample || this.fileHandle) return;
     if (typeof window !== 'undefined' && window.mojianDesktop && this.localFilePath) {
       return this._restoreDesktopFileLink();
     }
@@ -309,6 +310,14 @@ export class LocalFileSyncMethods {
   async _reattachLocalFileForDocument(doc) {
     this._detachLocalFile();
     if (!doc || !doc.fileName || doc.fileName === '未命名.md') return;
+    const initial = { content: this.sourceRef.current?.value, name: this.fileName,
+      revision: this._documentEditRevision || 0, generation: this._documentOpenGeneration || 0,
+      bridgeId: this.bridgeDocumentId };
+    const stale = () => this.fileHandle || this.localFilePath
+      || this.sourceRef.current?.value !== initial.content || this.fileName !== initial.name
+      || this.bridgeDocumentId !== initial.bridgeId
+      || (this._documentEditRevision || 0) !== initial.revision
+      || (this._documentOpenGeneration || 0) !== initial.generation;
     let handle = await loadFileHandle(doc.fileName);
     // 桌面端 IndexedDB 随端口漂移，重启后句柄必然丢失；工作区记录了绝对路径，
     // 主进程的路径授权持久化在 userData，按路径重建句柄即可恢复双向同步。
@@ -327,9 +336,11 @@ export class LocalFileSyncMethods {
       if (permission !== 'granted') return;
       const file = await handle.getFile();
       const text = this._cleanOpenedMarkdown(await file.text());
+      const localPath = await this._resolveLocalFilePath(handle);
+      if (stale()) return;
       this.fileHandle = handle;
       this._localFileModifiedAt = file.lastModified;
-      this.localFilePath = await this._resolveLocalFilePath(handle);
+      this.localFilePath = localPath;
       this._syncFileNameTooltip();
       const src = this.sourceRef.current;
       if (src && text !== src.value) {

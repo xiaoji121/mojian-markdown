@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { t } from './i18n.ts';
+import { sampleLanguage } from './sample.ts';
 
 function localImageSource(src) {
   if (!src || /^(data:|blob:|file:)/i.test(src)) return '';
@@ -235,6 +236,8 @@ export class ViewMethods {
     const src = this.sourceRef.current, prev = this.previewRef.current;
     if (!src || !prev || !window.marked) return;
     const markdown = this.previewOverrideMarkdown || src.value;
+    src.setAttribute('lang', sampleLanguage(src.value));
+    prev.setAttribute('lang', sampleLanguage(markdown));
     // 脉络视图（override 且不属于任何子文档）：节点可点击，样式上给出提示
     prev.classList.toggle('is-reading-map', !!this.previewOverrideMarkdown && !this.activeAnswerRequestId);
     // 路径成文的浮动操作条只在脉络视图出现，跟随每次预览重渲染结算显隐
@@ -566,6 +569,8 @@ export class ViewMethods {
 
 
   _touch() {
+    this._startedWithSample = false;
+    this._documentEditRevision = (this._documentEditRevision || 0) + 1;
     this._setDirty(true);
     if (this._saveT) clearTimeout(this._saveT);
     this._saveT = setTimeout(() => this._autosave(), 600);
