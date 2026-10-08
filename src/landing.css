@@ -463,3 +463,6 @@ body.editor-active #landing-page { display: none; }
   #landing-page .hero-source { display: none; }
 }
 @media (max-width: 380px) { .landing-open { flex-basis: 100%; } }
+/* Long Latin product names and translated headings must reflow at 200% zoom. */
+#landing-page h1, #landing-page h2, #landing-page h3 { overflow-wrap: anywhere; }
+#landing-page .edition-card a:not(.landing-button) { color: var(--landing-accent); text-underline-offset: 3px; }

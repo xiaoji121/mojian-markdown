@@ -34,9 +34,11 @@ test('locale links are keyboard accessible on mobile and at 200% sizing', async 
   await japanese.focus(); await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/ja\/$/);
   await expect(page.locator('html')).toHaveAttribute('lang', 'ja');
+  await page.screenshot({ path: testInfo.outputPath('landing-ja-mobile.png'), fullPage: true });
   await page.locator('body').evaluate(node => node.style.zoom = '2');
   await expect(page.locator('.landing-languages a[lang="ja"]')).toBeInViewport();
   await expect(page.locator('.landing-open')).toBeInViewport();
+  expect(await page.locator('#landing-page h1').evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath('landing-ja-mobile-200-percent.png'), fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.goBack(); await expect(page.locator('html')).toHaveAttribute('lang', 'en');
