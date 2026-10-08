@@ -62,19 +62,31 @@ test('global settings work in source-only mode and fit short narrow screens', as
 });
 
 for (const width of [390, 1440]) {
-  test(`immersive global menu leaves exit focus accessible at width ${width}`, async ({ page }, testInfo) => {
-    await page.setViewportSize({ width, height: 844 });
-    await openEditor(page);
-    await page.locator('[data-mode="preview"]').click();
-    const immersive = page.getByRole('button', { name: '沉浸式阅读', exact: true });
-    await immersive.click();
-    const more = await page.locator('.file-menu-toggle').boundingBox();
-    const exit = await immersive.boundingBox();
-    expect(exit!.x + exit!.width).toBeLessThanOrEqual(more!.x);
-    await page.screenshot({ path: testInfo.outputPath(`immersive-controls-${width}.png`) });
-    await immersive.click();
-    await expect(page.locator('.preview-pane')).not.toHaveClass(/preview-pane-fullscreen/);
-  });
+  for (const wide of [false, true]) {
+    test(`immersive global menu leaves exit focus accessible at width ${width} (wide=${wide})`, async ({ page }, testInfo) => {
+      await page.setViewportSize({ width, height: 844 });
+      await openEditor(page);
+      // Set the global width preference before entering immersive mode, including
+      // on mobile where the width control is intentionally hidden.
+      if (wide) {
+        await page.setViewportSize({ width: 1440, height: 844 });
+        await openAppearance(page);
+        await page.locator('.immersive-wide-toggle').click();
+        await page.keyboard.press('Escape');
+        await page.setViewportSize({ width, height: 844 });
+      }
+      await page.locator('[data-mode="preview"]').click();
+      const immersive = page.getByRole('button', { name: '沉浸式阅读', exact: true });
+      await immersive.click();
+      const more = await page.locator('.file-menu-toggle').boundingBox();
+      const exit = await immersive.boundingBox();
+      await page.screenshot({ path: testInfo.outputPath(`immersive-controls-${width}-wide-${wide}.png`) });
+      expect(exit!.x + exit!.width).toBeLessThanOrEqual(more!.x);
+      if (width === 390) await expect(page.locator('.reading-toolbar')).toHaveCSS('right', '64px');
+      await immersive.click();
+      await expect(page.locator('.preview-pane')).not.toHaveClass(/preview-pane-fullscreen/);
+    });
+  }
 }
 
 for (const viewport of [{ width: 390, height: 320 }, { width: 640, height: 400 }]) {

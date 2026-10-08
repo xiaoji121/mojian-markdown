@@ -4,11 +4,15 @@
 .appearance-theme { display: inline-flex; align-items: center; gap: 8px; padding: 0 10px; }
 .reading-toolbar .preview-toolbar-actions { gap: 8px; }
 .reading-toolbar .fullscreen-button-label { display: inline; }
+/* Reserve a 48px lane for the fixed global More button in every immersive layout.
+   Keeping the inset in the shared geometry avoids equal-specificity mobile rules
+   replacing the clearance when preview-mode-active and fullscreen are both set. */
+.preview-pane-fullscreen { --reading-tools-edge: 64px; }
 
 .editor-main.preview-mode-active > .preview-pane > .reading-toolbar,
 .editor-main > .preview-pane-fullscreen > .reading-toolbar {
   position: absolute;
-  inset: 20px max(32px, calc((100% - 820px) / 2)) auto auto;
+  inset: 20px max(var(--reading-tools-edge, 32px), calc((100% - 820px) / 2)) auto auto;
   width: max-content;
   max-width: calc(100% - 32px);
   height: 36px;
@@ -40,7 +44,7 @@
   .editor-main.preview-mode-active > .preview-pane > .reading-toolbar,
   .editor-main > .preview-pane-fullscreen > .reading-toolbar {
     top: 12px;
-    right: 16px;
+    right: var(--reading-tools-edge, 16px);
     height: 36px !important;
     padding: 0 !important;
     overflow: visible;

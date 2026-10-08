@@ -22,7 +22,6 @@ export function syncWebLanding() {
 
 export function initLandingNavigation() {
   initLandingLanguageMenu();
-  let restoreLanguageFocusAfterHash = false;
   // Same-document navigation keeps the mounted editor and pending draft intact.
   // Ordinary links remain a real no-JS fallback, and modified clicks keep their
   // browser behavior. Landing language never overwrites editor preferences.
@@ -32,7 +31,11 @@ export function initLandingNavigation() {
     if (!target) return;
     closeLandingLanguageMenu();
     if (window.mojianDesktop) {
-      restoreLanguageFocusAfterHash = target.hash !== location.hash;
+      // Own this same-document transition, as on the web. Native fragment
+      // navigation can reset focus after a paint or dispatch another hashchange.
+      event.preventDefault();
+      if (target.hash !== location.hash) history.pushState(null, '', target.hash);
+      window.dispatchEvent(new Event('hashchange'));
       focusLandingLanguageToggle();
       return;
     }
@@ -47,15 +50,6 @@ export function initLandingNavigation() {
     window.dispatchEvent(new Event('hashchange'));
     window.scrollTo(0, 0);
     focusLandingLanguageToggle();
-  });
-  window.addEventListener('hashchange', () => {
-    if (!restoreLanguageFocusAfterHash) return;
-    // History can dispatch a synthetic hashchange before the native event.
-    // Wait for both desktop renders so neither removes the focused trigger.
-    requestAnimationFrame(() => {
-      restoreLanguageFocusAfterHash = false;
-      focusLandingLanguageToggle();
-    });
   });
   window.addEventListener('popstate', () => {
     syncWebLanding();

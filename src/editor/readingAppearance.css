@@ -42,13 +42,13 @@
 .appearance-reading-heading { padding-top: 14px; border-top: 1px solid var(--border-soft); }
 .appearance-close { font-size: 22px; line-height: 1; }
 .interface-language-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
-.interface-language-option { min-height: 36px; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--bg-input); color: var(--text-2); font: inherit; cursor: pointer; }
-.interface-language-option[aria-checked='true'] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.interface-language-option { position: relative; min-height: 36px; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--bg-input); color: var(--text-2); font: inherit; cursor: pointer; }
+.interface-language-option[aria-checked='true'] { border-color: var(--accent); background: var(--accent-soft); color: var(--text); font-weight: 600; }
+.interface-language-option[aria-checked='true']::after { content: '✓'; position: absolute; right: 8px; }
 .interface-language-option:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* Keep the same global menu reachable above the immersive article, at any scroll position. */
 .app-shell:has(.preview-pane-fullscreen) .file-menu-wrap { position: fixed; top: 12px; right: 16px; z-index: 170; }
 .app-shell:has(.preview-pane-fullscreen) .file-menu-toggle { background: var(--bg-2); border: 1px solid var(--border-soft); border-radius: var(--radius-control); }
-.app-shell .editor-main > .preview-pane-fullscreen > .reading-toolbar { right: max(64px, calc((100% - 820px) / 2)); }
 .app-shell:has(.preview-pane-fullscreen) .reading-appearance-panel { top: 56px; max-height: calc(100dvh - 68px); }
 .appearance-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .appearance-font-controls { display: flex; align-items: center; gap: 12px; }
@@ -60,7 +60,6 @@
 @media (max-width: 760px) {
   .reading-appearance-panel { right: 12px; top: 60px; max-height: calc(100dvh - 72px); padding: 16px; }
   .appearance-width { display: none; }
-  .app-shell .editor-main > .preview-pane-fullscreen > .reading-toolbar { right: 64px; }
   .reading-appearance-panel .paper-dot { display: block; }
 }
 

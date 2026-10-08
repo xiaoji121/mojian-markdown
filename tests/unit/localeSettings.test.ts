@@ -31,3 +31,10 @@ test('language keyboard controls wrap, select, focus and clean up listeners', as
   assert.equal(selected, 'en');
   dispose(); assert.ok(items.every(item => item.listeners.size === 0));
 });
+
+test('selected language has high-contrast text and a non-color selection marker', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const css = await readFile(new URL('../../src/editor/readingAppearance.css', import.meta.url), 'utf8');
+  assert.match(css, /\.interface-language-option\[aria-checked='true'\]\s*\{[^}]*color: var\(--text\)/);
+  assert.match(css, /\.interface-language-option\[aria-checked='true'\]::after\s*\{[^}]*content: '✓'/);
+});
