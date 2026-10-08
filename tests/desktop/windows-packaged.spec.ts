@@ -138,13 +138,23 @@ test('Windows packaged bridge calls npm Claude and Codex shims without a shell',
           } }) });
         return response.text();
       }, { engine, question });
-      expect(result).toContain('event: done');
+      // /api/chat completes by ending the response after saving; unlike
+      // /api/compose, it does not emit a separate done event.
+      expect(result).toContain('event: meta');
       expect(result).not.toContain('event: error');
       expect(result).toContain(engine === 'claude' ? 'packaged Claude' : 'packaged Codex');
       // SSE JSON escapes quotes; inspect the decoded streamed answer.
-      const deltas = result.split(/\r?\n/).filter(line => line.startsWith('data:'))
-        .map(line => JSON.parse(line.slice(5))).filter(data => typeof data.text === 'string');
+      const packets = result.split(/\r?\n/).filter(line => line.startsWith('data:'))
+        .map(line => JSON.parse(line.slice(5)));
+      const deltas = packets.filter(data => typeof data.text === 'string');
       expect(deltas.map(data => data.text).join('')).toContain(question);
+      const meta = packets.find(data => data.documentId && data.requestId);
+      expect(meta).toBeTruthy();
+      const saved = await page.evaluate(id => fetch('/api/documents/' + id)
+        .then(response => response.json()), meta.documentId);
+      const message = saved.document.messages.find(item => item.requestId === meta.requestId);
+      expect(message.answer).toContain(question);
+      expect(message.answerAt).toBeTruthy();
     }
   } finally {
     await app.close();
