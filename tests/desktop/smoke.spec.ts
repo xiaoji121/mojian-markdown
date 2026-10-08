@@ -279,6 +279,7 @@ test('桌面端批注面板的复制与删除按钮可用', async () => {
     await expect(page.locator('.comments-panel .comment-quote')).toHaveCount(1);
 
     await page.getByRole('button', { name: '复制', exact: true }).click();
+    await expect.poll(() => app.evaluate(({ clipboard }) => clipboard.readText())).toContain('hello world');
     await expect(page.locator('.save-status')).toHaveText(/已复制该批注/);
 
     page.on('dialog', (dialog) => dialog.accept());

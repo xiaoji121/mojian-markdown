@@ -431,8 +431,7 @@ export class BridgeMethods {
     const latest = [...this.recentDocuments]
       .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))[0];
     this._startedWithSample = false;
-    await this.openRecentDocument(latest.documentId);
-    this._setStatus('已恢复最近阅读 · ' + this.fileName);
+    await this.openRecentDocument(latest.documentId, { restoring: true });
   }
 
 
@@ -468,7 +467,7 @@ export class BridgeMethods {
   }
 
 
-  async openRecentDocument(documentId) {
+  async openRecentDocument(documentId, { restoring = false } = {}) {
     if (!this.sourceRef.current) return;
     try {
       await this._flushBridgeSync();
@@ -492,7 +491,9 @@ export class BridgeMethods {
       this._setDirty(false);
       this._persist();
       this._renderRecentDocuments();
-      this._setStatus('已从 Reading Workspace 打开 · ' + this.fileName);
+      // Publish the open status when content becomes interactive. Local-file
+      // reattachment can finish after newer user feedback (for example, Copy).
+      this._setStatus((restoring ? '已恢复最近阅读 · ' : '已从 Reading Workspace 打开 · ') + this.fileName);
       this.closeDocumentSidebar();
       // 若之前打开过同名本地文件，重新接上句柄；本地文件内容优先于工作区副本。
       await this._reattachLocalFileForDocument(doc);
