@@ -51,7 +51,7 @@ test('桌面端启动并与本地文件双向同步', async () => {
     const pathPreview = await page.evaluate((filePath) =>
       (window as any).mojianDesktop.openMarkdownPath(filePath), absolutePathDoc);
     expect(pathPreview).toMatchObject({ path: absolutePathDoc, name: '路径打开.md' });
-    await page.getByRole('button', { name: '文件菜单' }).click();
+    await page.getByRole('button', { name: '更多操作', exact: true }).click();
     await page.getByRole('menuitem', { name: '输入绝对路径打开…' }).click();
     await page.locator('.file-path-input').fill(absolutePathDoc);
     await page.getByRole('button', { name: '打开该路径' }).click();
