@@ -1,6 +1,6 @@
 import { test, expect, openEditor, setSource } from './fixtures';
 
-test('editor uses the complete local Canger reading font without remote fonts', async ({ page }) => {
+test('editor prefers an installed reading font without downloading font files', async ({ page }) => {
   const remoteFontRequests: string[] = [];
   const fontRequests: string[] = [];
   page.on('request', (request) => {
@@ -20,10 +20,9 @@ test('editor uses the complete local Canger reading font without remote fonts', 
 
   await expect(page.locator('link[href*="fonts.googleapis.com"], link[href*="fonts.gstatic.com"]')).toHaveCount(0);
   expect(remoteFontRequests).toEqual([]);
-  expect(fontRequests).toHaveLength(1);
-  expect(fontRequests[0]).toContain('/cejk-subset.woff2');
+  expect(fontRequests).toEqual([]);
   expect(await page.locator('.md-preview').evaluate((element) => getComputedStyle(element).fontFamily))
-    .toContain('Canger JinKai 04');
+    .toContain('Mojian Local JinKai 04');
 });
 
 test.beforeEach(async ({ page }) => {

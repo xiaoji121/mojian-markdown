@@ -64,7 +64,8 @@ test('test desktop package includes the native locale module', () => {
   assert.ok(config.files.some((pattern: string) => matchesGlob('desktop/locale.js', pattern)));
 });
 
-test('native IPC changes menus only after a trusted successful state save', async () => {
+for (const eol of ['\n', '\r\n'])
+test('native IPC accepts ' + JSON.stringify(eol) + ' sources and only trusts successful saves', async () => {
   const { readFileSync } = await import('node:fs');
   const { runInNewContext } = await import('node:vm');
   const { isTrustedEditorSender } = await import('../../desktop/editorState.js');
@@ -75,7 +76,8 @@ test('native IPC changes menus only after a trusted successful state save', asyn
   let saved = 0;
   let saveSucceeds = true;
   const source = readFileSync(new URL('../../desktop/main.js', import.meta.url), 'utf8')
-    .replace(/^import .*;\n/gm, '')
+    .replace(/\r?\n/g, eol)
+    .replace(/^import .*;\r?\n/gm, '')
     .replace('dirname(fileURLToPath(import.meta.url))', "'/test/desktop'");
   runInNewContext(source + `\nmainWindow = testWindow; bridge = { url: 'http://127.0.0.1:4321' };
     editorStateStore = testStore; registerEditorStateIpc();`, {
