@@ -20,12 +20,15 @@ jobs:
         include:
           - platform: win
             arch: x64
+            target: nsis
             runner: windows-2025
           - platform: mac
             arch: arm64
+            target: dmg
             runner: macos-15
           - platform: mac
             arch: x64
+            target: dmg
             runner: macos-15-intel
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 35
@@ -60,12 +63,15 @@ jobs:
       - name: Gather complete license texts
         run: node scripts/test-installer-notices.mjs
       - name: Build unsigned installer (never publish)
+        # No signing secrets or accounts. Only the config's hard-coded ad-hoc '-'.
+        env:
+          CSC_FOR_PULL_REQUEST: 'true'
         shell: bash
-        run: npx electron-builder --config desktop/electron-builder.test.cjs --${{ matrix.platform }} --${{ matrix.arch }} --publish never -c.extraMetadata.version="$TEST_VERSION"
+        run: npx electron-builder --config desktop/electron-builder.test.cjs --${{ matrix.platform }} ${{ matrix.target }} --${{ matrix.arch }} --publish never -c.extraMetadata.version="$TEST_VERSION"
       - name: Build newer Windows upgrade candidate (never publish)
         if: matrix.platform == 'win'
         shell: bash
-        run: npx electron-builder --config desktop/electron-builder.test.cjs --win --x64 --publish never -c.extraMetadata.version="$UPGRADE_VERSION"
+        run: npx electron-builder --config desktop/electron-builder.test.cjs --win nsis --x64 --publish never -c.extraMetadata.version="$UPGRADE_VERSION"
       - name: Audit real packaged contents
         shell: bash
         run: |
