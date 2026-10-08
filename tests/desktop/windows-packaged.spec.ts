@@ -2,6 +2,7 @@ import { _electron as electron, expect, test } from '@playwright/test';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { createMockCli, mockCliEnv } from '../helpers/mockCli';
 
 // This is a real Windows executable test, deliberately outside the checkout so
 // missing packaged dependencies cannot resolve from development node_modules.
@@ -25,7 +26,9 @@ test('Windows packaged app saves Chinese/space paths and survives restart', asyn
     args: [],
     cwd: root,
     env: {
-      ...process.env,
+      ...mockCliEnv(root),
+      AGENT_BRIDGE_LARK_COMMAND: join(root, 'missing-test-lark'),
+      AGENT_BRIDGE_DWS_COMMAND: join(root, 'missing-test-dws'),
       MOJIAN_USER_DATA: userData,
       // Leave AGENT_BRIDGE_WORKSPACE unset to test the packaged default under
       // userData, rather than a writable source-tree development workspace.
@@ -91,6 +94,58 @@ test('Windows packaged app saves Chinese/space paths and survives restart', asyn
       path: renamedPath, content: '# 重启验证\n\n持久授权写回成功\n'
     });
     expect(await readFile(renamedPath, 'utf8')).toContain('持久授权写回成功');
+  } finally {
+    await app.close();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('Windows packaged bridge calls npm Claude and Codex shims without a shell', async () => {
+  const root = await mkdtemp(join(tmpdir(), '墨笺 AI CLI 空格 '));
+  const userData = join(root, '用户 数据');
+  await mkdir(userData);
+  const claude = await createMockCli(root, 'mojian-test-claude', `
+    process.stdout.write('packaged Claude: ' + process.argv.at(-1));
+  `);
+  const codex = await createMockCli(root, 'mojian-test-codex', `
+    const fs = require('node:fs');
+    let input = '';
+    process.stdin.setEncoding('utf8');
+    process.stdin.on('data', chunk => { input += chunk; });
+    process.stdin.on('end', () => {
+      const at = process.argv.indexOf('--output-last-message');
+      fs.writeFileSync(process.argv[at + 1], 'packaged Codex: ' + input);
+    });
+  `);
+  const app = await electron.launch({ executablePath, args: [], cwd: root, env: {
+    ...mockCliEnv(root),
+      AGENT_BRIDGE_LARK_COMMAND: join(root, 'missing-test-lark'),
+      AGENT_BRIDGE_DWS_COMMAND: join(root, 'missing-test-dws'), MOJIAN_USER_DATA: userData, AGENT_BRIDGE_WORKSPACE: '',
+    AGENT_BRIDGE_CLAUDE_COMMAND: claude, AGENT_BRIDGE_CODEX_COMMAND: codex,
+    NO_PROXY: 'localhost,127.0.0.1'
+  } });
+  try {
+    expect(await app.evaluate(({ app }) => app.isPackaged)).toBe(true);
+    const page = await app.firstWindow();
+    await expect(page.locator('.md-source')).toBeVisible({ timeout: 15_000 });
+    const question = '中文 " & echo injected | < > ^ %PATH% !VALUE!';
+    for (const engine of ['claude', 'codex']) {
+      const result = await page.evaluate(async ({ engine, question }) => {
+        const response = await fetch('/api/chat', { method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ engine, question, document: {
+            sourceApp: 'markdown-editor', fileName: 'CLI 测试.md', content: '# mock only'
+          } }) });
+        return response.text();
+      }, { engine, question });
+      expect(result).toContain('event: done');
+      expect(result).not.toContain('event: error');
+      expect(result).toContain(engine === 'claude' ? 'packaged Claude' : 'packaged Codex');
+      // SSE JSON escapes quotes; inspect the decoded streamed answer.
+      const deltas = result.split(/\r?\n/).filter(line => line.startsWith('data:'))
+        .map(line => JSON.parse(line.slice(5))).filter(data => typeof data.text === 'string');
+      expect(deltas.map(data => data.text).join('')).toContain(question);
+    }
   } finally {
     await app.close();
     await rm(root, { recursive: true, force: true });

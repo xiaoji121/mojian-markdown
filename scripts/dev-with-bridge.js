@@ -1,15 +1,36 @@
-import { spawn } from 'node:child_process';
+import { spawnCli } from './agent-bridge-process.js';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+// Launch the actual Node entrypoints: npm.cmd shipped with Node is not always a
+// standard npm shim, and an extra npm process also complicates shutdown.
+export function developmentInvocations() {
+  const vite = new URL('./bin/vite.js', import.meta.resolve('vite/package.json'));
+  return [
+    { label: 'bridge', command: process.execPath,
+      args: [fileURLToPath(new URL('./agent-bridge.js', import.meta.url))] },
+    { label: 'vite', command: process.execPath, args: [fileURLToPath(vite), '--mode', 'bridge'] }
+  ];
+}
 const children = new Set();
 let shuttingDown = false;
 
 function start(label, command, args) {
-  const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+  let child;
+  try {
+    child = spawnCli(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch (error) {
+    console.error(`[${label}] ${error.message}`);
+    shutdown(1);
+    return;
+  }
   children.add(child);
 
   child.stdout.on('data', (chunk) => process.stdout.write(`[${label}] ${chunk}`));
   child.stderr.on('data', (chunk) => process.stderr.write(`[${label}] ${chunk}`));
+  child.on('error', (error) => {
+    console.error(`[${label}] ${error.message}`);
+    shutdown(1);
+  });
   child.on('exit', (code, signal) => {
     children.delete(child);
     if (!shuttingDown && code !== 0) {
@@ -27,8 +48,8 @@ function shutdown(code = 0) {
   setTimeout(() => process.exit(code), 150);
 }
 
-process.on('SIGINT', () => shutdown(0));
-process.on('SIGTERM', () => shutdown(0));
-
-start('bridge', process.execPath, ['scripts/agent-bridge.js']);
-start('vite', npmCommand, ['run', 'dev:web']);
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  process.on('SIGINT', () => shutdown(0));
+  process.on('SIGTERM', () => shutdown(0));
+  for (const { label, command, args } of developmentInvocations()) start(label, command, args);
+}

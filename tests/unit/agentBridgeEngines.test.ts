@@ -1,9 +1,12 @@
+import { allowOnlyLoopbackConnections } from '../helpers/loopbackNetwork.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { engineInvocation, normalizeEngine, runEngine } from '../../scripts/agent-bridge-engines.js';
+
+allowOnlyLoopbackConnections();
 
 test('normalizeEngine 认 codex 与 gemini，其余回退 claude', () => {
   assert.equal(normalizeEngine('codex'), 'codex');
