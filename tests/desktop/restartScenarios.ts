@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ChildProcess } from 'node:child_process';
+import { freezeRendererClock } from './freezeRendererClock.ts';
 
 // Share the exact regression flows between development Electron and the real
 // Windows package. Each test owns a fresh profile, workspace, and credential-free
@@ -76,8 +77,7 @@ export async function closeEditorWindow(app: ElectronApplication) {
 async function editBeforeDebounce(page: Page, content: string) {
   // Freeze renderer timers BEFORE input: the autosave debounce cannot race ahead
   // on a slow Windows runner. Input and the OS-window close still run normally.
-  await page.clock.install();
-  await page.clock.pauseAt(new Date());
+  await freezeRendererClock(page);
   await page.locator('.md-source').evaluate((element, value) => {
     const source = element as HTMLTextAreaElement;
     source.value = value;

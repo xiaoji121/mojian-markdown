@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
       - name: Packaging dependency regression tests
-        run: node --experimental-strip-types --test tests/unit/desktopPackaging.test.ts
+        run: node --experimental-strip-types --test tests/unit/desktopPackaging.test.ts tests/unit/desktopClock.test.ts
       - name: Mock AI CLI and connector protocols (no accounts)
         run: npm run test:cli
       - name: Type check
@@ -43,7 +43,7 @@ jobs:
           if ($exe.Count -ne 1) { throw "Expected one packaged application executable, found $($exe.Count)" }
           "MOJIAN_PACKAGED_EXECUTABLE=$($exe[0].FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Packaged app launch, file save and restart
-        run: npx playwright test --config playwright.desktop.config.ts windows-packaged.spec.ts
+        run: npx playwright test --config playwright.desktop.config.ts windows-packaged.spec.ts --repeat-each=3
       - name: Upload desktop test evidence
         if: always()
         uses: actions/upload-artifact@v4
