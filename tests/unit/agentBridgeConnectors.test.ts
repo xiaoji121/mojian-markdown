@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
+import { createMockCli, mockCliEnv } from '../helpers/mockCli.ts';
 import {
   connectorCapabilities,
   connectorInvocation,
@@ -13,14 +14,14 @@ import {
 
 test('连接器能力检测区分可用、未登录与未安装', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'connector-capability-test-'));
-  const lark = join(dir, 'fake-lark');
-  const dws = join(dir, 'fake-dws');
   try {
-    await writeFile(lark, '#!/bin/sh\necho \'{"identities":{"user":{"available":true}}}\'\n');
-    await writeFile(dws, '#!/bin/sh\necho \'{"success":true,"authenticated":false,"token_valid":false}\'\n');
-    await import('node:fs/promises').then(({ chmod }) => Promise.all([chmod(lark, 0o755), chmod(dws, 0o755)]));
+    const lark = await createMockCli(dir, 'mojian-test-lark',
+      `process.stdout.write('{"identities":{"user":{"available":true}}}');`);
+    const dws = await createMockCli(dir, 'mojian-test-dws',
+      `process.stdout.write('{"success":true,"authenticated":false,"token_valid":false}');`);
 
     const capabilities = await connectorCapabilities({
+      ...mockCliEnv(dir),
       AGENT_BRIDGE_LARK_COMMAND: lark,
       AGENT_BRIDGE_DWS_COMMAND: dws,
     });
@@ -163,7 +164,8 @@ test('钉钉上传 Markdown 文件时传绝对路径并保留原文', async () =
     });
 
     const seen = JSON.parse(await readFile(probe, 'utf8'));
-    assert.match(seen.path, /^\/.+document\.md$/);
+    assert.ok(isAbsolute(seen.path));
+    assert.ok(seen.path.endsWith('document.md'));
     assert.equal(seen.content, '# 正文');
     assert.equal(result.url, 'https://alidocs.dingtalk.com/i/nodes/x', 'dws 的链接在 serverResponse.docUrl');
   });
@@ -262,3 +264,54 @@ test('publishDocument 落盘的临时文件用完即删', async () => {
     await assert.rejects(() => readFile(usedPath, 'utf8'), /ENOENT/);
   });
 });
+
+test('npm connector shims preserve document names, folders, Chinese paths and cwd', async () => {
+  const dir = await mkdtemp(join(tmpdir(), '连接器 CLI 空格 '));
+  try {
+    const command = await createMockCli(dir, 'mojian-test-connector', `
+      const fs = require('node:fs');
+      const args = process.argv.slice(2);
+      if (args[0] === 'auth') {
+        process.stdout.write(JSON.stringify({
+          identities: { user: { available: true } },
+          success: true, authenticated: true, token_valid: true
+        }));
+      } else {
+        const file = args[args.indexOf('--file') + 1];
+        process.stdout.write(JSON.stringify({ ok: true, success: true,
+          args, content: fs.readFileSync(file, 'utf8'), cwd: process.cwd() }));
+      }
+    `);
+    const env = { ...mockCliEnv(dir), AGENT_BRIDGE_LARK_COMMAND: command, AGENT_BRIDGE_DWS_COMMAND: command };
+    const available = await connectorCapabilities(env);
+    assert.equal(available.feishu.available, true);
+    assert.equal(available.dingtalk.available, true);
+    for (const target of ['feishu', 'dingtalk']) {
+      const fileName = '中文 " & echo injected | < > ^ %PATH% !VALUE! .md';
+      const folder = 'folder " & | < > ^ %PATH% !VALUE!';
+      const result = await publishDocument(target, { fileName, content: '# 原样正文', folder, env });
+      assert.equal(result.raw.content, '# 原样正文');
+      assert.ok(result.raw.args.includes(fileName));
+      assert.ok(result.raw.args.includes(folder));
+      if (target === 'feishu') assert.match(result.raw.cwd, /mojian-publish-/);
+    }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('unsupported Windows batch connector yields capability reason rather than rejecting all probes',
+  { skip: process.platform !== 'win32' }, async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'unsupported-cli-'));
+    try {
+      const command = join(dir, 'custom.cmd');
+      await writeFile(command, '@echo off\r\necho arbitrary batch script\r\n');
+      const result = await connectorCapabilities({ ...mockCliEnv(dir),
+        AGENT_BRIDGE_LARK_COMMAND: command, AGENT_BRIDGE_DWS_COMMAND: command });
+      assert.equal(result.feishu.available, false);
+      assert.match(result.feishu.reason, /CLI/);
+      assert.equal(result.dingtalk.available, false);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });

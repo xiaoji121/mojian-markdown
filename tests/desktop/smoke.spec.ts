@@ -4,6 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { registerRestartScenarios } from './restartScenarios';
 
+import { mockCliEnv } from '../helpers/mockCli';
+
 // 桌面端冒烟：Electron 启动 → 内嵌 bridge 同源可达 → 外部打开本地文件 →
 // 外部改动自动重载 → 编辑器输入写穿回本地文件 → 未授权路径被拒绝。
 // 前置条件：npm run build:bridge（dist 由内嵌 bridge 静态托管）。
@@ -28,7 +30,11 @@ test('桌面端启动并与本地文件双向同步', async () => {
   const app = await electron.launch({
     args: ['.'],
     env: {
-      ...process.env,
+      ...mockCliEnv(workspace),
+      ...(process.env.DISPLAY ? { DISPLAY: process.env.DISPLAY } : {}),
+      ...(process.env.XAUTHORITY ? { XAUTHORITY: process.env.XAUTHORITY } : {}),
+      AGENT_BRIDGE_LARK_COMMAND: join(workspace, 'missing-test-lark'),
+      AGENT_BRIDGE_DWS_COMMAND: join(workspace, 'missing-test-dws'),
       AGENT_BRIDGE_WORKSPACE: workspace,
       MOJIAN_USER_DATA: userData,
       NO_PROXY: 'localhost,127.0.0.1'
@@ -130,7 +136,11 @@ test('文章链接交给系统浏览器打开，应用窗口不动', async () =>
   const app = await electron.launch({
     args: ['.'],
     env: {
-      ...process.env,
+      ...mockCliEnv(workspace),
+      ...(process.env.DISPLAY ? { DISPLAY: process.env.DISPLAY } : {}),
+      ...(process.env.XAUTHORITY ? { XAUTHORITY: process.env.XAUTHORITY } : {}),
+      AGENT_BRIDGE_LARK_COMMAND: join(workspace, 'missing-test-lark'),
+      AGENT_BRIDGE_DWS_COMMAND: join(workspace, 'missing-test-dws'),
       AGENT_BRIDGE_WORKSPACE: workspace,
       MOJIAN_USER_DATA: userData,
       NO_PROXY: 'localhost,127.0.0.1'
@@ -199,7 +209,11 @@ test('重启恢复且内容一致时，相对路径图片仍能展示', async ()
   const app = await electron.launch({
     args: ['.'],
     env: {
-      ...process.env,
+      ...mockCliEnv(workspace),
+      ...(process.env.DISPLAY ? { DISPLAY: process.env.DISPLAY } : {}),
+      ...(process.env.XAUTHORITY ? { XAUTHORITY: process.env.XAUTHORITY } : {}),
+      AGENT_BRIDGE_LARK_COMMAND: join(workspace, 'missing-test-lark'),
+      AGENT_BRIDGE_DWS_COMMAND: join(workspace, 'missing-test-dws'),
       AGENT_BRIDGE_WORKSPACE: workspace,
       MOJIAN_USER_DATA: userData,
       NO_PROXY: 'localhost,127.0.0.1'
@@ -244,7 +258,11 @@ test('桌面端批注面板的复制与删除按钮可用', async () => {
   const app = await electron.launch({
     args: ['.'],
     env: {
-      ...process.env,
+      ...mockCliEnv(workspace),
+      ...(process.env.DISPLAY ? { DISPLAY: process.env.DISPLAY } : {}),
+      ...(process.env.XAUTHORITY ? { XAUTHORITY: process.env.XAUTHORITY } : {}),
+      AGENT_BRIDGE_LARK_COMMAND: join(workspace, 'missing-test-lark'),
+      AGENT_BRIDGE_DWS_COMMAND: join(workspace, 'missing-test-dws'),
       AGENT_BRIDGE_WORKSPACE: workspace,
       MOJIAN_USER_DATA: userData,
       NO_PROXY: 'localhost,127.0.0.1'
@@ -300,7 +318,11 @@ test('重启后自动恢复最近阅读并重建本地文件同步', async () =>
   const app = await electron.launch({
     args: ['.'],
     env: {
-      ...process.env,
+      ...mockCliEnv(workspace),
+      ...(process.env.DISPLAY ? { DISPLAY: process.env.DISPLAY } : {}),
+      ...(process.env.XAUTHORITY ? { XAUTHORITY: process.env.XAUTHORITY } : {}),
+      AGENT_BRIDGE_LARK_COMMAND: join(workspace, 'missing-test-lark'),
+      AGENT_BRIDGE_DWS_COMMAND: join(workspace, 'missing-test-dws'),
       AGENT_BRIDGE_WORKSPACE: workspace,
       MOJIAN_USER_DATA: userData,
       NO_PROXY: 'localhost,127.0.0.1'

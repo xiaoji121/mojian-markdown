@@ -1,9 +1,12 @@
+import { allowOnlyLoopbackConnections } from '../helpers/loopbackNetwork.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { startAgentBridge } from '../../scripts/agent-bridge.js';
+
+allowOnlyLoopbackConnections();
 
 async function withBridge(options, run) {
   const root = await mkdtemp(join(tmpdir(), 'bridge-test-'));
@@ -27,15 +30,26 @@ test('startAgentBridge 在随机端口启动并响应 /health', async () => {
 });
 
 test('/api/connectors 返回飞书与钉钉本机能力状态', async () => {
-  await withBridge({}, async (bridge) => {
-    const response = await fetch(`${bridge.url}/api/connectors`);
-    const result = await response.json();
-    assert.equal(response.status, 200);
-    for (const target of ['feishu', 'dingtalk']) {
-      assert.equal(typeof result[target].available, 'boolean');
-      assert.equal(typeof result[target].reason, 'string');
-    }
-  });
+  const previousLark = process.env.AGENT_BRIDGE_LARK_COMMAND;
+  const previousDws = process.env.AGENT_BRIDGE_DWS_COMMAND;
+  try {
+    await withBridge({}, async (bridge) => {
+      process.env.AGENT_BRIDGE_LARK_COMMAND = join(bridge.root, 'missing-test-lark');
+      process.env.AGENT_BRIDGE_DWS_COMMAND = join(bridge.root, 'missing-test-dws');
+      const response = await fetch(`${bridge.url}/api/connectors`);
+      const result = await response.json();
+      assert.equal(response.status, 200);
+      for (const target of ['feishu', 'dingtalk']) {
+        assert.equal(typeof result[target].available, 'boolean');
+        assert.equal(typeof result[target].reason, 'string');
+      }
+    });
+  } finally {
+    if (previousLark === undefined) delete process.env.AGENT_BRIDGE_LARK_COMMAND;
+    else process.env.AGENT_BRIDGE_LARK_COMMAND = previousLark;
+    if (previousDws === undefined) delete process.env.AGENT_BRIDGE_DWS_COMMAND;
+    else process.env.AGENT_BRIDGE_DWS_COMMAND = previousDws;
+  }
 });
 
 test('文档 API 在嵌入模式下可用', async () => {
