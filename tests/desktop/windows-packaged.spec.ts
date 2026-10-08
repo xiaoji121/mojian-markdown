@@ -76,7 +76,8 @@ test('Windows packaged app saves Chinese/space paths and survives restart', asyn
     await expect.poll(async () => JSON.parse(await readFile(join(userData, 'granted-paths.json'), 'utf8')))
       .toContain(renamedPath);
     await testInfo.attach('Windows packaged editor', {
-      body: await page.screenshot(), contentType: 'image/png'
+      body: await page.screenshot({ path: testInfo.outputPath('windows-packaged-editor.png') }),
+      contentType: 'image/png'
     });
 
     await app.close();
