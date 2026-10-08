@@ -5,7 +5,7 @@
 // 命令与前置参数可用环境变量覆盖（AGENT_BRIDGE_{LARK,DWS}_{COMMAND,ARGS}），
 // 便于自定义安装路径与测试注入假 CLI。
 // 与 Agent 模式的分工：这里是确定性路径（可预期、可测），Agent 那条是柔性路径。
-import { spawn } from 'node:child_process';
+import { spawnCli } from './agent-bridge-process.js';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -59,7 +59,13 @@ function probeConnector(target, env) {
   const connector = CONNECTORS[target];
   const command = env[connector.envCommand] || connector.command;
   return new Promise((resolve) => {
-    const child = spawn(command, connector.authArgs, { env, stdio: ['ignore', 'pipe', 'pipe'] });
+    let child;
+    try {
+      child = spawnCli(command, connector.authArgs, { env, stdio: ['ignore', 'pipe', 'pipe'] });
+    } catch (error) {
+      resolve({ available: false, reason: `${connector.label} CLI 检测失败：${error.message}` });
+      return;
+    }
     let stdout = '';
     let stderr = '';
     let settled = false;
@@ -170,7 +176,7 @@ function cliFailed(result) {
 
 function runConnector(invocation, missingMessage, env, cwd) {
   return new Promise((resolve, reject) => {
-    const child = spawn(invocation.command, invocation.args, {
+    const child = spawnCli(invocation.command, invocation.args, {
       env,
       ...(cwd ? { cwd } : {}),
       stdio: ['ignore', 'pipe', 'pipe']

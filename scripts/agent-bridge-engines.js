@@ -17,7 +17,7 @@
 //              Node 内置 fetch 不认代理环境变量，Gemini 有地域封锁，
 //              故显式支持代理：设置里的代理地址优先，其次环境变量。
 // CLI 引擎可用环境变量覆盖命令与参数（AGENT_BRIDGE_{CLAUDE,CODEX}_{COMMAND,ARGS}）。
-import { spawn } from 'node:child_process';
+import { spawnCli, terminateCli } from './agent-bridge-process.js';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -120,22 +120,64 @@ function missingCliMessage(engine) {
     : '未找到 Claude CLI。请先安装并登录 Claude Code，或设置 AGENT_BRIDGE_CLAUDE_COMMAND。';
 }
 
-function spawnEngine(engine, invocation, onStdout) {
+function spawnEngine(engine, invocation, onStdout, env, options) {
+  const { signal, processTree } = options;
   return new Promise((resolve, reject) => {
-    const child = spawn(invocation.command, invocation.args, {
-      // Agent 模式把工作目录设成文档所属工程根；问答模式不带 cwd，沿用桥接进程目录。
+    signal?.throwIfAborted();
+    const child = spawnCli(invocation.command, invocation.args, {
+      env, processTree,
+      // Agent 模式把工作目录设成文档所属工程根；问答模式沿用桥接进程目录。
       ...(invocation.cwd ? { cwd: invocation.cwd } : {}),
       stdio: [invocation.stdinPrompt === null ? 'ignore' : 'pipe', 'pipe', 'pipe']
     });
     let stderr = '';
-    child.stdout.on('data', (chunk) => onStdout(chunk.toString('utf8')));
+    let settled = false;
+    let closed = false;
+    let terminationSucceeded = false;
+    let terminationTimer;
+    const finish = (error) => {
+      if (settled) return;
+      settled = true;
+      signal?.removeEventListener('abort', abort);
+      clearTimeout(terminationTimer);
+      if (error) reject(error);
+      else resolve();
+    };
+    const terminationFailed = (error) => {
+      if (settled) return;
+      // 终止失败时释放本地句柄，明确报错，不能伪装成已成功取消。
+      child.stdin?.destroy();
+      child.stdout?.destroy();
+      child.stderr?.destroy();
+      child.unref();
+      finish(error);
+    };
+    // 等到 close 再拒绝；npm 启动器及继承 stdio 的普通子孙进程都需要停止。
+    const abort = () => {
+      terminationTimer = setTimeout(() => terminationFailed(Object.assign(new Error(
+        '无法确认 CLI 进程树已经停止：终止后输出流仍未关闭，请检查残留进程。'
+      ), { code: 'ECLI_TERMINATION_TIMEOUT' })), 5000);
+      terminateCli(child).then(() => {
+        terminationSucceeded = true;
+        if (closed) finish(signal.reason);
+      }, terminationFailed);
+    };
+    signal?.addEventListener('abort', abort, { once: true });
+    child.stdout.on('data', (chunk) => {
+      if (!signal?.aborted) onStdout(chunk.toString('utf8'));
+    });
     child.stderr.on('data', (chunk) => { stderr += chunk.toString('utf8'); });
     child.on('error', (error) => {
-      reject(error.code === 'ENOENT' ? new Error(missingCliMessage(engine)) : error);
+      finish(error.code === 'ENOENT' ? new Error(missingCliMessage(engine)) : error);
     });
     child.on('close', (code) => {
-      if (code === 0) resolve();
-      else reject(new Error(stderr.trim() || `${invocation.command} exited with code ${code}`));
+      closed = true;
+      if (signal?.aborted) {
+        // Windows 根进程可能先退出；仍须等 taskkill 确认整棵进程树的结果。
+        if (terminationSucceeded) finish(signal.reason);
+      }
+      else if (code === 0) finish();
+      else finish(new Error(stderr.trim() || `${invocation.command} exited with code ${code}`));
     });
     if (invocation.stdinPrompt !== null) {
       child.stdin.on('error', () => {});
@@ -155,7 +197,7 @@ async function runClaude(prompt, onDelta, env, options = {}) {
   await spawnEngine('claude', invocation, (delta) => {
     answer += delta;
     onDelta(delta);
-  });
+  }, env, options);
   if (normalizeMode(options.mode) === 'agent') {
     reportSession(options, options.resumeSessionId || options.sessionId);
   }
@@ -209,8 +251,9 @@ async function runCodex(prompt, onDelta, env, options = {}) {
     // stdout 是人类可读进度 / JSON 事件，不进入回答；只取 --output-last-message 的最终消息。
     const invocation = engineInvocation('codex', prompt, { ...options, env, outputFile });
     const onStdout = normalizeMode(options.mode) === 'agent' ? createCodexEventReader(options) : () => {};
-    await spawnEngine('codex', invocation, onStdout);
+    await spawnEngine('codex', invocation, onStdout, env, options);
     const answer = (await readFile(outputFile, 'utf8')).trim();
+    options.signal?.throwIfAborted();
     if (!answer) throw new Error('Codex 没有返回回答内容');
     onDelta(answer);
     return answer;
@@ -227,7 +270,7 @@ function geminiProxy(env, gemini) {
     || '';
 }
 
-async function runGemini(prompt, onDelta, env, gemini) {
+async function runGemini(prompt, onDelta, env, gemini, signal) {
   const apiKey = gemini?.apiKey;
   if (!apiKey) throw new Error('尚未配置 Gemini API Key，请在 AI 面板的设置（⚙）里填写。');
   const base = env.AGENT_BRIDGE_GEMINI_BASE || 'https://generativelanguage.googleapis.com';
@@ -239,6 +282,7 @@ async function runGemini(prompt, onDelta, env, gemini) {
   const response = await doFetch(
     `${base}/v1beta/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse`,
     {
+      signal,
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] })
@@ -261,6 +305,7 @@ async function runGemini(prompt, onDelta, env, gemini) {
   let finishInfo = '';
   const consumePacket = (packet) => {
     for (const line of packet.split(/\r?\n/)) {
+      signal?.throwIfAborted();
       if (!line.startsWith('data:')) continue;
       let payload = null;
       try { payload = JSON.parse(line.slice(5).trim()); } catch {}
@@ -293,9 +338,48 @@ async function runGemini(prompt, onDelta, env, gemini) {
   return answer.trim();
 }
 
-export function runEngine(engine, prompt, onDelta, env = process.env, options = {}) {
-  if (engine === 'gemini') return runGemini(prompt, onDelta, env, options.gemini);
-  return engine === 'codex'
-    ? runCodex(prompt, onDelta, env, options)
-    : runClaude(prompt, onDelta, env, options);
+function requestLifecycle(options) {
+  const controller = new AbortController();
+  const abort = () => controller.abort(Object.assign(new Error('请求已取消'), {
+    name: 'AbortError', code: 'ABORT_ERR', cause: options.signal?.reason
+  }));
+  if (options.signal?.aborted) abort();
+  else options.signal?.addEventListener('abort', abort, { once: true });
+  const timer = Number.isFinite(options.timeoutMs) && options.timeoutMs > 0
+    ? setTimeout(() => controller.abort(Object.assign(new Error('请求超时'), {
+      name: 'TimeoutError', code: 'ETIMEDOUT'
+    })), options.timeoutMs)
+    : null;
+  return {
+    signal: controller.signal,
+    dispose() {
+      if (timer) clearTimeout(timer);
+      options.signal?.removeEventListener('abort', abort);
+    }
+  };
+}
+
+// timeoutMs / signal 由调用方按需启用；默认仍不限制请求时长。
+export async function runEngine(engine, prompt, onDelta, env = process.env, options = {}) {
+  const request = requestLifecycle(options);
+  try {
+    request.signal.throwIfAborted();
+    const settings = {
+      ...options, signal: request.signal,
+      processTree: !!options.signal || (Number.isFinite(options.timeoutMs) && options.timeoutMs > 0)
+    };
+    const answer = await (engine === 'gemini'
+      ? runGemini(prompt, onDelta, env, options.gemini, request.signal)
+      : engine === 'codex'
+        ? runCodex(prompt, onDelta, env, settings)
+        : runClaude(prompt, onDelta, env, settings));
+    request.signal.throwIfAborted();
+    return answer;
+  } catch (error) {
+    if (error?.code?.startsWith('ECLI_TERMINATION_')) throw error;
+    if (request.signal.aborted) throw request.signal.reason;
+    throw error;
+  } finally {
+    request.dispose();
+  }
 }

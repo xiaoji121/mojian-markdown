@@ -111,3 +111,12 @@ test('输入 Markdown 后预览实时渲染', async ({ page }) => {
 - CI 将应用复制到仓库外的中文/空格路径，再通过 `MOJIAN_PACKAGED_EXECUTABLE` 启动 `tests/desktop/windows-packaged.spec.ts`：检查 bridge 健康、中文路径打开、写回、另存为、外部更新、重命名，以及重启后的文件授权。
 - 另存为的原生对话框选择由测试替身提供，实际 IPC 与磁盘写入仍执行。该测试不覆盖 NSIS 安装/卸载、SmartScreen、签名或第三方 CLI 安装。
 - 手动执行时先构建并打包，再设置 `MOJIAN_PACKAGED_EXECUTABLE` 为仓库外应用的 `.exe` 绝对路径，运行 `npx playwright test --config playwright.desktop.config.ts windows-packaged.spec.ts`。
+
+## Windows AI CLI 协议验证（无账号）
+
+- `npm run test:cli` 运行 shell-free 进程启动、Claude/Codex 协议、Gemini 本地 HTTP/SSE、飞书/钉钉连接器与开发入口测试。Linux CI 随完整单测执行；Windows desktop CI 在真实 Windows runner 上执行同一组测试。
+- CLI fixture 使用独立的 `mojian-test-*` 命令、临时目录和仅含操作系统必需项的环境变量，不继承账号、HOME、token 或代理。Gemini 仅使用 loopback 服务与假 Key；测试在 socket 边界阻止非本机连接。
+- Windows 覆盖 PATH/PATHEXT、npm `.cmd` shim、中文/空格路径、引号/换行/命令元字符原样传递、stdin、流式输出、非零退出、缺失命令，以及 `runEngine` 的 `timeoutMs` / `signal`。这两个选项是引擎 API 能力，本变更没有新增 UI 取消按钮或默认超时。
+- 已知 npm Node shim 解析后直接运行 Node + JS 入口，始终 `shell: false`；任意 `.bat`、自定义或修改过的 `.cmd` 会安全拒绝。原生 `.exe` 继续直接启动。Electron 必须能找到 shim 同目录或 PATH 中的 `node.exe`，不会把桌面应用当作 Node 再启动。
+- Windows 打包冒烟还会通过真实 `/api/chat` 调用 mock Claude/Codex shim，验证打包后的 Electron 能正确找到 Node 并传递提示词。开发入口直接启动 Vite 的 Node 入口，避免依赖 Node 自带的特殊 `npm.cmd` 包装器。
+- 这些检查不验证真实 Claude/Codex 登录、服务端模型行为、Gemini Key、真实发布权限、任意包管理器 wrapper，或 Windows 10/11 的 NSIS 安装体验。启用超时/取消时，POSIX 使用独立进程组，Windows 使用系统 taskkill 终止普通子孙进程；测试包含 npm 风格的二级进程与继承的输出管道。终止失败会明确报错，不承诺终止工具自行脱离进程树的进程。
