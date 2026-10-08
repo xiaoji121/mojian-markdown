@@ -1,4 +1,4 @@
-import { test, expect, openEditor, setSource } from './fixtures';
+import { test, expect, openEditor, openAppearance, setSource } from './fixtures';
 
 const ARTICLE = `# 长图导出
 
@@ -55,7 +55,7 @@ test('长图弹窗按预览排版渲染海报，首个标题升格为海报标�
 });
 
 test('长图预览跟随当前阅读纸张颜色', async ({ page }) => {
-  await page.getByRole('button', { name: '阅读排版', exact: true }).click();
+  await openAppearance(page);
   await page.locator('.paper-dot[data-paper="green"]').click();
   await page.keyboard.press('Escape');
   await expect(page.locator('body')).toHaveAttribute('data-paper', 'green');

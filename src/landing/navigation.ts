@@ -1,6 +1,7 @@
 import { landingCopy } from './copy.ts';
 import { renderLanding, renderMetadata } from './render.ts';
 import { localeFromPath } from './route.ts';
+import { closeLandingLanguageMenu, focusLandingLanguageToggle, initLandingLanguageMenu } from './languageMenu.ts';
 
 export function syncWebLanding() {
   if (window.mojianDesktop) return;
@@ -20,13 +21,24 @@ export function syncWebLanding() {
 }
 
 export function initLandingNavigation() {
+  initLandingLanguageMenu();
   // Same-document navigation keeps the mounted editor and pending draft intact.
   // Ordinary links remain a real no-JS fallback, and modified clicks keep their
   // browser behavior. Landing language never overwrites editor preferences.
   document.addEventListener('click', event => {
-    if (window.mojianDesktop || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     const target = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('.landing-languages a') : null;
     if (!target) return;
+    closeLandingLanguageMenu();
+    if (window.mojianDesktop) {
+      // Own this same-document transition, as on the web. Native fragment
+      // navigation can reset focus after a paint or dispatch another hashchange.
+      event.preventDefault();
+      if (target.hash !== location.hash) history.pushState(null, '', target.hash);
+      window.dispatchEvent(new Event('hashchange'));
+      focusLandingLanguageToggle();
+      return;
+    }
     event.preventDefault();
     // Vite makes template assets relative to the HTML entry. Resolve them
     // before changing paths, including the not-yet-mounted editor favicon.
@@ -37,6 +49,7 @@ export function initLandingNavigation() {
     syncWebLanding();
     window.dispatchEvent(new Event('hashchange'));
     window.scrollTo(0, 0);
+    focusLandingLanguageToggle();
   });
   window.addEventListener('popstate', () => {
     syncWebLanding();

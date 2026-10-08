@@ -28,3 +28,20 @@ test('Vite dev fallback uses the original locale URL, not rewritten index.html',
   assert.match(localized, /<html lang="ja"/);
   assert.match(localized, /href="https:\/\/yuxizhai.com\/md-editor\/ja\/"/);
 });
+
+for (const [locale, autonym] of [['zh-CN', '简体中文'], ['zh-TW', '繁體中文'], ['en', 'English'], ['ja', '日本語']]) {
+  test(`${locale} keeps language links in a closed utility disclosure beside editor entry`, () => {
+    const html = renderLanding(locale, `/md-editor/${locale}/`);
+    const utility = html.match(/<div class="landing-nav-actions">([\s\S]*?)<\/div>/)?.[1];
+    assert.ok(utility, 'language and editor entry must share the right-side utility group');
+    assert.match(utility, /<details class="landing-language-menu">/);
+    assert.doesNotMatch(utility, /<details[^>]*\sopen(?:[\s=>])/);
+    assert.match(utility, new RegExp(`<summary[^>]+class="landing-language-toggle"[^>]+aria-label="[^\"]+${autonym}"`));
+    assert.match(utility, new RegExp(`<span[^>]+lang="${locale}"[^>]*>${autonym}<\\/span>`));
+    assert.match(utility, /<svg[^>]+aria-hidden="true"/);
+    assert.match(utility, /<nav class="landing-languages"[^>]+aria-label=/);
+    assert.equal((utility.match(/hreflang=/g) ?? []).length, 4);
+    assert.match(utility, /<\/details><a class="landing-button landing-open"/);
+    for (const language of ['zh-CN', 'zh-TW', 'en', 'ja']) assert.ok(utility.includes(`href="../${language}/"`));
+  });
+}

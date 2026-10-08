@@ -3,6 +3,7 @@ import { detectLocalReadingFont, READING_FONT_OFFICIAL_URL } from '../fonts/loca
 import { detectLocale, getLocale, isLocale, setLocale, t } from './i18n.ts';
 
 import { localeFromPath } from '../landing/route.ts';
+import { bindLocaleSettings, syncLocaleSettings } from './localeSettings.ts';
 import { translateChrome } from './localeChrome.ts';
 
 export class LocaleMethods {
@@ -13,12 +14,9 @@ export class LocaleMethods {
       document.documentElement.lang = getLocale();
       document.title = getLocale() === 'en' ? 'Mojian Markdown' : '墨笺 Markdown';
     }
-    this._localeSelect = document.querySelector('.interface-language');
-    if (this._localeSelect) {
-      this._localeSelect.value = getLocale();
-      this._localeChange = () => this._changeLocale(this._localeSelect.value);
-      this._localeSelect.addEventListener('change', this._localeChange);
-    }
+    document.documentElement.dataset.editorLocale = getLocale();
+    syncLocaleSettings(document, getLocale());
+    this._disposeLocaleSettings = bindLocaleSettings(document, value => this._changeLocale(value));
     translateChrome(document);
     this._readingFontStatus = 'unknown';
     const link = document.querySelector('.reading-font-link');
@@ -32,6 +30,8 @@ export class LocaleMethods {
   _changeLocale(value) {
     if (!isLocale(value) || value === getLocale()) return;
     setLocale(value);
+    document.documentElement.dataset.editorLocale = getLocale();
+    syncLocaleSettings(document, getLocale());
     if (window.location.hash === '#editor') {
       document.documentElement.lang = getLocale();
       document.title = getLocale() === 'en' ? 'Mojian Markdown' : '墨笺 Markdown';
@@ -73,5 +73,5 @@ export class LocaleMethods {
     node.textContent = t(key);
   }
 
-  _disposeLocale() { this._disposeReadingFont?.(); this._localeSelect?.removeEventListener('change', this._localeChange); }
+  _disposeLocale() { this._disposeReadingFont?.(); this._disposeLocaleSettings?.(); }
 }

@@ -4,11 +4,15 @@
 .appearance-theme { display: inline-flex; align-items: center; gap: 8px; padding: 0 10px; }
 .reading-toolbar .preview-toolbar-actions { gap: 8px; }
 .reading-toolbar .fullscreen-button-label { display: inline; }
+/* Reserve a 48px lane for the fixed global More button in every immersive layout.
+   Keeping the inset in the shared geometry avoids equal-specificity mobile rules
+   replacing the clearance when preview-mode-active and fullscreen are both set. */
+.preview-pane-fullscreen { --reading-tools-edge: 64px; }
 
 .editor-main.preview-mode-active > .preview-pane > .reading-toolbar,
 .editor-main > .preview-pane-fullscreen > .reading-toolbar {
   position: absolute;
-  inset: 20px max(32px, calc((100% - 820px) / 2)) auto auto;
+  inset: 20px max(var(--reading-tools-edge, 32px), calc((100% - 820px) / 2)) auto auto;
   width: max-content;
   max-width: calc(100% - 32px);
   height: 36px;
@@ -26,12 +30,9 @@
   right: max(64px, calc((100% - 1240px) / 2));
 }
 .editor-main.preview-mode-active .reading-toolbar > .preview-toolbar-actions > .tbtn,
-.editor-main.preview-mode-active .reading-toolbar .appearance-toggle,
-.preview-pane-fullscreen .reading-toolbar > .preview-toolbar-actions > .tbtn,
-.preview-pane-fullscreen .reading-toolbar .appearance-toggle { color: var(--paper-text-3); }
+.preview-pane-fullscreen .reading-toolbar > .preview-toolbar-actions > .tbtn { color: var(--paper-text-3); }
 .editor-main.preview-mode-active .reading-toolbar .tbtn:hover,
 .preview-pane-fullscreen .reading-toolbar .tbtn:hover { color: var(--paper-accent); }
-.reading-toolbar .appearance-toggle[aria-expanded='true'] { color: var(--accent); }
 /* 工具组随正文滚走；容器边界裁切，避免滚到顶栏上方。 */
 .preview-pane { overflow: hidden; }
 .preview-pane > .reading-toolbar { transition: none; }
@@ -43,15 +44,13 @@
   .editor-main.preview-mode-active > .preview-pane > .reading-toolbar,
   .editor-main > .preview-pane-fullscreen > .reading-toolbar {
     top: 12px;
-    right: 16px;
+    right: var(--reading-tools-edge, 16px);
     height: 36px !important;
     padding: 0 !important;
     overflow: visible;
   }
   .editor-main.preview-mode-active > .preview-pane > .md-preview,
   .editor-main > .preview-pane-fullscreen > .md-preview { padding-top: 72px !important; }
-  .reading-toolbar .reading-appearance-panel { right: 0; }
-  .reading-toolbar .appearance-label,
   .reading-toolbar .fullscreen-button-label { display: inline !important; }
 }
 @media (max-width: 420px) {
@@ -61,14 +60,10 @@
 }
 
 /* Language names remain self-identifying in every locale. */
-.interface-language-control { display: inline-flex; min-width: 0; }
-.interface-language { max-width: 112px; min-width: 78px; padding: 5px 6px; border: 1px solid var(--border); border-radius: 6px; color: var(--text-2); background: var(--bg-2); font: inherit; font-size: 12px; }
-.interface-language:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 html[lang="en"] .header-menu, html[lang="ja"] .header-menu { min-width: 260px; max-width: min(360px, calc(100vw - 24px)); }
 html[lang="en"] .header-menu-item, html[lang="ja"] .header-menu-item { white-space: normal; }
 @media (max-width: 700px) {
-  .interface-language { max-width: 88px; min-width: 60px; }
   .header-brand .brand-title { display: none; }
 }
 .reading-font-note { display: grid; gap: 5px; max-width: 290px; white-space: normal; line-height: 1.5; }

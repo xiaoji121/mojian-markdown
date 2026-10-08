@@ -10,7 +10,9 @@ export function syncDesktopLanding() {
   const locale = selected ?? (window.location.hash === '' || window.location.hash === '#' ? 'zh-CN' : null);
   if (locale) {
     const landing = document.getElementById('landing-page');
-    if (landing) landing.outerHTML = renderLanding(locale);
+    // History may report the same route more than once. Keep its live controls
+    // and focus when the locale is already rendered.
+    if (landing && landing.lang !== locale) landing.outerHTML = renderLanding(locale);
     document.documentElement.dataset.landingLocale = locale;
     if (selected) document.documentElement.dataset.desktopLandingLocale = selected;
     else delete document.documentElement.dataset.desktopLandingLocale;

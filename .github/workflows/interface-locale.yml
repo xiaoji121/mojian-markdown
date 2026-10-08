@@ -43,7 +43,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Web locale persistence and layout screenshots
         if: runner.os == 'Linux'
-        run: npx playwright test tests/e2e/interfaceLocale.spec.ts tests/e2e/local-reading-font.spec.ts tests/e2e/localized-sample.spec.ts --output=test-results/web
+        run: npx playwright test tests/e2e/interfaceLocale.spec.ts tests/e2e/local-reading-font.spec.ts tests/e2e/localized-sample.spec.ts tests/e2e/global-settings.spec.ts --output=test-results/web
       - name: Built landing locale navigation and no-JS screenshots
         if: runner.os == 'Linux'
         run: npx playwright test --config playwright.landing.config.ts --output=test-results/landing

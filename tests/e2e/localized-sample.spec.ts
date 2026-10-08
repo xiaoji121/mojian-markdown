@@ -1,3 +1,4 @@
+import { chooseLanguage } from './localeHelpers';
 import { test, expect, setSource } from './fixtures';
 
 const samples = [
@@ -19,7 +20,7 @@ for (const sample of samples) {
     await expect(page.locator('.md-source')).toHaveValue(/Ctrl\+S/);
     await page.screenshot({ path: testInfo.outputPath(`sample-${sample.locale}.png`), fullPage: true });
     const initial = await page.locator('.md-source').inputValue();
-    await page.locator('.interface-language').selectOption(sample.locale === 'en' ? 'ja' : 'en');
+    await chooseLanguage(page, sample.locale === 'en' ? 'ja' : 'en');
     await expect(page.locator('.md-source')).toHaveValue(initial);
     await expect(page.locator('.md-preview')).toHaveAttribute('lang', sample.locale);
     const state = await page.evaluate(() => JSON.parse(localStorage.getItem('md-editor-warm-v1') || '{}'));
@@ -27,7 +28,7 @@ for (const sample of samples) {
     await page.reload();
     await expect(page.locator('.md-source')).toHaveValue(initial);
     await setSource(page, initial + '\nUser note');
-    await page.locator('.interface-language').selectOption(sample.locale);
+    await chooseLanguage(page, sample.locale);
     await expect(page.locator('.md-source')).toHaveValue(initial + '\nUser note');
     await expect(page.locator('.md-preview')).toHaveAttribute('lang', '');
   });
@@ -40,7 +41,7 @@ for (const content of ['', '# Saved document\nKeep <strong>my text</strong>']) {
     await page.goto('/#editor');
     await expect(page.locator('.md-source')).toBeVisible();
     await expect(page.locator('.md-source')).toHaveValue(content);
-    await page.locator('.interface-language').selectOption('en');
+    await chooseLanguage(page, 'en');
     await expect(page.locator('.md-source')).toHaveValue(content);
     await expect(page.locator('.md-preview')).toHaveAttribute('lang', '');
   });
@@ -61,7 +62,7 @@ test('Back and Forward never reload a sample over edited content', async ({ page
   await page.evaluate(() => { location.hash = 'editor'; });
   await expect(page.locator('.md-source')).toBeVisible();
   await setSource(page, '# My reading notes\nKeep these notes.');
-  await page.locator('.interface-language').selectOption('ja');
+  await chooseLanguage(page, 'ja');
   await page.goBack();
   await page.goForward();
   await expect(page.locator('.md-source')).toHaveValue('# My reading notes\nKeep these notes.');

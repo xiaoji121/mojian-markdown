@@ -1,4 +1,4 @@
-import { test, expect, openEditor, setSource } from './fixtures';
+import { test, expect, openEditor, openAppearance, setSource } from './fixtures';
 
 test('editor loads only bundled licensed reading fonts without remote font services', async ({ page }) => {
   const remoteFontRequests: string[] = [];
@@ -151,7 +151,7 @@ test('字数统计跟随内容更新', async ({ page }) => {
 });
 
 test('主题移入排版后仍有清晰图标与足够的点击区域', async ({ page }) => {
-  await page.getByRole('button', { name: '阅读排版', exact: true }).click();
+  await openAppearance(page);
   const theme = page.getByRole('button', { name: '切换亮色或暗黑主题' });
   const bounds = await theme.boundingBox();
   expect(bounds!.height).toBeGreaterThanOrEqual(32);
@@ -277,7 +277,7 @@ test('主题切换写入 data-theme 并可来回切换', async ({ page }) => {
   const initial = await body.getAttribute('data-theme');
   const other = initial === 'dark' ? 'light' : 'dark';
 
-  await page.getByRole('button', { name: '阅读排版', exact: true }).click();
+  await openAppearance(page);
   await page.getByRole('button', { name: '切换亮色或暗黑主题' }).click();
   await expect(body).toHaveAttribute('data-theme', other);
 

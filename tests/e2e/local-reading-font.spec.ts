@@ -1,4 +1,4 @@
-import { test, expect, openEditor } from './fixtures';
+import { test, expect, openEditor, openAppearance } from './fixtures';
 
 test('explicit local reading choice stays offline with no Canger download', async ({ page }) => {
   const downloads: string[] = [];
@@ -6,9 +6,9 @@ test('explicit local reading choice stays offline with no Canger download', asyn
     if (/cejk|weread|canger-jinkai/i.test(request.url())) downloads.push(request.url());
   });
   await openEditor(page);
-  await page.locator('.appearance-toggle').click();
+  await openAppearance(page);
   await page.locator('.reading-font-select').selectOption('local-jinkai');
-  await page.locator('.appearance-toggle').click();
+  await page.keyboard.press('Escape');
   const font = await page.locator('.md-preview').evaluate((element) => getComputedStyle(element).fontFamily);
   expect(font).toContain('Mojian Local JinKai 04');
   const available = await page.evaluate(async () => {
