@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { t } from './i18n.ts';
+import { isPristineSample } from './sample.ts';
 // 本地文件双向同步：
 //   编辑器 → 本地：autosave 时把内容写穿回打开的本地文件（需要 readwrite 权限）。
 //   本地 → 编辑器：轮询文件 lastModified，外部改动后自动重载；
@@ -246,6 +247,7 @@ export class LocalFileSyncMethods {
   async _restoreLocalFileLink() {
     // A fresh example is not a saved file, even if an old handle has its name.
     if (this._initialSample || this.fileHandle) return;
+    if (!this.localFilePath && isPristineSample(this.sourceRef.current?.value || '', this.fileName)) return;
     if (typeof window !== 'undefined' && window.mojianDesktop && this.localFilePath) {
       return this._restoreDesktopFileLink();
     }

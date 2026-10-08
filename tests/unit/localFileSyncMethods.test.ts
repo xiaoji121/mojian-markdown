@@ -314,3 +314,20 @@ test('fresh localized sample does not inspect an unrelated saved file handle', a
   try { await editor._restoreLocalFileLink(); assert.equal(opens, 0); }
   finally { if (old) globalThis.indexedDB = old; else delete (globalThis as any).indexedDB; }
 });
+
+test('a persisted untouched localized sample cannot reopen an orphan same-name handle', async () => {
+  const { getSample } = await import('../../src/editor/sample.ts');
+  const old = globalThis.indexedDB;
+  let opens = 0;
+  globalThis.indexedDB = { open() { opens++; throw new Error('must not open'); } } as any;
+  try {
+    for (const locale of ['en', 'ja'] as const) {
+      const sample = getSample(locale, 'Win32');
+      const editor = createEditor(null, sample.markdown);
+      editor.fileName = sample.fileName;
+      editor._initialSample = null;
+      await editor._restoreLocalFileLink();
+    }
+    assert.equal(opens, 0);
+  } finally { if (old) globalThis.indexedDB = old; else delete (globalThis as any).indexedDB; }
+});
