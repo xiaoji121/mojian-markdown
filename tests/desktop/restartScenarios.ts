@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ChildProcess } from 'node:child_process';
+import { freezeRendererClock } from './freezeRendererClock.ts';
 
 // Share the exact regression flows between development Electron and the real
 // Windows package. Each test owns a fresh profile, workspace, and credential-free
@@ -76,8 +77,7 @@ export async function closeEditorWindow(app: ElectronApplication) {
 async function editBeforeDebounce(page: Page, content: string) {
   // Freeze renderer timers BEFORE input: the autosave debounce cannot race ahead
   // on a slow Windows runner. Input and the OS-window close still run normally.
-  await page.clock.install();
-  await page.clock.pauseAt(new Date());
+  await freezeRendererClock(page);
   await page.locator('.md-source').evaluate((element, value) => {
     const source = element as HTMLTextAreaElement;
     source.value = value;
@@ -113,7 +113,11 @@ async function addAnnotation(page: Page) {
   await expect(page.locator('.selection-toolbar')).toBeVisible();
   await page.getByRole('button', { name: /写想法/ }).click();
   await expect(page.locator('.comments-panel .comment-quote')).toHaveCount(1);
-  await page.locator('.comment-note-input').fill('重启后保留的想法');
+  const note = page.locator('.comment-note-input');
+  // Wait for the application's delayed autofocus before fill() can focus the
+  // note itself; otherwise that pending focus can close the next appearance menu.
+  await expect(note).toBeFocused();
+  await note.fill('重启后保留的想法');
 }
 
 export function registerRestartScenarios(label: string, executablePath?: string) {
