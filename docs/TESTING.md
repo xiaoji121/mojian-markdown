@@ -103,3 +103,11 @@ test('输入 Markdown 后预览实时渲染', async ({ page }) => {
 - `tests/e2e/fixtures.ts` — E2E fixture 与页面辅助函数。
 - `tests/desktop/` — Electron 冒烟测试（`_electron.launch` 驱动真实桌面应用）。
 - 测试目录不参与 `tsc --noEmit`（tsconfig 只含 `src`、`extension/src`），stub 可以写得宽松。
+
+## 桌面安装包依赖与 Windows 验证
+
+- `tests/unit/desktopPackaging.test.ts` 检查 bridge 的本地静态导入均在打包清单中，且生产依赖没有被排除；随 `npm test` 运行。
+- `Windows desktop` CI 在 Windows x64 上运行现有桌面冒烟测试，并用 `electron-builder --win --x64 --dir --publish never` 生成未发布的应用目录。
+- CI 将应用复制到仓库外的中文/空格路径，再通过 `MOJIAN_PACKAGED_EXECUTABLE` 启动 `tests/desktop/windows-packaged.spec.ts`：检查 bridge 健康、中文路径打开、写回、另存为、外部更新、重命名，以及重启后的文件授权。
+- 另存为的原生对话框选择由测试替身提供，实际 IPC 与磁盘写入仍执行。该测试不覆盖 NSIS 安装/卸载、SmartScreen、签名或第三方 CLI 安装。
+- 手动执行时先构建并打包，再设置 `MOJIAN_PACKAGED_EXECUTABLE` 为仓库外应用的 `.exe` 绝对路径，运行 `npx playwright test --config playwright.desktop.config.ts windows-packaged.spec.ts`。

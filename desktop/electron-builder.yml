@@ -1,5 +1,5 @@
-# 桌面端打包配置。运行时只依赖 Node 内建模块与 Electron，
-# node_modules 全部排除（前端依赖已打进 dist）。
+# 桌面端打包配置。前端依赖已打进 dist；Agent Bridge 仍依赖 undici。
+# 保留 electron-builder 默认的生产依赖收集，避免漏掉运行时模块。
 appId: com.yuxizhai.mojian-markdown
 productName: 墨笺 Markdown
 directories:
@@ -7,11 +7,8 @@ directories:
 files:
   - desktop/**
   - dist/**
-  - scripts/agent-bridge.js
-  - scripts/agent-bridge-store.js
-  - scripts/agent-bridge-engines.js
+  - scripts/agent-bridge*.js
   - package.json
-  - "!node_modules/**"
 npmRebuild: false
 fileAssociations:
   - ext: md
