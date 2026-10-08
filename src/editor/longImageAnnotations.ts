@@ -1,3 +1,4 @@
+import { t } from './i18n.ts';
 // 长图专用的批注回填：预览中只有划线和编号，生成图片时把批注正文
 // 放回对应段落下方。这里只操作海报克隆 DOM，不会污染编辑器预览。
 
@@ -22,13 +23,13 @@ function annotationCopy(comment: LongImageAnnotation): AnnotationCopy {
     return {
       note: String(comment.question || comment.note || '').trim(),
       reply: String(comment.answer || '').trim(),
-      replyLabel: '回应'
+      replyLabel: t("回应")
     };
   }
   return {
     note: String(comment.note || '').trim(),
     reply: String(comment.reply || '').trim(),
-    replyLabel: '补充'
+    replyLabel: t("补充")
   };
 }
 
@@ -53,7 +54,7 @@ function wrapTextRange(root: HTMLElement, start: number, end: number, comment: L
     const mark = document.createElement('span');
     mark.className = 'longimg-restored-mark is-' + (comment.type || 'marker');
     mark.setAttribute('data-comment-id', comment.id);
-    mark.title = '查看批注';
+    mark.title = t("查看批注");
     text.parentNode?.insertBefore(mark, text);
     mark.appendChild(text);
     if (!first) first = mark;
@@ -90,7 +91,7 @@ function cardFor(comment: LongImageAnnotation, index: number, copy: AnnotationCo
 
   const label = document.createElement('div');
   label.className = 'longimg-comment-label';
-  label.textContent = '我的批注 · ' + String(index + 1).padStart(2, '0');
+  label.textContent = t("我的批注 · {index}", { index: String(index + 1).padStart(2, '0') });
   card.appendChild(label);
 
   if (copy.note) {

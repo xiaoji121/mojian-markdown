@@ -17,7 +17,7 @@ export function registerSecureSettingsScenario(label: string, executablePath?: s
     await writeFile(settingsPath, JSON.stringify({ providers: { gemini: { apiKey: fakeKey } } }));
     const launch = async () => {
       const app = await electron.launch({ executablePath,
-        args: [...(executablePath ? [] : ['.']), '--disable-background-networking',
+        args: [...(executablePath ? [] : ['.']), '--lang=zh-CN', '--disable-background-networking',
           '--proxy-server=http://127.0.0.1:9', '--proxy-bypass-list=localhost;127.0.0.1;[::1]'],
         env: { ...mockCliEnv(root), MOJIAN_USER_DATA: userData, AGENT_BRIDGE_WORKSPACE: workspace,
           AGENT_BRIDGE_CLAUDE_COMMAND: join(root, 'missing-test-claude'),

@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { t } from './i18n.ts';
 // 阅读脉络图：把一篇文档的追问树（AI 问答 + 摘录回答的逐级追问）
 // 渲染成 mermaid 流程图，从侧栏文档条目进入，复用预览 override 视图。
 // 脉络视图不属于任何子文档（activeAnswerRequestId 为空），
@@ -11,7 +12,7 @@ export class ReadingMapMethods {
       // 先把防抖中的批注/回复落盘，脉络里才能看到刚写下的追问。
       await this._flushBridgeSync();
       const response = await fetch(bridgeUrl('/api/documents/') + encodeURIComponent(documentId));
-      if (!response.ok) throw new Error('阅读脉络读取失败');
+      if (!response.ok) throw new Error(t("阅读脉络读取失败"));
       const doc = (await response.json()).document;
       this.bridgeDocumentId = doc.documentId;
       this.activeDocumentId = doc.documentId;
@@ -29,10 +30,10 @@ export class ReadingMapMethods {
       this._syncViewMode();
       this._renderPreview();
       this._renderRecentDocuments();
-      this._setStatus('正在查看阅读脉络 · ' + (doc.fileName || '未命名文档'));
+      this._setStatus(t("正在查看阅读脉络 · {name}", { name: doc.fileName || t('未命名文档') }));
       this.closeDocumentSidebar();
     } catch (error) {
-      this._setStatus(error.message || '阅读脉络读取失败');
+      this._setStatus(error.message || t("阅读脉络读取失败"));
     }
   }
 
@@ -44,7 +45,7 @@ export class ReadingMapMethods {
     const nodes = [];
     messages.filter((item) => item.answer).forEach((item) => nodes.push({
       requestId: item.requestId,
-      question: item.question || '未命名问题',
+      question: item.question || t("未命名问题"),
       kind: item.engine === 'codex' ? 'Codex' : 'AI',
       parentRequestId: item.parentRequestId,
       hiddenFromReadingTree: item.hiddenFromReadingTree === true
@@ -53,8 +54,8 @@ export class ReadingMapMethods {
       .filter((item) => item.type !== 'ai' && item.reply && String(item.reply).trim())
       .forEach((item) => nodes.push({
         requestId: item.id,
-        question: item.note || item.question || item.quote || '未命名想法',
-        kind: '摘录',
+        question: item.note || item.question || item.quote || t("未命名想法"),
+        kind: t("摘录"),
         parentRequestId: item.answerRequestId,
         hiddenFromReadingTree: item.hiddenFromReadingTree === true
       }));
@@ -77,7 +78,7 @@ export class ReadingMapMethods {
   // 完整内容仍可通过点击节点打开，图中只保留足够辨认的摘要。
   _mermaidLabel(text) {
     const cleaned = String(text || '').replace(/\s+/g, ' ').replace(/["'`[\]{}()<>|#;]/g, '').trim();
-    const characters = Array.from(cleaned || '未命名问题');
+    const characters = Array.from(cleaned || t("未命名问题"));
     const visible = characters.length > 36 ? [...characters.slice(0, 35), '…'] : characters;
     const lines = [];
     for (let index = 0; index < visible.length; index += 18) {
@@ -97,8 +98,8 @@ export class ReadingMapMethods {
 
   // 节点 id → 未截断标题，供 SVG 节点使用原生 title 悬停展示。
   _readingMapBuildTitles(doc, nodes) {
-    const titles = { doc0: String(doc.fileName || doc.title || '未命名文档') };
-    nodes.forEach((node, i) => { titles['q' + i] = String(node.question || '未命名问题'); });
+    const titles = { doc0: String(doc.fileName || doc.title || t("未命名文档")) };
+    nodes.forEach((node, i) => { titles['q' + i] = String(node.question || t("未命名问题")); });
     return titles;
   }
 

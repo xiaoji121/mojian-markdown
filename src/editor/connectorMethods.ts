@@ -2,6 +2,7 @@
 // 飞书 / 钉钉连接器的前端入口：飞书创建在线文档；钉钉上传原始 .md 到钉盘。
 // 借飞书/钉钉现成的文档与文件承载能力，墨笺自己不做内容托管。
 // 走 bridge 的 /api/publish（确定性路径），不依赖 AI 是否愿意正确调用 CLI。
+import { t } from './i18n.ts';
 import { bridgeUrl } from './bridgeClient.ts';
 
 const TARGETS = {
@@ -12,8 +13,8 @@ const TARGETS = {
 export class ConnectorMethods {
   async _refreshConnectorCapabilities() {
     const unavailable = {
-      feishu: { available: false, reason: '无法检测 lark-cli，请确认本地 Agent Bridge 已启动' },
-      dingtalk: { available: false, reason: '无法检测 dws，请确认本地 Agent Bridge 已启动' }
+      feishu: { available: false, reason: t('无法检测 lark-cli，请确认本地 Agent Bridge 已启动') },
+      dingtalk: { available: false, reason: t('无法检测 dws，请确认本地 Agent Bridge 已启动') }
     };
     try {
       const response = await fetch(bridgeUrl('/api/connectors'));
@@ -34,8 +35,8 @@ export class ConnectorMethods {
       const available = !!state?.available;
       button.disabled = !available;
       button.title = available
-        ? `上传到${TARGETS[target]?.label || '在线文档'}`
-        : (state?.reason || '本地工具不可用');
+        ? t('上传到{label}', { label: t(TARGETS[target]?.label || '在线文档') })
+        : (state?.reason || t('本地工具不可用'));
       button.classList.toggle('is-unavailable', !available);
     });
   }
@@ -53,23 +54,23 @@ export class ConnectorMethods {
 
   async _publishTo(target) {
     if (!this.agentBridgeEnabled) {
-      this._setStatus('官网版暂不提供发布到' + (TARGETS[target] || {}).label + '，请使用桌面端');
+      this._setStatus(t('官网版暂不提供发布到{label}，请使用桌面端', { label: t((TARGETS[target] || {}).label || target) }));
       return;
     }
     if (this.publishBusy) {
-      this._setStatus('正在发布上一篇，请稍候');
+      this._setStatus(t('正在发布上一篇，请稍候'));
       return;
     }
-    const label = (TARGETS[target] || {}).label || target;
+    const label = t((TARGETS[target] || {}).label || target);
     const payload = this._documentPayload();
     if (!String(payload.content || '').trim()) {
-      this._setStatus('当前文档没有内容，已跳过发布');
+      this._setStatus(t('当前文档没有内容，已跳过发布'));
       return;
     }
 
     this.publishBusy = true;
-    this._setStatus('正在发布到' + label + '…');
-    this._showPublishToast('loading', '正在上传到' + label, '正在创建在线文档，请稍候…');
+    this._setStatus(t('正在发布到{label}…', { label }));
+    this._showPublishToast('loading', t('正在上传到{label}', { label }), t('正在创建在线文档，请稍候…'));
     try {
       // 未落盘的编辑先同步进工作区，否则发布出去的是上一次的内容。
       if (typeof this._flushBridgeSync === 'function') await this._flushBridgeSync();
@@ -82,12 +83,12 @@ export class ConnectorMethods {
         body: JSON.stringify(body)
       });
       const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || (label + '发布失败'));
+      if (!response.ok) throw new Error(result.error || (t('{label}发布失败', { label })));
       await this._notePublication(target, label, result);
     } catch (error) {
-      const message = (error && error.message) ? error.message : label + '发布失败';
+      const message = (error && error.message) ? error.message : t('{label}发布失败', { label });
       this._setStatus(message);
-      this._showPublishToast('error', label + '上传失败', message);
+      this._showPublishToast('error', t('{label}上传失败', { label }), message);
     } finally {
       this.publishBusy = false;
     }
@@ -98,23 +99,23 @@ export class ConnectorMethods {
     const url = String(result.url || '');
     if (!url) {
       // 文档大概率已经建好，只是 CLI 输出里没有链接字段：如实说明，不谎报。
-      this._setStatus('已提交到' + label + '，但未拿到链接，请到' + label + '文档里确认');
-      this._showPublishToast('warning', '已提交到' + label, '未能获取文档链接，请到在线文档中确认');
+      this._setStatus(t('已提交到{label}，但未拿到链接，请到{label}文档里确认', { label }));
+      this._showPublishToast('warning', t('已提交到{label}', { label }), t('未能获取文档链接，请到在线文档中确认'));
       this.lastPublication = null;
       return;
     }
-    this.lastPublication = { target, label: result.label || label, url };
+    this.lastPublication = { target, label: t(result.label || label), url };
     const opened = this._openExternal(url) !== false;
     let copied = false;
     if (typeof this._copyText === 'function') {
       try { copied = await this._copyText(url) !== false; } catch (e) {}
     }
-    const publishedLabel = result.label || label;
+    const publishedLabel = t(result.label || label);
     const detail = opened
-      ? ('已在浏览器打开' + (copied ? '，链接也已复制' : ''))
-      : (copied ? '链接已复制，可点击打开文档' : '可点击打开在线文档');
-    this._setStatus('已发布到' + publishedLabel + ' · ' + detail);
-    this._showPublishToast('success', publishedLabel + '上传成功', detail);
+      ? (copied ? t('已在浏览器打开，链接也已复制') : t('已在浏览器打开'))
+      : (copied ? t('链接已复制，可点击打开文档') : t('可点击打开在线文档'));
+    this._setStatus(t('已发布到{label} · {detail}', { label: publishedLabel, detail }));
+    this._showPublishToast('success', t('{label}上传成功', { label: publishedLabel }), detail);
     if (typeof this._renderPublications === 'function') this._renderPublications();
   }
 
@@ -140,7 +141,7 @@ export class ConnectorMethods {
   openLastPublication() {
     const publication = this.lastPublication;
     if (!publication || !publication.url) {
-      this._setStatus('还没有发布记录');
+      this._setStatus(t('还没有发布记录'));
       return;
     }
     this._openExternal(publication.url);

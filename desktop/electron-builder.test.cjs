@@ -10,6 +10,7 @@ module.exports = {
   publish: null,
   fileAssociations: [],
   files: [
+    '!**/canger*/**', '!**/cejk*', '!**/tsanger*/**',
     'desktop/*.js', 'desktop/preload.cjs', 'dist/index.html', 'dist/favicon.svg', 'dist/assets/**',
     'dist/THIRD_PARTY_NOTICES.txt', 'scripts/agent-bridge*.js', 'LICENSE', 'package.json'
   ],

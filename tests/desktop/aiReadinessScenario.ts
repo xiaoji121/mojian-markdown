@@ -18,7 +18,7 @@ export function registerAIReadinessScenario(label: string, executablePath?: stri
     await writeFile(join(userData, 'granted-paths.json'), JSON.stringify([documentPath]));
     console.info('[readiness fixture] launch isolated app');
     const app = await electron.launch({ executablePath,
-      args: [...(executablePath ? [] : ['.']), documentPath, '--disable-background-networking',
+      args: [...(executablePath ? [] : ['.']), '--lang=zh-CN', documentPath, '--disable-background-networking',
         '--proxy-server=http://127.0.0.1:9', '--proxy-bypass-list=localhost;127.0.0.1;[::1]'],
       env: { ...mockCliEnv(root), MOJIAN_USER_DATA: userData, AGENT_BRIDGE_WORKSPACE: workspace,
         AGENT_BRIDGE_CLAUDE_COMMAND: cli, AGENT_BRIDGE_CODEX_COMMAND: join(root, 'mojian-test-missing-codex'),

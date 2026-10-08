@@ -15,6 +15,7 @@ export default defineConfig({
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL: 'http://localhost:4650',
+    locale: 'zh-CN',
     trace: 'on-first-retry',
     // 本机 shell 常配有 HTTP 代理，直连以确保 localhost 可达
     launchOptions: { args: ['--no-proxy-server'] }

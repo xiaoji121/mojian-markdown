@@ -21,6 +21,7 @@ export interface Annotation {
 export type PaperTheme = 'ink' | 'parchment' | 'cream' | 'snow' | 'green';
 
 export interface PersistedEditorState {
+  locale?: 'zh-CN' | 'zh-TW' | 'en' | 'ja';
   content: string;
   fileName: string;
   fontSize: number;

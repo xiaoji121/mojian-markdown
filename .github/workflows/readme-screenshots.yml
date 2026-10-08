@@ -22,9 +22,6 @@ jobs:
         run: |
           npx playwright install --with-deps chromium
           sudo apt-get install -y fonts-noto-cjk
-      - name: Fetch optional reading font
-        continue-on-error: true
-        run: npm run font:fetch
       - name: Capture current app
         env:
           SCREENSHOT_OUTPUT: screenshot-output

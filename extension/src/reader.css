@@ -2,20 +2,12 @@
    （构建时由 vite 内联），排版对齐主编辑器 .md-preview。 */
 @import '../../src/theme/tokens.css';
 
-/* GB2312 子集，构建时由 scripts/copy-extension-font.mjs 从 public/fonts 复制；
-   缺失时由字体栈的系统楷体 / 宋体兜底 */
-@font-face {
-  font-family: 'Canger JinKai 04';
-  src: url('/fonts/cejk-subset.woff2') format('woff2');
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-}
+/* The shared token stylesheet loads only an already installed reading font. */
 
 :root {
   --doc-size: 16px;
   /* 阅读器专属：正文兜底优先宋体，标题与引文（--read）兜底楷体 */
-  --read-body: 'Canger JinKai 04', 'Fraunces', 'Noto Serif SC', 'Songti SC', 'Kaiti SC', 'STKaiti', serif;
+  --read-body: 'Mojian Local JinKai 04', 'Canger JinKai 04', 'Fraunces', 'Noto Serif SC', 'Songti SC', 'Kaiti SC', 'STKaiti', serif;
   --paper-font-body: var(--read-body);
 }
 

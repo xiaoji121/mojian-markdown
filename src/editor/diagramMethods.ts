@@ -1,4 +1,6 @@
 // @ts-nocheck
+import { registerOwnedChrome } from './localeChrome.ts';
+import { t } from './i18n.ts';
 
 let mermaidReady = false;
 let mermaidRenderCount = 0;
@@ -27,7 +29,7 @@ export class DiagramMethods {
     if (!pre || !pre.parentNode) return;
     const host = document.createElement('div');
     host.className = 'mermaid-rendered is-loading';
-    host.textContent = '正在渲染流程图…';
+    host.textContent = t("正在渲染流程图…");
     pre.replaceWith(host);
     try {
       const mermaid = await this._loadMermaid();
@@ -43,7 +45,7 @@ export class DiagramMethods {
     } catch (error) {
       host.classList.remove('is-loading');
       host.classList.add('has-error');
-      host.textContent = 'Mermaid 渲染失败：' + (error?.message || String(error));
+      host.textContent = t("Mermaid 渲染失败：{error}", { error: error?.message || String(error) });
     }
   }
 
@@ -51,8 +53,9 @@ export class DiagramMethods {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'mermaid-fullscreen-button';
-    button.setAttribute('aria-label', '全屏查看流程图');
-    button.title = '全屏查看流程图';
+    registerOwnedChrome(button);
+    button.setAttribute('aria-label', t("全屏查看流程图")); button.setAttribute('data-i18n-aria-label', "全屏查看流程图");
+    button.title = t("全屏查看流程图"); button.setAttribute('data-i18n-title', "全屏查看流程图");
     button.textContent = '⛶';
     button.addEventListener('click', (event) => {
       event.stopPropagation();
@@ -69,8 +72,10 @@ export class DiagramMethods {
     host.classList.toggle('is-fullscreen', open);
     const button = host.querySelector('.mermaid-fullscreen-button');
     if (button) {
-      const label = open ? '退出流程图全屏' : '全屏查看流程图';
+      const label = open ? t("退出流程图全屏") : t("全屏查看流程图");
       button.setAttribute('aria-label', label);
+      button.setAttribute('data-i18n-aria-label', open ? '退出流程图全屏' : '全屏查看流程图');
+      button.setAttribute('data-i18n-title', open ? '退出流程图全屏' : '全屏查看流程图');
       button.title = label;
       button.textContent = open ? '×' : '⛶';
     }

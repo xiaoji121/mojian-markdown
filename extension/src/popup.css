@@ -2,14 +2,7 @@
    （构建时由 vite 内联）；主题跟随阅读页设置，见 popup.ts。 */
 @import '../../src/theme/tokens.css';
 
-/* GB2312 子集，构建时由 scripts/copy-extension-font.mjs 从 public/fonts 复制 */
-@font-face {
-  font-family: 'Canger JinKai 04';
-  src: url('/fonts/cejk-subset.woff2') format('woff2');
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-}
+/* The shared token stylesheet loads only an already installed reading font. */
 
 * {
   box-sizing: border-box;

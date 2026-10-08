@@ -31,7 +31,7 @@ async function createSession(executablePath?: string) {
     async launch() {
       const current = await electron.launch({
         ...(executablePath ? { executablePath, cwd: root } : {}),
-        args: executablePath ? [] : ['.'], env
+        args: [...(executablePath ? [] : ['.']), '--lang=zh-CN'], env
       });
       child = current.process();
       if (executablePath) expect(await current.evaluate(({ app }) => app.isPackaged)).toBe(true);

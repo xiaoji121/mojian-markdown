@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { t } from './i18n.ts';
 
 // Markdown 原文的全文搜索与替换：浮层搜索条、匹配跳转、替换当前/全部。
 // 替换走与工具栏格式化相同的撤销历史链路（_recordEditingHistory 强制新条目）。
@@ -257,9 +258,9 @@ export class SearchReplaceMethods {
   }
 
   _searchCountText(index, total, query) {
-    if (this._searchRegexInvalid) return '表达式无效';
-    if (total) return '第 ' + (index + 1) + ' 项，共 ' + total + ' 项';
-    return query ? '无结果' : '';
+    if (this._searchRegexInvalid) return t("表达式无效");
+    if (total) return t("第 {index} 项，共 {total} 项", { index: index + 1, total });
+    return query ? t("无结果") : '';
   }
 
 
@@ -300,7 +301,7 @@ export class SearchReplaceMethods {
       src.value.slice(0, match.start) + replacement + src.value.slice(match.end),
       match.start + replacement.length
     );
-    this._setStatus('已替换 1 处');
+    this._setStatus(t("已替换 1 处"));
   }
 
   replaceAll() {
@@ -320,7 +321,7 @@ export class SearchReplaceMethods {
     }
     result += value.slice(last);
     this._applySearchEdit(src, result, 0);
-    this._setStatus('已替换 ' + matches.length + ' 处');
+    this._setStatus(t("已替换 {count} 处", { count: matches.length }));
   }
 
   // 替换共用的落盘链路：写入新值、记独立历史、重渲染、标脏，并定位后续匹配。

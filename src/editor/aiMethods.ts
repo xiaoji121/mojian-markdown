@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { t } from './i18n.ts';
 import { bridgeUrl } from './bridgeClient.ts';
 import { aiRequestContext } from './aiReadinessMethods.ts';
 
@@ -6,7 +7,7 @@ export class AIMethods {
   aiAsk() {
     if (!this.agentBridgeEnabled) {
       this.copySel();
-      this._setStatus('官网版暂不提供 AI 助手，已复制选中文字');
+      this._setStatus(t('官网版暂不提供 AI 助手，已复制选中文字'));
       return;
     }
     const p = this._pending; if (!p) return;
@@ -21,7 +22,7 @@ export class AIMethods {
       const input = this.aiInputRef.current;
       if (input) input.focus();
     }, 80);
-    this._setStatus('已将划线内容发送到 AI 助手');
+    this._setStatus(t('已将划线内容发送到 AI 助手'));
   }
 
 
@@ -39,7 +40,7 @@ export class AIMethods {
     this.aiEngine = (engine === 'codex' || engine === 'gemini') ? engine : 'claude';
     this._syncAIEngineSwitch();
     this._persist(false);
-    this._setStatus('AI 引擎已切换为 ' + this._aiEngineLabel());
+    this._setStatus(t('AI 引擎已切换为 {engine}', { engine: this._aiEngineLabel() }));
     this._renderAIReadiness?.();
   }
 
@@ -68,12 +69,12 @@ export class AIMethods {
   _resolveQuestionMode(question, confirmTools = (message) => window.confirm(message)) {
     if (!this._questionNeedsProjectTools(question)) return 'chat';
     if (this.aiEngine === 'gemini') {
-      this._setStatus('当前 Gemini 渠道不能操作项目，请切换到 Claude 或 Codex');
+      this._setStatus(t('当前 Gemini 渠道不能操作项目，请切换到 Claude 或 Codex'));
       return null;
     }
     const confirmed = confirmTools(this._questionNeedsWriteAccess(question)
-      ? '这条请求需要修改当前文档或项目文件。\n\n是否仅为本次请求授予写入权限？'
-      : '这条请求需要使用项目工具。\n\n是否仅为本次请求授权？');
+      ? t('这条请求需要修改当前文档或项目文件。\n\n是否仅为本次请求授予写入权限？')
+      : t('这条请求需要使用项目工具。\n\n是否仅为本次请求授权？'));
     return confirmed ? 'agent' : null;
   }
 
@@ -174,7 +175,8 @@ export class AIMethods {
   }
 
 
-  _setAIStatus(text, state) {
+  _setAIStatus(text, state, localeText = null) {
+    this._aiStatusLocale = localeText;
     const el = this.aiStatusRef.current;
     if (!el) return;
     el.textContent = text;
@@ -243,7 +245,7 @@ export class AIMethods {
     if (!this.aiConversations.length) {
       const empty = document.createElement('div');
       empty.className = 'ai-history-empty';
-      empty.textContent = '还没有本地问答历史';
+      empty.textContent = t('还没有本地问答历史');
       list.appendChild(empty);
       return;
     }
@@ -251,11 +253,11 @@ export class AIMethods {
       const button = document.createElement('button');
       button.className = 'ai-history-item';
       const title = document.createElement('strong');
-      title.textContent = conversation.title || '未命名文档';
+      title.textContent = conversation.title || t('未命名文档');
       const question = document.createElement('span');
-      question.textContent = conversation.lastQuestion || '阅读问答';
+      question.textContent = conversation.lastQuestion || t('阅读问答');
       const meta = document.createElement('small');
-      meta.textContent = conversation.questionCount + ' 个问题' +
+      meta.textContent = t('{count} 个问题', { count: conversation.questionCount }) +
         (conversation.updatedAt ? ' · ' + new Date(conversation.updatedAt).toLocaleString() : '');
       button.appendChild(title);
       button.appendChild(question);
@@ -269,13 +271,13 @@ export class AIMethods {
   async _loadAIConversation(documentId, focusRequestId) {
     try {
       const response = await fetch(bridgeUrl('/api/conversations/') + encodeURIComponent(documentId));
-      if (!response.ok) throw new Error('历史读取失败');
+      if (!response.ok) throw new Error(t('历史读取失败'));
       const data = await response.json();
       this._showConversationMessages(documentId, data.messages || [], focusRequestId);
       this.aiHistoryOpen = false;
       if (this.aiHistoryRef.current) this.aiHistoryRef.current.style.display = 'none';
     } catch (error) {
-      this._setAIStatus(error.message || '历史读取失败', 'offline');
+      this._setAIStatus(error.message || t('历史读取失败'), 'offline');
     }
   }
 
@@ -293,7 +295,7 @@ export class AIMethods {
         requestId: item.requestId, documentId, engine: item.engine,
         hiddenFromReadingTree: item.hiddenFromReadingTree === true,
         artifacts: item.artifacts || [], progress: item.progress || [],
-        meta: '本地历史 · 已归档至阅读工作区', pending: false
+        meta: t('本地历史 · 已归档至阅读工作区'), pending: false
       });
     });
     this.aiQuote = '';
@@ -348,8 +350,8 @@ export class AIMethods {
     const context = el.closest && el.closest('.ai-context');
     if (context) context.classList.toggle('has-quote', Boolean(this.aiQuote));
     el.textContent = this.aiQuote || (this.aiMessages.length
-      ? '未引用划线内容 · 继续当前对话'
-      : '请先在预览中选中文字，再点击「问 AI」。');
+      ? t('未引用划线内容 · 继续当前对话')
+      : t('请先在预览中选中文字，再点击「问 AI」。'));
     el.classList.toggle('is-empty', !this.aiQuote);
   }
 
@@ -414,7 +416,10 @@ export class AIMethods {
     if (!this.aiMessages.length) {
       const empty = document.createElement('div');
       empty.className = 'ai-empty';
-      empty.innerHTML = '<span>选择一段原文，然后提出你的疑问。</span><small>回答由所选 AI 渠道（本地 Agent 或 API Key）生成，并归档到阅读工作区。渠道在顶栏「设置」里更换。</small>';
+      const prompt = document.createElement('span'), hint = document.createElement('small');
+      prompt.textContent = t('选择一段原文，然后提出你的疑问。');
+      hint.textContent = t('回答由所选 AI 渠道（本地 Agent 或 API Key）生成，并归档到阅读工作区。渠道在顶栏「设置」里更换。');
+      empty.append(prompt, hint);
       list.appendChild(empty);
       return;
     }
@@ -424,11 +429,11 @@ export class AIMethods {
       if (message.requestId) item.setAttribute('data-request-id', message.requestId);
       const label = document.createElement('div');
       label.className = 'ai-message-label';
-      label.textContent = message.role === 'user' ? '你' : this._aiEngineLabel(message.engine);
+      label.textContent = message.role === 'user' ? t('你') : this._aiEngineLabel(message.engine);
       const body = document.createElement('div');
       body.className = 'ai-message-body';
       if (message.role === 'assistant' && message.text) this._renderSafeMarkdown(body, message.text, message.artifacts);
-      else body.textContent = message.text || '正在思考…';
+      else body.textContent = message.text || t('正在思考…');
       item.appendChild(label);
       this._appendAIProgress(item, message);
       if (message.quote && message.role === 'user') {
@@ -467,7 +472,7 @@ export class AIMethods {
     details.className = 'ai-agent-progress';
     details.open = !!message.pending;
     const summary = document.createElement('summary');
-    summary.textContent = (message.pending ? '执行中' : '执行过程') + ' · ' + message.progress.length + ' 步';
+    summary.textContent = t('{state} · {count} 步', { state: message.pending ? t('执行中') : t('执行过程'), count: message.progress.length });
     const list = document.createElement('ol');
     message.progress.forEach((progress) => {
       const row = document.createElement('li');
@@ -487,7 +492,7 @@ export class AIMethods {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'ai-message-retry';
-    button.textContent = message.retrying ? '正在重试…' : (message.retried ? '已重试' : '重试');
+    button.textContent = message.retrying ? t('正在重试…') : (message.retried ? t('已重试') : t('重试'));
     button.disabled = !!(message.retrying || message.retried || this.aiBusy);
     button.addEventListener('click', () => this.retryAIMessage(message.id));
     actions.appendChild(button);
@@ -583,7 +588,7 @@ export class AIMethods {
       link.removeAttribute('rel');
       link.setAttribute('href', '#');
       link.classList.add('ai-local-markdown-link');
-      link.title = '用墨笺打开 ' + artifact.fileName;
+      link.title = t('用墨笺打开 {name}', { name: artifact.fileName });
       link.addEventListener('click', (event) => {
         event.preventDefault();
         this._openAIMarkdownArtifact(artifact.documentId);
@@ -599,7 +604,7 @@ export class AIMethods {
     if (input) input.disabled = busy;
     if (button) {
       button.disabled = busy;
-      button.textContent = busy ? '回答中…' : '发送';
+      button.textContent = busy ? t('回答中…') : t('发送');
     }
   }
 
@@ -630,23 +635,23 @@ export class AIMethods {
       this._persist();
       if (data.mode === 'agent') {
         this.agentProjectRoot = data.projectRoot || '';
-        state.contextMeta = '已使用项目工具' +
-          (data.writeAuthorized ? ' · 已获本次写入权限' : '') +
-          (this.agentProjectRoot ? ' · 工程 ' + this.agentProjectRoot : ' · 无工程上下文');
-        state.assistant.meta = state.contextMeta + (data.resumed ? ' · 已续接会话' : ' · 已新建会话');
+        state.contextMeta = t('已使用项目工具') +
+          (data.writeAuthorized ? t(' · 已获本次写入权限') : '') +
+          (this.agentProjectRoot ? ' · ' + t('工程 {path}', { path: this.agentProjectRoot }) : t(' · 无工程上下文'));
+        state.assistant.meta = state.contextMeta + (data.resumed ? t(' · 已续接会话') : t(' · 已新建会话'));
       } else {
-        state.contextMeta = '整篇文档已载入' + (data.documentChars ? ' · ' + data.documentChars + ' 字符' : '');
-        state.assistant.meta = state.contextMeta + (data.resumed ? ' · 已继续阅读会话' : ' · 已建立阅读会话');
+        state.contextMeta = t('整篇文档已载入') + (data.documentChars ? ' · ' + t('{count} 字符', { count: data.documentChars }) : '');
+        state.assistant.meta = state.contextMeta + (data.resumed ? t(' · 已继续阅读会话') : t(' · 已建立阅读会话'));
       }
     } else if (event === 'session-reset' && data) {
       this.aiBridgeOnline = true;
       state.userMessage.documentId = data.documentId || state.userMessage.documentId;
       state.assistant.documentId = data.documentId || state.assistant.documentId;
       state.aiComment.documentId = data.documentId || state.aiComment.documentId;
-      state.assistant.meta = (state.contextMeta ? state.contextMeta + ' · ' : '') + '历史会话已失效，已自动建立新会话';
-      this._setAIStatus('本地 Agent 已连接 · 已重建会话', 'online');
+      state.assistant.meta = (state.contextMeta ? state.contextMeta + ' · ' : '') + t('历史会话已失效，已自动建立新会话');
+      this._setAIStatus(t('本地 Agent 已连接 · 已重建会话'), 'online', () => t('本地 Agent 已连接 · 已重建会话'));
     } else if (event === 'error' && data) {
-      throw new Error(data.message || 'Agent 回答失败');
+      throw new Error(data.message || t('Agent 回答失败'));
     }
   }
 
@@ -706,14 +711,14 @@ export class AIMethods {
     let bridgeReached = false;
     if (input) input.value = '';
     this._setAIBusy(true);
-    this._setAIStatus(engineLabel + (requestMode === 'agent' ? ' 正在使用项目工具…' : ' 正在阅读…'), 'checking');
+    this._setAIStatus((requestMode === 'agent' ? t('{engine} 正在使用项目工具…', { engine: engineLabel }) : t('{engine} 正在阅读…', { engine: engineLabel })), 'checking', () => (requestMode === 'agent' ? t('{engine} 正在使用项目工具…', { engine: engineLabel }) : t('{engine} 正在阅读…', { engine: engineLabel })));
     try {
       const response = await fetch(bridgeUrl('/api/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody)
       });
-      if (!response.ok || !response.body) throw new Error('本地 Agent Bridge 无响应');
+      if (!response.ok || !response.body) throw new Error(t('本地 Agent Bridge 无响应'));
       bridgeReached = true;
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -738,7 +743,7 @@ export class AIMethods {
       assistant.pending = false;
       assistant.failed = false;
       assistant.meta = (streamState.contextMeta ? streamState.contextMeta + ' · ' : '') +
-        (streamState.documentUpdated ? '已更新原文档 · ' : '') + '已归档至阅读工作区';
+        (streamState.documentUpdated ? t('已更新原文档 · ') : '') + t('已归档至阅读工作区');
       this.aiBridgeOnline = true;
       aiComment.answer = assistant.text;
       aiComment.aiStatus = 'answered';
@@ -746,24 +751,24 @@ export class AIMethods {
       this._renderComments();
       this._refreshAIConversations();
       this._refreshRecentDocuments();
-      this._setAIStatus('本地 Agent 已连接', 'online');
+      this._setAIStatus(t('本地 Agent 已连接'), 'online', () => t('本地 Agent 已连接'));
       this._setStatus(streamState.documentUpdated
-        ? 'Agent 已更新原文档并归档回答'
-        : 'AI 回答已归档到阅读工作区');
+        ? t('Agent 已更新原文档并归档回答')
+        : t('AI 回答已归档到阅读工作区'));
     } catch (error) {
       assistant.pending = false;
       assistant.failed = true;
       const message = error && error.message ? error.message : String(error);
-      assistant.text = (bridgeReached ? 'Agent 执行失败：' : '连接失败：') + message;
+      assistant.text = (bridgeReached ? t('Agent 执行失败：') : t('连接失败：')) + message;
       assistant.meta = bridgeReached
-        ? 'Agent Bridge 已连接，请检查 ' + engineLabel + ' CLI 的会话或运行环境'
-        : (window.mojianDesktop ? 'Agent Bridge 未就绪，请重启应用' : '请使用 npm run dev 同时启动前端与 Agent Bridge');
+        ? t('Agent Bridge 已连接，请检查 {engine} CLI 的会话或运行环境', { engine: engineLabel })
+        : (window.mojianDesktop ? t('Agent Bridge 未就绪，请重启应用') : t('请使用 npm run dev 同时启动前端与 Agent Bridge'));
       aiComment.answer = assistant.text;
       aiComment.aiStatus = 'error';
       this._persist();
       this._renderComments();
       this.aiBridgeOnline = bridgeReached;
-      this._setAIStatus(bridgeReached ? 'Agent 执行失败' : '本地 Agent 未连接', bridgeReached ? 'online' : 'offline');
+      this._setAIStatus(bridgeReached ? t('Agent 执行失败') : t('本地 Agent 未连接'), bridgeReached ? 'online' : 'offline', () => bridgeReached ? t('Agent 执行失败') : t('本地 Agent 未连接'));
     } finally {
       this._setAIBusy(false);
       this._renderAIMessages();

@@ -1,9 +1,10 @@
 // @ts-nocheck
+import { t } from './i18n.ts';
 import { bridgeUrl } from './bridgeClient.ts';
 
 export class CommentMethods {
-  _typeLabel(t) {
-    return ({ marker: '马克笔', wavy: '波浪线', straight: '直线', idea: '想法', ai: 'AI 问答' })[t] || '批注';
+  _typeLabel(type) {
+    return ({ marker: t("马克笔"), wavy: t("波浪线"), straight: t("直线"), idea: t("想法"), ai: t("AI 问答") })[type] || t("批注");
   }
 
 
@@ -128,7 +129,7 @@ export class CommentMethods {
       const span = document.createElement('span');
       span.setAttribute('data-comment-id', c.id);
       span.style.cssText = css;
-      span.title = '查看批注';
+      span.title = t("查看批注");
       node.parentNode.insertBefore(span, node);
       span.appendChild(node);
       if (!first) first = span;
@@ -203,31 +204,31 @@ export class CommentMethods {
 
   copySel() {
     const p = this._pending; if (!p) return;
-    this._copy(p.quote, '已复制选中文字');
+    this._copy(p.quote, t("已复制选中文字"));
     const s = window.getSelection(); if (s) s.removeAllRanges();
     if (this.selBarRef.current) this.selBarRef.current.style.display = 'none';
   }
 
 
-  markMarker() { if (this._createAnnotation('marker', false)) this._setStatus('✓ 已用马克笔划线 · 共 ' + this.comments.length + ' 条'); }
+  markMarker() { if (this._createAnnotation('marker', false)) this._setStatus(t("✓ 已用马克笔划线 · 共 {count} 条", { count: this.comments.length })); }
 
-  markWavy() { if (this._createAnnotation('wavy', false)) this._setStatus('✓ 已添加波浪线 · 共 ' + this.comments.length + ' 条'); }
+  markWavy() { if (this._createAnnotation('wavy', false)) this._setStatus(t("✓ 已添加波浪线 · 共 {count} 条", { count: this.comments.length })); }
 
-  markStraight() { if (this._createAnnotation('straight', false)) this._setStatus('✓ 已添加直线 · 共 ' + this.comments.length + ' 条'); }
+  markStraight() { if (this._createAnnotation('straight', false)) this._setStatus(t("✓ 已添加直线 · 共 {count} 条", { count: this.comments.length })); }
 
-  writeIdea() { if (this._createAnnotation('idea', true)) this._setStatus('写下你对这段的想法…'); }
+  writeIdea() { if (this._createAnnotation('idea', true)) this._setStatus(t("写下你对这段的想法…")); }
 
 
   async _deleteComment(id) {
     const comment = this.comments.find((c) => c.id === id);
     if (!comment) return;
     if (typeof window !== 'undefined' && window.confirm
-      && !window.confirm('删除这条「' + this._typeLabel(comment.type) + '」批注？此操作不可恢复。')) return;
+      && !window.confirm(t("删除这条「{type}」批注？此操作不可恢复。", { type: this._typeLabel(comment.type) }))) return;
     this.comments = this.comments.filter((c) => c.id !== id);
     this._persist();
     this._renderPreview();
     this._renderComments();
-    this._setStatus('已删除批注 · 剩 ' + this.comments.length + ' 条');
+    this._setStatus(t("已删除批注 · 剩 {count} 条", { count: this.comments.length }));
     if (this.agentBridgeEnabled && comment && this.bridgeDocumentId && (comment.requestId || comment.id)) {
       try {
         const annotationId = comment.requestId || comment.id;
@@ -236,10 +237,10 @@ export class CommentMethods {
           '/annotations/' + encodeURIComponent(annotationId),
           { method: 'DELETE' }
         );
-        if (!response.ok) throw new Error('删除同步失败');
+        if (!response.ok) throw new Error(t("删除同步失败"));
         this._refreshRecentDocuments();
       } catch (error) {
-        this._setStatus('批注已在当前页面删除，但同步到 Reading Workspace 失败');
+        this._setStatus(t("批注已在当前页面删除，但同步到 Reading Workspace 失败"));
       }
     }
   }
@@ -349,7 +350,7 @@ export class CommentMethods {
     if (!this.comments.length) {
       const e = document.createElement('div');
       e.style.cssText = 'padding:26px 12px; color:var(--text-4); font-size:var(--fs-sm); line-height:1.9; text-align:center; font-family:var(--sans);';
-      e.innerHTML = '在右侧预览中<span style="color:var(--text-3)">选中任意文字</span>，<br>用浮出的工具条<span style="color:var(--accent)">划线</span>或<span style="color:var(--accent)">写想法</span>，<br>都会收集到这里。';
+      e.textContent = t("在右侧预览中选中任意文字，用浮出的工具条划线或写想法，都会收集到这里。");
       list.appendChild(e);
       return;
     }
@@ -388,15 +389,15 @@ export class CommentMethods {
     acts.style.cssText = 'display:flex; gap:6px;';
     const btnCss = 'background:transparent; border:1px solid var(--border); color:var(--text-3); padding:4px 9px; font-family:var(--mono); font-size:var(--fs-2xs); cursor:pointer; border-radius:var(--radius-control); transition:all .15s;';
     const copyBtn = document.createElement('button');
-    copyBtn.textContent = '复制'; copyBtn.className = 'tbtn'; copyBtn.style.cssText = btnCss;
-    copyBtn.addEventListener('click', () => this._copy(this._commentText(c, i), '已复制该批注', copyBtn));
+    copyBtn.textContent = t("复制"); copyBtn.className = 'tbtn'; copyBtn.style.cssText = btnCss;
+    copyBtn.addEventListener('click', () => this._copy(this._commentText(c, i), t("已复制该批注"), copyBtn));
     const delBtn = document.createElement('button');
-    delBtn.textContent = '删除'; delBtn.className = 'tbtn'; delBtn.style.cssText = btnCss;
+    delBtn.textContent = t("删除"); delBtn.className = 'tbtn'; delBtn.style.cssText = btnCss;
     delBtn.addEventListener('click', () => this._deleteComment(c.id));
     acts.appendChild(copyBtn);
     if (c.type === 'ai') {
       const viewBtn = document.createElement('button');
-      viewBtn.textContent = c.aiStatus === 'pending' ? '回答中' : '查看问答';
+      viewBtn.textContent = c.aiStatus === 'pending' ? t("回答中") : t("查看问答");
       viewBtn.className = 'tbtn';
       viewBtn.style.cssText = btnCss;
       viewBtn.disabled = c.aiStatus === 'pending';
@@ -404,8 +405,8 @@ export class CommentMethods {
       acts.appendChild(viewBtn);
     } else if (!this._replyBoxVisible(c)) {
       const replyBtn = document.createElement('button');
-      replyBtn.textContent = '回复'; replyBtn.className = 'tbtn'; replyBtn.style.cssText = btnCss;
-      replyBtn.title = '把从别处找到的回答贴在这条批注下方';
+      replyBtn.textContent = t("回复"); replyBtn.className = 'tbtn'; replyBtn.style.cssText = btnCss;
+      replyBtn.title = t("把从别处找到的回答贴在这条批注下方");
       replyBtn.addEventListener('click', () => this._openReplyBox(c.id));
       acts.appendChild(replyBtn);
     }
@@ -415,7 +416,7 @@ export class CommentMethods {
     const quote = document.createElement('div');
     quote.className = 'comment-quote';
     quote.textContent = c.quote;
-    quote.title = '跳到原文位置';
+    quote.title = t("跳到原文位置");
     quote.addEventListener('click', () => this._focusComment(c.id));
 
     card.appendChild(head);
@@ -425,12 +426,12 @@ export class CommentMethods {
       qa.className = 'comment-ai-qa';
       const question = document.createElement('div');
       question.className = 'comment-ai-question';
-      question.textContent = '问：' + (c.question || c.note || '');
+      question.textContent = t("问：") + (c.question || c.note || '');
       const answer = document.createElement('div');
       answer.className = 'comment-ai-answer';
       answer.textContent = c.aiStatus === 'pending'
-        ? 'Claude 正在回答…'
-        : '答：' + (c.answer || '回答暂不可用');
+        ? t("Claude 正在回答…")
+        : t("答：") + (c.answer || t("回答暂不可用"));
       qa.appendChild(question);
       qa.appendChild(answer);
       card.appendChild(qa);
@@ -438,7 +439,7 @@ export class CommentMethods {
       const ta = document.createElement('textarea');
       ta.className = 'comment-note-input';
       ta.value = c.note || '';
-      ta.placeholder = c.type === 'idea' ? '写下你的疑问或想法…' : '可补充想法（可选）…';
+      ta.placeholder = c.type === 'idea' ? t("写下你的疑问或想法…") : t("可补充想法（可选）…");
       ta.spellcheck = false;
       const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.max(42, ta.scrollHeight) + 'px'; };
       ta.addEventListener('focus', () => { ta.style.borderColor = 'var(--text-4)'; });
@@ -475,7 +476,7 @@ export class CommentMethods {
     const label = document.createElement('div');
     label.className = 'comment-reply-label';
     const labelText = document.createElement('span');
-    labelText.textContent = '找到的回答';
+    labelText.textContent = t("找到的回答");
     label.appendChild(labelText);
     const editing = !!(this._openReplyIds && this._openReplyIds.has(c.id));
     const actions = document.createElement('span');
@@ -485,8 +486,8 @@ export class CommentMethods {
     if (documentId) {
       const open = document.createElement('button');
       open.className = 'comment-reply-edit';
-      open.textContent = '打开阅读节点';
-      open.setAttribute('aria-label', '打开找到的回答阅读节点');
+      open.textContent = t("打开阅读节点");
+      open.setAttribute('aria-label', t("打开找到的回答阅读节点"));
       open.hidden = !(c.reply && c.reply.trim());
       open.addEventListener('click', () => this._openReplyNode(c));
       actions.appendChild(open);
@@ -495,8 +496,8 @@ export class CommentMethods {
     if (c.reply && c.reply.trim() && !editing) {
       const edit = document.createElement('button');
       edit.className = 'comment-reply-edit';
-      edit.textContent = '编辑';
-      edit.setAttribute('aria-label', '编辑找到的回答');
+      edit.textContent = t("编辑");
+      edit.setAttribute('aria-label', t("编辑找到的回答"));
       edit.addEventListener('click', () => this._openReplyBox(c.id));
       actions.appendChild(edit);
       label.appendChild(actions);
@@ -510,8 +511,8 @@ export class CommentMethods {
     if (editing) {
       const done = document.createElement('button');
       done.className = 'comment-reply-edit';
-      done.textContent = '完成';
-      done.setAttribute('aria-label', '完成编辑找到的回答');
+      done.textContent = t("完成");
+      done.setAttribute('aria-label', t("完成编辑找到的回答"));
       done.addEventListener('click', () => {
         this._openReplyIds.delete(c.id);
         this._renderComments();
@@ -522,7 +523,7 @@ export class CommentMethods {
     const ta = document.createElement('textarea');
     ta.className = 'comment-note-input comment-reply-input';
     ta.value = c.reply || '';
-    ta.placeholder = '把你从别处找到的回答贴在这里…';
+    ta.placeholder = t("把你从别处找到的回答贴在这里…");
     ta.spellcheck = false;
     const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.max(42, ta.scrollHeight) + 'px'; };
     ta.addEventListener('focus', () => { ta.style.borderColor = 'var(--text-4)'; });
@@ -603,7 +604,7 @@ export class CommentMethods {
 
 
   // 状态栏在窗口左下角、离点击位置太远，复制成功同时在被点的按钮上原地闪现反馈。
-  _flashButton(btn, label = '✓ 已复制') {
+  _flashButton(btn, label = t("✓ 已复制")) {
     if (!btn || typeof btn.textContent !== 'string') return;
     if (!btn.dataset.originalLabel) btn.dataset.originalLabel = btn.textContent;
     btn.textContent = label;
@@ -619,7 +620,7 @@ export class CommentMethods {
 
   _copy(text, msg, btn) {
     const done = () => {
-      this._setStatus('✓ ' + (msg || '已复制'));
+      this._setStatus('✓ ' + (msg || t("已复制")));
       this._flashButton(btn);
     };
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -638,22 +639,22 @@ export class CommentMethods {
     try { copied = document.execCommand('copy'); } catch (e) {}
     document.body.removeChild(ta);
     if (copied && done) done();
-    else if (!copied) this._setStatus('复制失败 · 请手动选中后复制');
+    else if (!copied) this._setStatus(t("复制失败 · 请手动选中后复制"));
   }
 
 
   copyAll(event) {
-    if (!this.comments.length) { this._openPanel(true); this._setStatus('暂无批注可复制'); return; }
+    if (!this.comments.length) { this._openPanel(true); this._setStatus(t("暂无批注可复制")); return; }
     this._copy(
       this._allCommentsText(),
-      '已复制全部批注（' + this.comments.length + ' 条）',
+      t("已复制全部批注（{count} 条）", { count: this.comments.length }),
       event && event.currentTarget
     );
   }
 
 
   copyFull(event) {
-    this._copy(this._fullWithComments(), '已复制全文 + 批注', event && event.currentTarget);
+    this._copy(this._fullWithComments(), t("已复制全文 + 批注"), event && event.currentTarget);
   }
 
   // ===== source toolbar formatting =====
