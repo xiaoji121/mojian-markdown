@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
       - name: Packaging dependency regression tests
-        run: node --experimental-strip-types --test tests/unit/desktopPackaging.test.ts tests/unit/desktopClock.test.ts
+        run: node --experimental-strip-types --test tests/unit/desktopPackaging.test.ts tests/unit/desktopClock.test.ts tests/unit/recentRestoreStatus.test.ts
       - name: Mock AI CLI and connector protocols (no accounts)
         run: npm run test:cli
       - name: Fake secure storage and desktop authorization contracts
