@@ -466,3 +466,9 @@ body.editor-active #landing-page { display: none; }
 /* Long Latin product names and translated headings must reflow at 200% zoom. */
 #landing-page h1, #landing-page h2, #landing-page h3 { overflow-wrap: anywhere; }
 #landing-page .edition-card a:not(.landing-button) { color: var(--landing-accent); text-underline-offset: 3px; }
+@media (max-width: 760px) {
+  /* Decorative preview text must not compete with the primary copy on phones. */
+  #landing-page .hero-product { display: none; }
+  #landing-page .landing-hero { min-height: 0; padding-bottom: 72px; }
+  #landing-page .landing-copy { padding-top: 12px; }
+}

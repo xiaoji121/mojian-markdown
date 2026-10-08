@@ -34,6 +34,7 @@ test('locale links are keyboard accessible on mobile and at 200% sizing', async 
   await japanese.focus(); await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/ja\/$/);
   await expect(page.locator('html')).toHaveAttribute('lang', 'ja');
+  await expect(page.locator('.hero-product')).toBeHidden();
   await page.screenshot({ path: testInfo.outputPath('landing-ja-mobile.png'), fullPage: true });
   await page.locator('body').evaluate(node => node.style.zoom = '2');
   await expect(page.locator('.landing-languages a[lang="ja"]')).toBeInViewport();
