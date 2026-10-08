@@ -42,19 +42,16 @@ test('桌面端启动并与本地文件双向同步', async () => {
     const health = await page.evaluate(() => fetch('/health').then((r) => r.json()));
     expect(health).toEqual({ ok: true });
 
-    // 网页版专属 UI 在桌面端隐藏：关联文件夹入口（桌面句柄自带绝对路径）
-    // 与宽屏下因此为空的 ⋯ 溢出菜单按钮。
-    const hiddenStates = await page.evaluate(() => ({
-      folderItem: getComputedStyle(document.querySelector('.folder-menu-item')!).display,
-      headerMore: getComputedStyle(document.querySelector('.header-more')!).display
-    }));
-    expect(hiddenStates).toEqual({ folderItem: 'none', headerMore: 'none' });
+    // 桌面句柄自带绝对路径，网页版的关联文件夹入口隐藏。
+    // 旧的 header-more 已从模板移除，避免对不存在的节点调用 getComputedStyle。
+    await expect(page.locator('.folder-menu-item')).toHaveCSS('display', 'none');
+    await expect(page.locator('.header-more')).toHaveCount(0);
 
     // 新入口：用户输入绝对路径，主进程校验、授权并读取文件。
     const pathPreview = await page.evaluate((filePath) =>
       (window as any).mojianDesktop.openMarkdownPath(filePath), absolutePathDoc);
     expect(pathPreview).toMatchObject({ path: absolutePathDoc, name: '路径打开.md' });
-    await page.getByRole('button', { name: '文件菜单' }).click();
+    await page.getByRole('button', { name: '更多操作', exact: true }).click();
     await page.getByRole('menuitem', { name: '输入绝对路径打开…' }).click();
     await page.locator('.file-path-input').fill(absolutePathDoc);
     await page.getByRole('button', { name: '打开该路径' }).click();

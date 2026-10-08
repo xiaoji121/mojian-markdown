@@ -1,0 +1,52 @@
+name: Windows desktop
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  packaged-smoke:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Use stable npm
+        run: |
+          npm install -g npm@11.12.1
+          npm config set registry https://registry.npmmirror.com
+          npm config set replace-registry-host always
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Packaging dependency regression tests
+        run: node --experimental-strip-types --test tests/unit/desktopPackaging.test.ts
+      - name: Type check
+        run: npx tsc --noEmit
+      - name: Build desktop frontend
+        run: npm run build:bridge
+      - name: Existing desktop regression suite
+        run: npx playwright test --config playwright.desktop.config.ts smoke.spec.ts
+      - name: Package Windows x64 without publishing
+        run: npx electron-builder --config desktop/electron-builder.yml --win --x64 --dir --publish never
+      - name: Isolate package from checkout and its node_modules
+        shell: pwsh
+        run: |
+          $destination = Join-Path $env:RUNNER_TEMP '墨笺 Windows package'
+          Copy-Item -LiteralPath 'release/win-unpacked' -Destination $destination -Recurse
+          $exe = @(Get-ChildItem -LiteralPath $destination -Filter '*.exe' -File | Where-Object { $_.Name -ne 'chrome_crashpad_handler.exe' })
+          if ($exe.Count -ne 1) { throw "Expected one packaged application executable, found $($exe.Count)" }
+          "MOJIAN_PACKAGED_EXECUTABLE=$($exe[0].FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Packaged app launch, file save and restart
+        run: npx playwright test --config playwright.desktop.config.ts windows-packaged.spec.ts
+      - name: Upload desktop test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-desktop-test-results
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
