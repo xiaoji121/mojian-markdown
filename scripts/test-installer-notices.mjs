@@ -33,5 +33,9 @@ for (const [path, info] of entries.sort(([a], [b]) => a.localeCompare(b))) {
   output.push(`\n===== ${manifest.name}@${info.version} (${manifest.license || info.license || 'see text'}) =====`, ...texts);
 }
 output.push('\n===== Bundled KaTeX font notices =====', await readFile('docs/licenses/KATEX-FONTS.txt', 'utf8'));
+output.push('\n===== Bundled Source Serif 4 4.005 (OFL 1.1) =====',
+  await readFile('public/fonts/source-serif-4/NOTICE.md', 'utf8'),
+  await readFile('public/fonts/source-serif-4/LICENSE.md', 'utf8'),
+  await readFile('public/fonts/source-serif-4/provenance.json', 'utf8'));
 await writeFile('dist/THIRD_PARTY_NOTICES.txt', output.join('\n'));
 console.log(`Included license and notice texts for ${entries.length} packages.`);

@@ -1,0 +1,20 @@
+{
+  "version": "4.005",
+  "release": "https://github.com/adobe-fonts/source-serif/releases/tag/4.005R",
+  "archive": "https://github.com/adobe-fonts/source-serif/releases/download/4.005R/source-serif-4.005_WOFF2.zip",
+  "archiveSha256": "af10e80dcd2296748b04cb9917db9f7ba0ae65101165fd2f0c16b9812d9abd28",
+  "licenseSource": "https://github.com/adobe-fonts/source-serif/blob/4.005R/LICENSE.md",
+  "licenseSha256": "75784a295293a8992f5a8d99210566e0064a012e6dab6731305e3787f15896c7",
+  "files": [
+    {
+      "file": "SourceSerif4Variable-Roman.ttf.woff2",
+      "bytes": 429100,
+      "sha256": "940a76eda1388de39d38c8e7a79bf6ea058a387faee0a9f33c8d25c6ba05e1be"
+    },
+    {
+      "file": "SourceSerif4Variable-Italic.ttf.woff2",
+      "bytes": 346688,
+      "sha256": "9d28b5749a1ad096a295cb607c521bd1af4cd9979b6f37332daf70143149fb44"
+    }
+  ]
+}

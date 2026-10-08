@@ -54,7 +54,7 @@ body.editor-active { overflow: hidden; }
 .brand-mark img { display: block; width: 100%; height: 100%; }
 .brand-title {
   color: var(--text);
-  font-family: var(--read);
+  font-family: var(--sans);
   font-weight: 700;
   font-size: var(--fs-2xl);
   letter-spacing: -0.01em;
@@ -389,9 +389,9 @@ body.is-desktop-app .header-more { display: none; }
   color: var(--text-2);
   opacity: .58;
 }
-.fmt-h { font-family: var(--read); font-weight: 700; font-size: var(--fs-lg); }
+.fmt-h { font-family: var(--sans); font-weight: 700; font-size: var(--fs-lg); }
 .fmt-b { font-weight: 700; }
-.fmt-i { font-style: italic; font-family: var(--read); font-size: var(--fs-lg); }
+.fmt-i { font-style: italic; font-family: var(--sans); font-size: var(--fs-lg); }
 .fmt-lg { font-size: var(--fs-lg); }
 .fmt-code { font-family: var(--mono); }
 
@@ -607,8 +607,8 @@ textarea.md-source {
   font-size: var(--fs-md);
   white-space: nowrap;
 }
-.tbtn.font-btn { width: 27px; height: 27px; font-family: var(--read); line-height: 1; }
-.tbtn.font-btn-sm { width: 24px; height: 20px; font-family: var(--read); line-height: 1; }
+.tbtn.font-btn { width: 27px; height: 27px; font-family: var(--sans); line-height: 1; }
+.tbtn.font-btn-sm { width: 24px; height: 20px; font-family: var(--sans); line-height: 1; }
 .font-dec { font-size: var(--fs-xs); }
 .font-inc { font-size: var(--fs-lg); }
 .fullscreen-font-value {
@@ -758,7 +758,7 @@ textarea.md-source {
 }
 .seltool:hover { background: var(--tool-hover); }
 .seltool-icon { height: 20px; display: flex; align-items: center; }
-.seltool-glyph { font-family: var(--read); font-size: var(--fs-xl); font-weight: 600; line-height: 1; }
+.seltool-glyph { font-family: var(--sans); font-size: var(--fs-xl); font-weight: 600; line-height: 1; }
 .glyph-mark { box-shadow: inset 0 -7px 0 var(--mark-bg); }
 .glyph-wavy {
   text-decoration: underline;

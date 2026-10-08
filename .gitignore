@@ -19,3 +19,8 @@ fonts-src/**/*.woff
 fonts-src/**/*.woff2
 public/fonts/
 extension/public/fonts/
+
+# Explicitly approved OFL font assets and exact upstream notice.
+!public/fonts/
+public/fonts/*
+!public/fonts/source-serif-4/

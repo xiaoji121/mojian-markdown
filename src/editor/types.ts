@@ -25,6 +25,7 @@ export interface PersistedEditorState {
   content: string;
   fileName: string;
   fontSize: number;
+  readingFont?: import('../fonts/readingFont').ReadingFont;
   theme: EditorTheme;
   /** 暗色主题下的纸色；缺省为墨黑 */
   paperDark?: PaperTheme;

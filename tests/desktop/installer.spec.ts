@@ -106,6 +106,13 @@ async function assertPreserved(fixture: Fixture, content: string) {
 
 async function recordStage(testInfo: TestInfo, page: Page, stage: string, version: string) {
   testInfo.annotations.push({ type: stage, description: `Packaged TEST version ${version}` });
+  const loaded = await page.evaluate(async () => {
+    const roman = await document.fonts.load('400 16px "Source Serif 4"');
+    const italic = await document.fonts.load('italic 700 16px "Source Serif 4"');
+    await document.fonts.ready;
+    return [roman.length, italic.length];
+  });
+  expect(loaded.every(count => count > 0)).toBe(true);
   const path = testInfo.outputPath(`${stage}.png`);
   await page.screenshot({ path });
   await testInfo.attach(stage, { path, contentType: 'image/png' });
@@ -144,7 +151,7 @@ test('TEST installer preserves an unnamed draft across restart and Windows upgra
     let current = await launch();
     expect(current.version).toMatch(/\.1$/);
     const initialVersion = current.version;
-    let content = '# Installer synthetic draft\n\n中文空格路径，关闭前最后输入。\n';
+    let content = '# Installer synthetic draft\n\n中文空格路径，关闭前最后输入。\n\nReading with **bold**, *italic*, ***bold italic*** and `code()`. 日本語の文章。\n';
     await editImmediatelyBeforeClose(current.page, content);
     await recordStage(testInfo, current.page, 'installed-editor', current.version);
     await closeEditorWindow(current.app);

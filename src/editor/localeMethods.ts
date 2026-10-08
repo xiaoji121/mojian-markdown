@@ -73,5 +73,5 @@ export class LocaleMethods {
     node.textContent = t(key);
   }
 
-  _disposeLocale() { this._localeSelect?.removeEventListener('change', this._localeChange); }
+  _disposeLocale() { this._disposeReadingFont?.(); this._localeSelect?.removeEventListener('change', this._localeChange); }
 }

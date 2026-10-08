@@ -14,7 +14,7 @@ test('落地页首屏不预加载编辑器运行时', async ({ page }) => {
   expect(editorRequests).toEqual([]);
 });
 
-test('落地页优先使用已安装字体且不请求字体文件', async ({ page }) => {
+test('landing uses bundled licensed fonts without restricted or remote requests', async ({ page }) => {
   const fontRequests: string[] = [];
   page.on('request', request => {
     if (/cejk|canger|fonts\.(googleapis|gstatic)\.com/i.test(request.url())) fontRequests.push(request.url());
@@ -22,7 +22,7 @@ test('落地页优先使用已安装字体且不请求字体文件', async ({ pa
   await page.goto('/');
   await page.evaluate(() => document.fonts.ready);
   expect(await page.locator('#landing-page').evaluate(landing => getComputedStyle(landing).fontFamily))
-    .toContain('Mojian Local JinKai 04');
+    .toContain('Source Serif 4');
   expect(fontRequests).toEqual([]);
 });
 

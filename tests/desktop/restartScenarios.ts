@@ -125,15 +125,24 @@ export function registerRestartScenarios(label: string, executablePath?: string)
     const session = await createSession(executablePath);
     try {
       let { app, page } = await session.launch();
-      const original = '# 未命名草稿\n\n这是一段足够长的正文，用来验证重启之后仍然保留批注和设置。\n';
+      const original = '# 未命名草稿\n\n这是一段足够长的正文，用来验证重启之后仍然保留批注和设置。\n\nRead with **bold**, *italic*, ***bold italic*** and `code()`. 日本語の文章。\n';
       await page.locator('.md-source').fill(original);
       await expect(page.locator('.md-preview h1')).toHaveText('未命名草稿');
+      const fontFaces = await page.evaluate(async () => {
+        const faces = await document.fonts.load('italic 700 16px "Source Serif 4"');
+        await document.fonts.ready;
+        return faces.map(face => face.status);
+      });
+      expect(fontFaces.length).toBeGreaterThan(0);
+      expect(fontFaces.every(status => status === 'loaded')).toBe(true);
+      await test.info().attach('packaged-reading-font.png', { body: await page.screenshot(), contentType: 'image/png' });
       await addAnnotation(page);
       const theme = await page.locator('body').getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
       await page.getByRole('button', { name: '阅读排版', exact: true }).click();
       await page.getByRole('button', { name: '切换亮色或暗黑主题' }).click();
       await page.getByRole('button', { name: '放大字号' }).click();
       const fontSize = await page.locator('.font-size-value').textContent();
+      await page.locator('.reading-font-select').selectOption('system-serif');
       await page.getByRole('button', { name: '阅读排版', exact: true }).click();
       await openSettings(page);
       await page.getByRole('radio', { name: /Gemini/ }).click();
@@ -147,6 +156,8 @@ export function registerRestartScenarios(label: string, executablePath?: string)
       await expect(page.locator('body')).toHaveAttribute('data-theme', theme);
       await page.getByRole('button', { name: '阅读排版', exact: true }).click();
       await expect(page.locator('.font-size-value')).toHaveText(fontSize!);
+      await expect(page.locator('.reading-font-select')).toHaveValue('system-serif');
+      await expect(page.locator('body')).toHaveAttribute('data-reading-font', 'system-serif');
       await page.getByRole('button', { name: '阅读排版', exact: true }).click();
       await page.getByRole('button', { name: /^批注/ }).click();
       await expect(page.locator('.comments-panel .comment-quote')).toHaveCount(1);

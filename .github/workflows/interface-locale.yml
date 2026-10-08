@@ -24,7 +24,7 @@ jobs:
           npm config set registry https://registry.npmmirror.com
           npm config set replace-registry-host always
       - run: npm ci --no-audit --no-fund
-      - run: node --experimental-strip-types --test tests/unit/i18n.test.ts tests/unit/desktopLocale.test.ts tests/unit/aiLocale.test.ts tests/unit/featureMessages.test.ts tests/unit/localReadingFont.test.ts
+      - run: node --experimental-strip-types --test tests/unit/i18n.test.ts tests/unit/desktopLocale.test.ts tests/unit/aiLocale.test.ts tests/unit/featureMessages.test.ts tests/unit/localReadingFont.test.ts tests/unit/readingFont.test.ts tests/unit/sourceSerifAssets.test.ts tests/unit/longImageFont.test.ts
       - run: npm run build:bridge
       - name: Verify prerendered locale HTML and asset paths
         run: node scripts/check-landing-build.mjs

@@ -14,7 +14,7 @@ for (const configFile of ['vite.config.ts', 'extension/vite.config.ts']) {
   test(`${configFile} excludes generated restricted fonts while preserving open fonts and sources`, async () => {
     const temp = mkdtempSync(join(tmpdir(), 'mojian-font-build-'));
     const fixtures = ['fonts/canger-jinkai-04/cejk-subset.woff2', 'fonts/cejk.woff',
-      'fonts/cejk-subset.woff2', 'fonts/open/NotoSans.woff2', 'fonts/KaTeX_Main-Regular.woff2', 'favicon.svg'];
+      'fonts/cejk-subset.woff2', 'fonts/open/NotoSans.woff2', 'fonts/source-serif-4/LICENSE.md', 'fonts/source-serif-4/SourceSerif4Variable-Roman.ttf.woff2', 'fonts/KaTeX_Main-Regular.woff2', 'favicon.svg'];
     try {
       for (const file of fixtures) {
         const path = join(temp, 'public', file);
@@ -64,7 +64,9 @@ test('production and test desktop packages exclude stale restricted assets, reta
     for (const file of ['dist/fonts/canger-jinkai-04/cejk-subset.woff2', 'dist/fonts/cejk.woff', 'dist/assets/cejk-subset-abc.woff2']) {
       assert.ok(exclusions.some((pattern: string) => matchesGlob(file, pattern.slice(1))), file);
     }
-    assert.ok(!exclusions.some((pattern: string) => matchesGlob('dist/assets/KaTeX_Main-Regular-abc.woff2', pattern.slice(1))));
+    for (const file of ['dist/assets/KaTeX_Main-Regular-abc.woff2', 'dist/assets/SourceSerif4Variable-Roman.ttf-abc.woff2', 'dist/fonts/source-serif-4/LICENSE.md']) {
+      assert.ok(!exclusions.some((pattern: string) => matchesGlob(file, pattern.slice(1))), file);
+    }
   }
 });
 

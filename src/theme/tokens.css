@@ -17,10 +17,29 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Source Serif 4';
+  src: url('../fonts/source-serif-4/SourceSerif4Variable-Roman.ttf.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Source Serif 4';
+  src: url('../fonts/source-serif-4/SourceSerif4Variable-Italic.ttf.woff2') format('woff2');
+  font-style: italic;
+  font-weight: 200 900;
+  font-display: swap;
+}
+
 :root {
   /* ----- 字体 ----- */
   /* 优先使用本机仓耳今楷04；不可用或缺字时由系统字体逐字兜底。 */
-  --read: 'Mojian Local JinKai 04', 'Canger JinKai 04', 'Kaiti SC', 'STKaiti', 'KaiTi', '楷体', 'Songti SC', 'Noto Serif CJK SC', serif;
+  --read-local: 'Mojian Local JinKai 04', 'Canger JinKai 04', 'Kaiti SC', 'STKaiti', 'KaiTi', '楷体', 'Songti SC', 'Noto Serif CJK SC', serif;
+  --read-serif: Georgia, 'Times New Roman', 'Songti SC', 'Noto Serif CJK SC', 'Yu Mincho', serif;
+  --read-source: 'Source Serif 4', var(--read-serif);
+  --read: var(--read-source);
   --sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --mono: ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
 
@@ -107,8 +126,8 @@
   /* ----- 纸面排版 ----- */
   --paper-font-heading: var(--read);
   --paper-font-body: var(--read);
-  --paper-line-height: 2.1;
-  --paper-letter-spacing: 0.04em;
+  --paper-line-height: 1.8;
+  --paper-letter-spacing: 0;
 
   /* ----- 阴影（小=按钮 / 中=下拉、工具条 / 大=弹层），双层叠加 ----- */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.22);
@@ -306,3 +325,11 @@ textarea.md-source:focus-visible,
     scroll-behavior: auto !important;
   }
 }
+
+/* Reading choices never change UI, editor source, code or KaTeX faces. */
+[data-reading-font='system-default'] { --read: var(--sans); }
+[data-reading-font='system-serif'] { --read: var(--read-serif); }
+[data-reading-font='source-serif-4'] { --read: var(--read-source); }
+[data-reading-font='local-jinkai'] { --read: var(--read-local); }
+/* Rebind paper tokens at the choice boundary (custom properties resolve where declared). */
+[data-reading-font] { --paper-font-body: var(--read); --paper-font-heading: var(--read); }

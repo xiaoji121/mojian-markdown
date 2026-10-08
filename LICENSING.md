@@ -30,6 +30,8 @@
 
 第三方依赖及字体等材料适用各自的许可条款。仓耳今楷字体不随仓库授权，其使用与再分发受字体所有者及来源平台的条款约束。
 
+Source Serif 4 4.005 随应用离线提供，适用 SIL Open Font License 1.1，与本项目代码许可独立。其未修改的 TrueType-outline WOFF2 字体位于 `src/fonts/source-serif-4/`；完整上游版权、许可证和来源校验信息位于 [public/fonts/source-serif-4/](./public/fonts/source-serif-4/)。该许可不适用于仓耳字体。
+
 ## 5. 版本切换
 
 本次许可变更仅适用于采用本协议发布的版本。此前已经依据 MIT License 合法取得的历史版本，仍可继续依照当时的 MIT License 使用；既有授权不会被追溯撤销。

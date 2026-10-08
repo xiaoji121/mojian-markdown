@@ -1,6 +1,6 @@
 import { test, expect, openEditor, setSource } from './fixtures';
 
-test('editor prefers an installed reading font without downloading font files', async ({ page }) => {
+test('editor loads only bundled licensed reading fonts without remote font services', async ({ page }) => {
   const remoteFontRequests: string[] = [];
   const fontRequests: string[] = [];
   page.on('request', (request) => {
@@ -20,9 +20,13 @@ test('editor prefers an installed reading font without downloading font files', 
 
   await expect(page.locator('link[href*="fonts.googleapis.com"], link[href*="fonts.gstatic.com"]')).toHaveCount(0);
   expect(remoteFontRequests).toEqual([]);
-  expect(fontRequests).toEqual([]);
+  expect(fontRequests.every(url => {
+    const asset = new URL(url);
+    return ['localhost', '127.0.0.1'].includes(asset.hostname)
+      && /SourceSerif4Variable-(Roman|Italic)\.ttf\.woff2$/.test(asset.pathname);
+  })).toBe(true);
   expect(await page.locator('.md-preview').evaluate((element) => getComputedStyle(element).fontFamily))
-    .toContain('Mojian Local JinKai 04');
+    .toContain('Source Serif 4');
 });
 
 test.beforeEach(async ({ page }) => {
