@@ -1,3 +1,4 @@
+import type { PersistedEditorState } from './types';
 // 桌面端（Electron）本地文件句柄：实现 File System Access API 句柄的最小接口，
 // 底层经 preload 暴露的 window.mojianDesktop 走主进程 Node fs。
 // 与 localFileSyncMethods 的既有同步逻辑完全兼容，同时补上网页版做不到的部分：
@@ -7,6 +8,9 @@ export interface DesktopPickedFile { path: string; name: string; content: string
 export interface DesktopSavedFile { path: string; name: string; lastModified: number; }
 
 export interface MojianDesktopApi {
+  loadEditorState?(): { ok: boolean; state?: Partial<PersistedEditorState> | null; error?: string };
+  saveEditorState?(state: PersistedEditorState): { ok: boolean; error?: string };
+  onBeforeClose?(callback: () => Promise<boolean>): () => void;
   openMarkdownFile(): Promise<DesktopPickedFile | null>;
   openMarkdownPath(path: string): Promise<DesktopPickedFile | null>;
   readClipboardText(): Promise<string>;

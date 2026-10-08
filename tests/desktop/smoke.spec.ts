@@ -2,6 +2,8 @@ import { _electron as electron, expect, test } from '@playwright/test';
 import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { registerRestartScenarios } from './restartScenarios';
+
 import { mockCliEnv } from '../helpers/mockCli';
 
 // 桌面端冒烟：Electron 启动 → 内嵌 bridge 同源可达 → 外部打开本地文件 →
@@ -341,3 +343,6 @@ test('重启后自动恢复最近阅读并重建本地文件同步', async () =>
     await app.close();
   }
 });
+
+// Run restart regressions in the existing development Electron CI step.
+registerRestartScenarios('development Electron');

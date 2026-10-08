@@ -1,8 +1,8 @@
-// The DC runtime supplies its base class dynamically, so this controller uses
-// a small factory instead of importing runtime internals.
 // @ts-nocheck
+// The DC runtime supplies its base class dynamically; keep this factory lightweight.
+import { DesktopStateMethods } from "./desktopStateMethods";
 import { SAMPLE_MARKDOWN } from './sample';
-import { EDITOR_STORAGE_KEY, loadEditorState } from './storage';
+import { EDITOR_STORAGE_KEY, loadEditorState, getEditorStorageError } from './storage';
 import { AIMethods } from './aiMethods';
 import { AIReadingTreeMethods } from './aiReadingTreeMethods';
 import { BridgeMethods } from './bridgeMethods';
@@ -196,7 +196,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.theme = this.props.theme
       || (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
     const saved = loadEditorState();
-    this._startedWithSample = !(saved && typeof saved.content === 'string');
+    this._startedWithSample = !getEditorStorageError() && !(saved && typeof saved.content === 'string');
     if (saved && typeof saved.content === 'string') {
       initial = this._cleanOpenedMarkdown(saved.content);
       if (saved.fileName) name = saved.fileName;
@@ -207,6 +207,15 @@ export function createMarkdownEditorComponent(DCLogic, React) {
         this.activeDocumentId = saved.bridgeDocumentId;
       }
       if (saved.savedAt) this._draftSavedAt = saved.savedAt;
+      if (window.mojianDesktop) {
+        this.localFilePath = saved.localFilePath || null;
+        this._localFileModifiedAt = saved.localFileModifiedAt || 0;
+        this.dirty = saved.dirty === true;
+        this.pinnedDocumentIds = new Set(saved.pinnedDocumentIds || []);
+        if (saved.aiPanelWidth) this.aiPanelWidth = saved.aiPanelWidth;
+        if (saved.commentsPanelWidth) this.commentsPanelWidth = saved.commentsPanelWidth;
+        if (saved.documentSidebarWidth) this.documentSidebarWidth = saved.documentSidebarWidth;
+      }
       if (saved.aiEngine === 'claude' || saved.aiEngine === 'codex' || saved.aiEngine === 'gemini') {
         this.aiEngine = saved.aiEngine;
       }
@@ -235,7 +244,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._renderPreview();
     this._updateCount();
     this._resetEditingHistory();
-    this._setStatus('编辑后自动保存草稿到此浏览器');
+    this._setStatus(getEditorStorageError() ? '草稿读取失败 · 原始数据已保留，请勿继续编辑并检查备份'
+      : window.mojianDesktop ? '编辑后自动保存桌面草稿' : '编辑后自动保存草稿到此浏览器');
     this._initReadingAppearance();
     this._applyProps();
     this._initFileNameEditing();
@@ -297,7 +307,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     // 桌面端：接上应用菜单与「双击 .md 打开」事件。
     if (window.mojianDesktop) this._initDesktop();
     // 上次会话打开过本地文件时，恢复与它的双向同步关联。
-    this._restoreLocalFileLink();
+    this._localRestorePromise = this._restoreLocalFileLink();
   }
 
   componentDidUpdate() { this._applyProps(); }
@@ -315,6 +325,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
   }
 
   componentWillUnmount() {
+    if (this._desktopCloseCleanup) this._desktopCloseCleanup();
     if (this._keyHandler) window.removeEventListener('keydown', this._keyHandler);
     if (this._resizeHandler) window.removeEventListener('resize', this._resizeHandler);
     if (this._desktopClipboardFocus) window.removeEventListener('focus', this._desktopClipboardFocus);
@@ -477,7 +488,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     ConnectorMethods,
     TranslateMethods,
     EditingFileLayoutMethods,
-    LocalFileSyncMethods
+    LocalFileSyncMethods,
+    DesktopStateMethods
   );
   return Component;
 }

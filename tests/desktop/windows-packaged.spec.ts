@@ -2,6 +2,8 @@ import { _electron as electron, expect, test } from '@playwright/test';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { closeEditorWindow, registerRestartScenarios } from './restartScenarios';
+
 import { createMockCli, mockCliEnv } from '../helpers/mockCli';
 
 // This is a real Windows executable test, deliberately outside the checkout so
@@ -83,7 +85,7 @@ test('Windows packaged app saves Chinese/space paths and survives restart', asyn
       contentType: 'image/png'
     });
 
-    await app.close();
+    await closeEditorWindow(app);
     app = await launch();
     const reopened = await app.firstWindow();
     await expect(reopened.locator('.md-source')).toBeVisible({ timeout: 15_000 });
@@ -99,6 +101,9 @@ test('Windows packaged app saves Chinese/space paths and survives restart', asyn
     await rm(root, { recursive: true, force: true });
   }
 });
+
+// Exercise the same state-restoration contract in the isolated Windows package.
+registerRestartScenarios('Windows packaged', executablePath);
 
 test('Windows packaged bridge calls npm Claude and Codex shims without a shell', async () => {
   const root = await mkdtemp(join(tmpdir(), '墨笺 AI CLI 空格 '));

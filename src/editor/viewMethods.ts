@@ -584,7 +584,7 @@ export class ViewMethods {
     const t = new Date();
     const hh = String(t.getHours()).padStart(2, '0');
     const mm = String(t.getMinutes()).padStart(2, '0');
-    this._setStatus(saved === false ? '草稿保存失败 · 请保存到文件' : '草稿已保存到此浏览器 · ' + hh + ':' + mm);
+    this._setStatus(saved === false ? '草稿保存失败 · 请保存到文件' : (typeof window !== 'undefined' && window.mojianDesktop ? '桌面草稿已保存 · ' : '草稿已保存到此浏览器 · ') + hh + ':' + mm);
     // 打开了本地文件时，草稿同时写穿回本地（异步，不阻塞输入）。
     if (typeof this._maybeWriteThroughLocalFile === 'function') this._maybeWriteThroughLocalFile();
   }

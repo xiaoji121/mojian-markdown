@@ -258,7 +258,7 @@ export class CommentMethods {
 
   _initCommentsResize() {
     try {
-      const saved = Number(localStorage.getItem('md-editor-comments-panel-width'));
+      const saved = Number(!window.mojianDesktop && localStorage.getItem('md-editor-comments-panel-width'));
       if (saved) this.commentsPanelWidth = saved;
     } catch (e) {}
     const handle = this.commentsResizeRef && this.commentsResizeRef.current;
@@ -270,6 +270,7 @@ export class CommentMethods {
       dragging = false;
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
+      if (window.mojianDesktop) this._persist(false);
       try { localStorage.setItem('md-editor-comments-panel-width', String(this.commentsPanelWidth)); } catch (e) {}
     };
     handle.addEventListener('mousedown', (e) => {

@@ -33,3 +33,24 @@ test('loadEditorState tolerates corrupted or non-object payloads', () => {
     }
   }
 });
+
+test('desktop storage survives an origin change and never falls back after a failed desktop read', () => {
+  const restore = installLocalStorageStub({ [EDITOR_STORAGE_KEY]: JSON.stringify({ content: 'stale browser' }) });
+  const previous = globalThis.window;
+  const state = { content: 'desktop draft', fileName: '未命名.md', fontSize: 20, theme: 'light', comments: [] };
+  let durable = state;
+  globalThis.window = { mojianDesktop: {
+    loadEditorState: () => ({ ok: true, state: durable }),
+    saveEditorState: (next) => { durable = next; return { ok: true }; }
+  } };
+  try {
+    assert.deepEqual(loadEditorState(), state);
+    assert.equal(saveEditorState({ ...state, content: 'latest' }), true);
+    localStorage.clear();
+    assert.equal(loadEditorState()?.content, 'latest');
+    globalThis.window.mojianDesktop.loadEditorState = () => ({ ok: false, error: 'corrupt' });
+    assert.equal(loadEditorState(), null);
+    globalThis.window.mojianDesktop.saveEditorState = () => ({ ok: false, error: 'disk full' });
+    assert.equal(saveEditorState(state), false);
+  } finally { globalThis.window = previous; restore(); }
+});

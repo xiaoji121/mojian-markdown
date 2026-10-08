@@ -112,6 +112,14 @@ test('输入 Markdown 后预览实时渲染', async ({ page }) => {
 - 另存为的原生对话框选择由测试替身提供，实际 IPC 与磁盘写入仍执行。该测试不覆盖 NSIS 安装/卸载、SmartScreen、签名或第三方 CLI 安装。
 - 手动执行时先构建并打包，再设置 `MOJIAN_PACKAGED_EXECUTABLE` 为仓库外应用的 `.exe` 绝对路径，运行 `npx playwright test --config playwright.desktop.config.ts windows-packaged.spec.ts`。
 
+## Desktop draft durability
+
+- `tests/unit/desktopEditorState.test.ts` covers an atomic, versioned userData draft, strict non-secret UI-field allowlists, damaged-file/I/O preservation, validated IPC and close timeout/cancellation.
+- `tests/unit/desktopStateMethods.test.ts` covers immediate final snapshots and safe file restoration; local-file/bridge unit tests also cover serialized pending writes.
+- Shared `tests/desktop/restartScenarios.ts` runs in both source Electron and the isolated Windows executable: an unnamed draft with annotations/theme/font/AI channel, save-failure Stay/Retry, and linked files through repeated immediate window closes. Renderer timers are paused before the last input so these tests cannot accidentally wait out the autosave debounce.
+- Desktop drafts are stored in `userData/editor-state.json`, independently of the randomized bridge port. The store intentionally excludes API settings and credentials. Existing browser/extension localStorage is unchanged. Old origin-local unnamed drafts cannot be automatically located; when no desktop draft exists, the existing recent-workspace fallback remains.
+- Corrupted/unsupported draft files are retained and subsequent writes fail closed. Copy that file before manual recovery. A failed final save or unresolved linked-file conflict offers Stay (default) or an explicit exit with a loss warning.
+
 ## Windows AI CLI 协议验证（无账号）
 
 - `npm run test:cli` 运行 shell-free 进程启动、Claude/Codex 协议、Gemini 本地 HTTP/SSE、飞书/钉钉连接器与开发入口测试。Linux CI 随完整单测执行；Windows desktop CI 在真实 Windows runner 上执行同一组测试。
