@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { t, getLocale } from './i18n.ts';
+import { readingFontRevision } from '../fonts/userReadingFont.ts';
 //
 // 做法是把预览节点搬进一张海报（页眉 · 正文 · 页脚），再交给 SVG <foreignObject>
 // 让浏览器自己排版并光栅化——排版、字体、纸色都与预览同源，不另写一套渲染。
@@ -45,6 +46,7 @@ const POSTER_PAPER_VARIABLES = [
 ];
 
 let posterFontCssPromise = null;
+let posterFontRevision = -1;
 export class LongImageMethods {
   openLongImage() {
     this._longImageSelection = null;
@@ -535,7 +537,10 @@ export class LongImageMethods {
   }
 
   _posterFontCss() {
-    if (!posterFontCssPromise) posterFontCssPromise = this._buildPosterFontCss();
+    if (!posterFontCssPromise || posterFontRevision !== readingFontRevision()) {
+      posterFontRevision = readingFontRevision();
+      posterFontCssPromise = this._buildPosterFontCss();
+    }
     return posterFontCssPromise;
   }
 

@@ -1,4 +1,4 @@
-export const READING_FONTS = ['system-default', 'system-serif', 'source-serif-4', 'local-jinkai'] as const;
+export const READING_FONTS = ['system-default', 'system-serif', 'source-serif-4', 'local-jinkai', 'project-jinkai', 'imported-font'] as const;
 export type ReadingFont = typeof READING_FONTS[number];
 export function isReadingFont(value: unknown): value is ReadingFont {
   return READING_FONTS.includes(value as ReadingFont);

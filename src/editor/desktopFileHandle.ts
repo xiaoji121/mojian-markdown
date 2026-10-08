@@ -8,6 +8,7 @@ export interface DesktopPickedFile { path: string; name: string; content: string
 export interface DesktopSavedFile { path: string; name: string; lastModified: number; }
 
 export interface MojianDesktopApi {
+  readingFont?: import('../fonts/userReadingFont').FontApi;
   aiSettings?(operation: 'load' | 'save' | 'migrate' | 'test', payload?: unknown): Promise<{ ok: boolean; value?: unknown; error?: string }>;
   loadEditorState?(): { ok: boolean; state?: Partial<PersistedEditorState> | null; error?: string };
   saveEditorState?(state: PersistedEditorState): { ok: boolean; error?: string };

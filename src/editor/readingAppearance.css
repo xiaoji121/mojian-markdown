@@ -68,3 +68,9 @@
 .reading-font-preview { font: 15px/1.7 var(--read); color: var(--text-2); }
 .reading-font-preview code { font-family: var(--mono); font-size: .8em; }
 .reading-font-note[hidden] { display: none; }
+
+.reading-font-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.reading-font-actions .tbtn { width: auto; padding: 6px 10px; font: inherit; }
+.reading-font-actions .tbtn:disabled { opacity: .45; cursor: default; }
+.reading-font-project-note[hidden] { display: none; }
+.reading-font-official { color: var(--accent); font-size: var(--fs-sm); }

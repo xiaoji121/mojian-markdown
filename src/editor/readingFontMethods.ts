@@ -8,12 +8,14 @@ export class ReadingFontMethods {
     this._readingFontChange = () => {
       const value = this._readingFontSelect.value;
       if (!isReadingFont(value)) return;
+      this._fontChoiceVersion++;
       this.readingFont = value;
       this._applyReadingFont();
       this._persist(false);
     };
     this._readingFontSelect?.addEventListener('change', this._readingFontChange);
     this._applyReadingFont();
+    this._initUserReadingFonts();
   }
 
   _applyReadingFont() {
@@ -23,6 +25,7 @@ export class ReadingFontMethods {
     if (note) note.hidden = this.readingFont !== 'local-jinkai';
     const preview = document.querySelector('.reading-font-preview');
     if (preview) preview.setAttribute('data-reading-font', this.readingFont);
+    this._renderUserReadingFonts?.();
   }
 
   _syncReadingScript() {
@@ -35,6 +38,7 @@ export class ReadingFontMethods {
   }
 
   _disposeReadingFont() {
+    this._disposeUserReadingFonts?.();
     this._readingFontSelect?.removeEventListener('change', this._readingFontChange);
   }
 }

@@ -40,6 +40,8 @@
   --read-serif: Georgia, 'Times New Roman', 'Songti SC', 'Noto Serif CJK SC', 'Yu Mincho', serif;
   --read-source: 'Source Serif 4', var(--read-local);
   --read-source-ja: 'Source Serif 4', Georgia, 'Times New Roman', 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif CJK JP', serif;
+  --read-project: 'Mojian Project Reading Font', var(--read-local);
+  --read-imported: 'Mojian Imported Reading Font', var(--read-source);
   --read: var(--read-source);
   --sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --mono: ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
@@ -341,3 +343,6 @@ textarea.md-source:focus-visible,
   --paper-font-body: var(--read-source-ja);
   --paper-font-heading: var(--read-source-ja);
 }
+
+[data-reading-font='project-jinkai'] { --read: var(--read-project); --paper-font-body: var(--read); --paper-font-heading: var(--read); }
+[data-reading-font='imported-font'] { --read: var(--read-imported); --paper-font-body: var(--read); --paper-font-heading: var(--read); }
