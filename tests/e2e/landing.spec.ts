@@ -22,7 +22,7 @@ test('landing uses bundled licensed fonts without restricted or remote requests'
   await page.goto('/');
   await page.evaluate(() => document.fonts.ready);
   expect(await page.locator('#landing-page').evaluate(landing => getComputedStyle(landing).fontFamily))
-    .toContain('Source Serif 4');
+    .toContain('Mojian Local JinKai 04');
   expect(fontRequests).toEqual([]);
 });
 
