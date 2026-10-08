@@ -472,3 +472,14 @@ body.editor-active #landing-page { display: none; }
   #landing-page .landing-hero { min-height: 0; padding-bottom: 72px; }
   #landing-page .landing-copy { padding-top: 12px; }
 }
+
+/* Landing typography belongs to its own content language, never editor settings. */
+#landing-page[lang='zh-CN'], #landing-page[lang='zh-TW'] {
+  --landing-serif: var(--read-local);
+  --landing-sans: var(--read-local);
+}
+#landing-page[lang='ja'] {
+  --landing-serif: var(--read-source-ja);
+  --landing-sans: var(--read-source-ja);
+}
+.landing-languages, .landing-button { font-family: var(--sans); }

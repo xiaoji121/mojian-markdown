@@ -38,7 +38,8 @@
   /* 优先使用本机仓耳今楷04；不可用或缺字时由系统字体逐字兜底。 */
   --read-local: 'Mojian Local JinKai 04', 'Canger JinKai 04', 'Kaiti SC', 'STKaiti', 'KaiTi', '楷体', 'Songti SC', 'Noto Serif CJK SC', serif;
   --read-serif: Georgia, 'Times New Roman', 'Songti SC', 'Noto Serif CJK SC', 'Yu Mincho', serif;
-  --read-source: 'Source Serif 4', var(--read-serif);
+  --read-source: 'Source Serif 4', var(--read-local);
+  --read-source-ja: 'Source Serif 4', Georgia, 'Times New Roman', 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif CJK JP', serif;
   --read: var(--read-source);
   --sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --mono: ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
@@ -333,3 +334,10 @@ textarea.md-source:focus-visible,
 [data-reading-font='local-jinkai'] { --read: var(--read-local); }
 /* Rebind paper tokens at the choice boundary (custom properties resolve where declared). */
 [data-reading-font] { --paper-font-body: var(--read); --paper-font-heading: var(--read); }
+
+/* Only known document language selects Japanese glyph fallback. A UI-language
+   change never replaces a saved font choice or relabels arbitrary documents. */
+[data-reading-font='source-serif-4'] .md-preview[lang='ja'] {
+  --paper-font-body: var(--read-source-ja);
+  --paper-font-heading: var(--read-source-ja);
+}
