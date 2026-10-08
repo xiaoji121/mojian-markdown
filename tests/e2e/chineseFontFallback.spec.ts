@@ -1,4 +1,5 @@
-import { test, expect, openEditor, setSource } from './fixtures';
+import { chooseLanguage } from './localeHelpers';
+import { test, expect, openEditor, setSource, openAppearance } from './fixtures';
 import type { Locator } from '@playwright/test';
 
 const family = (locator: Locator) =>
@@ -26,9 +27,11 @@ for (const locale of ['zh-CN', 'zh-TW', 'en', 'ja']) {
     });
     info.annotations.push({ type: 'local-jinkai', description: detected });
     await page.screenshot({ path: info.outputPath(`landing-font-${locale}.png`) });
+    await page.locator('.landing-language-toggle').click();
     await page.locator('.landing-languages a[hreflang="zh-CN"]').click();
     await expect(page.locator('#landing-page')).toHaveAttribute('lang', 'zh-CN');
     expect(await family(page.locator('#landing-page'))).toContain('Mojian Local JinKai 04');
+    await page.locator('.landing-language-toggle').click();
     await page.locator('.landing-languages a[hreflang="ja"]').click();
     await expect(page.locator('#landing-page')).toHaveAttribute('lang', 'ja');
     expect(await family(page.locator('#landing-page'))).not.toContain('JinKai');
@@ -42,11 +45,11 @@ test('fresh Chinese startup and saved Source Serif retain local CJK fallback acr
   await openEditor(page);
   await expect(page.locator('.md-preview')).toHaveAttribute('lang', 'zh-CN');
   expect(await family(page.locator('.md-preview'))).toContain('Mojian Local JinKai 04');
-  await page.locator('.appearance-toggle').click();
+  await openAppearance(page);
   await page.locator('.reading-font-select').selectOption('source-serif-4');
-  await page.locator('.appearance-toggle').click();
+  await page.keyboard.press('Escape');
   await setSource(page, '# English and 中文\n\nRead with **bold**, *italic* and `code()`. 中文阅读保留本机字体后备。');
-  await page.locator('.interface-language').selectOption('ja');
+  await chooseLanguage(page, 'ja');
   await expect(page.locator('body')).toHaveAttribute('data-reading-font', 'source-serif-4');
   expect(await family(page.locator('.md-preview'))).toMatch(/Source Serif 4.*Mojian Local JinKai 04/);
   await page.reload();
@@ -61,14 +64,14 @@ test('Japanese sample uses Japanese fallback, while an explicit local choice is 
   await expect(page.locator('.md-preview')).toHaveAttribute('lang', 'ja');
   expect(await family(page.locator('.md-preview'))).toContain('Yu Mincho');
   expect(await family(page.locator('.md-preview'))).not.toContain('JinKai');
-  await page.locator('.appearance-toggle').click();
+  await openAppearance(page);
   await page.locator('.reading-font-select').selectOption('local-jinkai');
   expect(await family(page.locator('.md-preview'))).toContain('Mojian Local JinKai 04');
   await page.locator('.reading-font-select').selectOption('system-serif');
   expect(await family(page.locator('.md-preview'))).not.toContain('JinKai');
   await page.locator('.reading-font-select').selectOption('source-serif-4');
-  await page.locator('.appearance-toggle').click();
-  await page.locator('.interface-language').selectOption('zh-CN');
+  await page.keyboard.press('Escape');
+  await chooseLanguage(page, 'zh-CN');
   await expect(page.locator('.md-preview')).toHaveAttribute('lang', 'ja');
   await page.getByRole('button', { name: '更多操作', exact: true }).click();
   await page.getByRole('menuitem', { name: '导出长图', exact: true }).click();
