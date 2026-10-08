@@ -1,12 +1,9 @@
 // @ts-nocheck
-// 产品级「设置」弹窗（顶栏 ⚙ 进入）。目前只有 AI 渠道一节，按两类渠道组织：
-//   本地 Agent 渠道 —— Claude / Codex，调用本机已登录的 CLI，无需 Key；
-//   API Key 渠道 —— 目前支持 Gemini，Key 保存在本机 Reading Workspace 的
-//     settings.json，界面上永远只显示尾号掩码，不回显明文。
-// 渠道选择点击即生效（setAIEngine），Key/模型/代理仍需「保存」。
+// Desktop settings use narrow validated IPC; the plaintext CLI mode remains
+// separate and is explicitly disclosed. Password inputs are never restored.
 import { bridgeUrl } from './bridgeClient.ts';
 
-const GEMINI_FALLBACK = { configured: false, apiKeyTail: '', model: 'gemini-2.5-flash', proxy: '' };
+const GEMINI_FALLBACK = { configured: false, model: 'gemini-2.5-flash', proxy: '' };
 
 const AI_CHANNELS = [
   {
@@ -30,19 +27,44 @@ const AI_CHANNELS = [
 
 export class AISettingsMethods {
   async openAISettings() {
+    const epoch = this._aiSettingsEpoch = (this._aiSettingsEpoch || 0) + 1;
     const overlay = this._buildAISettingsModal();
     // 先加载回填、再展示：异步回填会重置 Key 输入框，
     // 若先展示，粘贴得快的 Key 会被回填悄悄清掉。
-    await this._loadAISettings();
+    await this._loadAISettings(epoch);
+    if (epoch !== this._aiSettingsEpoch) return;
     this._syncAISettingsEngine();
     overlay.style.display = 'flex';
   }
 
 
   closeAISettings() {
+    this._aiSettingsEpoch = (this._aiSettingsEpoch || 0) + 1;
+    if (this._aiSettingsInputs) this._aiSettingsInputs.key.value = '';
     if (this._aiSettingsEl) this._aiSettingsEl.style.display = 'none';
   }
 
+
+  async _requestAISettings(operation, payload) {
+    const desktop = typeof window !== 'undefined' && window.mojianDesktop;
+    if (desktop?.aiSettings) {
+      const result = await desktop.aiSettings(operation, payload);
+      if (!result.ok) throw new Error(result.error || '设置操作失败');
+      return result.value;
+    }
+    const path = operation === 'test' ? '/api/settings/test' : '/api/settings';
+    const response = await fetch(bridgeUrl(path), operation === 'load' ? undefined : {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error('设置操作失败');
+    const value = await response.json();
+    return operation === 'test' ? value : { providers: value, secureStorage: null };
+  }
+
+  _acceptAISettings(result) {
+    this.aiProviderSettings = result.providers;
+    this._aiSecureStorage = result.secureStorage;
+  }
 
   _aiSettingsField(labelText, input) {
     const field = document.createElement('label');
@@ -148,6 +170,7 @@ export class AISettingsMethods {
     const key = document.createElement('input');
     key.type = 'password';
     key.spellcheck = false;
+    key.autocomplete = 'off';
     const model = document.createElement('input');
     model.type = 'text';
     model.spellcheck = false;
@@ -190,11 +213,24 @@ export class AISettingsMethods {
     save.className = 'abtn primary';
     save.textContent = '保存';
     save.addEventListener('click', () => this._saveAISettings());
-    actions.append(testBtn, clear, spacer, close, save);
+    const migrate = document.createElement('button');
+    migrate.type = 'button';
+    migrate.className = 'tbtn ai-settings-migrate';
+    migrate.textContent = '同意迁移旧明文 Key';
+    migrate.style.display = 'none';
+    migrate.addEventListener('click', () => this._migrateAIKey());
+    actions.append(testBtn, clear, migrate, spacer, close, save);
+    this._aiSettingsMigrateBtn = migrate;
+    this._aiSettingsActionBtns = [testBtn, clear, migrate, save];
     this._aiSettingsClearBtn = clear;
     return actions;
   }
 
+
+  _setAISettingsBusy(value) {
+    this._aiSettingsBusy = value;
+    (this._aiSettingsActionBtns || []).forEach((button) => { button.disabled = value; });
+  }
 
   _setAISettingsNote(text, state) {
     const note = this._aiSettingsNote;
@@ -206,40 +242,41 @@ export class AISettingsMethods {
 
   // 用表单当前值验证连通性（Key 留空时服务端回落到已保存的），保存前即可测。
   async _testAISettings() {
+    if (this._aiSettingsBusy) return;
+    const epoch = this._aiSettingsEpoch;
     const inputs = this._aiSettingsInputs;
     if (!inputs) return;
     const payload = {
       gemini: {
-        model: String(inputs.model.value || '').trim() || undefined,
+        model: String(inputs.model.value || '').trim(),
         proxy: String(inputs.proxy.value || '').trim() || undefined
       }
     };
     const key = String(inputs.key.value || '').trim();
     if (key) payload.gemini.apiKey = key;
+    this._setAISettingsBusy(true);
     this._setAISettingsNote('正在验证连接…', '');
     try {
-      const response = await fetch(bridgeUrl('/api/settings/test'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (!response.ok) throw new Error('验证请求失败');
-      const result = await response.json();
-      if (result.ok) this._setAISettingsNote('✓ 连接成功 · ' + (result.model || ''), 'ok');
+      const result = await this._requestAISettings('test', payload);
+      if (epoch !== this._aiSettingsEpoch) return;
+      if (result.ok) this._setAISettingsNote('✓ 连接成功' + (result.model ? ' · ' + result.model : ''), 'ok');
       else this._setAISettingsNote('✗ ' + (result.message || '验证失败'), 'error');
     } catch (error) {
-      this._setAISettingsNote('✗ ' + (error.message || '验证失败'), 'error');
-    }
+      if (epoch === this._aiSettingsEpoch) this._setAISettingsNote('✗ ' + (error.message || '验证失败'), 'error');
+    } finally { this._setAISettingsBusy(false); }
   }
 
 
-  async _loadAISettings() {
+  async _loadAISettings(epoch) {
     try {
-      const response = await fetch(bridgeUrl('/api/settings'));
-      if (!response.ok) throw new Error('设置读取失败');
-      this.aiProviderSettings = await response.json();
+      const result = await this._requestAISettings('load');
+      if (epoch !== undefined && epoch !== this._aiSettingsEpoch) return;
+      this._acceptAISettings(result);
+      this._aiSettingsLoadError = false;
     } catch {
+      if (epoch !== undefined && epoch !== this._aiSettingsEpoch) return;
       this.aiProviderSettings = null;
+      this._aiSettingsLoadError = true;
     }
     this._syncAISettingsForm();
   }
@@ -249,23 +286,35 @@ export class AISettingsMethods {
     const inputs = this._aiSettingsInputs;
     if (!inputs) return;
     const gemini = (this.aiProviderSettings && this.aiProviderSettings.gemini) || GEMINI_FALLBACK;
-    this._setAISettingsNote('', '');
+    const secure = this._aiSecureStorage;
+    const legacy = gemini.credentialStatus === 'migration-required';
+    const disclosure = this._aiSettingsLoadError ? '设置读取失败；未覆盖原有文件。'
+      : legacy ? '发现旧明文 Key。点击“同意迁移”才会用系统安全存储加密并替换原文件；不会联网，也不会保留明文备份。'
+      : secure ? (secure.available
+        ? '保存会使用本机系统安全存储加密 Key；保存不联网。测试连接会将 Key 发送给 Google（经已保存的代理）。'
+        : ({ unsupported: '此平台暂不支持密钥安全存储。', locked: '系统安全存储已锁定或拒绝访问。', unavailable: '系统安全存储暂不可用。' }[secure.status]
+          || '系统安全存储暂不可用。') + '不会回退为明文；普通编辑不受影响。')
+        : '命令行网页版将 Key 以明文保存在本机 settings.json；保存不联网。测试连接会联系服务商。';
+    this._setAISettingsNote(disclosure, this._aiSettingsLoadError ? 'error' : '');
+    if (this._aiSettingsMigrateBtn) this._aiSettingsMigrateBtn.style.display = legacy ? '' : 'none';
     inputs.key.value = '';
     inputs.key.placeholder = gemini.configured
-      ? '已配置（尾号 ' + gemini.apiKeyTail + '），留空保持不变'
+      ? '已配置，留空保持不变'
       : '粘贴 Gemini API Key';
     inputs.model.value = gemini.model || GEMINI_FALLBACK.model;
     inputs.proxy.value = gemini.proxy || '';
-    if (this._aiSettingsClearBtn) this._aiSettingsClearBtn.style.display = gemini.configured ? '' : 'none';
+    if (this._aiSettingsClearBtn) this._aiSettingsClearBtn.style.display = (gemini.configured || legacy) ? '' : 'none';
   }
 
 
   async _saveAISettings() {
+    if (this._aiSettingsBusy) return;
+    const epoch = this._aiSettingsEpoch;
     const inputs = this._aiSettingsInputs;
     if (!inputs) return;
     const payload = {
       gemini: {
-        model: String(inputs.model.value || '').trim() || undefined,
+        model: String(inputs.model.value || '').trim(),
         // 代理始终提交：空串 = 显式清除
         proxy: String(inputs.proxy.value || '').trim()
       }
@@ -273,36 +322,48 @@ export class AISettingsMethods {
     const key = String(inputs.key.value || '').trim();
     if (key) payload.gemini.apiKey = key;
     try {
-      const response = await fetch(bridgeUrl('/api/settings'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (!response.ok) throw new Error('设置保存失败');
-      this.aiProviderSettings = await response.json();
+      this._setAISettingsBusy(true);
+      inputs.key.value = '';
+      const result = await this._requestAISettings('save', payload);
+      if (epoch !== this._aiSettingsEpoch) return;
+      this._acceptAISettings(result);
       this.closeAISettings();
       const configured = this.aiProviderSettings && this.aiProviderSettings.gemini
         && this.aiProviderSettings.gemini.configured;
       this._setStatus(configured ? 'AI 设置已保存 · Gemini 已配置' : 'AI 设置已保存');
     } catch (error) {
-      this._setStatus(error.message || '设置保存失败');
-    }
+      if (epoch === this._aiSettingsEpoch) this._setStatus(error.message || '设置保存失败');
+    } finally { this._setAISettingsBusy(false); }
   }
 
 
-  async _clearAIKey() {
+  async _migrateAIKey() {
+    if (this._aiSettingsBusy) return;
+    const epoch = this._aiSettingsEpoch;
+    this._setAISettingsBusy(true);
     try {
-      const response = await fetch(bridgeUrl('/api/settings'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gemini: { apiKey: '' } })
-      });
-      if (!response.ok) throw new Error('清除失败');
-      this.aiProviderSettings = await response.json();
+      const result = await this._requestAISettings('migrate', { consent: true });
+      if (epoch !== this._aiSettingsEpoch) return;
+      this._acceptAISettings(result);
+      this._syncAISettingsForm();
+      this._setStatus('旧 Key 已迁移为本机加密存储');
+    } catch (error) { if (epoch === this._aiSettingsEpoch) this._setStatus(error.message || '迁移失败，原文件已保留'); }
+    finally { this._setAISettingsBusy(false); }
+  }
+
+  async _clearAIKey() {
+    if (this._aiSettingsBusy) return;
+    const epoch = this._aiSettingsEpoch;
+    this._setAISettingsBusy(true);
+    if (this._aiSettingsInputs) this._aiSettingsInputs.key.value = '';
+    try {
+      const result = await this._requestAISettings('save', { gemini: { apiKey: '' } });
+      if (epoch !== this._aiSettingsEpoch) return;
+      this._acceptAISettings(result);
       this._syncAISettingsForm();
       this._setStatus('已清除 Gemini API Key');
     } catch (error) {
-      this._setStatus(error.message || 'Key 清除失败');
-    }
+      if (epoch === this._aiSettingsEpoch) this._setStatus(error.message || 'Key 清除失败');
+    } finally { this._setAISettingsBusy(false); }
   }
 }

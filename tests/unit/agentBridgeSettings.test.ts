@@ -54,16 +54,16 @@ test('设置存储：代理地址可保存、可用空串清除', async () => {
   });
 });
 
-test('maskProviderSettings 只回配置状态与尾号，不暴露明文', () => {
+test('maskProviderSettings 只回配置状态，不暴露明文或尾号', () => {
   const masked = maskProviderSettings({
     providers: { gemini: { apiKey: 'AIzaSyTest123456', model: 'gemini-2.5-pro', proxy: 'http://127.0.0.1:7890' } }
   });
   assert.deepEqual(masked, {
-    gemini: { configured: true, apiKeyTail: '3456', model: 'gemini-2.5-pro', proxy: 'http://127.0.0.1:7890' }
+    gemini: { configured: true, model: 'gemini-2.5-pro', proxy: 'http://127.0.0.1:7890' }
   });
   assert.ok(!JSON.stringify(masked).includes('AIzaSyTest'));
 
   assert.deepEqual(maskProviderSettings({}), {
-    gemini: { configured: false, apiKeyTail: '', model: 'gemini-2.5-flash', proxy: '' }
+    gemini: { configured: false, model: 'gemini-2.5-flash', proxy: '' }
   });
 });

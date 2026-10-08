@@ -118,7 +118,7 @@ test('打开设置弹窗时加载掩码配置回填表单（含代理地址）',
       assert.ok(body.children.length >= 1, '设置弹窗应挂到 body');
       const inputs = editor._aiSettingsInputs;
       assert.ok(inputs, '应保留输入框引用');
-      assert.match(inputs.key.placeholder || '', /3456/);
+      assert.match(inputs.key.placeholder || '', /已配置/);
       assert.equal(inputs.model.value, 'gemini-2.5-pro');
       assert.equal(inputs.proxy.value, 'http://127.0.0.1:7890');
     } finally {
@@ -213,5 +213,91 @@ test('清除已保存的 Key 提交空串', async () => {
     } finally {
       globalThis.fetch = previousFetch;
     }
+  });
+});
+
+test('close clears password and a pending open cannot reopen the dismissed settings modal', async () => {
+  await withDom(async () => {
+    const before = globalThis.fetch;
+    let finish;
+    globalThis.fetch = (() => new Promise((resolve) => { finish = resolve; })) as typeof fetch;
+    try {
+      const editor = createEditor();
+      const opening = editor.openAISettings();
+      editor._aiSettingsInputs.key.value = 'FAKE-secret-only';
+      editor.closeAISettings();
+      assert.equal(editor._aiSettingsInputs.key.value, '');
+      finish({ ok: true, json: async () => MASKED });
+      await opening;
+      assert.equal(editor._aiSettingsEl.style.display, 'none');
+    } finally { globalThis.fetch = before; }
+  });
+});
+
+for (const operation of ['_clearAIKey', '_migrateAIKey']) {
+  test(`${operation} late response cannot clear a newly reopened form`, async () => {
+    await withDom(async () => {
+      const editor = createEditor();
+      editor._buildAISettingsModal();
+      editor._aiSettingsEpoch = 1;
+      let finish;
+      editor._requestAISettings = () => new Promise((resolve) => { finish = resolve; });
+      const pending = editor[operation]();
+      editor.closeAISettings();
+      editor._aiSettingsEpoch++;
+      editor._aiSettingsInputs.key.value = 'FAKE-new-unsaved-key';
+      editor._aiSettingsInputs.model.value = 'gemini-new-model';
+      finish({ providers: MASKED, secureStorage: { available: true, status: 'available' } });
+      await pending;
+      assert.equal(editor._aiSettingsInputs.key.value, 'FAKE-new-unsaved-key');
+      assert.equal(editor._aiSettingsInputs.model.value, 'gemini-new-model');
+      assert.equal(editor.aiProviderSettings, undefined);
+    });
+  });
+}
+
+test('stale rejected load does not reset a newer successfully loaded settings form', async () => {
+  await withDom(async () => {
+    const editor = createEditor();
+    editor._buildAISettingsModal();
+    editor._aiSettingsEpoch = 1;
+    let rejectOld;
+    editor._requestAISettings = () => new Promise((_resolve, reject) => { rejectOld = reject; });
+    const pending = editor._loadAISettings(1);
+    editor._aiSettingsEpoch = 2;
+    editor.aiProviderSettings = MASKED;
+    editor._aiSettingsInputs.key.value = 'FAKE-new-input';
+    rejectOld(new Error('old request failed'));
+    await pending;
+    assert.equal(editor.aiProviderSettings, MASKED);
+    assert.equal(editor._aiSettingsInputs.key.value, 'FAKE-new-input');
+  });
+});
+
+test('repeated save click submits one operation and immediately clears the typed password', async () => {
+  await withDom(async () => {
+    const editor = createEditor();
+    editor._buildAISettingsModal();
+    editor._aiSettingsInputs.key.value = 'FAKE-typed-secret';
+    let finish; let calls = 0;
+    editor._requestAISettings = () => { calls++; return new Promise(resolve => { finish = resolve; }); };
+    const pending = editor._saveAISettings();
+    await editor._saveAISettings();
+    assert.equal(calls, 1);
+    assert.equal(editor._aiSettingsInputs.key.value, '');
+    finish({ providers: MASKED });
+    await pending;
+  });
+});
+
+test('blank desktop model is a valid preserve operation across structured clone', async () => {
+  await withDom(async () => {
+    const editor = createEditor();
+    editor._buildAISettingsModal();
+    editor._aiSettingsInputs.model.value = '';
+    let received;
+    editor._requestAISettings = async (_op, payload) => { received = structuredClone(payload); return { providers: MASKED }; };
+    await editor._saveAISettings();
+    assert.equal(received.gemini.model, '');
   });
 });

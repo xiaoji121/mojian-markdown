@@ -8,6 +8,7 @@ import { pathToFileURL } from 'node:url';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { createDocumentStore, normalizeAnnotation } from './agent-bridge-store.js';
+import { authorizeDesktopRequest } from './agent-bridge-security.js';
 import { createSettingsStore, maskProviderSettings } from './agent-bridge-settings.js';
 import { normalizeEngine, normalizeMode, runEngine } from './agent-bridge-engines.js';
 import { agentPrompt, prepareAgentContext, readAgentDocumentUpdate, runAgentTurn } from './agent-bridge-agent.js';
@@ -144,7 +145,7 @@ function translatePrompt(text) {
   ].join('\n');
 }
 
-function createRequestHandler({ store, settings, staticDir, cors, root }) {
+function createRequestHandler({ store, settings, staticDir, cors, root, desktopCapability, getOrigin }) {
   const { readDocument, writeDocument, deleteDocument, upsertDocument, listDocuments } = store;
   const corsHeaders = cors
     ? {
@@ -438,6 +439,10 @@ function createRequestHandler({ store, settings, staticDir, cors, root }) {
     const url = new URL(req.url || '/', `http://${req.headers.host || '127.0.0.1'}`);
     const parts = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
     try {
+      if (desktopCapability && parts[0] === 'api' && !authorizeDesktopRequest(req, getOrigin(), desktopCapability)) {
+        return sendError(res, 403, 'Forbidden');
+      }
+      if (desktopCapability && url.pathname.startsWith('/api/settings')) return sendError(res, 403, 'Use desktop settings IPC');
       if (req.method === 'GET' && url.pathname === '/health') return sendJson(res, 200, { ok: true });
       if (req.method === 'GET' && url.pathname === '/api/connectors') {
         return sendJson(res, 200, await connectorCapabilities(process.env));
@@ -520,15 +525,19 @@ export function startAgentBridge({
   host = '127.0.0.1',
   root = defaultWorkspaceRoot(),
   staticDir = '',
-  cors = true
+  cors = true,
+  settingsStore,
+  desktopCapability = ''
 } = {}) {
   const store = createDocumentStore(root);
-  const settings = createSettingsStore(root);
-  const server = createServer(createRequestHandler({ store, settings, staticDir, cors, root }));
+  const settings = settingsStore || createSettingsStore(root);
+  let origin = '';
+  const server = createServer(createRequestHandler({ store, settings, staticDir, cors, root, desktopCapability, getOrigin: () => origin }));
   return new Promise((resolvePromise, rejectPromise) => {
     server.once('error', rejectPromise);
     server.listen(port, host, () => {
       const boundPort = server.address().port;
+      origin = `http://${host}:${boundPort}`;
       resolvePromise({
         server,
         port: boundPort,

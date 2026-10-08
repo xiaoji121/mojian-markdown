@@ -5,9 +5,14 @@
 //   2. 原生文件对话框与读写——真实绝对路径，授权一次永久有效
 //      （授权清单持久化在 userData，重启后恢复的文档仍可直接同步）；
 //   3. 应用菜单、macOS「双击 .md 打开」、单实例与命令行参数接管。
-import { app, BrowserWindow, Menu, clipboard, dialog, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, Menu, clipboard, dialog, ipcMain, shell, safeStorage } from 'electron';
 import { readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, extname, isAbsolute, join, resolve } from 'node:path';
+import { randomBytes } from 'node:crypto';
+import { createSettingsStore } from '../scripts/agent-bridge-settings.js';
+import { createSafeStorageAdapter } from './credentialStore.js';
+import { desktopRequestHeaders, invokeSettings } from './credentialBoundary.js';
+import { testAiConnection } from './testAiConnection.js';
 import { fileURLToPath } from 'node:url';
 import { startAgentBridge } from '../scripts/agent-bridge.js';
 import { readLocalAsset } from './localAssets.js';
@@ -23,6 +28,8 @@ if (process.env.MOJIAN_USER_DATA) app.setPath('userData', process.env.MOJIAN_USE
 let mainWindow = null;
 let bridge = null;
 let editorStateStore = null;
+let aiSettingsStore = null;
+const desktopCapability = randomBytes(32).toString('hex');
 let closeCoordinator = null;
 let quittingRequested = false;
 const pendingWrites = new Set();
@@ -165,6 +172,9 @@ function collectMarkdownArgs(argv, cwd) {
 
 function registerIpcHandlers() {
   registerEditorStateIpc();
+  ipcMain.handle('desktop:ai-settings', (event, operation, payload) => trackWrite(() =>
+    invokeSettings(event, mainWindow, bridge?.url, aiSettingsStore, operation, payload,
+      (input) => testAiConnection(aiSettingsStore, input))));
   const handleWrite = (channel, handler) => ipcMain.handle(channel, (...args) => trackWrite(() => handler(...args)));
   ipcMain.handle('desktop:read-clipboard-text', () => clipboard.readText());
 
@@ -331,6 +341,9 @@ async function createWindow() {
       contextIsolation: true
     }
   });
+  mainWindow.webContents.session.webRequest.onBeforeSendHeaders((details, callback) => {
+    callback({ requestHeaders: desktopRequestHeaders(details, mainWindow, bridge.url, desktopCapability) });
+  });
   protectWindowClose(mainWindow);
   mainWindow.webContents.on('did-start-loading', () => { rendererReady = false; });
   // 文章里的链接一律交给系统浏览器：target=_blank 不自开 Electron 窗口，
@@ -374,11 +387,16 @@ if (!app.requestSingleInstanceLock()) {
   app.whenReady().then(async () => {
     try {
       editorStateStore = createEditorStateStore(app.getPath('userData'));
+      aiSettingsStore = createSettingsStore(workspaceRoot(), {
+        credentialAdapter: createSafeStorageAdapter({ safeStorage, app, platform: process.platform })
+      });
       await loadGrantedPaths();
       bridge = await startAgentBridge({
         root: workspaceRoot(),
         staticDir: join(app.getAppPath(), 'dist'),
-        cors: false
+        cors: false,
+        settingsStore: aiSettingsStore,
+        desktopCapability
       });
     } catch (error) {
       dialog.showErrorBox('墨笺 Markdown 启动失败', error.message || String(error));

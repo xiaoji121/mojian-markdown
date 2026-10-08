@@ -128,3 +128,11 @@ test('输入 Markdown 后预览实时渲染', async ({ page }) => {
 - 已知 npm Node shim 解析后直接运行 Node + JS 入口，始终 `shell: false`；任意 `.bat`、自定义或修改过的 `.cmd` 会安全拒绝。原生 `.exe` 继续直接启动。Electron 必须能找到 shim 同目录或 PATH 中的 `node.exe`，不会把桌面应用当作 Node 再启动。
 - Windows 打包冒烟还会通过真实 `/api/chat` 调用 mock Claude/Codex shim，验证打包后的 Electron 能正确找到 Node 并传递提示词。开发入口直接启动 Vite 的 Node 入口，避免依赖 Node 自带的特殊 `npm.cmd` 包装器。
 - 这些检查不验证真实 Claude/Codex 登录、服务端模型行为、Gemini Key、真实发布权限、任意包管理器 wrapper，或 Windows 10/11 的 NSIS 安装体验。启用超时/取消时，POSIX 使用独立进程组，Windows 使用系统 taskkill 终止普通子孙进程；测试包含 npm 风格的二级进程与继承的输出管道。终止失败会明确报错，不承诺终止工具自行脱离进程树的进程。
+
+## Desktop credential tests
+
+- `secureSettingsStore.test.ts`, `desktopCredentialStore.test.ts`, and boundary tests use injected fake crypto, fixed error strings and temporary workspaces. They cover consent-only migration, strict status, atomic failures, corruption, save/clear serialization, unsupported/locked storage and trusted-frame/capability checks.
+- `credentialRedaction.test.ts` checks key redaction across streamed chunk boundaries. `desktopTestAiConnection.test.ts` injects a fake engine and proves response/error bodies do not return keys.
+- `ai-settings.spec.ts` tests the desktop settings contract through a browser-only IPC mock, including disclosure and clearing hidden password inputs. `aiSettingsMethods.test.ts` covers interrupted/repeated operations and stale responses.
+- `secureSettingsScenario.ts` runs in both source Electron and the isolated Windows package. It replaces OS safeStorage before any credential operation, uses fabricated keys, exercises the migration button, and checks save/clear/restart persistence. External Chromium traffic is directed to an unused loopback proxy; Node provider connections are loopback-guarded.
+- Real Keychain/DPAPI integration and signed upgrades are not established by mocks. See [desktop credential security](DESKTOP_CREDENTIAL_SECURITY.md) for the exact boundary and limits.
