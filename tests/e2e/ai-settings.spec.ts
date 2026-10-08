@@ -5,6 +5,9 @@ test('desktop settings disclose migration and clear unsaved passwords on close/r
   // Inject only the narrow IPC contract after normal editor initialization. No
   // provider request, real key, or operating-system secret store is used here.
   await page.evaluate(() => {
+    // The default web build hides bridge-only controls. Expose that presentation
+    // for this injected IPC fixture; actual desktop wiring is tested separately.
+    document.body.classList.add('agent-bridge-enabled');
     let migrated = false;
     (window as any).mojianDesktop = {
       aiSettings: async (operation, payload) => {

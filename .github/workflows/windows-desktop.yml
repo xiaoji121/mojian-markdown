@@ -33,7 +33,7 @@ jobs:
       - name: Build desktop frontend
         run: npm run build:bridge
       - name: Existing desktop regression suite
-        run: npx playwright test --config playwright.desktop.config.ts smoke.spec.ts
+        run: npx playwright test --config playwright.desktop.config.ts smoke.spec.ts --repeat-each=3
       - name: Package Windows x64 without publishing
         run: npx electron-builder --config desktop/electron-builder.yml --win --x64 --dir --publish never
       - name: Isolate package from checkout and its node_modules
