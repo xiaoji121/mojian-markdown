@@ -17,10 +17,10 @@
     var wasEditing = document.body.classList.contains('editor-active');
     document.body.classList.toggle('editor-active', editing);
     document.title = editing
-      ? ((document.querySelector('.interface-language')?.value || document.documentElement.dataset.landingLocale) === 'en' ? 'Mojian Markdown' : '墨笺 Markdown')
+      ? ((document.documentElement.dataset.editorLocale || document.documentElement.dataset.landingLocale) === 'en' ? 'Mojian Markdown' : '墨笺 Markdown')
       : document.documentElement.dataset.landingTitle;
     document.documentElement.lang = editing
-      ? (document.querySelector('.interface-language')?.value || document.documentElement.dataset.landingLocale)
+      ? (document.documentElement.dataset.editorLocale || document.documentElement.dataset.landingLocale)
       : document.documentElement.dataset.landingLocale;
     // 只在进出编辑器时回到顶部；落地页内部锚点（#editions/#desktop）交给浏览器定位。
     if (editing !== wasEditing) window.scrollTo(0, 0);
@@ -86,7 +86,6 @@
       </span>
     </div>
     <div class="header-actions">
-      <label class="interface-language-control"><span class="sr-only" data-i18n="界面语言">界面语言</span><select class="interface-language" aria-label="界面语言" data-i18n-aria-label="界面语言"><option value="zh-CN">简体中文</option><option value="zh-TW">繁體中文</option><option value="en">English</option><option value="ja">日本語</option></select></label>
       <span ref="{{ viewModeSwitcherRef }}" class="view-mode-switcher" role="group" aria-label="编辑器视图" data-i18n-aria-label="编辑器视图">
         <button class="view-mode-option" data-mode="editor" onClick="{{ showEditorMode }}" aria-pressed="false" title="仅显示 Markdown 原文" data-i18n-title="仅显示 Markdown 原文"><span data-i18n="编辑">编辑</span></button>
         <button class="view-mode-option split-mode-option" data-mode="split" onClick="{{ showSplitMode }}" aria-pressed="true" title="同时显示原文和预览" data-i18n-title="同时显示原文和预览"><span data-i18n="分屏">分屏</span></button>
@@ -106,18 +105,50 @@
           <div class="header-menu-separator" role="separator"></div>
           <button class="header-menu-item" role="menuitem" onClick="{{ menuFind }}"><span data-i18n="查找文档">查找文档</span><span class="menu-shortcut">⌘F</span></button>
           <button class="header-menu-item longimg-entry" role="menuitem" onClick="{{ menuLongImage }}"><span data-i18n="导出长图">导出长图</span></button>
-          <button class="header-menu-item" role="menuitem" onClick="{{ menuAppearance }}"><span data-i18n="阅读排版">阅读排版</span></button>
+          <button class="header-menu-item global-settings-entry" role="menuitem" onClick="{{ menuAppearance }}"><span data-i18n="设置">设置</span><small class="menu-item-hint"><span data-i18n="界面语言">界面语言</span> · <span data-i18n="阅读排版">阅读排版</span></small></button>
           <div class="header-menu-separator publish-menu-item" role="separator"></div>
           <!-- 飞书创建在线文档；钉钉上传原始 Markdown 文件。均走本机已登录的官方 CLI，凭据不经过墨笺 -->
           <button class="header-menu-item publish-menu-item" data-target="feishu" role="menuitem" onClick="{{ menuPublishFeishu }}" disabled title="正在检测 lark-cli…" data-i18n-title="正在检测 lark-cli…"><span data-i18n="上传到飞书文档">上传到飞书文档</span><small class="menu-item-hint"><span data-i18n="上传完成后自动打开">上传完成后自动打开</span></small></button>
           <button class="header-menu-item publish-menu-item" data-target="dingtalk" role="menuitem" onClick="{{ menuPublishDingtalk }}" disabled title="正在检测 dws…" data-i18n-title="正在检测 dws…"><span data-i18n="上传到钉钉云盘">上传到钉钉云盘</span><small class="menu-item-hint"><span data-i18n="保留 .md 文件，不转在线文档">保留 .md 文件，不转在线文档</span></small></button>
           <div class="header-menu-separator" role="separator"></div>
           <button class="header-menu-item folder-menu-item" role="menuitem" onClick="{{ menuFolder }}" title="选择文件夹，让文档显示本地路径" data-i18n-title="选择文件夹，让文档显示本地路径"><span data-i18n="关联本地文件夹">关联本地文件夹</span><small class="menu-item-hint"><span data-i18n="让文档显示本地路径">让文档显示本地路径</span></small></button>
-          <button class="header-menu-item settings-entry" role="menuitem" onClick="{{ menuSettings }}"><span data-i18n="设置">设置</span><small class="menu-item-hint"><span data-i18n="AI 渠道与 API Key">AI 渠道与 API Key</span></small></button>
+          <button class="header-menu-item settings-entry" role="menuitem" onClick="{{ menuSettings }}"><span data-i18n="AI 渠道与 API Key">AI 渠道与 API Key</span></button>
         </div>
       </span>
     </div>
   </header>
+
+  <section ref="{{ appearancePanelRef }}" id="reading-appearance-panel" class="reading-appearance-panel" role="dialog" aria-label="设置" data-i18n-aria-label="设置" tabindex="-1" hidden>
+    <div class="appearance-panel-header"><h2 class="appearance-heading" data-i18n="设置">设置</h2><button type="button" class="tbtn appearance-close" onClick="{{ closeReadingAppearance }}" aria-label="关闭" data-i18n-aria-label="关闭">&times;</button></div>
+    <div class="interface-language-settings" role="radiogroup" aria-label="界面语言" data-i18n-aria-label="界面语言">
+      <span class="appearance-section-heading" data-i18n="界面语言">界面语言</span>
+      <div class="interface-language-options">
+        <button type="button" class="interface-language-option" role="radio" aria-checked="false" data-locale="zh-CN" lang="zh-CN">简体中文</button>
+        <button type="button" class="interface-language-option" role="radio" aria-checked="false" data-locale="zh-TW" lang="zh-TW">繁體中文</button>
+        <button type="button" class="interface-language-option" role="radio" aria-checked="false" data-locale="en" lang="en">English</button>
+        <button type="button" class="interface-language-option" role="radio" aria-checked="false" data-locale="ja" lang="ja">日本語</button>
+      </div>
+    </div>
+    <span class="appearance-section-heading appearance-reading-heading" data-i18n="阅读排版">阅读排版</span>
+    <span class="appearance-row"><span><span data-i18n="界面主题">界面主题</span></span><button class="tbtn appearance-theme" onClick="{{ toggleTheme }}" title="切换亮色或暗黑主题" data-i18n-title="切换亮色或暗黑主题" aria-label="切换亮色或暗黑主题" data-i18n-aria-label="切换亮色或暗黑主题"><span ref="{{ themeIconRef }}"></span><span ref="{{ themeLabelRef }}"><span data-i18n="亮色">亮色</span></span></button></span>
+    <label class="reading-font-field"><span data-i18n="阅读字体">阅读字体</span><select class="reading-font-select" aria-label="阅读字体" data-i18n-aria-label="阅读字体">
+      <option value="system-default" data-i18n="系统默认">系统默认</option>
+      <option value="system-serif" data-i18n="系统衬线">系统衬线</option>
+      <option value="source-serif-4">Source Serif 4</option>
+      <option value="local-jinkai" data-i18n="本机仓耳今楷 04">本机仓耳今楷 04</option>
+    </select></label>
+    <span class="reading-font-preview">Read · 阅读 · 閱讀 · 読む<br><strong>Bold 粗体</strong> · <em>Italic 斜体</em> · <strong><em>Both</em></strong> · <code>code()</code></span>
+    <span class="appearance-row"><span><span data-i18n="字号">字号</span></span><span class="appearance-font-controls">
+      <button class="tbtn font-btn font-dec" onClick="{{ fontDec }}" aria-label="缩小字号" data-i18n-aria-label="缩小字号">A−</button>
+      <span ref="{{ fontSizeRef }}" class="font-size-value">16px</span>
+      <button class="tbtn font-btn font-inc" onClick="{{ fontInc }}" aria-label="放大字号" data-i18n-aria-label="放大字号">A+</button>
+    </span></span>
+    <span class="appearance-row"><span><span data-i18n="纸色">纸色</span></span><span ref="{{ paperPickerRef }}" class="paper-picker" role="group" aria-label="选择纸色" data-i18n-aria-label="选择纸色"></span></span>
+    <span class="appearance-row appearance-width"><span><span data-i18n="沉浸阅读宽度">沉浸阅读宽度</span></span><button ref="{{ immersiveWideRef }}" class="tbtn tool-pill immersive-wide-toggle" onClick="{{ toggleImmersiveWide }}" title="切换为宽屏阅读" data-i18n-title="切换为宽屏阅读" aria-pressed="false"><span data-i18n="宽屏">宽屏</span></button></span>
+    <span class="appearance-note reading-font-note"><strong data-i18n="本机仓耳今楷 04">本机仓耳今楷 04</strong><span class="reading-font-status" role="status"></span><span data-i18n="前往仓耳官网查看许可并自行安装，安装后重启应用。">前往仓耳官网查看许可并自行安装，安装后重启应用。</span> <a class="reading-font-link" target="_blank" rel="noopener noreferrer" data-i18n="字体官网">字体官网</a></span>
+    <span class="appearance-note"><span data-i18n="排版偏好会自动记住">排版偏好会自动记住</span></span>
+  </section>
+
 
   <!-- ===== SPLIT BODY ===== -->
   <main ref="{{ splitRef }}" class="editor-main">
@@ -197,29 +228,6 @@
       <div class="pane-toolbar reading-toolbar" role="toolbar" aria-label="阅读工具" data-i18n-aria-label="阅读工具">
         <span ref="{{ previewTitleRef }}" class="pane-title"><span data-i18n="预览 · 仅阅读">预览 · 仅阅读</span></span>
         <span class="preview-toolbar-actions">
-          <span class="reading-appearance">
-            <button ref="{{ appearanceButtonRef }}" class="tbtn tool-pill appearance-toggle" onClick="{{ toggleReadingAppearance }}" aria-label="阅读排版" data-i18n-aria-label="阅读排版" aria-expanded="false" aria-controls="reading-appearance-panel"><span aria-hidden="true">Aa</span><span class="appearance-label"><span data-i18n="排版">排版</span></span></button>
-            <span ref="{{ appearancePanelRef }}" id="reading-appearance-panel" class="reading-appearance-panel" role="region" aria-label="阅读排版设置" data-i18n-aria-label="阅读排版设置" hidden>
-              <span class="appearance-heading"><span data-i18n="阅读排版">阅读排版</span></span>
-              <span class="appearance-row"><span><span data-i18n="界面主题">界面主题</span></span><button class="tbtn appearance-theme" onClick="{{ toggleTheme }}" title="切换亮色或暗黑主题" data-i18n-title="切换亮色或暗黑主题" aria-label="切换亮色或暗黑主题" data-i18n-aria-label="切换亮色或暗黑主题"><span ref="{{ themeIconRef }}"></span><span ref="{{ themeLabelRef }}"><span data-i18n="亮色">亮色</span></span></button></span>
-              <label class="reading-font-field"><span data-i18n="阅读字体">阅读字体</span><select class="reading-font-select" aria-label="阅读字体" data-i18n-aria-label="阅读字体">
-                <option value="system-default" data-i18n="系统默认">系统默认</option>
-                <option value="system-serif" data-i18n="系统衬线">系统衬线</option>
-                <option value="source-serif-4">Source Serif 4</option>
-                <option value="local-jinkai" data-i18n="本机仓耳今楷 04">本机仓耳今楷 04</option>
-              </select></label>
-              <span class="reading-font-preview">Read · 阅读 · 閱讀 · 読む<br><strong>Bold 粗体</strong> · <em>Italic 斜体</em> · <strong><em>Both</em></strong> · <code>code()</code></span>
-              <span class="appearance-row"><span><span data-i18n="字号">字号</span></span><span class="appearance-font-controls">
-                <button class="tbtn font-btn font-dec" onClick="{{ fontDec }}" aria-label="缩小字号" data-i18n-aria-label="缩小字号">A−</button>
-                <span ref="{{ fontSizeRef }}" class="font-size-value">16px</span>
-                <button class="tbtn font-btn font-inc" onClick="{{ fontInc }}" aria-label="放大字号" data-i18n-aria-label="放大字号">A+</button>
-              </span></span>
-              <span class="appearance-row"><span><span data-i18n="纸色">纸色</span></span><span ref="{{ paperPickerRef }}" class="paper-picker" role="group" aria-label="选择纸色" data-i18n-aria-label="选择纸色"></span></span>
-              <span class="appearance-row appearance-width"><span><span data-i18n="沉浸阅读宽度">沉浸阅读宽度</span></span><button ref="{{ immersiveWideRef }}" class="tbtn tool-pill immersive-wide-toggle" onClick="{{ toggleImmersiveWide }}" title="切换为宽屏阅读" data-i18n-title="切换为宽屏阅读" aria-pressed="false"><span data-i18n="宽屏">宽屏</span></button></span>
-              <span class="appearance-note reading-font-note"><strong data-i18n="本机仓耳今楷 04">本机仓耳今楷 04</strong><span class="reading-font-status" role="status"></span><span data-i18n="前往仓耳官网查看许可并自行安装，安装后重启应用。">前往仓耳官网查看许可并自行安装，安装后重启应用。</span> <a class="reading-font-link" target="_blank" rel="noopener noreferrer" data-i18n="字体官网">字体官网</a></span>
-              <span class="appearance-note"><span data-i18n="排版偏好会自动记住">排版偏好会自动记住</span></span>
-            </span>
-          </span>
           <button class="tbtn tool-pill fullscreen-only-control" onClick="{{ toggleComments }}" title="显示批注" data-i18n-title="显示批注" aria-label="显示批注" data-i18n-aria-label="显示批注">
             <span class="fullscreen-comments-label"><span data-i18n="批注">批注</span></span>
             <span ref="{{ previewCommentCountRef }}" class="count-badge">0</span>

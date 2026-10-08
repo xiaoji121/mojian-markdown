@@ -1,24 +1,24 @@
-import { test, expect, openEditor, setSource } from './fixtures';
+import { chooseLanguage } from './localeHelpers';
+import { test, expect, openEditor, openAppearance, setSource } from './fixtures';
 
 for (const locale of ['zh-CN', 'zh-TW', 'en', 'ja']) {
   test(`reading font survives ${locale} UI changes and reload`, async ({ page }, testInfo) => {
     await openEditor(page);
     await expect(page.locator('body')).toHaveAttribute('data-reading-font', 'source-serif-4');
-    await page.locator('.appearance-toggle').click();
+    await openAppearance(page);
     await page.locator('.reading-font-select').selectOption('system-serif');
-    await page.locator('.appearance-toggle').click();
-    await page.locator('.interface-language').selectOption(locale);
+    await chooseLanguage(page, locale);
     await expect(page.locator('body')).toHaveAttribute('data-reading-font', 'system-serif');
     await page.reload();
     await expect(page.locator('body')).toHaveAttribute('data-reading-font', 'system-serif');
-    await page.locator('.appearance-toggle').click();
+    await openAppearance(page);
     await expect(page.locator('.reading-font-select')).toHaveValue('system-serif');
     await page.locator('.reading-font-select').selectOption('local-jinkai');
     await expect(page.locator('.reading-font-note')).toBeVisible();
     await expect(page.locator('.reading-font-status')).not.toBeEmpty();
     await page.locator('.reading-font-select').selectOption('source-serif-4');
     await expect(page.locator('.reading-font-note')).toBeHidden();
-    await page.locator('.appearance-toggle').click();
+    await page.keyboard.press('Escape');
     await setSource(page, '# Reading 阅读 閱讀 読む\n\nRead and think with **bold**, *italic*, ***bold italic*** and `code()`.\n\n日本語の文章。中文阅读与思考。');
     await page.evaluate(() => document.fonts.ready);
     await page.screenshot({ path: testInfo.outputPath(`reading-font-${locale}.png`), fullPage: true });
@@ -36,7 +36,7 @@ test('offline bundled roman, bold and italic load; prose, code and UI stay separ
     ]);
     await document.fonts.ready;
     const family = (selector: string) => getComputedStyle(document.querySelector(selector)!).fontFamily;
-    return { loaded: loaded.map(list => list.length), prose: family('.md-preview'), code: family('.md-preview code'), ui: family('.appearance-toggle'), brand: family('.brand-title'), format: family('.fmt-h') };
+    return { loaded: loaded.map(list => list.length), prose: family('.md-preview'), code: family('.md-preview code'), ui: family('.file-menu-toggle'), brand: family('.brand-title'), format: family('.fmt-h') };
   });
   expect(result.loaded.every(count => count > 0)).toBe(true);
   expect(result.prose).toContain('Source Serif 4');

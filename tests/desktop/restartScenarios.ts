@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ChildProcess } from 'node:child_process';
+import { openAppearance } from '../e2e/fixtures';
 import { freezeRendererClock } from './freezeRendererClock.ts';
 
 // Share the exact regression flows between development Electron and the real
@@ -94,7 +95,7 @@ async function openPath(page: Page, path: string) {
 
 async function openSettings(page: Page) {
   await page.getByRole('button', { name: '更多操作', exact: true }).click();
-  await page.getByRole('menuitem', { name: /^设置/ }).click();
+  await page.locator('.settings-entry').click();
   await expect(page.locator('.ai-settings-modal')).toBeVisible();
 }
 
@@ -138,12 +139,14 @@ export function registerRestartScenarios(label: string, executablePath?: string)
       await test.info().attach('packaged-reading-font.png', { body: await page.screenshot(), contentType: 'image/png' });
       await addAnnotation(page);
       const theme = await page.locator('body').getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      await page.getByRole('button', { name: '阅读排版', exact: true }).click();
+      await openAppearance(page);
       await page.getByRole('button', { name: '切换亮色或暗黑主题' }).click();
       await page.getByRole('button', { name: '放大字号' }).click();
       const fontSize = await page.locator('.font-size-value').textContent();
       await page.locator('.reading-font-select').selectOption('system-serif');
-      await page.getByRole('button', { name: '阅读排版', exact: true }).click();
+      await page.locator('.paper-dot[data-paper="green"]').click();
+      await page.locator('.immersive-wide-toggle').click();
+      await page.keyboard.press('Escape');
       await openSettings(page);
       await page.getByRole('radio', { name: /Gemini/ }).click();
       await page.locator('.ai-settings-modal').getByRole('button', { name: '关闭', exact: true }).click();
@@ -154,11 +157,13 @@ export function registerRestartScenarios(label: string, executablePath?: string)
       ({ app, page } = await session.launch());
       await expect(page.locator('.md-source')).toHaveValue(content);
       await expect(page.locator('body')).toHaveAttribute('data-theme', theme);
-      await page.getByRole('button', { name: '阅读排版', exact: true }).click();
+      await openAppearance(page);
       await expect(page.locator('.font-size-value')).toHaveText(fontSize!);
       await expect(page.locator('.reading-font-select')).toHaveValue('system-serif');
       await expect(page.locator('body')).toHaveAttribute('data-reading-font', 'system-serif');
-      await page.getByRole('button', { name: '阅读排版', exact: true }).click();
+      await expect(page.locator('body')).toHaveAttribute('data-paper', 'green');
+      await expect(page.locator('.immersive-wide-toggle')).toHaveAttribute('aria-pressed', 'true');
+      await page.keyboard.press('Escape');
       await page.getByRole('button', { name: /^批注/ }).click();
       await expect(page.locator('.comments-panel .comment-quote')).toHaveCount(1);
       await expect(page.locator('.comment-note-input')).toHaveValue('重启后保留的想法');

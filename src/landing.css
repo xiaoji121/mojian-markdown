@@ -441,12 +441,50 @@ body.editor-active #landing-page { display: none; }
   .landing-button:hover { transform: none; }
 }
 
-/* Locale links remain readable without JavaScript and at narrow/zoomed widths. */
+/* A quiet utility disclosure keeps native, no-JS language navigation available. */
 .landing-nav { position: sticky; height: auto; min-height: 72px; flex-wrap: wrap; padding-top: 12px; padding-bottom: 12px; }
-.landing-languages { display: flex; gap: 4px 12px; flex-wrap: wrap; }
-.landing-languages a { color: var(--landing-muted); padding: 8px 2px; text-underline-offset: 5px; }
-.landing-languages a[aria-current] { color: var(--landing-accent); text-decoration-thickness: 2px; }
-#landing-page a:focus-visible { outline: 2px solid var(--landing-accent); outline-offset: 4px; }
+.landing-nav-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; max-width: 100%; margin-left: auto; }
+.landing-language-toggle, .landing-languages { font-family: var(--sans); }
+.landing-language-menu { position: relative; flex: none; max-width: 100%; }
+.landing-language-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 8px;
+  border-radius: var(--radius-control);
+  color: var(--landing-muted);
+  cursor: pointer;
+  list-style: none;
+  white-space: nowrap;
+  font-size: var(--fs-md);
+}
+.landing-language-toggle::-webkit-details-marker { display: none; }
+.landing-language-toggle:hover, .landing-language-menu[open] .landing-language-toggle { color: var(--landing-text); background: var(--landing-panel); }
+.landing-language-toggle svg { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; }
+.landing-language-toggle .landing-language-chevron { width: 12px; height: 12px; }
+.landing-language-menu[open] .landing-language-chevron { transform: rotate(180deg); }
+.landing-languages {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  width: max-content;
+  min-width: 100%;
+  padding: 4px;
+  border: 1px solid var(--landing-border);
+  border-radius: var(--radius-surface);
+  background: var(--landing-panel);
+  box-shadow: var(--shadow-md);
+}
+.landing-languages a { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 40px; padding: 8px 12px; border-radius: var(--radius-control); color: var(--landing-muted); text-decoration: none; white-space: nowrap; font-size: var(--fs-md); }
+.landing-languages a::after { content: ''; width: 12px; }
+.landing-languages a:hover { color: var(--landing-text); background: var(--landing-panel-2); }
+.landing-languages a[aria-current] { color: var(--landing-accent); }
+.landing-languages a[aria-current]::after { content: '✓'; }
+#landing-page a:focus-visible, .landing-language-toggle:focus-visible { outline: 2px solid var(--landing-accent); outline-offset: 4px; }
+.landing-languages a:focus-visible { outline-offset: -2px; }
 #landing-page .landing-hero { padding-top: 48px; }
 #landing-page .hero-product { grid-template-columns: 1fr 1fr; }
 #landing-page .hero-source, #landing-page .hero-preview { min-width: 0; }
@@ -456,13 +494,15 @@ body.editor-active #landing-page { display: none; }
 #landing-page .edition-card { overflow-wrap: anywhere; }
 @media (max-width: 760px) {
   .landing-nav { gap: 8px; }
-  .landing-languages { order: 3; flex-basis: 100%; justify-content: center; }
   .landing-brand-name { font-size: 18px; }
   .landing-open { margin-left: auto; }
   #landing-page .hero-product { grid-template-columns: 1fr; }
   #landing-page .hero-source { display: none; }
 }
-@media (max-width: 380px) { .landing-open { flex-basis: 100%; } }
+@media (max-width: 600px) {
+  .landing-brand-name { display: none; }
+  .landing-nav-actions { min-width: 0; }
+}
 /* Long Latin product names and translated headings must reflow at 200% zoom. */
 #landing-page h1, #landing-page h2, #landing-page h3 { overflow-wrap: anywhere; }
 #landing-page .edition-card a:not(.landing-button) { color: var(--landing-accent); text-underline-offset: 3px; }

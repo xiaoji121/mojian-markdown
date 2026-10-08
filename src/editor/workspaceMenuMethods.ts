@@ -18,10 +18,7 @@ export class WorkspaceMenuMethods {
         else this.openSearch(false);
       }),
       menuAppearance: run(() => {
-        if (this.viewMode === 'editor') this.setViewMode('preview');
-        if (this.previewRef.current) this.previewRef.current.scrollTop = 0;
         this.toggleReadingAppearance(true);
-        this.appearanceButtonRef.current?.focus();
       })
     };
   }

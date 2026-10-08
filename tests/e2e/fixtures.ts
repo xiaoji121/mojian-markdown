@@ -35,3 +35,12 @@ export async function selectInSource(page: Page, text: string) {
     source.setSelectionRange(start, start + target.length);
   }, text);
 }
+
+// Global preferences are reachable from the same More menu in every editor layout.
+export async function openAppearance(page: Page) {
+  const panel = page.locator('.reading-appearance-panel');
+  if (await panel.isVisible()) return;
+  await page.locator('.file-menu-toggle').click();
+  await page.locator('.global-settings-entry').click();
+  await expect(panel).toBeVisible();
+}

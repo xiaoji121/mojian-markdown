@@ -128,21 +128,19 @@ export class ViewMethods {
   _initReadingAppearanceRefs(React) {
     this.paperPickerRef = React.createRef();
     this.appearancePanelRef = React.createRef();
-    this.appearanceButtonRef = React.createRef();
   }
 
   _readingAppearanceRenderVals() {
     return {
       appearancePanelRef: this.appearancePanelRef,
-      appearanceButtonRef: this.appearanceButtonRef,
-      toggleReadingAppearance: () => this.toggleReadingAppearance()
+      closeReadingAppearance: () => this.toggleReadingAppearance(false, true)
     };
   }
 
   _initReadingAppearance() {
     if (this.appearancePanelRef.current) this.appearancePanelRef.current.hidden = true;
     this._appearanceOutsideH = (event) => {
-      const panel = this.appearancePanelRef.current, button = this.appearanceButtonRef.current;
+      const panel = this.appearancePanelRef.current, button = this.fileMenuButtonRef.current;
       if (!this.appearanceOpen || panel?.contains(event.target) || button?.contains(event.target)) return;
       this.toggleReadingAppearance(false);
     };
@@ -152,13 +150,12 @@ export class ViewMethods {
   }
 
   toggleReadingAppearance(force, returnFocus = false) {
-    const panel = this.appearancePanelRef.current, button = this.appearanceButtonRef.current;
-    if (!panel || !button) return;
+    const panel = this.appearancePanelRef.current;
+    if (!panel) return;
     this.appearanceOpen = typeof force === 'boolean' ? force : !this.appearanceOpen;
     panel.hidden = !this.appearanceOpen;
-    button.setAttribute('aria-expanded', String(this.appearanceOpen));
-    if (returnFocus) button.focus();
-    this._syncReadingToolbarScroll();
+    if (this.appearanceOpen) panel.focus({ preventScroll: true });
+    else if (returnFocus) this.fileMenuButtonRef.current?.focus({ preventScroll: true });
   }
 
   _disposeReadingAppearance() {
@@ -228,7 +225,6 @@ export class ViewMethods {
     const gone = offset >= toolbar.offsetTop + toolbar.offsetHeight;
     toolbar.style.transform = offset ? `translateY(${-offset}px)` : '';
     toolbar.classList.toggle('is-scrolled-away', reading && gone);
-    if (reading && gone && this.appearanceOpen) this.toggleReadingAppearance(false);
   }
 
 

@@ -1,4 +1,4 @@
-import { test, expect, openEditor, setSource } from './fixtures';
+import { test, expect, openEditor, openAppearance, setSource } from './fixtures';
 
 test('阅读工具属于正文，不再形成第二条通栏', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -10,7 +10,7 @@ test('阅读工具属于正文，不再形成第二条通栏', async ({ page }) 
   expect(bounds!.width).toBeLessThan(500);
   await expect(tools.locator('.pane-title')).toBeHidden();
   await expect(tools.locator('.preview-toolbar-hint')).toHaveCount(0);
-  await expect(tools.getByRole('button')).toHaveCount(2);
+  await expect(tools.getByRole('button')).toHaveCount(1);
   const title = await page.locator('.md-preview h1').boundingBox();
   expect(title!.y).toBeGreaterThan(bounds!.y + bounds!.height);
   await page.locator('[data-mode="split"]').click();
@@ -21,7 +21,7 @@ test('顶栏只有一个更多菜单，主题从排版调整，搜索与导出�
   await openEditor(page);
   await expect(page.locator('.app-header').getByRole('button', { name: '切换亮色或暗黑主题' })).toHaveCount(0);
   await expect(page.locator('.app-header').getByRole('button', { name: '打开设置' })).toHaveCount(0);
-  await page.getByRole('button', { name: '阅读排版', exact: true }).click();
+  await openAppearance(page);
   const before = await page.locator('body').getAttribute('data-theme');
   await page.getByRole('button', { name: '切换亮色或暗黑主题' }).click();
   await expect(page.locator('body')).toHaveAttribute('data-theme', before === 'dark' ? 'light' : 'dark');
@@ -67,18 +67,18 @@ for (const immersive of [false, true]) {
     await expect(tools).toBeHidden();
     await preview.evaluate((element) => { element.scrollTop = 0; });
     await expect(tools).toBeVisible();
-    await page.getByRole('button', { name: '阅读排版', exact: true }).click();
+    await openAppearance(page);
     await expect(page.locator('.reading-appearance-panel')).toBeVisible();
   });
 }
 
-test('滚动后从更多菜单打开排版，会回到工具组所在的文章顶部', async ({ page }) => {
+test('滚动后从更多菜单打开全局设置，保持文章阅读位置', async ({ page }) => {
   await openEditor(page);
   await setSource(page, '# 菜单排版\n\n' + '段落。\n\n'.repeat(100));
   await page.locator('[data-mode="preview"]').click();
   await page.locator('.md-preview').evaluate((element) => { element.scrollTop = 500; });
   await page.getByRole('button', { name: '更多操作', exact: true }).click();
-  await page.getByRole('menuitem', { name: '阅读排版', exact: true }).click();
-  await expect.poll(() => page.locator('.md-preview').evaluate((element) => element.scrollTop)).toBe(0);
+  await page.locator('.global-settings-entry').click();
+  await expect.poll(() => page.locator('.md-preview').evaluate((element) => element.scrollTop)).toBe(500);
   await expect(page.locator('.reading-appearance-panel')).toBeVisible();
 });

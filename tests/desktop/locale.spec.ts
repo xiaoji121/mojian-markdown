@@ -1,3 +1,4 @@
+import { chooseLanguage } from '../e2e/localeHelpers';
 import { _electron as electron, expect, test } from '@playwright/test';
 import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -29,7 +30,7 @@ test('language switches persist across real desktop restarts and update native m
     const content = '# 保持される下書き\n\n中文 English 日本語\n';
     for (const [locale, label] of [['zh-TW', '檔案'], ['ja', 'ファイル'], ['zh-CN', '文件'], ['en', 'File']]) {
       await page.locator('.md-source').fill(content);
-      await page.locator('.interface-language').selectOption(locale);
+      await chooseLanguage(page, locale);
       await expect(page.locator('html')).toHaveAttribute('lang', locale);
       expect(await fileLabel()).toBe(label);
       await page.screenshot({ path: testInfo.outputPath(`desktop-${locale}.png`) });
@@ -37,7 +38,7 @@ test('language switches persist across real desktop restarts and update native m
       app = await launch();
       page = await app.firstWindow();
       await expect(page.locator('.md-source')).toHaveValue(content);
-      await expect(page.locator('.interface-language')).toHaveValue(locale);
+      await expect(page.locator('html')).toHaveAttribute('data-editor-locale', locale);
       expect(await fileLabel()).toBe(label);
     }
   } finally {

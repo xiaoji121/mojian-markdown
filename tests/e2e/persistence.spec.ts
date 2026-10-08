@@ -1,4 +1,4 @@
-import { test, expect, openEditor, setSource } from './fixtures';
+import { test, expect, openEditor, openAppearance, setSource } from './fixtures';
 
 const STORAGE_KEY = 'md-editor-warm-v1';
 
@@ -24,7 +24,7 @@ test('主题选择在刷新后保持', async ({ page }) => {
   const initial = await body.getAttribute('data-theme');
   const other = initial === 'dark' ? 'light' : 'dark';
 
-  await page.getByRole('button', { name: '阅读排版', exact: true }).click();
+  await openAppearance(page);
   await page.getByRole('button', { name: '切换亮色或暗黑主题' }).click();
   await expect(body).toHaveAttribute('data-theme', other);
   await page.waitForFunction(([key, theme]) => {
