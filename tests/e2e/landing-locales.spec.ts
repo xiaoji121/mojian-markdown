@@ -1,4 +1,8 @@
 import { test, expect, setSource } from './fixtures';
+const sampleHeadings: Record<string, string> = {
+  'zh-CN': '欢迎使用 Markdown 编辑器', 'zh-TW': '歡迎使用 Markdown 編輯器',
+  en: 'Welcome to Mojian', ja: '墨笺へようこそ',
+};
 for (const [locale, title, open] of [['zh-CN', '墨笺 Markdown', '打开编辑器'], ['zh-TW','墨箋 Markdown','開啟編輯器'], ['en','Mojian Markdown','Open editor'], ['ja','墨箋 Markdown','エディターを開く']]) {
   test(`${locale} landing is shareable without JavaScript`, async ({ browser, baseURL }, testInfo) => {
     const context = await browser.newContext({ javaScriptEnabled: false });
@@ -17,6 +21,9 @@ for (const [locale, title, open] of [['zh-CN', '墨笺 Markdown', '打开编辑�
     await page.locator('.landing-open').click();
     await expect(page.locator('.md-source')).toBeVisible();
     await expect(page.locator('.interface-language')).toHaveValue(locale);
+    await expect(page.locator('.md-preview h1').first()).toHaveText(sampleHeadings[locale]);
+    await expect(page.locator('.md-source')).toHaveAttribute('lang', locale);
+    await expect(page.locator('.md-preview')).toHaveAttribute('lang', locale);
     await setSource(page, '# Keep my draft\n\nUntouched across navigation.');
     await page.locator('.brand-mark').click();
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
