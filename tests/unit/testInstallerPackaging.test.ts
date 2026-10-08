@@ -16,6 +16,7 @@ test('test installers have isolated identity, explicit targets and no publicatio
   assert.equal(config.nsis.runAfterFinish, false);
   assert.equal(config.nsis.deleteAppDataOnUninstall, false);
   assert.ok(config.files.includes('LICENSE'));
+  assert.ok(config.files.includes('dist/favicon.svg'));
   assert.ok(config.files.includes('desktop/preload.cjs'));
   assert.ok(config.files.includes('dist/THIRD_PARTY_NOTICES.txt'));
   assert.ok(!config.files.includes('dist/**'));

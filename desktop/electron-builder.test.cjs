@@ -10,7 +10,7 @@ module.exports = {
   publish: null,
   fileAssociations: [],
   files: [
-    'desktop/*.js', 'desktop/preload.cjs', 'dist/index.html', 'dist/assets/**',
+    'desktop/*.js', 'desktop/preload.cjs', 'dist/index.html', 'dist/favicon.svg', 'dist/assets/**',
     'dist/THIRD_PARTY_NOTICES.txt', 'scripts/agent-bridge*.js', 'LICENSE', 'package.json'
   ],
   extraResources: [{ from: 'node_modules/electron/dist/LICENSES.chromium.html', to: 'licenses/LICENSES.chromium.html' }],
