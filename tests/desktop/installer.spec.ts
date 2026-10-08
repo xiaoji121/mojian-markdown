@@ -1,5 +1,5 @@
 import { _electron as electron, expect, test, type ElectronApplication, type Page, type TestInfo } from '@playwright/test';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { appendFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createInstallerSession, validateInstallerInputs } from '../../scripts/installer-smoke.mjs';
@@ -105,7 +105,9 @@ async function assertPreserved(fixture: Fixture, content: string) {
 
 async function recordStage(testInfo: TestInfo, page: Page, stage: string, version: string) {
   testInfo.annotations.push({ type: stage, description: `Packaged TEST version ${version}` });
-  await testInfo.attach(stage, { body: await page.screenshot(), contentType: 'image/png' });
+  const path = testInfo.outputPath(`${stage}.png`);
+  await page.screenshot({ path });
+  await testInfo.attach(stage, { path, contentType: 'image/png' });
 }
 
 async function stopFailedApp(app?: ElectronApplication) {
@@ -124,12 +126,20 @@ async function stopFailedApp(app?: ElectronApplication) {
 test('TEST installer preserves an unnamed draft across restart and Windows upgrade/uninstall', async ({}, testInfo) => {
   const inputs = await validateInstallerInputs(process.platform, process.env);
   const fixture = await createFixture();
-  const installer = createInstallerSession({ ...inputs, root: fixture.root, env: fixture.env });
+  const installer = createInstallerSession({ ...inputs, root: fixture.root, env: fixture.env,
+    diagnosticsDir: testInfo.outputPath('native') });
+  const stage = async (message: string) => {
+    const line = `[${new Date().toISOString()}] ${message}`;
+    console.log(line);
+    await appendFile(testInfo.outputPath('smoke-stages.log'), line + '\n');
+  };
   let active: ElectronApplication | undefined;
   const launch = () => launchInstalled(installer.executablePath, fixture, app => { active = app; });
   let completed = false;
   try {
+    await stage('Installing TEST package');
     await installer.install();
+    await stage('Launching installed TEST package');
     let current = await launch();
     expect(current.version).toMatch(/\.1$/);
     const initialVersion = current.version;
@@ -140,6 +150,7 @@ test('TEST installer preserves an unnamed draft across restart and Windows upgra
     active = undefined;
     await assertPreserved(fixture, content);
 
+    await stage('First window closed; restarting installed TEST package');
     current = await launch();
     expect(current.version).toBe(initialVersion);
     await expect(current.page.locator('.md-source')).toHaveValue(content);
@@ -148,7 +159,9 @@ test('TEST installer preserves an unnamed draft across restart and Windows upgra
     active = undefined;
 
     if (process.platform === 'win32') {
+      await stage('Restart window closed; beginning Windows upgrade');
       await installer.upgrade();
+      await stage('Upgrade returned; launching newer TEST package');
       await assertPreserved(fixture, content);
       current = await launch();
       expect(current.version).toBe(initialVersion.replace(/\.1$/, '.2'));
@@ -160,15 +173,20 @@ test('TEST installer preserves an unnamed draft across restart and Windows upgra
       active = undefined;
       await assertPreserved(fixture, content);
       const draftBeforeUninstall = await readFile(join(fixture.userData, 'editor-state.json'));
+      await stage('Upgraded window closed; beginning Windows uninstall');
       await installer.uninstall();
+      await stage('Uninstaller returned; checking preserved data');
       await assertPreserved(fixture, content);
       expect(await readFile(join(fixture.userData, 'editor-state.json'))).toEqual(draftBeforeUninstall);
       testInfo.annotations.push({ type: 'uninstalled', description: 'App removed; synthetic document and userData preserved' });
     }
     completed = true;
   } catch (error) {
-    await testInfo.attach('installer-failure', { body: String(error instanceof Error ? error.stack : error),
-      contentType: 'text/plain' });
+    const failurePath = testInfo.outputPath('installer-failure.txt');
+    await writeFile(failurePath, String(error instanceof Error ? error.stack : error));
+    await testInfo.attach('installer-failure', { path: failurePath, contentType: 'text/plain' });
+    const page = active?.windows().find(page => !page.isClosed());
+    if (page) await page.screenshot({ path: testInfo.outputPath('failure-editor.png'), timeout: 5_000 }).catch(() => {});
     throw error;
   } finally {
     await stopFailedApp(active);
@@ -181,6 +199,10 @@ test('TEST installer preserves an unnamed draft across restart and Windows upgra
       testInfo.annotations.push({ type: 'cleanup', description: String(error) });
       if (completed) throw error;
     }
-    if (!completed) console.error(`Installer smoke fixture retained at ${fixture.root}`);
+    if (!completed) {
+      const message = `Installer smoke fixture retained at ${fixture.root}`;
+      console.error(message);
+      await writeFile(testInfo.outputPath('retained-fixture.txt'), message);
+    }
   }
 });

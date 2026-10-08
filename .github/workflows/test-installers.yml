@@ -57,7 +57,7 @@ jobs:
       - name: Install clean locked dependencies
         run: npm ci --no-audit --no-fund
       - name: Packaging contracts
-        run: node --experimental-strip-types --test tests/unit/desktopPackaging.test.ts tests/unit/testInstallerPackaging.test.ts
+        run: node --experimental-strip-types --test tests/unit/desktopPackaging.test.ts tests/unit/testInstallerPackaging.test.ts tests/unit/installerSmoke.test.ts
       - name: Build frontend without font downloads
         run: npm run build:bridge
       # Electron 43 downloads its native distribution lazily; require materializes
