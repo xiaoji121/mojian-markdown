@@ -742,3 +742,30 @@ test('无路径时点击底部路径不触发复制', () => {
 
   assert.equal(called, 0, '空路径不复制');
 });
+
+test('flush waits an already running bridge sync before sending the newest annotation snapshot', async () => {
+  const previous = globalThis.fetch;
+  const requests = []; let release;
+  const pending = new Promise((resolve) => { release = resolve; });
+  globalThis.fetch = async (_url, options) => {
+    requests.push(JSON.parse(options.body));
+    if (requests.length === 1) await pending;
+    return { ok: true, json: async () => ({ documentId: 'doc-1' }) };
+  };
+  const ctx = createEditor();
+  ctx.fileName = 'note.md'; ctx.sourceRef = { current: { value: 'first' } };
+  ctx._refreshRecentDocuments = () => {};
+  try {
+    const first = ctx._syncDocumentToBridge();
+    await new Promise((resolve) => setImmediate(resolve));
+    ctx.sourceRef.current.value = 'latest'; ctx.comments = [{ type: 'idea', note: 'latest annotation' }];
+    ctx._bridgeSyncT = setTimeout(() => {}, 60_000);
+    const flushed = ctx._flushBridgeSync();
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(requests.length, 1, 'must serialize snapshots instead of writing them out of order');
+    release(); await Promise.all([first, flushed]);
+    assert.equal(requests.length, 2);
+    assert.equal(requests[1].document.content, 'latest');
+    assert.equal(requests[1].annotations[0].note, 'latest annotation');
+  } finally { release(); clearTimeout(ctx._bridgeSyncT); globalThis.fetch = previous; }
+});

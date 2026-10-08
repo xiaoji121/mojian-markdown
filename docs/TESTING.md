@@ -111,3 +111,11 @@ test('输入 Markdown 后预览实时渲染', async ({ page }) => {
 - CI 将应用复制到仓库外的中文/空格路径，再通过 `MOJIAN_PACKAGED_EXECUTABLE` 启动 `tests/desktop/windows-packaged.spec.ts`：检查 bridge 健康、中文路径打开、写回、另存为、外部更新、重命名，以及重启后的文件授权。
 - 另存为的原生对话框选择由测试替身提供，实际 IPC 与磁盘写入仍执行。该测试不覆盖 NSIS 安装/卸载、SmartScreen、签名或第三方 CLI 安装。
 - 手动执行时先构建并打包，再设置 `MOJIAN_PACKAGED_EXECUTABLE` 为仓库外应用的 `.exe` 绝对路径，运行 `npx playwright test --config playwright.desktop.config.ts windows-packaged.spec.ts`。
+
+## Desktop draft durability
+
+- `tests/unit/desktopEditorState.test.ts` covers an atomic, versioned userData draft, strict non-secret UI-field allowlists, damaged-file/I/O preservation, validated IPC and close timeout/cancellation.
+- `tests/unit/desktopStateMethods.test.ts` covers immediate final snapshots and safe file restoration; local-file/bridge unit tests also cover serialized pending writes.
+- Shared `tests/desktop/restartScenarios.ts` runs in both source Electron and the isolated Windows executable: an unnamed draft with annotations/theme/font/AI channel, save-failure Stay/Retry, and linked files through repeated immediate window closes. Renderer timers are paused before the last input so these tests cannot accidentally wait out the autosave debounce.
+- Desktop drafts are stored in `userData/editor-state.json`, independently of the randomized bridge port. The store intentionally excludes API settings and credentials. Existing browser/extension localStorage is unchanged. Old origin-local unnamed drafts cannot be automatically located; when no desktop draft exists, the existing recent-workspace fallback remains.
+- Corrupted/unsupported draft files are retained and subsequent writes fail closed. Copy that file before manual recovery. A failed final save or unresolved linked-file conflict offers Stay (default) or an explicit exit with a loss warning.

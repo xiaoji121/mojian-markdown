@@ -3,6 +3,34 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('mojianDesktop', {
+  loadEditorState: () => ipcRenderer.sendSync('desktop:load-editor-state'),
+  saveEditorState: (state) => ipcRenderer.sendSync('desktop:save-editor-state', state),
+  onBeforeClose: (callback) => {
+    let activeToken = null;
+    let previousInert = false;
+    const restore = (_event, token) => {
+      if (token !== activeToken) return;
+      activeToken = null;
+      if (typeof document !== 'undefined') document.documentElement.inert = previousInert;
+    };
+    const listener = async (_event, token) => {
+      if (activeToken === null && typeof document !== 'undefined') {
+        previousInert = document.documentElement.inert;
+      }
+      activeToken = token;
+      if (typeof document !== 'undefined') document.documentElement.inert = true;
+      let success = false;
+      try { success = (await callback()) === true; } catch {}
+      ipcRenderer.send('desktop:close-ready', token, success);
+    };
+    ipcRenderer.on('desktop:prepare-close', listener);
+    ipcRenderer.on('desktop:close-cancelled', restore);
+    return () => {
+      ipcRenderer.removeListener('desktop:prepare-close', listener);
+      ipcRenderer.removeListener('desktop:close-cancelled', restore);
+      if (activeToken !== null) restore(null, activeToken);
+    };
+  },
   openMarkdownFile: () => ipcRenderer.invoke('desktop:open-file'),
   openMarkdownPath: (path) => ipcRenderer.invoke('desktop:open-file-path', path),
   readClipboardText: () => ipcRenderer.invoke('desktop:read-clipboard-text'),

@@ -115,7 +115,7 @@ export class AIMethods {
       });
     }
     try {
-      const savedWidth = Number(localStorage.getItem('md-editor-ai-panel-width'));
+      const savedWidth = Number(!window.mojianDesktop && localStorage.getItem('md-editor-ai-panel-width'));
       if (savedWidth) this.aiPanelWidth = savedWidth;
     } catch (e) {}
     this._applyAIPanelWidth(this.aiPanelWidth);
@@ -148,6 +148,7 @@ export class AIMethods {
       dragging = false;
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
+      if (window.mojianDesktop) this._persist(false);
       try { localStorage.setItem('md-editor-ai-panel-width', String(this.aiPanelWidth)); } catch (e) {}
     };
     handle.addEventListener('mousedown', (e) => {

@@ -221,3 +221,51 @@ test('本地自动同步失败时明确提示并保留未保存状态', async ()
   assert.match(editor.statuses.at(-1), /本地文件同步失败/);
   assert.equal(editor.dirty, true);
 });
+
+test('close-time write waits an in-flight save then saves the newest edit', async () => {
+  const handle = createFakeHandle('disk');
+  const ctx = createEditor(handle, 'first'); ctx.dirty = true;
+  let release;
+  const pending = new Promise((resolve) => { release = resolve; });
+  const writable = handle.createWritable.bind(handle);
+  let writes = 0;
+  handle.createWritable = async () => {
+    const writer = await writable();
+    const close = writer.close.bind(writer);
+    writer.close = async () => { if (++writes === 1) await pending; await close(); };
+    return writer;
+  };
+  const first = ctx._maybeWriteThroughLocalFile();
+  await new Promise((r) => setImmediate(r));
+  ctx.sourceRef.current.value = 'newest';
+  const closing = ctx._maybeWriteThroughLocalFile();
+  release(); await Promise.all([first, closing]);
+  assert.equal(handle.state.content, 'newest');
+  assert.equal(ctx.dirty, false);
+});
+
+test('multiple save requests waiting on one write remain serialized', async () => {
+  const ctx = createEditor(null, 'latest');
+  let release;
+  const blocker = new Promise((resolve) => { release = resolve; });
+  let active = 0, maximum = 0, calls = 0;
+  ctx._writeThroughLocalFile = async () => {
+    maximum = Math.max(maximum, ++active);
+    if (++calls === 1) await blocker;
+    await new Promise((resolve) => setImmediate(resolve));
+    active--;
+  };
+  const one = ctx._maybeWriteThroughLocalFile();
+  await new Promise((resolve) => setImmediate(resolve));
+  const two = ctx._maybeWriteThroughLocalFile(), three = ctx._maybeWriteThroughLocalFile();
+  release(); await Promise.all([one, two, three]);
+  assert.equal(maximum, 1); assert.equal(calls, 3);
+});
+
+test('a real desktop file named 未命名.md restores by path', async () => {
+  const ctx = createEditor(null, 'draft'); ctx.fileName = '未命名.md'; ctx.localFilePath = '/notes/未命名.md';
+  const previous = globalThis.window; globalThis.window = { mojianDesktop: {} };
+  let restored = false; ctx._restoreDesktopFileLink = async () => { restored = true; };
+  try { await ctx._restoreLocalFileLink(); assert.equal(restored, true); }
+  finally { globalThis.window = previous; }
+});

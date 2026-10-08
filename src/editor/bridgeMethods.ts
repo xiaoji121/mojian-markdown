@@ -27,6 +27,7 @@ export class BridgeMethods {
   }
 
   _loadPinnedIds() {
+    if (typeof window !== 'undefined' && window.mojianDesktop) { this._pinnedSet(); return; }
     this.pinnedDocumentIds = new Set();
     try {
       const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(PINNED_DOCS_KEY) : null;
@@ -36,6 +37,7 @@ export class BridgeMethods {
   }
 
   _savePinnedIds() {
+    if (typeof window !== 'undefined' && window.mojianDesktop) { this._persist(false); return; }
     try {
       localStorage.setItem(PINNED_DOCS_KEY, JSON.stringify([...this._pinnedSet()]));
     } catch (e) {}
@@ -661,7 +663,16 @@ export class BridgeMethods {
       comments: this.comments,
       bridgeDocumentId: this.bridgeDocumentId || undefined,
       aiEngine: this.aiEngine || undefined,
-      savedAt
+      savedAt,
+      ...(typeof window !== 'undefined' && window.mojianDesktop ? {
+        localFilePath: this.localFilePath || undefined,
+        localFileModifiedAt: this._localFileModifiedAt || undefined,
+        dirty: !!this.dirty,
+        pinnedDocumentIds: [...this._pinnedSet()],
+        aiPanelWidth: this.aiPanelWidth,
+        commentsPanelWidth: this.commentsPanelWidth,
+        documentSidebarWidth: this.documentSidebarWidth
+      } : {})
     });
     if (syncBridge && this.agentBridgeEnabled) this._scheduleBridgeSync();
     return saved;
@@ -681,25 +692,37 @@ export class BridgeMethods {
   // 还在防抖等待中的变更立即落盘。openRecentDocument 会用 bridge 数据整体重建
   // comments，不先冲刷的话，这 800ms 窗口里新写的批注/回复会被覆盖丢失。
   async _flushBridgeSync() {
-    if (!this._bridgeSyncT) return;
+    if (!this._bridgeSyncT) { await this._bridgeSyncPromise; return; }
     clearTimeout(this._bridgeSyncT);
     this._bridgeSyncT = null;
     await this._syncDocumentToBridge();
   }
 
 
-  async _syncDocumentToBridge() {
+  _syncDocumentToBridge() {
+    // Serialize writes so an older request cannot land after the final snapshot.
+    const previous = this._bridgeSyncPromise || Promise.resolve();
+    const pending = previous.catch(() => {}).then(() => this._writeDocumentToBridge());
+    this._bridgeSyncPromise = pending;
+    return pending.finally(() => {
+      if (this._bridgeSyncPromise === pending) this._bridgeSyncPromise = null;
+    });
+  }
+
+  async _writeDocumentToBridge() {
+    const document = this._documentPayload();
     try {
       const response = await fetch(bridgeUrl('/api/documents'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          document: this._documentPayload(),
+          document,
           annotations: this.comments.filter((comment) => comment.type !== 'ai')
         })
       });
       if (!response.ok) return;
       const data = await response.json();
+      if (this.fileName !== document.fileName || (this.localFilePath || undefined) !== document.localPath) return;
       this.bridgeDocumentId = data.documentId;
       this.activeDocumentId = data.documentId;
       this._refreshRecentDocuments();

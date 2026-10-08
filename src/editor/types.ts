@@ -47,6 +47,14 @@ export interface PersistedEditorState {
   aiEngine?: 'claude' | 'codex' | 'gemini';
   /** 草稿最后一次持久化的时间戳，用于恢复本地文件关联时判断谁更新 */
   savedAt?: number;
+  /** Desktop file identity and last observed disk version, independent of origin. */
+  localFilePath?: string;
+  localFileModifiedAt?: number;
+  dirty?: boolean;
+  pinnedDocumentIds?: string[];
+  aiPanelWidth?: number;
+  commentsPanelWidth?: number;
+  documentSidebarWidth?: number;
 }
 
 export interface EditorProps {

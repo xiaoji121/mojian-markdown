@@ -192,7 +192,16 @@ export class LocalFileSyncMethods {
   }
 
 
-  async _maybeWriteThroughLocalFile() {
+  _maybeWriteThroughLocalFile() {
+    const previous = this._localWritePromise || Promise.resolve();
+    const pending = previous.catch(() => {}).then(() => this._writeThroughLocalFile());
+    this._localWritePromise = pending;
+    return pending.finally(() => {
+      if (this._localWritePromise === pending) this._localWritePromise = null;
+    });
+  }
+
+  async _writeThroughLocalFile() {
     const handle = this.fileHandle;
     if (!handle || !handle.createWritable || !this.dirty) return;
     if (this._localFileConflict || this._localWriteBusy) return;
@@ -206,12 +215,15 @@ export class LocalFileSyncMethods {
         await this._checkLocalFileChange();
         return;
       }
+      if (this.fileHandle !== handle) return;
       this._localWriteBusy = true;
       const content = src.value;
       const writable = await handle.createWritable();
       await writable.write(content);
       await writable.close();
+      if (this.fileHandle !== handle) return;
       await this._updateLocalFileBaseline();
+      if (this.fileHandle !== handle) return;
       // 写盘期间用户可能又输入了新内容，只有内容仍一致时才算“已保存”。
       if (src.value === content) this._setDirty(false);
       const t = new Date();
@@ -228,7 +240,11 @@ export class LocalFileSyncMethods {
   // ===== 恢复持久化的句柄 =====
 
   async _restoreLocalFileLink() {
-    if (this.fileHandle || !this.fileName || this.fileName === '未命名.md') return;
+    if (this.fileHandle) return;
+    if (typeof window !== 'undefined' && window.mojianDesktop && this.localFilePath) {
+      return this._restoreDesktopFileLink();
+    }
+    if (!this.fileName || this.fileName === '未命名.md') return;
     const handle = await loadFileHandle(this.fileName);
     if (!handle || !handle.getFile) return;
     let permission = 'granted';

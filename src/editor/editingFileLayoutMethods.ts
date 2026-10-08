@@ -327,6 +327,7 @@ export class EditingFileLayoutMethods {
     if (!desktop) return;
     // 网页版专属 UI（关联文件夹入口、宽屏下的 ⋯ 菜单）由 CSS 按此标记隐藏。
     document.body.classList.add('is-desktop-app');
+    this._desktopCloseCleanup = desktop.onBeforeClose?.(() => this._prepareDesktopClose());
     desktop.onMenu((action) => {
       if (action === 'new') this.onNew();
       else if (action === 'open') this.onOpen();
@@ -641,7 +642,7 @@ export class EditingFileLayoutMethods {
     const handle = this.documentSidebarResizeRef.current;
     if (!handle) return;
     try {
-      const savedWidth = Number(localStorage.getItem('md-editor-document-sidebar-width'));
+      const savedWidth = Number(!window.mojianDesktop && localStorage.getItem('md-editor-document-sidebar-width'));
       if (savedWidth) this.documentSidebarWidth = savedWidth;
     } catch (e) {}
     this._applyDocumentSidebarWidth(this.documentSidebarWidth);
@@ -654,6 +655,7 @@ export class EditingFileLayoutMethods {
       dragging = false;
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
+      if (window.mojianDesktop) this._persist(false);
       try {
         localStorage.setItem('md-editor-document-sidebar-width', String(this.documentSidebarWidth));
       } catch (e) {}

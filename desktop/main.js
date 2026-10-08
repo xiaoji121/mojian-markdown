@@ -11,6 +11,8 @@ import { basename, dirname, extname, isAbsolute, join, resolve } from 'node:path
 import { fileURLToPath } from 'node:url';
 import { startAgentBridge } from '../scripts/agent-bridge.js';
 import { readLocalAsset } from './localAssets.js';
+import { createEditorStateStore, isTrustedEditorSender } from './editorState.js';
+import { createCloseCoordinator } from './closeCoordinator.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MARKDOWN_EXTENSIONS = new Set(['.md', '.markdown', '.txt']);
@@ -20,6 +22,78 @@ if (process.env.MOJIAN_USER_DATA) app.setPath('userData', process.env.MOJIAN_USE
 
 let mainWindow = null;
 let bridge = null;
+let editorStateStore = null;
+let closeCoordinator = null;
+let quittingRequested = false;
+const pendingWrites = new Set();
+
+function trackWrite(work) {
+  const promise = Promise.resolve().then(work);
+  pendingWrites.add(promise);
+  promise.then(() => pendingWrites.delete(promise), () => pendingWrites.delete(promise));
+  return promise;
+}
+
+async function waitForWrites() {
+  while (pendingWrites.size) await Promise.all([...pendingWrites]);
+}
+
+function registerEditorStateIpc() {
+  const trusted = (event) => isTrustedEditorSender(event, mainWindow, bridge?.url);
+  ipcMain.on('desktop:load-editor-state', (event) => {
+    event.returnValue = trusted(event) ? editorStateStore.load() : { ok: false, error: 'Untrusted editor' };
+  });
+  ipcMain.on('desktop:save-editor-state', (event, state) => {
+    event.returnValue = trusted(event) ? editorStateStore.save(state) : { ok: false, error: 'Untrusted editor' };
+  });
+  ipcMain.on('desktop:close-ready', (event, token, success) => {
+    if (trusted(event)) void closeCoordinator?.complete(token, success);
+  });
+}
+
+function protectWindowClose(window) {
+  let allowed = false;
+  let closing = false;
+  closeCoordinator = createCloseCoordinator({
+    prepare: (token) => {
+      closing = true;
+      window.webContents.send('desktop:prepare-close', token);
+    },
+    onCancel: (token) => {
+      closing = false;
+      window.webContents.send('desktop:close-cancelled', token);
+    },
+    waitForWrites,
+    close: () => {
+      allowed = true;
+      if (quittingRequested) app.quit();
+      else window.close();
+    },
+    confirmLoss: async () => {
+      const result = await dialog.showMessageBox(window, {
+        type: 'warning', title: '草稿尚未安全保存',
+        message: '无法确认最新修改已保存。现在退出可能丢失修改。',
+        detail: '请选择“留在编辑器”重试保存。只有选择“仍然退出”才会放弃本次保存保护。',
+        buttons: ['留在编辑器', '仍然退出'], defaultId: 0, cancelId: 0, noLink: true
+      });
+      if (result.response !== 1) quittingRequested = false;
+      return result.response === 1;
+    }
+  });
+  const coordinator = closeCoordinator;
+  window.webContents.on('before-input-event', (event) => {
+    if (closing) event.preventDefault();
+  });
+  window.on('close', (event) => {
+    if (allowed) return;
+    event.preventDefault();
+    coordinator.request();
+  });
+  window.on('closed', () => {
+    coordinator.dispose();
+    if (closeCoordinator === coordinator) closeCoordinator = null;
+  });
+}
 // 渲染层注册完事件监听（调用 consume-pending-open）之前，外部打开请求先排队。
 let rendererReady = false;
 let pendingOpen = null;
@@ -48,7 +122,7 @@ async function loadGrantedPaths() {
 
 function grantPath(filePath) {
   grantedPaths.add(resolve(filePath));
-  writeFile(grantsFile(), JSON.stringify([...grantedPaths], null, 2)).catch(() => {});
+  trackWrite(() => writeFile(grantsFile(), JSON.stringify([...grantedPaths], null, 2))).catch(() => {});
 }
 
 function assertGranted(filePath) {
@@ -90,6 +164,8 @@ function collectMarkdownArgs(argv, cwd) {
 // ===== IPC =====
 
 function registerIpcHandlers() {
+  registerEditorStateIpc();
+  const handleWrite = (channel, handler) => ipcMain.handle(channel, (...args) => trackWrite(() => handler(...args)));
   ipcMain.handle('desktop:read-clipboard-text', () => clipboard.readText());
 
   ipcMain.handle('desktop:open-file', async () => {
@@ -116,7 +192,7 @@ function registerIpcHandlers() {
     return picked;
   });
 
-  ipcMain.handle('desktop:save-file-as', async (_event, suggestedName, content) => {
+  handleWrite('desktop:save-file-as', async (_event, suggestedName, content) => {
     const result = await dialog.showSaveDialog(mainWindow, {
       defaultPath: String(suggestedName || 'document.md'),
       filters: [{ name: 'Markdown', extensions: ['md', 'markdown'] }]
@@ -138,13 +214,13 @@ function registerIpcHandlers() {
     }
   });
 
-  ipcMain.handle('desktop:write-file', async (_event, filePath, content) => {
+  handleWrite('desktop:write-file', async (_event, filePath, content) => {
     assertGranted(filePath);
     await writeFile(String(filePath), String(content ?? ''), 'utf8');
     return { lastModified: (await stat(String(filePath))).mtimeMs };
   });
 
-  ipcMain.handle('desktop:rename-file', async (_event, filePath, requestedName) => {
+  handleWrite('desktop:rename-file', async (_event, filePath, requestedName) => {
     assertGranted(filePath);
     const sourcePath = resolve(String(filePath));
     const nextName = String(requestedName || '').trim();
@@ -255,6 +331,7 @@ async function createWindow() {
       contextIsolation: true
     }
   });
+  protectWindowClose(mainWindow);
   mainWindow.webContents.on('did-start-loading', () => { rendererReady = false; });
   // 文章里的链接一律交给系统浏览器：target=_blank 不自开 Electron 窗口，
   // 普通链接不把编辑器导航走；http/https/mailto 之外的协议直接丢弃。
@@ -266,7 +343,9 @@ async function createWindow() {
     return { action: 'deny' };
   });
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    if (url.startsWith(bridge.url)) return;
+    try {
+      if (new URL(url).origin === new URL(bridge.url).origin && new URL(url).pathname === '/') return;
+    } catch {}
     event.preventDefault();
     openExternally(url);
   });
@@ -294,6 +373,7 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(async () => {
     try {
+      editorStateStore = createEditorStateStore(app.getPath('userData'));
       await loadGrantedPaths();
       bridge = await startAgentBridge({
         root: workspaceRoot(),
@@ -311,6 +391,8 @@ if (!app.requestSingleInstanceLock()) {
     collectMarkdownArgs(process.argv, process.cwd()).forEach((filePath) => openExternalPath(filePath));
     app.on('activate', () => { if (!mainWindow) createWindow(); });
   });
+
+  app.on('before-quit', () => { quittingRequested = true; });
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
