@@ -113,7 +113,11 @@ async function addAnnotation(page: Page) {
   await expect(page.locator('.selection-toolbar')).toBeVisible();
   await page.getByRole('button', { name: /写想法/ }).click();
   await expect(page.locator('.comments-panel .comment-quote')).toHaveCount(1);
-  await page.locator('.comment-note-input').fill('重启后保留的想法');
+  const note = page.locator('.comment-note-input');
+  // Wait for the application's delayed autofocus before fill() can focus the
+  // note itself; otherwise that pending focus can close the next appearance menu.
+  await expect(note).toBeFocused();
+  await note.fill('重启后保留的想法');
 }
 
 export function registerRestartScenarios(label: string, executablePath?: string) {
