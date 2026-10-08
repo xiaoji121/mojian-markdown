@@ -3,6 +3,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('mojianDesktop', {
+  aiSettings: (operation, payload) => ipcRenderer.invoke('desktop:ai-settings', operation, payload),
   loadEditorState: () => ipcRenderer.sendSync('desktop:load-editor-state'),
   saveEditorState: (state) => ipcRenderer.sendSync('desktop:save-editor-state', state),
   onBeforeClose: (callback) => {

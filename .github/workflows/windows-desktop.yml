@@ -26,6 +26,8 @@ jobs:
         run: node --experimental-strip-types --test tests/unit/desktopPackaging.test.ts tests/unit/desktopClock.test.ts
       - name: Mock AI CLI and connector protocols (no accounts)
         run: npm run test:cli
+      - name: Fake secure storage and desktop authorization contracts
+        run: node --experimental-strip-types --test tests/unit/secureSettingsStore.test.ts tests/unit/desktopCredentialStore.test.ts tests/unit/desktopCredentialBoundary.test.ts tests/unit/desktopBridgeSecurity.test.ts tests/unit/credentialRedaction.test.ts
       - name: Type check
         run: npx tsc --noEmit
       - name: Build desktop frontend

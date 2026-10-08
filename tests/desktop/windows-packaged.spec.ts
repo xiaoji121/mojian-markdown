@@ -166,3 +166,6 @@ test('Windows packaged bridge calls npm Claude and Codex shims without a shell',
     await rm(root, { recursive: true, force: true });
   }
 });
+
+import { registerSecureSettingsScenario } from './secureSettingsScenario';
+registerSecureSettingsScenario('Windows packaged', executablePath);

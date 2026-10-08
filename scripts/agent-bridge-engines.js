@@ -17,6 +17,7 @@
 //              Node 内置 fetch 不认代理环境变量，Gemini 有地域封锁，
 //              故显式支持代理：设置里的代理地址优先，其次环境变量。
 // CLI 引擎可用环境变量覆盖命令与参数（AGENT_BRIDGE_{CLAUDE,CODEX}_{COMMAND,ARGS}）。
+import { credentialOutput } from './agent-bridge-credential-output.js';
 import { spawnCli, terminateCli } from './agent-bridge-process.js';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -362,6 +363,7 @@ function requestLifecycle(options) {
 // timeoutMs / signal 由调用方按需启用；默认仍不限制请求时长。
 export async function runEngine(engine, prompt, onDelta, env = process.env, options = {}) {
   const request = requestLifecycle(options);
+  const output = credentialOutput(engine === 'gemini' ? options.gemini?.apiKey : '', onDelta);
   try {
     request.signal.throwIfAborted();
     const settings = {
@@ -369,13 +371,17 @@ export async function runEngine(engine, prompt, onDelta, env = process.env, opti
       processTree: !!options.signal || (Number.isFinite(options.timeoutMs) && options.timeoutMs > 0)
     };
     const answer = await (engine === 'gemini'
-      ? runGemini(prompt, onDelta, env, options.gemini, request.signal)
+      ? runGemini(prompt, output.delta, env, options.gemini, request.signal)
       : engine === 'codex'
         ? runCodex(prompt, onDelta, env, settings)
         : runClaude(prompt, onDelta, env, settings));
     request.signal.throwIfAborted();
-    return answer;
+    output.flush();
+    return output.text(answer);
   } catch (error) {
+    if (engine === 'gemini' && !request.signal.aborted) {
+      throw Object.assign(new Error(output.text(error.message || 'Gemini 请求失败')), { code: error.code });
+    }
     if (error?.code?.startsWith('ECLI_TERMINATION_')) throw error;
     if (request.signal.aborted) throw request.signal.reason;
     throw error;

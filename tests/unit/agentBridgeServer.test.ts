@@ -1,5 +1,11 @@
 import { allowOnlyLoopbackConnections } from '../helpers/loopbackNetwork.ts';
-import { test } from 'node:test';
+import { test, after } from 'node:test';
+const proxyNames = ['HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'http_proxy', 'https_proxy', 'all_proxy'];
+const oldProxies = proxyNames.map((name) => process.env[name]);
+proxyNames.forEach((name) => { delete process.env[name]; });
+after(() => proxyNames.forEach((name, index) => {
+  if (oldProxies[index] === undefined) delete process.env[name]; else process.env[name] = oldProxies[index];
+}));
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -182,7 +188,7 @@ test('PATCH 问答可从阅读树隐藏整个追问分支，但保留对话历�
 test('/api/settings 读写 Gemini 配置且不回明文 Key', async () => {
   await withBridge({}, async (bridge) => {
     const initial = await (await fetch(`${bridge.url}/api/settings`)).json();
-    assert.deepEqual(initial.gemini, { configured: false, apiKeyTail: '', model: 'gemini-2.5-flash', proxy: '' });
+    assert.deepEqual(initial.gemini, { configured: false, model: 'gemini-2.5-flash', proxy: '' });
 
     const saved = await fetch(`${bridge.url}/api/settings`, {
       method: 'POST',
@@ -192,7 +198,7 @@ test('/api/settings 读写 Gemini 配置且不回明文 Key', async () => {
     assert.equal(saved.ok, true);
     const masked = await saved.json();
     assert.deepEqual(masked.gemini, {
-      configured: true, apiKeyTail: '3456', model: 'gemini-2.5-pro', proxy: 'http://127.0.0.1:7890'
+      configured: true, model: 'gemini-2.5-pro', proxy: 'http://127.0.0.1:7890'
     });
     assert.ok(!JSON.stringify(masked).includes('AIzaSyTest'));
 

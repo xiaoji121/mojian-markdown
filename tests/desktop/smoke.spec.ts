@@ -346,3 +346,6 @@ test('重启后自动恢复最近阅读并重建本地文件同步', async () =>
 
 // Run restart regressions in the existing development Electron CI step.
 registerRestartScenarios('development Electron');
+
+import { registerSecureSettingsScenario } from './secureSettingsScenario';
+registerSecureSettingsScenario('Source Electron');
