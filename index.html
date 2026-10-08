@@ -135,8 +135,15 @@
       <option value="system-default" data-i18n="系统默认">系统默认</option>
       <option value="system-serif" data-i18n="系统衬线">系统衬线</option>
       <option value="source-serif-4">Source Serif 4</option>
+      <option value="project-jinkai" data-i18n="项目字体（font:fetch）">项目字体（font:fetch）</option>
+      <option value="imported-font" data-i18n="已导入字体">已导入字体</option>
       <option value="local-jinkai" data-i18n="本机仓耳今楷 04">本机仓耳今楷 04</option>
     </select></label>
+    <span class="reading-font-actions"><button type="button" class="tbtn reading-font-import" data-i18n="导入字体…">导入字体…</button><button type="button" class="tbtn reading-font-remove" data-i18n="移除导入副本">移除导入副本</button></span>
+    <span class="appearance-note" data-i18n="请选择你有权使用的字体文件。仅保存在此应用，不会上传或安装到系统。">请选择你有权使用的字体文件。仅保存在此应用，不会上传或安装到系统。</span>
+    <a href="https://www.tsanger.cn/product/43" target="_blank" rel="noopener noreferrer" class="reading-font-official" data-i18n="前往仓耳官网下载">前往仓耳官网下载</a>
+    <span class="appearance-note reading-font-import-status" role="status"></span>
+    <span class="appearance-note reading-font-project-note" hidden><span class="reading-font-project-status" role="status"></span></span>
     <span class="reading-font-preview">Read · 阅读 · 閱讀 · 読む<br><strong>Bold 粗体</strong> · <em>Italic 斜体</em> · <strong><em>Both</em></strong> · <code>code()</code></span>
     <span class="appearance-row"><span><span data-i18n="字号">字号</span></span><span class="appearance-font-controls">
       <button class="tbtn font-btn font-dec" onClick="{{ fontDec }}" aria-label="缩小字号" data-i18n-aria-label="缩小字号">A−</button>

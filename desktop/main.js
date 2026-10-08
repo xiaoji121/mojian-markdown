@@ -16,6 +16,9 @@ import { testAiConnection } from './testAiConnection.js';
 import { fileURLToPath } from 'node:url';
 import { startAgentBridge } from '../scripts/agent-bridge.js';
 import { readLocalAsset } from './localAssets.js';
+import { createReadingFontStore } from './readingFontStore.js';
+import { createReadingFontHandler } from './readingFontBoundary.js';
+import { readProjectReadingFont } from './projectReadingFont.js';
 import { createEditorStateStore, isTrustedEditorSender } from './editorState.js';
 import { createCloseCoordinator } from './closeCoordinator.js';
 import { desktopLocales, initialDesktopLocale, nativeText, nativeMenuTemplate } from './locale.js';
@@ -180,6 +183,21 @@ function collectMarkdownArgs(argv, cwd) {
 
 function registerIpcHandlers() {
   registerEditorStateIpc();
+  const readingFontHandler = createReadingFontHandler({
+    isTrusted: event => isTrustedEditorSender(event, mainWindow, bridge?.url),
+    store: createReadingFontStore(app.getPath('userData')),
+    chooseFile: async () => {
+      const result = await dialog.showOpenDialog(mainWindow, { properties: ['openFile'],
+        filters: [{ name: 'Font (WOFF, WOFF2, TTF, OTF)', extensions: ['woff', 'woff2', 'ttf', 'otf'] }] });
+      return result.canceled ? null : result.filePaths[0] || null;
+    },
+    projectFont: event => readProjectReadingFont({ appRoot: app.getAppPath(), packaged: app.isPackaged,
+      trusted: isTrustedEditorSender(event, mainWindow, bridge?.url) })
+  });
+  ipcMain.handle('desktop:reading-font', (event, operation, payload) => {
+    const invoke = () => readingFontHandler(event, operation, payload);
+    return operation === 'commit' || operation === 'remove' ? trackWrite(invoke) : invoke();
+  });
   ipcMain.handle('desktop:ai-settings', (event, operation, payload) => trackWrite(() =>
     invokeSettings(event, mainWindow, bridge?.url, aiSettingsStore, operation, payload,
       (input) => testAiConnection(aiSettingsStore, input))));

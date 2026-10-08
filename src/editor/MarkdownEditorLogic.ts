@@ -1,5 +1,6 @@
 // @ts-nocheck
 // The DC runtime supplies its base class dynamically; keep this factory lightweight.
+import { UserReadingFontMethods } from './userReadingFontMethods';
 import { ReadingFontMethods } from './readingFontMethods';
 import { LocaleMethods } from './localeMethods';
 import { getLocale, t } from './i18n';
@@ -503,7 +504,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     LocalFileSyncMethods,
     DesktopStateMethods,
     LocaleMethods,
-    ReadingFontMethods
+    ReadingFontMethods,
+    UserReadingFontMethods
   );
   return Component;
 }

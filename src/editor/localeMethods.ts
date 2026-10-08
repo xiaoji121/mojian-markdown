@@ -44,6 +44,7 @@ export class LocaleMethods {
     this._updateCount();
     this._renderOutline();
     this._renderReadingFontStatus();
+    this._renderUserReadingFonts?.();
     this._renderRecentDocuments();
     this._renderComments();
     this._renderAIReadiness?.();

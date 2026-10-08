@@ -154,6 +154,7 @@ export class ViewMethods {
     if (!panel) return;
     this.appearanceOpen = typeof force === 'boolean' ? force : !this.appearanceOpen;
     panel.hidden = !this.appearanceOpen;
+    if (this.appearanceOpen) this._renderUserReadingFonts?.();
     if (this.appearanceOpen) panel.focus({ preventScroll: true });
     else if (returnFocus) this.fileMenuButtonRef.current?.focus({ preventScroll: true });
   }

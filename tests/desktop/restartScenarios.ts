@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import type { ChildProcess } from 'node:child_process';
 import { openAppearance } from '../e2e/fixtures';
 import { freezeRendererClock } from './freezeRendererClock.ts';
+import { importedFontScenario } from './importedFontScenario';
 
 // Share the exact regression flows between development Electron and the real
 // Windows package. Each test owns a fresh profile, workspace, and credential-free
@@ -122,6 +123,11 @@ async function addAnnotation(page: Page) {
 }
 
 export function registerRestartScenarios(label: string, executablePath?: string) {
+  test(`${label}: imported font preserves actual glyphs and bytes across restart`, async () => {
+    const session = await createSession(executablePath);
+    try { await importedFontScenario(session, closeEditorWindow); }
+    finally { await session.dispose(); }
+  });
   test(`${label}: unnamed draft, annotations and preferences survive immediate window close`, async () => {
     const session = await createSession(executablePath);
     try {
