@@ -142,9 +142,9 @@ test('font activation never rewrites or removes similarly marked user-authored s
   await setSource(page, '# User content\n\n<style data-user-reading-font="imported">/* user-owned */</style>\n\nReading.');
   await openAppearance(page); await page.locator('.reading-font-import').click();
   await expect(page.locator('body')).toHaveAttribute('data-reading-font', 'imported-font');
-  await expect(page.locator('.md-preview style[data-user-reading-font]')).toHaveText('/* user-owned */');
+  expect(await page.locator('.md-preview style[data-user-reading-font]').evaluate(element => element.textContent)).toBe('/* user-owned */');
   expect(await page.locator('head style[data-user-reading-font="imported"]').textContent()).toContain(dataUrl);
   await page.locator('.reading-font-remove').click();
   await expect(page.locator('.reading-font-import-status')).toContainText('原文件不变');
-  await expect(page.locator('.md-preview style[data-user-reading-font]')).toHaveText('/* user-owned */');
+  expect(await page.locator('.md-preview style[data-user-reading-font]').evaluate(element => element.textContent)).toBe('/* user-owned */');
 });
