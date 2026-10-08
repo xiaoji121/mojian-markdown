@@ -2,10 +2,6 @@
 // No network, account data, or font downloads are used by this build step.
 import { readFile, readdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { createRequire } from 'node:module';
-// Electron 43 installs its native distribution lazily. Materialize official
-// pinned package bytes (do not launch it) before reading Chromium notices.
-createRequire(import.meta.url)('electron');
 const lock = JSON.parse(await readFile('package-lock.json', 'utf8'));
 const output = [
   'Mojian Markdown TEST — UNSIGNED, NOT FOR PUBLIC RELEASE',

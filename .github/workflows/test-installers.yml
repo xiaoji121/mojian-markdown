@@ -60,8 +60,21 @@ jobs:
         run: node --experimental-strip-types --test tests/unit/desktopPackaging.test.ts tests/unit/testInstallerPackaging.test.ts
       - name: Build frontend without font downloads
         run: npm run build:bridge
+      # Electron 43 downloads its native distribution lazily; require materializes
+      # the pinned official bytes without launching Electron or any user code.
+      - name: Materialize Electron and Chromium notices
+        run: node -e "require('electron')"
       - name: Gather complete license texts
         run: node scripts/test-installer-notices.mjs
+      - name: Require a certificate-free macOS runner
+        if: matrix.platform == 'mac'
+        run: |
+          node --input-type=module -e '
+            import { execFileSync } from "node:child_process";
+            const identities = execFileSync("/usr/bin/security", ["find-identity", "-v", "-p", "codesigning"], { encoding: "utf8" });
+            if (!/^\s*0 valid identities found\s*$/m.test(identities)) throw Error("Refusing TEST build: runner has a signing identity");
+            console.log("No certificate signing identities; ad-hoc TEST signing only.");
+          '
       - name: Build unsigned installer (never publish)
         # No signing secrets or accounts. Only the config's hard-coded ad-hoc '-'.
         env:
