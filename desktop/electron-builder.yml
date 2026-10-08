@@ -7,6 +7,9 @@ directories:
 files:
   - desktop/**
   - dist/**
+  - "!**/canger*/**"
+  - "!**/cejk*"
+  - "!**/tsanger*/**"
   - scripts/agent-bridge*.js
   - package.json
 npmRebuild: false

@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { t, getLocale } from './i18n.ts';
 import { saveEditorState } from './storage.ts';
 import { bridgeUrl } from './bridgeClient.ts';
 
@@ -14,8 +15,8 @@ export class BridgeMethods {
     const sameDay = date.toDateString() === now.toDateString();
     if (sameDay) return String(date.getHours()).padStart(2, '0') + ':' + String(date.getMinutes()).padStart(2, '0');
     const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-    if (date.toDateString() === yesterday.toDateString()) return '昨天';
-    if (date.getFullYear() === now.getFullYear()) return (date.getMonth() + 1) + '月' + date.getDate() + '日';
+    if (date.toDateString() === yesterday.toDateString()) return t("昨天");
+    if (date.getFullYear() === now.getFullYear()) return t("{month}月{day}日", { month: date.getMonth() + 1, day: date.getDate() });
     return date.getFullYear() + '/' + (date.getMonth() + 1) + '/' + date.getDate();
   }
 
@@ -80,11 +81,11 @@ export class BridgeMethods {
       const empty = document.createElement('div');
       empty.className = 'recent-documents-empty';
       empty.textContent = this._recentDocumentsOffline
-        ? '本地服务未连接，仍可编辑和保存当前文档。'
-        : '还没有最近阅读，打开一篇文档开始。';
+        ? t("本地服务未连接，仍可编辑和保存当前文档。")
+        : t("还没有最近阅读，打开一篇文档开始。");
       const action = document.createElement('button');
       action.className = 'abtn secondary';
-      action.textContent = this._recentDocumentsOffline ? '重新连接' : '打开文档';
+      action.textContent = this._recentDocumentsOffline ? t("重新连接") : t("打开文档");
       action.addEventListener('click', () => this._recentDocumentsOffline ? this._refreshRecentDocuments() : this.onOpen());
       empty.appendChild(action);
       list.appendChild(empty);
@@ -95,9 +96,9 @@ export class BridgeMethods {
     const rest = docs.filter((doc) => !pinnedSet.has(doc.documentId));
     // 有固定项时才分区标注，否则保持与旧版一致的平铺列表。
     if (pinned.length) {
-      list.appendChild(this._recentSectionLabel('已固定', pinned.length));
+      list.appendChild(this._recentSectionLabel(t("已固定"), pinned.length));
       pinned.forEach((doc) => list.appendChild(this._recentDocumentGroup(doc, true)));
-      if (rest.length) list.appendChild(this._recentSectionLabel('最近', rest.length));
+      if (rest.length) list.appendChild(this._recentSectionLabel(t("最近"), rest.length));
     }
     // 最近区：默认只留最近 N 篇，另加当前打开与本会话开过的，其余折叠。
     const sessionOpened = this._sessionOpenedIds instanceof Set ? this._sessionOpenedIds : new Set();
@@ -124,7 +125,7 @@ export class BridgeMethods {
     const more = document.createElement('button');
     more.type = 'button';
     more.className = 'recent-list-more';
-    more.textContent = expanded ? '收起' : ('显示全部 ' + hidden + ' 篇');
+    more.textContent = expanded ? t("收起") : (t("显示全部 {count} 篇", { count: hidden }));
     more.addEventListener('click', () => this.toggleRecentListExpanded());
     return more;
   }
@@ -148,7 +149,7 @@ export class BridgeMethods {
     name.title = doc.fileName;
     const time = document.createElement('small');
     time.textContent = this._formatRecentTime(doc.updatedAt) +
-      ' · ' + (doc.annotationCount || 0) + ' 批注 · ' + (doc.questionCount || 0) + ' 问答';
+      t(" · {annotations} 批注 · {questions} 问答", { annotations: doc.annotationCount || 0, questions: doc.questionCount || 0 });
     body.append(name, time);
     button.append(icon, body);
     button.addEventListener('click', () => this.openRecentDocument(doc.documentId));
@@ -178,8 +179,8 @@ export class BridgeMethods {
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.className = 'recent-document-delete';
-    remove.title = '从最近阅读中删除';
-    remove.setAttribute('aria-label', '删除 ' + doc.fileName);
+    remove.title = t("从最近阅读中删除");
+    remove.setAttribute('aria-label', t("删除 {name}", { name: doc.fileName }));
     remove.textContent = '×';
     remove.addEventListener('click', (e) => {
       if (e && e.stopPropagation) e.stopPropagation();
@@ -189,8 +190,8 @@ export class BridgeMethods {
     const pin = document.createElement('button');
     pin.type = 'button';
     pin.className = 'recent-document-pin' + (isPinned ? ' is-pinned' : '');
-    pin.title = isPinned ? '取消固定' : '固定到列表顶部';
-    pin.setAttribute('aria-label', (isPinned ? '取消固定 ' : '固定 ') + doc.fileName);
+    pin.title = isPinned ? t("取消固定") : t("固定到列表顶部");
+    pin.setAttribute('aria-label', t("{action} {name}", { action: isPinned ? t('取消固定') : t('固定到列表顶部'), name: doc.fileName }));
     pin.setAttribute('aria-pressed', isPinned ? 'true' : 'false');
     pin.textContent = isPinned ? '★' : '☆';
     pin.addEventListener('click', (e) => {
@@ -211,7 +212,7 @@ export class BridgeMethods {
     caret.className = 'recent-answer-caret';
     caret.textContent = '▸';
     const label = document.createElement('span');
-    label.textContent = count + ' 条追问';
+    label.textContent = t("{count} 条追问", { count });
     toggle.append(caret, label);
     toggle.addEventListener('click', (e) => {
       if (e && e.stopPropagation) e.stopPropagation();
@@ -238,7 +239,7 @@ export class BridgeMethods {
       if (doc && doc.localPath) path = doc.localPath;
     }
     el.textContent = path;
-    el.title = path ? path + '（点击复制完整路径）' : '';
+    el.title = path ? t("{path}（点击复制完整路径）", { path }) : '';
     if (el.classList) el.classList.toggle('has-path', !!path);
   }
 
@@ -247,7 +248,7 @@ export class BridgeMethods {
     const el = this.footerPathRef && this.footerPathRef.current;
     const path = (el && el.textContent) || this.localFilePath || '';
     if (!path) return;
-    this._copy(path, '已复制完整路径');
+    this._copy(path, t("已复制完整路径"));
     if (el && el.classList) {
       el.classList.add('is-copied');
       clearTimeout(this._footerCopyT);
@@ -305,7 +306,7 @@ export class BridgeMethods {
     childName.textContent = answer.question;
     const childMeta = document.createElement('small');
     const engineName = ({ codex: 'Codex', gemini: 'Gemini' })[answer.engine] || 'AI';
-    const childLabel = answer.kind === 'reply' ? '摘录回答' : engineName + ' 回答';
+    const childLabel = answer.kind === 'reply' ? t("摘录回答") : t("{name} 回答", { name: engineName });
     childMeta.textContent = childLabel + ' · ' + this._formatRecentTime(answer.updatedAt);
     childBody.append(childName, childMeta);
     child.append(branch, childBody);
@@ -313,8 +314,8 @@ export class BridgeMethods {
     const hide = document.createElement('button');
     hide.type = 'button';
     hide.className = 'recent-answer-hide';
-    hide.title = '从阅读树移除（保留对话历史）';
-    hide.setAttribute('aria-label', '从阅读树移除 ' + answer.question);
+    hide.title = t("从阅读树移除（保留对话历史）");
+    hide.setAttribute('aria-label', t("从阅读树移除 {question}", { question: answer.question }));
     hide.textContent = '−';
     hide.addEventListener('click', (event) => {
       if (event && event.stopPropagation) event.stopPropagation();
@@ -327,9 +328,9 @@ export class BridgeMethods {
 
   async hideAnswerFromTree(doc, answer) {
     if (!doc || !doc.documentId || !answer || !answer.requestId) return;
-    const label = answer.question || '该问答';
+    const label = answer.question || t("该问答");
     if (typeof window !== 'undefined' && window.confirm
-      && !window.confirm('从阅读树移除「' + label + '」及其子追问？\n\nAgent 对话历史仍会保留。')) return;
+      && !window.confirm(t("从阅读树移除「{name}」及其子追问？\n\nAgent 对话历史仍会保留。", { name: label }))) return;
     try {
       const response = await fetch(bridgeUrl('/api/documents/' + encodeURIComponent(doc.documentId)
         + '/answers/' + encodeURIComponent(answer.requestId)), {
@@ -339,14 +340,14 @@ export class BridgeMethods {
       });
       if (!response.ok) throw new Error('hide failed');
     } catch {
-      this._setStatus('移除失败 · Reading Workspace 不可用');
+      this._setStatus(t("移除失败 · Reading Workspace 不可用"));
       return;
     }
     const local = Array.isArray(this.comments)
       ? this.comments.find((item) => item.id === answer.requestId || item.requestId === answer.requestId)
       : null;
     if (local) local.hiddenFromReadingTree = true;
-    this._setStatus('已从阅读树移除 · 对话历史已保留');
+    this._setStatus(t("已从阅读树移除 · 对话历史已保留"));
     await this._refreshRecentDocuments();
   }
 
@@ -355,8 +356,8 @@ export class BridgeMethods {
     const map = document.createElement('button');
     map.type = 'button';
     map.className = 'recent-document-map';
-    map.title = '查看阅读脉络图';
-    map.setAttribute('aria-label', '查看 ' + doc.fileName + ' 的阅读脉络');
+    map.title = t("查看阅读脉络图");
+    map.setAttribute('aria-label', t("查看 {name} 的阅读脉络", { name: doc.fileName }));
     map.textContent = '⌗';
     map.addEventListener('click', (e) => {
       if (e && e.stopPropagation) e.stopPropagation();
@@ -368,9 +369,9 @@ export class BridgeMethods {
 
   async deleteRecentDocument(doc) {
     if (!doc || !doc.documentId) return;
-    const label = doc.fileName || '该文档';
+    const label = doc.fileName || t("该文档");
     if (typeof window !== 'undefined' && window.confirm
-      && !window.confirm('从最近阅读中删除「' + label + '」？其批注与 AI 问答记录将一并删除。')) return;
+      && !window.confirm(t("从最近阅读中删除「{name}」？其批注与 AI 问答记录将一并删除。", { name: label }))) return;
     try {
       const response = await fetch(
         bridgeUrl('/api/documents/' + encodeURIComponent(doc.documentId)),
@@ -378,7 +379,7 @@ export class BridgeMethods {
       );
       if (!response.ok) throw new Error('delete failed');
     } catch {
-      this._setStatus('删除失败 · Reading Workspace 不可用');
+      this._setStatus(t("删除失败 · Reading Workspace 不可用"));
       return;
     }
     if (this.bridgeDocumentId === doc.documentId) {
@@ -392,7 +393,7 @@ export class BridgeMethods {
       this.activeAnswerRequestId = null;
       if (typeof this._renderPreview === 'function') this._renderPreview();
     }
-    this._setStatus('已从最近阅读删除 · ' + label);
+    this._setStatus(t("已从最近阅读删除 · {name}", { name: label }));
     await this._refreshRecentDocuments();
   }
 
@@ -472,7 +473,7 @@ export class BridgeMethods {
     try {
       await this._flushBridgeSync();
       const response = await fetch(bridgeUrl('/api/documents/') + encodeURIComponent(documentId));
-      if (!response.ok) throw new Error('文档读取失败');
+      if (!response.ok) throw new Error(t("文档读取失败"));
       const data = await response.json();
       const doc = data.document;
       this.bridgeDocumentId = doc.documentId;
@@ -493,7 +494,7 @@ export class BridgeMethods {
       this._renderRecentDocuments();
       // Publish the open status when content becomes interactive. Local-file
       // reattachment can finish after newer user feedback (for example, Copy).
-      this._setStatus((restoring ? '已恢复最近阅读 · ' : '已从 Reading Workspace 打开 · ') + this.fileName);
+      this._setStatus(restoring ? t('已恢复最近阅读 · {name}', { name: this.fileName }) : t('已从 Reading Workspace 打开 · {name}', { name: this.fileName }));
       this.closeDocumentSidebar();
       // 若之前打开过同名本地文件，重新接上句柄；本地文件内容优先于工作区副本。
       await this._reattachLocalFileForDocument(doc);
@@ -501,7 +502,7 @@ export class BridgeMethods {
       // 需要在此补齐相对路径图片的替换。
       this._hydrateLocalImages(this.previewRef.current);
     } catch (error) {
-      this._setStatus(error.message || 'Reading Workspace 文档读取失败');
+      this._setStatus(error.message || t("Reading Workspace 文档读取失败"));
     }
   }
 
@@ -509,14 +510,14 @@ export class BridgeMethods {
   async openAnswerDocument(documentId, requestId) {
     try {
       const response = await fetch(bridgeUrl('/api/documents/') + encodeURIComponent(documentId));
-      if (!response.ok) throw new Error('问答读取失败');
+      if (!response.ok) throw new Error(t("问答读取失败"));
       const data = await response.json();
       const doc = data.document;
       const item = (doc.messages || []).find((message) => message.requestId === requestId);
       // 子节点也可能是用户贴在批注下的摘录回答，此时 requestId 是批注 id。
       const reply = (item && item.answer) ? null : (doc.annotations || [])
         .find((annotation) => annotation.id === requestId && annotation.reply && String(annotation.reply).trim());
-      if ((!item || !item.answer) && !reply) throw new Error('这条问答还没有回答结果');
+      if ((!item || !item.answer) && !reply) throw new Error(t("这条问答还没有回答结果"));
       this.bridgeDocumentId = documentId;
       this.activeDocumentId = documentId;
       this.activeAnswerRequestId = requestId;
@@ -530,11 +531,11 @@ export class BridgeMethods {
       this._renderPreview();
       this._renderRecentDocuments();
       this._setStatus(reply
-        ? '正在阅读摘录回答 · ' + this._crumbLabel(reply.note || '未命名想法')
-        : '正在阅读 AI 问答 · ' + this._crumbLabel(item.question || '未命名问题'));
+        ? t("正在阅读摘录回答 · {name}", { name: this._crumbLabel(reply.note || t('未命名想法')) })
+        : t("正在阅读 AI 问答 · {name}", { name: this._crumbLabel(item.question || t('未命名问题')) }));
       this.closeDocumentSidebar();
     } catch (error) {
-      this._setStatus(error.message || 'AI 问答读取失败');
+      this._setStatus(error.message || t("AI 问答读取失败"));
     }
   }
 
@@ -561,7 +562,7 @@ export class BridgeMethods {
     let current = parentOf(requestId);
     while (current && !seen.has(current)) {
       seen.add(current);
-      trail.unshift(labelOf(current) || '未命名问题');
+      trail.unshift(labelOf(current) || t("未命名问题"));
       current = parentOf(current);
     }
     return trail;
@@ -650,6 +651,7 @@ export class BridgeMethods {
     const savedAt = Date.now();
     this._draftSavedAt = savedAt;
     const saved = saveEditorState({
+      locale: getLocale(),
       content: src ? src.value : '',
       fileName: this.fileName,
       fontSize: this.fontSize,

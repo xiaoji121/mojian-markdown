@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { t } from './i18n.ts';
 // 预览 / 沉浸式阅读的全文搜索：预览面板内浮动搜索条，
 // 高亮用 CSS Custom Highlight API（不改动预览 DOM，与批注高亮零冲突）。
 // 匹配算法复用 searchReplaceMethods 的 _searchMatchPositions（大小写不敏感）。
@@ -93,8 +94,8 @@ export class PreviewSearchMethods {
     if (!count) return;
     const total = this._previewSearchRanges ? this._previewSearchRanges.length : 0;
     count.textContent = total
-      ? '第 ' + (this._previewSearchIndex + 1) + ' 项，共 ' + total + ' 项'
-      : (query ? '无结果' : '');
+      ? t("第 {index} 项，共 {total} 项", { index: this._previewSearchIndex + 1, total })
+      : (query ? t("无结果") : '');
     const bar = this.previewSearchBarRef.current;
     if (bar) bar.classList.toggle('search-no-match', Boolean(query) && !total);
   }

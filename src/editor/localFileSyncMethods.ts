@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { t } from './i18n.ts';
 // 本地文件双向同步：
 //   编辑器 → 本地：autosave 时把内容写穿回打开的本地文件（需要 readwrite 权限）。
 //   本地 → 编辑器：轮询文件 lastModified，外部改动后自动重载；
@@ -98,13 +99,13 @@ export class LocalFileSyncMethods {
     const el = this.fileNameRef?.current;
     if (!el) return;
     const location = this.localFilePath || this.fileName || '未命名.md';
-    el.title = location + '\n双击重命名';
+    el.title = t("{name}\n双击重命名", { name: location });
   }
 
 
   async associateLocalFolder() {
     if (!window.showDirectoryPicker) {
-      this._setStatus('当前浏览器不支持关联文件夹');
+      this._setStatus(t("当前浏览器不支持关联文件夹"));
       return;
     }
     try {
@@ -112,7 +113,7 @@ export class LocalFileSyncMethods {
       await saveFolderHandle(folder.name, folder);
       const known = await this._loadFolderHandles();
       this._folderHandles = [...known.filter((item) => item.name !== folder.name), { name: folder.name, handle: folder }];
-      this._setStatus('已关联文件夹 · ' + folder.name);
+      this._setStatus(t("已关联文件夹 · {name}", { name: folder.name }));
       await this._refreshLocalFilePaths();
     } catch {}
   }
@@ -162,7 +163,7 @@ export class LocalFileSyncMethods {
       }
       if (this.dirty) {
         this._localFileConflict = true;
-        this._setStatus('本地文件已被其他程序修改 · ⌘S 保存将覆盖对方改动');
+        this._setStatus(t("本地文件已被其他程序修改 · ⌘S 保存将覆盖对方改动"));
         return;
       }
       this._reloadFromLocalFile(text, file);
@@ -188,7 +189,7 @@ export class LocalFileSyncMethods {
     this._updateCount();
     this._setDirty(false);
     this._persist();
-    this._setStatus('本地文件已更新 · 已重新加载 ' + (this.fileName || ''));
+    this._setStatus(t("本地文件已更新 · 已重新加载 {name}", { name: this.fileName || '' }));
   }
 
 
@@ -230,12 +231,11 @@ export class LocalFileSyncMethods {
       if (this.fileHandle !== handle) return;
       // 写盘期间用户可能又输入了新内容，只有内容仍一致时才算“已保存”。
       if (src.value === content) this._setDirty(false);
-      const t = new Date();
-      this._setStatus('已同步到本地文件 · '
-        + String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0'));
+      const now = new Date();
+      this._setStatus(t("已同步到本地文件 · {time}", { time: String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') }));
     } catch {
       // 写回失败不打断编辑；保留脏标记，用户仍可手动保存。
-      this._setStatus('本地文件同步失败 · 请重试保存或另存为');
+      this._setStatus(t("本地文件同步失败 · 请重试保存或另存为"));
     } finally {
       this._localWriteBusy = false;
     }
@@ -263,7 +263,7 @@ export class LocalFileSyncMethods {
     }
     if (permission !== 'prompt') return;
     // 浏览器重启后恢复读写授权需要一次用户手势：挂到下一次点击/按键上。
-    this._setStatus('本地文件同步待恢复 · 点击页面任意位置恢复');
+    this._setStatus(t("本地文件同步待恢复 · 点击页面任意位置恢复"));
     const resume = async () => {
       window.removeEventListener('pointerdown', resume, true);
       window.removeEventListener('keydown', resume, true);
@@ -271,7 +271,7 @@ export class LocalFileSyncMethods {
         if (await handle.requestPermission({ mode: 'readwrite' }) === 'granted') {
           await this._adoptRestoredHandle(handle);
         } else {
-          this._setStatus('未授权访问本地文件 · 改动只保存在浏览器内');
+          this._setStatus(t("未授权访问本地文件 · 改动只保存在浏览器内"));
         }
       } catch {}
     };
@@ -296,7 +296,7 @@ export class LocalFileSyncMethods {
           this._reloadFromLocalFile(text, file);
         } else {
           this._setDirty(true);
-          this._setStatus('浏览器草稿比本地文件新 · 正在同步到本地');
+          this._setStatus(t("浏览器草稿比本地文件新 · 正在同步到本地"));
           await this._maybeWriteThroughLocalFile();
         }
       }
@@ -339,7 +339,7 @@ export class LocalFileSyncMethods {
         this._renderPreview();
         this._updateCount();
         this._persist();
-        this._setStatus('已关联本地文件并加载最新内容 · ' + doc.fileName);
+        this._setStatus(t("已关联本地文件并加载最新内容 · {name}", { name: doc.fileName }));
       }
       this._startLocalFileWatcher();
     } catch {}

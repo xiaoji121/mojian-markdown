@@ -1,5 +1,4 @@
 import { readFile } from 'node:fs/promises';
-import { stat } from 'node:fs/promises';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -21,20 +20,12 @@ test('synchronously loaded styles hide the raw editor template on first paint', 
   assert.match(landingStyles, /x-dc\s*\{\s*display:\s*none\s*!important;\s*\}/);
 });
 
-test('shared web styles expose the complete Canger GB2312 reading font', async () => {
-  const [styles, tokens, landingStyles] = await Promise.all([
-    readProjectFile('src/editor/styles.css'),
+test('shared reading styles prefer local Canger without downloading a font', async () => {
+  const [tokens, landingStyles] = await Promise.all([
     readProjectFile('src/theme/tokens.css'),
     readProjectFile('src/landing.css')
   ]);
-  const webFont = await stat(new URL('public/fonts/canger-jinkai-04/cejk-subset.woff2', root))
-    .catch(() => null);
-
-  assert.match(landingStyles, /@font-face[\s\S]*cejk-subset\.woff2/);
-  assert.doesNotMatch(styles, /@font-face[\s\S]*Canger JinKai 04/);
-  assert.doesNotMatch(styles, /cejk-web\.woff2/);
-  assert.match(tokens, /--read:\s*'Canger JinKai 04'/);
-  if (webFont) {
-    assert.ok(webFont.size <= 2 * 1024 * 1024, `web font is ${Math.ceil(webFont.size / 1024)} KiB`);
-  }
+  assert.match(tokens, /@font-face[\s\S]*local\("TsangerJinKai04-W04"\)/);
+  assert.match(tokens, /--read:\s*'Mojian Local JinKai 04'/);
+  assert.doesNotMatch(landingStyles, /cejk-subset\.woff2/);
 });

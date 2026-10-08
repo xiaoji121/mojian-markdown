@@ -44,7 +44,7 @@ type Fixture = Awaited<ReturnType<typeof createFixture>>;
 async function launchInstalled(executablePath: string, fixture: Fixture, onLaunch: (app: ElectronApplication) => void) {
   const app = await electron.launch({
     executablePath, cwd: fixture.root, env: fixture.env,
-    args: ['--disable-background-networking', '--use-mock-keychain',
+    args: ['--lang=zh-CN', '--disable-background-networking', '--use-mock-keychain',
       '--proxy-server=http://127.0.0.1:9', '--proxy-bypass-list=localhost;127.0.0.1;[::1]']
   });
   onLaunch(app);

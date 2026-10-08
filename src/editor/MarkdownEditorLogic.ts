@@ -1,5 +1,7 @@
 // @ts-nocheck
 // The DC runtime supplies its base class dynamically; keep this factory lightweight.
+import { LocaleMethods } from './localeMethods';
+import { t } from './i18n';
 import { DesktopStateMethods } from "./desktopStateMethods";
 import { SAMPLE_MARKDOWN } from './sample';
 import { EDITOR_STORAGE_KEY, loadEditorState, getEditorStorageError } from './storage';
@@ -181,7 +183,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     } else if (tries < 80) {
       setTimeout(() => this._waitLibs(tries + 1), 60);
     } else if (this.saveStatusRef.current) {
-      this.saveStatusRef.current.textContent = '渲染库加载失败';
+      this.saveStatusRef.current.textContent = t('渲染库加载失败');
     }
   }
 
@@ -198,6 +200,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.theme = this.props.theme
       || (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
     const saved = loadEditorState();
+    this._initLocale(saved);
     this._startedWithSample = !getEditorStorageError() && !(saved && typeof saved.content === 'string');
     if (saved && typeof saved.content === 'string') {
       initial = this._cleanOpenedMarkdown(saved.content);
@@ -246,8 +249,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._renderPreview();
     this._updateCount();
     this._resetEditingHistory();
-    this._setStatus(getEditorStorageError() ? '草稿读取失败 · 原始数据已保留，请勿继续编辑并检查备份'
-      : window.mojianDesktop ? '编辑后自动保存桌面草稿' : '编辑后自动保存草稿到此浏览器');
+    this._setStatus(getEditorStorageError() ? t('草稿读取失败 · 原始数据已保留，请勿继续编辑并检查备份')
+      : window.mojianDesktop ? t('编辑后自动保存桌面草稿') : t('编辑后自动保存草稿到此浏览器'));
     this._initReadingAppearance();
     this._applyProps();
     this._initFileNameEditing();
@@ -327,6 +330,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
   }
 
   componentWillUnmount() {
+    this._disposeLocale();
     if (this._desktopCloseCleanup) this._desktopCloseCleanup();
     if (this._keyHandler) window.removeEventListener('keydown', this._keyHandler);
     if (this._resizeHandler) window.removeEventListener('resize', this._resizeHandler);
@@ -493,7 +497,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     TranslateMethods,
     EditingFileLayoutMethods,
     LocalFileSyncMethods,
-    DesktopStateMethods
+    DesktopStateMethods,
+    LocaleMethods
   );
   return Component;
 }

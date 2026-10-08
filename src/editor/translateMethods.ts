@@ -1,13 +1,14 @@
 // @ts-nocheck
 // 划词翻译：调用用户在 AI 设置里配置的 Gemini Key（/api/translate），
 // 译文流式渲染到选区附近的浮层；未配置 Key 时浮层里给「去配置」入口。
+import { t } from './i18n.ts';
 import { bridgeUrl } from './bridgeClient.ts';
 import { describeAIReadiness } from './aiReadinessMethods.ts';
 
 export class TranslateMethods {
   async translateSel() {
     if (!this.agentBridgeEnabled) {
-      this._setStatus('官网版暂不提供翻译，请使用本地完整版');
+      this._setStatus(t('官网版暂不提供翻译，请使用本地完整版'));
       return;
     }
     const p = this._pending;
@@ -22,7 +23,7 @@ export class TranslateMethods {
     popover.style.top = anchor.top;
     popover.style.display = 'flex';
     const epoch = this._translateEpoch = (this._translateEpoch || 0) + 1;
-    this._translateBody.textContent = '正在检查 Gemini…';
+    this._translateBody.textContent = t('正在检查 Gemini…');
     if (this._ensureAIReady) {
       const ready = await this._ensureAIReady('gemini');
       if (epoch !== this._translateEpoch) return;
@@ -33,7 +34,7 @@ export class TranslateMethods {
         return;
       }
     }
-    this._translateBody.textContent = '正在翻译…';
+    this._translateBody.textContent = t('正在翻译…');
     this._clampTranslatePopover();
     await this._streamTranslation(p.quote);
   }
@@ -89,12 +90,12 @@ export class TranslateMethods {
     head.className = 'translate-popover-head';
     const title = document.createElement('strong');
     title.className = 'translate-popover-title';
-    title.textContent = '翻译 · Gemini';
+    title.textContent = t('翻译 · Gemini');
     const close = document.createElement('button');
     close.type = 'button';
     close.className = 'translate-popover-close';
     close.textContent = '×';
-    close.setAttribute('aria-label', '关闭翻译');
+    close.setAttribute('aria-label', t('关闭翻译'));
     close.addEventListener('click', () => this._hideTranslatePopover());
     head.append(title, close);
     // 标题栏按住拖动浮层；点关闭按钮不触发拖拽
@@ -141,14 +142,14 @@ export class TranslateMethods {
     const config = document.createElement('button');
     config.type = 'button';
     config.className = 'tbtn translate-open-settings';
-    config.textContent = '配置 Gemini';
+    config.textContent = t('配置 Gemini');
     config.addEventListener('click', () => {
       this._translateSetupReturn = true;
       this._hideTranslatePopover(); this.openAISettings();
     });
     this._translateActions.appendChild(config);
     const close = document.createElement('button');
-    close.type = 'button'; close.className = 'tbtn'; close.textContent = '继续编辑';
+    close.type = 'button'; close.className = 'tbtn'; close.textContent = t('继续编辑');
     close.addEventListener('click', () => this._hideTranslatePopover());
     this._translateActions.appendChild(close);
   }
@@ -160,10 +161,10 @@ export class TranslateMethods {
     const pop = this._translatePopoverEl;
     if (!pop) return;
     pop.style.display = 'flex';
-    this._translateBody.textContent = '划词翻译使用 Gemini。配置完成后，可重新翻译。';
+    this._translateBody.textContent = t('划词翻译使用 Gemini。配置完成后，可重新翻译。');
     this._translateActions.innerHTML = '';
     const retry = document.createElement('button');
-    retry.type = 'button'; retry.className = 'tbtn'; retry.textContent = '重新翻译';
+    retry.type = 'button'; retry.className = 'tbtn'; retry.textContent = t('重新翻译');
     retry.addEventListener('click', () => this.translateSel());
     this._translateActions.appendChild(retry);
     this._clampTranslatePopover();
@@ -179,13 +180,13 @@ export class TranslateMethods {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text })
       });
-      if (!response.ok || !response.body) throw new Error('本地 Agent Bridge 无响应');
+      if (!response.ok || !response.body) throw new Error(t('本地 Agent Bridge 无响应'));
       const translated = await this._consumeTranslateStream(response, body);
       const copy = document.createElement('button');
       copy.type = 'button';
       copy.className = 'tbtn translate-popover-copy';
-      copy.textContent = '复制译文';
-      copy.addEventListener('click', () => this._copy(translated, '已复制译文', copy));
+      copy.textContent = t('复制译文');
+      copy.addEventListener('click', () => this._copy(translated, t('已复制译文'), copy));
       actions.appendChild(copy);
     } catch (error) {
       const message = error && error.message ? error.message : String(error);
@@ -194,7 +195,7 @@ export class TranslateMethods {
         const config = document.createElement('button');
         config.type = 'button';
         config.className = 'tbtn translate-open-settings';
-        config.textContent = '去配置';
+        config.textContent = t('去配置');
         config.addEventListener('click', () => { this._hideTranslatePopover(); this.openAISettings(); });
         actions.appendChild(config);
       }
@@ -229,12 +230,12 @@ export class TranslateMethods {
           bodyEl.textContent = translated;
           this._clampTranslatePopover();
         } else if (event === 'error' && data) {
-          failed = data.message || '翻译失败';
+          failed = data.message || t('翻译失败');
         }
       }
     }
     if (failed) throw new Error(failed);
-    if (!translated) throw new Error('没有返回译文');
+    if (!translated) throw new Error(t('没有返回译文'));
     return translated;
   }
 }

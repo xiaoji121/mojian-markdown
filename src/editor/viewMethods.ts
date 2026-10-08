@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { t } from './i18n.ts';
 
 function localImageSource(src) {
   if (!src || /^(data:|blob:|file:)/i.test(src)) return '';
@@ -52,7 +53,7 @@ export class ViewMethods {
     if (this.themeIconRef.current) this.themeIconRef.current.innerHTML = this.theme === 'dark'
       ? '<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14A8 8 0 0 1 10 4a8 8 0 1 0 10 10Z"/></svg>'
       : '<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>';
-    if (this.themeLabelRef?.current) this.themeLabelRef.current.textContent = this.theme === 'dark' ? '暗色' : '亮色';
+    if (this.themeLabelRef?.current) this.themeLabelRef.current.textContent = this.theme === 'dark' ? t('暗色') : t('亮色');
     this._applyPaper();
   }
 
@@ -62,18 +63,18 @@ export class ViewMethods {
     this._themeTouched = true;
     this._applyTheme();
     this._persist();
-    this._setStatus('已切换为' + (this.theme === 'dark' ? '暗黑' : '亮色') + '模式');
+    this._setStatus(t('已切换为{theme}模式', { theme: t(this.theme === 'dark' ? '暗黑' : '亮色') }));
   }
 
   // ===== paper（内容纸色，与框架主题解耦） =====
 
   PAPERS() {
     return [
-      { id: 'ink', label: '墨黑', swatch: '#1c1a17' },
-      { id: 'parchment', label: '羊皮纸', swatch: '#f9ebcc' },
-      { id: 'cream', label: '米黄', swatch: '#f0e9d1' },
-      { id: 'snow', label: '清爽白', swatch: '#ffffff' },
-      { id: 'green', label: '豆沙绿', swatch: '#c0edc6' }
+      { id: 'ink', label: t('墨黑'), swatch: '#1c1a17' },
+      { id: 'parchment', label: t('羊皮纸'), swatch: '#f9ebcc' },
+      { id: 'cream', label: t('米黄'), swatch: '#f0e9d1' },
+      { id: 'snow', label: t('清爽白'), swatch: '#ffffff' },
+      { id: 'green', label: t('豆沙绿'), swatch: '#c0edc6' }
     ];
   }
 
@@ -101,7 +102,7 @@ export class ViewMethods {
     this._applyPaper();
     this._persist();
     const item = this.PAPERS().find((p) => p.id === id);
-    this._setStatus('纸色已切换为「' + (item ? item.label : id) + '」');
+    this._setStatus(t('纸色已切换为「{paper}」', { paper: item ? item.label : id }));
   }
 
   _buildPaperPicker() {
@@ -113,8 +114,8 @@ export class ViewMethods {
       dot.type = 'button';
       dot.className = 'paper-dot';
       dot.dataset.paper = p.id;
-      dot.title = '纸色：' + p.label;
-      dot.setAttribute('aria-label', '纸色：' + p.label);
+      dot.title = t('纸色：{paper}', { paper: p.label });
+      dot.setAttribute('aria-label', t('纸色：{paper}', { paper: p.label }));
       dot.style.background = p.swatch;
       dot.addEventListener('click', () => this.setPaper(p.id));
       picker.appendChild(dot);
@@ -176,14 +177,14 @@ export class ViewMethods {
     document.body.style.overflow = this.previewFullscreen ? 'hidden' : '';
     this._syncReadingToolbarScroll();
     if (this.fullscreenLabelRef.current) {
-      this.fullscreenLabelRef.current.textContent = this.previewFullscreen ? '退出专注' : '专注';
+      this.fullscreenLabelRef.current.textContent = this.previewFullscreen ? t('退出专注') : t('专注');
     }
     if (this.fullscreenIconRef.current) {
       this.fullscreenIconRef.current.innerHTML = this.previewFullscreen
         ? '<path d="M9 3v6H3M15 3v6h6M9 21v-6H3M15 21v-6h6"></path>'
         : '<path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"></path>';
     }
-    this._setStatus(this.previewFullscreen ? '已进入沉浸式阅读 · 按 Esc 退出' : '已退出沉浸式阅读');
+    this._setStatus(this.previewFullscreen ? t('已进入沉浸式阅读 · 按 Esc 退出') : t('已退出沉浸式阅读'));
   }
 
   _syncPreviewEditable() {
@@ -191,7 +192,7 @@ export class ViewMethods {
     if (!prev) return;
     prev.setAttribute('contenteditable', 'false');
     if (this.previewTitleRef.current) {
-      this.previewTitleRef.current.textContent = '预览 · 仅阅读';
+      this.previewTitleRef.current.textContent = t('预览 · 仅阅读');
     }
   }
 
@@ -203,14 +204,14 @@ export class ViewMethods {
     if (pane) pane.classList.toggle('immersive-wide', this.previewFullscreen && this.immersiveWide);
     this._syncImmersiveWideButton();
     this._persist();
-    this._setStatus(this.immersiveWide ? '已切换为宽屏阅读' : '已切换为标准宽度');
+    this._setStatus(this.immersiveWide ? t('已切换为宽屏阅读') : t('已切换为标准宽度'));
   }
 
   _syncImmersiveWideButton() {
     const btn = this.immersiveWideRef.current;
     if (!btn) return;
-    btn.textContent = this.immersiveWide ? '标准' : '宽屏';
-    btn.title = this.immersiveWide ? '切换为标准宽度' : '切换为宽屏阅读';
+    btn.textContent = this.immersiveWide ? t('标准') : t('宽屏');
+    btn.title = this.immersiveWide ? t('切换为标准宽度') : t('切换为宽屏阅读');
     btn.setAttribute('aria-pressed', this.immersiveWide ? 'true' : 'false');
   }
 
@@ -410,7 +411,7 @@ export class ViewMethods {
     headings.forEach((heading, index) => {
       heading.id = this._outlineSlug(heading.textContent, index, used);
       heading.dataset.outlineIndex = String(index);
-      const title = heading.textContent.trim() || '未命名标题';
+      const title = heading.textContent.trim() || t('未命名标题');
       const summary = this._outlineSummary(heading);
       const marker = this._outlineControl(heading, title, summary, index);
       markers.appendChild(marker);
@@ -430,7 +431,7 @@ export class ViewMethods {
       if (text) parts.push(text);
       node = node.nextElementSibling;
     }
-    const summary = parts.join(' · ') || '这一段暂时没有正文内容。';
+    const summary = parts.join(' · ') || t('这一段暂时没有正文内容。');
     return summary.length > 140 ? summary.slice(0, 137).trimEnd() + '…' : summary;
   }
 
@@ -443,7 +444,7 @@ export class ViewMethods {
     button.dataset.outlineTitle = title;
     button.dataset.outlineIndex = String(index);
     button.title = title;
-    button.setAttribute('aria-label', '跳到：' + title);
+    button.setAttribute('aria-label', t('跳到：{title}', { title }));
     button.addEventListener('pointerenter', () => this._previewOutlineSection(title, summary, index));
     button.addEventListener('focus', () => this._previewOutlineSection(title, summary, index));
     button.addEventListener('click', () => this._jumpToOutlineHeading(heading));
@@ -549,7 +550,7 @@ export class ViewMethods {
       const url = new URL(rawHref, window.location.href);
       window.open(url.href, '_blank', 'noopener,noreferrer');
     } catch {
-      this._setStatus('无法打开链接 · ' + rawHref);
+      this._setStatus(t('无法打开链接 · {error}', { error: rawHref }));
     }
   }
 
@@ -560,7 +561,7 @@ export class ViewMethods {
     const text = src.value || '';
     const chars = text.replace(/\s/g, '').length;
     const lines = text.length ? text.split('\n').length : 0;
-    if (this.countRef.current) this.countRef.current.textContent = chars + ' 字 · ' + lines + ' 行';
+    if (this.countRef.current) this.countRef.current.textContent = t('{chars} 字 · {lines} 行', { chars, lines });
   }
 
 
@@ -581,10 +582,10 @@ export class ViewMethods {
     const src = this.sourceRef.current;
     if (!src) return;
     const saved = this._persist();
-    const t = new Date();
-    const hh = String(t.getHours()).padStart(2, '0');
-    const mm = String(t.getMinutes()).padStart(2, '0');
-    this._setStatus(saved === false ? '草稿保存失败 · 请保存到文件' : (typeof window !== 'undefined' && window.mojianDesktop ? '桌面草稿已保存 · ' : '草稿已保存到此浏览器 · ') + hh + ':' + mm);
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    this._setStatus(saved === false ? t('草稿保存失败 · 请保存到文件') : t(typeof window !== 'undefined' && window.mojianDesktop ? '桌面草稿已保存 · {time}' : '草稿已保存到此浏览器 · {time}', { time: hh + ':' + mm }));
     // 打开了本地文件时，草稿同时写穿回本地（异步，不阻塞输入）。
     if (typeof this._maybeWriteThroughLocalFile === 'function') this._maybeWriteThroughLocalFile();
   }
@@ -607,7 +608,7 @@ export class ViewMethods {
     this.fontSize = Math.max(12, Math.min(28, px));
     this._applyFont();
     this._persist();
-    this._setStatus('字号 ' + this.fontSize + 'px');
+    this._setStatus(t('字号 {size}px', { size: this.fontSize }));
   }
 
 

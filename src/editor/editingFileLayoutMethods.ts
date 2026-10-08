@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { t } from './i18n.ts';
 import { createDesktopFileHandle } from './desktopFileHandle.ts';
 
 export class EditingFileLayoutMethods {
@@ -262,7 +263,7 @@ export class EditingFileLayoutMethods {
     element.classList.remove('is-editing');
     if (!next) {
       element.textContent = previous;
-      this._setStatus('文档名不能为空');
+      this._setStatus(t("文档名不能为空"));
       return;
     }
     if (next === previous) {
@@ -278,7 +279,7 @@ export class EditingFileLayoutMethods {
     }
     this._setFileName(next);
     this._persist();
-    this._setStatus('已重命名为 ' + next);
+    this._setStatus(t("已重命名为 {name}", { name: next }));
   }
 
 
@@ -309,12 +310,12 @@ export class EditingFileLayoutMethods {
       }
       this._startLocalFileWatcher();
       if (this.dirty) this._saveT = setTimeout(() => this._autosave(), 600);
-      this._setStatus('当前浏览器不支持原地重命名本地文件');
+      this._setStatus(t("当前浏览器不支持原地重命名本地文件"));
       return false;
     } catch (error) {
       this._startLocalFileWatcher();
       if (this.dirty) this._saveT = setTimeout(() => this._autosave(), 600);
-      this._setStatus('重命名失败：' + (error.message || error));
+      this._setStatus(t("重命名失败：{error}", { error: error.message || error }));
       return false;
     }
   }
@@ -390,7 +391,7 @@ export class EditingFileLayoutMethods {
     this._renderPreview();
     this._setDirty(false);
     this._autosave();
-    this._setStatus('已打开 · ' + picked.name);
+    this._setStatus(t("已打开 · {name}", { name: picked.name }));
   }
 
 
@@ -420,7 +421,7 @@ export class EditingFileLayoutMethods {
         this._renderPreview();
         this._setDirty(false);
         this._autosave();
-        this._setStatus('已打开 · ' + file.name);
+        this._setStatus(t("已打开 · {name}", { name: file.name }));
       } catch (e) {}
     } else {
       const inp = document.createElement('input');
@@ -446,7 +447,7 @@ export class EditingFileLayoutMethods {
           this._renderPreview();
           this._setDirty(false);
           this._autosave();
-          this._setStatus('已打开 · ' + f.name + '（浏览器不支持原地保存，将以下载方式保存）');
+          this._setStatus(t("已打开 · {name}（浏览器不支持原地保存，将以下载方式保存）", { name: f.name }));
         };
         r.readAsText(f);
       };
@@ -458,7 +459,7 @@ export class EditingFileLayoutMethods {
   onOpenAbsolutePath(initialPath = '', options = {}) {
     const desktop = window.mojianDesktop;
     if (!desktop || !desktop.openMarkdownPath) {
-      this._setStatus('输入路径打开仅支持桌面版');
+      this._setStatus(t("输入路径打开仅支持桌面版"));
       return;
     }
     const { modal, input, note } = this._ensureAbsolutePathDialog();
@@ -466,11 +467,11 @@ export class EditingFileLayoutMethods {
     const fromClipboard = options.fromClipboard === true;
     const title = modal.querySelector('.file-path-title');
     const description = modal.querySelector('.file-path-description');
-    if (title) title.textContent = fromClipboard ? '打开剪贴板中的 Markdown？' : '输入绝对路径打开';
+    if (title) title.textContent = fromClipboard ? t("打开剪贴板中的 Markdown？") : t("输入绝对路径打开");
     if (description) description.textContent = fromClipboard
-      ? '检测到剪贴板中有 Markdown 文件路径，是否用墨笺打开？'
-      : '粘贴 Markdown 文件的完整路径，打开后会继续同步保存到该文件。';
-    note.textContent = fromClipboard ? '路径已自动填入，确认后才会打开文件' : '支持 .md、.markdown 和 .txt 文件';
+      ? t("检测到剪贴板中有 Markdown 文件路径，是否用墨笺打开？")
+      : t("粘贴 Markdown 文件的完整路径，打开后会继续同步保存到该文件。");
+    note.textContent = fromClipboard ? t("路径已自动填入，确认后才会打开文件") : t("支持 .md、.markdown 和 .txt 文件");
     modal.style.display = 'flex';
     setTimeout(() => { input.focus(); input.select(); }, 0);
   }
@@ -484,12 +485,12 @@ export class EditingFileLayoutMethods {
     modal.setAttribute('aria-modal', 'true');
     modal.setAttribute('aria-labelledby', 'file-path-title');
     modal.innerHTML = `<section class="file-path-modal">
-      <strong id="file-path-title" class="file-path-title">输入绝对路径打开</strong>
-      <p class="file-path-description">粘贴 Markdown 文件的完整路径，打开后会继续同步保存到该文件。</p>
+      <strong id="file-path-title" class="file-path-title">${t("输入绝对路径打开")}</strong>
+      <p class="file-path-description">${t("粘贴 Markdown 文件的完整路径，打开后会继续同步保存到该文件。")}</p>
       <input class="file-path-input" type="text" spellcheck="false" autocomplete="off" placeholder="/Users/name/Documents/note.md">
-      <small class="file-path-note">支持 .md、.markdown 和 .txt 文件</small>
-      <div class="file-path-actions"><button type="button" class="file-path-cancel">取消</button>
-      <button type="button" class="file-path-submit" aria-label="打开该路径">打开</button></div>
+      <small class="file-path-note">${t("支持 .md、.markdown 和 .txt 文件")}</small>
+      <div class="file-path-actions"><button type="button" class="file-path-cancel" data-i18n="取消">${t("取消")}</button>
+      <button type="button" class="file-path-submit" data-i18n="打开" data-i18n-aria-label="打开该路径" aria-label="${t('打开该路径')}">${t("打开")}</button></div>
     </section>`;
     const input = modal.querySelector('.file-path-input');
     const note = modal.querySelector('.file-path-note');
@@ -526,17 +527,17 @@ export class EditingFileLayoutMethods {
     if (!desktop || !desktop.openMarkdownPath || !input) return false;
     const filePath = input.value.trim();
     if (!filePath) return;
-    if (note) note.textContent = '正在打开…';
+    if (note) note.textContent = t("正在打开…");
     try {
       const picked = await desktop.openMarkdownPath(filePath);
-      if (!picked) throw new Error('文件不存在或不可读');
+      if (!picked) throw new Error(t("文件不存在或不可读"));
       await this._openDesktopFile(picked);
       this.closeAbsolutePathDialog();
       return true;
     } catch (error) {
       const message = error.message || String(error);
-      if (note) note.textContent = '打开失败 · ' + message;
-      this._setStatus('打开失败 · ' + message);
+      if (note) note.textContent = t("打开失败 · {error}", { error: message });
+      this._setStatus(t("打开失败 · {error}", { error: message }));
       return false;
     }
   }
@@ -558,8 +559,8 @@ export class EditingFileLayoutMethods {
         this._localFileConflict = false;
         this._setDirty(src.value !== content);
         this._autosave();
-        this._setStatus(this.dirty ? '已保存较早版本 · 最新修改仍待同步' : '✓ 已保存到 ' + this.fileName);
-      } catch (e) { this._setStatus('保存失败：' + (e.message || e)); }
+        this._setStatus(this.dirty ? t("已保存较早版本 · 最新修改仍待同步") : t("✓ 已保存到 {name}", { name: this.fileName }));
+      } catch (e) { this._setStatus(t("保存失败：{error}", { error: e.message || e })); }
     };
     if (this._queueLocalFileWrite) await this._queueLocalFileWrite(save);
     else await save();
@@ -573,7 +574,7 @@ export class EditingFileLayoutMethods {
       // Browser pickers need the original user gesture; native dialogs do not.
       if (window.mojianDesktop && this._queueLocalFileWrite) await this._queueLocalFileWrite(save);
       else await save();
-    } catch (e) { this._setStatus('另存为失败：' + (e.message || e)); }
+    } catch (e) { this._setStatus(t("另存为失败：{error}", { error: e.message || e })); }
   }
 
   async _saveAsSnapshot() {
@@ -592,7 +593,7 @@ export class EditingFileLayoutMethods {
       if (this.fileHandle !== nextHandle) return;
       this._setDirty(src.value !== content);
       this._autosave();
-      this._setStatus('✓ 已保存到 ' + saved.name);
+      this._setStatus(t("✓ 已保存到 {name}", { name: saved.name }));
       return;
     }
     if (window.showSaveFilePicker) {
@@ -608,7 +609,7 @@ export class EditingFileLayoutMethods {
         await this._attachLocalFile(handle);
         if (this.fileHandle !== handle) return;
         this._setDirty(src.value !== content); this._autosave();
-        this._setStatus('✓ 已保存到 ' + handle.name);
+        this._setStatus(t("✓ 已保存到 {name}", { name: handle.name }));
       } catch (e) {}
       return;
     }
@@ -619,14 +620,14 @@ export class EditingFileLayoutMethods {
     a.click();
     URL.revokeObjectURL(a.href);
     this._setDirty(src.value !== content);
-    this._setStatus('✓ 已下载 ' + a.download);
+    this._setStatus(t("✓ 已下载 {name}", { name: a.download }));
   }
 
 
   // ===== 顶栏「文件」下拉菜单 =====
 
   onNew() {
-    if (this.dirty && !window.confirm('当前内容尚未保存，确定新建空白文档？')) return;
+    if (this.dirty && !window.confirm(t("当前内容尚未保存，确定新建空白文档？"))) return;
     if (this.viewMode === 'preview') this.setViewMode('editor');
     this.sourceRef.current.value = '';
     this._resetEditingHistory();
@@ -639,7 +640,7 @@ export class EditingFileLayoutMethods {
     this._renderPreview();
     this._setDirty(false);
     this._autosave();
-    this._setStatus('新建空白文档');
+    this._setStatus(t("新建空白文档"));
     this.sourceRef.current.focus();
   }
 

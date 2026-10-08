@@ -25,7 +25,7 @@ test('Windows packaged app saves Chinese/space paths and survives restart', asyn
 
   const launch = () => electron.launch({
     executablePath,
-    args: [],
+    args: ['--lang=zh-CN'],
     cwd: root,
     env: {
       ...mockCliEnv(root),
@@ -122,7 +122,7 @@ test('Windows packaged bridge calls npm Claude and Codex shims without a shell',
       fs.writeFileSync(process.argv[at + 1], 'packaged Codex: ' + input);
     });
   `);
-  const app = await electron.launch({ executablePath, args: [], cwd: root, env: {
+  const app = await electron.launch({ executablePath, args: ['--lang=zh-CN'], cwd: root, env: {
     ...mockCliEnv(root),
       AGENT_BRIDGE_LARK_COMMAND: join(root, 'missing-test-lark'),
       AGENT_BRIDGE_DWS_COMMAND: join(root, 'missing-test-dws'), MOJIAN_USER_DATA: userData, AGENT_BRIDGE_WORKSPACE: '',

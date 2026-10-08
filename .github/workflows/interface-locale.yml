@@ -1,0 +1,50 @@
+name: Interface locales
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  locale:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Use stable npm
+        run: |
+          npm install -g npm@11.12.1
+          npm config set registry https://registry.npmmirror.com
+          npm config set replace-registry-host always
+      - run: npm ci --no-audit --no-fund
+      - run: node --experimental-strip-types --test tests/unit/i18n.test.ts tests/unit/desktopLocale.test.ts tests/unit/aiLocale.test.ts tests/unit/featureMessages.test.ts tests/unit/localReadingFont.test.ts
+      - run: npm run build:bridge
+      - name: Install CJK system fonts for screenshots
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y fonts-noto-cjk
+      - name: Native locale switching and restart (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a npx playwright test --config playwright.desktop.config.ts locale.spec.ts --output=test-results/desktop
+      - name: Native locale switching and restart (Windows)
+        if: runner.os == 'Windows'
+        run: npx playwright test --config playwright.desktop.config.ts locale.spec.ts --output=test-results/desktop
+      - name: Install web test browser and CJK system fonts
+        if: runner.os == 'Linux'
+        run: |
+          npx playwright install --with-deps chromium
+      - name: Web locale persistence and layout screenshots
+        if: runner.os == 'Linux'
+        run: npx playwright test tests/e2e/interfaceLocale.spec.ts tests/e2e/local-reading-font.spec.ts --output=test-results/web
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: interface-locales-${{ runner.os }}
+          path: test-results/
+          retention-days: 14

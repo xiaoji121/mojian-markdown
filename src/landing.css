@@ -1,13 +1,6 @@
 /* 着陆页始终保持「墨」暗色；token 来自 src/theme/tokens.css（index.html 先行引入）。
    亮色覆盖限定在 body.editor-active，不会泄漏到这里。 */
-/* Web 首页与编辑器共用完整 GB2312 字符子集；扩展保留自己的资源路径。 */
-@font-face {
-  font-family: 'Canger JinKai 04';
-  src: url('/fonts/canger-jinkai-04/cejk-subset.woff2') format('woff2');
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-}
+/* 本机阅读字体与回退在共享 theme/tokens.css 中定义。 */
 
 :root {
   --landing-bg: var(--bg);

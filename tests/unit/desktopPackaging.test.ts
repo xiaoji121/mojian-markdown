@@ -57,3 +57,7 @@ test('desktop package retains bridge production dependencies', () => {
     assert.ok(included(`node_modules/${name}/index.js`, true), `${name} runtime is excluded from the desktop package`);
   }
 });
+
+test('desktop package includes the native locale module', () => {
+  assert.ok(included('desktop/locale.js'));
+});

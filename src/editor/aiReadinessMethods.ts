@@ -1,25 +1,26 @@
 // @ts-nocheck
+import { t } from './i18n.ts';
 import { bridgeUrl } from './bridgeClient.ts';
 
 // A filesystem check is not authentication or a live provider test.
 export function describeAIReadiness(status, engine) {
-  if (!status?.bridgeAvailable) return { canRequest: false, text: '本地 AI 服务未连接。可重试，或继续编辑。' };
+  if (!status?.bridgeAvailable) return { canRequest: false, text: t('本地 AI 服务未连接。可重试，或继续编辑。') };
   const provider = status.providers?.[engine];
   if (engine !== 'gemini') {
     const name = engine === 'codex' ? 'Codex' : 'Claude';
     if (provider?.executable === 'found') return {
-      canRequest: true, text: `${name} CLI 已找到；登录尚未验证。首次提问会调用 CLI，请先在终端完成登录。`
+      canRequest: true, text: t('{name} CLI 已找到；登录尚未验证。首次提问会调用 CLI，请先在终端完成登录。', { name })
     };
-    const reason = { missing: '未找到', unsupported: '启动器不受支持', unavailable: '暂时无法检查' }[provider?.executable] || '尚未检查';
-    return { canRequest: false, text: `${name} CLI ${reason}。请安装并登录后重新检查，或在设置中选择其他渠道。` };
+    const reason = { missing: t('未找到'), unsupported: t('启动器不受支持'), unavailable: t('暂时无法检查') }[provider?.executable] || t('尚未检查');
+    return { canRequest: false, text: t('{name} CLI {reason}。请安装并登录后重新检查，或在设置中选择其他渠道。', { name, reason }) };
   }
-  if (provider?.credentialStatus === 'migration-required') return { canRequest: false, text: 'Gemini 旧密钥等待你在设置中同意安全迁移。' };
+  if (provider?.credentialStatus === 'migration-required') return { canRequest: false, text: t('Gemini 旧密钥等待你在设置中同意安全迁移。') };
   if (['locked', 'unsupported', 'unavailable'].includes(provider?.storage)) {
-    const reason = { locked: '已锁定', unsupported: '不支持此平台', unavailable: '暂不可用' }[provider.storage];
-    return { canRequest: false, text: `Gemini 安全存储${reason}。不会回退明文；可继续编辑或选择本地 CLI。` };
+    const reason = { locked: t('已锁定'), unsupported: t('不支持此平台'), unavailable: t('暂不可用') }[provider.storage];
+    return { canRequest: false, text: t('Gemini 安全存储{reason}。不会回退明文；可继续编辑或选择本地 CLI。', { reason }) };
   }
-  if (!provider?.configured) return { canRequest: false, text: 'Gemini 尚未配置 API Key。划词翻译始终需要 Gemini，与问答渠道无关。' };
-  return { canRequest: true, text: 'Gemini Key 已配置；有效性和网络尚未验证。' + (provider.storage === 'plaintext' ? '命令行网页版使用明文存储。' : '') };
+  if (!provider?.configured) return { canRequest: false, text: t('Gemini 尚未配置 API Key。划词翻译始终需要 Gemini，与问答渠道无关。') };
+  return { canRequest: true, text: t('Gemini Key 已配置；有效性和网络尚未验证。') + (provider.storage === 'plaintext' ? t('命令行网页版使用明文存储。') : '') };
 }
 
 export function aiRequestContext(editor) {
@@ -53,7 +54,7 @@ export class AIReadinessMethods {
       if (epoch === this._aiReadinessEpoch) this._aiReadinessAbort = null;
     }
     this._renderAIReadiness();
-    this._setAIStatus(this.aiBridgeOnline ? '本地 AI 服务已连接 · 渠道状态见下方' : '本地 AI 服务未连接', this.aiBridgeOnline ? 'online' : 'offline');
+    this._setAIStatus(this.aiBridgeOnline ? t('本地 AI 服务已连接 · 渠道状态见下方') : t('本地 AI 服务未连接'), this.aiBridgeOnline ? 'online' : 'offline', () => this.aiBridgeOnline ? t('本地 AI 服务已连接 · 渠道状态见下方') : t('本地 AI 服务未连接'));
     return true;
   }
 
@@ -63,6 +64,7 @@ export class AIReadinessMethods {
     const summary = describeAIReadiness(this.aiReadiness, this.aiEngine);
     if (this._aiReadinessText) {
       this._aiReadinessText.textContent = summary.text;
+      (this._aiReadinessActions || []).forEach(({ element, label }) => { element.textContent = t(label); });
       return;
     }
     const text = document.createElement('p');
@@ -73,7 +75,9 @@ export class AIReadinessMethods {
     actions.className = 'ai-readiness-actions';
     const button = (label, action) => {
       const element = document.createElement('button');
-      element.type = 'button'; element.className = 'tbtn'; element.textContent = label;
+      element.type = 'button'; element.className = 'tbtn'; element.textContent = t(label);
+      if (!this._aiReadinessActions) this._aiReadinessActions = [];
+      this._aiReadinessActions.push({ element, label });
       element.addEventListener('click', action); actions.appendChild(element);
       return element;
     };

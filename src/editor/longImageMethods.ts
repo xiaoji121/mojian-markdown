@@ -1,5 +1,5 @@
 // @ts-nocheck
-// 「保存长图」：把预览原样渲染成一张可分享的长图。
+import { t, getLocale } from './i18n.ts';
 //
 // 做法是把预览节点搬进一张海报（页眉 · 正文 · 页脚），再交给 SVG <foreignObject>
 // 让浏览器自己排版并光栅化——排版、字体、纸色都与预览同源，不另写一套渲染。
@@ -153,20 +153,20 @@ export class LongImageMethods {
     head.className = 'longimg-modal-head';
     const title = document.createElement('strong');
     title.className = 'longimg-modal-title';
-    title.textContent = '保存长图';
+    title.textContent = t("保存长图"); title.setAttribute('data-i18n', "保存长图");
     const hint = document.createElement('p');
     hint.className = 'longimg-modal-hint';
-    hint.textContent = '排版与纸色跟随预览；图片字号可单独调节，手机分页会避开图片、表格、代码块和标题。';
+    hint.textContent = t("排版与纸色跟随预览；图片字号可单独调节，手机分页会避开图片、表格、代码块和标题。"); hint.setAttribute('data-i18n', "排版与纸色跟随预览；图片字号可单独调节，手机分页会避开图片、表格、代码块和标题。");
     const tools = document.createElement('div');
     tools.className = 'longimg-modal-head-tools';
     const marks = document.createElement('button');
     marks.type = 'button';
     marks.className = 'longimg-mark-toggle';
-    marks.title = '导出时包含划线、编号和批注内容';
+    marks.title = t("导出时包含划线、编号和批注内容"); marks.setAttribute('data-i18n-title', "导出时包含划线、编号和批注内容");
     marks.setAttribute('role', 'switch');
-    marks.setAttribute('aria-label', '导出时包含划线批注');
+    marks.setAttribute('aria-label', t("导出时包含划线批注")); marks.setAttribute('data-i18n-aria-label', "导出时包含划线批注");
     const marksLabel = document.createElement('span');
-    marksLabel.textContent = '划线批注';
+    marksLabel.textContent = t("划线批注"); marksLabel.setAttribute('data-i18n', "划线批注");
     const marksTrack = document.createElement('span');
     marksTrack.className = 'longimg-switch-track';
     marksTrack.setAttribute('aria-hidden', 'true');
@@ -179,8 +179,8 @@ export class LongImageMethods {
     close.type = 'button';
     close.className = 'longimg-modal-close';
     close.textContent = '×';
-    close.title = '关闭（Esc）';
-    close.setAttribute('aria-label', '关闭');
+    close.title = t("关闭（Esc）"); close.setAttribute('data-i18n-title', "关闭（Esc）");
+    close.setAttribute('aria-label', t("关闭")); close.setAttribute('data-i18n-aria-label', "关闭");
     close.addEventListener('click', () => this.closeLongImage());
     tools.append(marks, close);
     head.append(title, hint, tools);
@@ -197,13 +197,13 @@ export class LongImageMethods {
     const widths = document.createElement('div');
     widths.className = 'longimg-segmented';
     widths.setAttribute('role', 'group');
-    widths.setAttribute('aria-label', '长图宽度');
+    widths.setAttribute('aria-label', t("长图宽度")); widths.setAttribute('data-i18n-aria-label', "长图宽度");
     LONG_IMAGE_PRESETS.forEach((preset) => widths.appendChild(this._longImageWidthOption(preset)));
     const crop = document.createElement('button');
     crop.type = 'button';
     crop.className = 'longimg-crop-toggle';
-    crop.textContent = '手机分页';
-    crop.title = '按手机一屏自动裁成多张图片，并避开图片、表格和代码块';
+    crop.textContent = t("手机分页"); crop.setAttribute('data-i18n', "手机分页");
+    crop.title = t("按手机一屏自动裁成多张图片，并避开图片、表格和代码块"); crop.setAttribute('data-i18n-title', "按手机一屏自动裁成多张图片，并避开图片、表格和代码块");
     crop.addEventListener('click', () => this.toggleLongImageAutoCrop());
     const fonts = this._buildLongImageFontControls();
     options.append(widths, crop, fonts);
@@ -212,7 +212,7 @@ export class LongImageMethods {
     const save = document.createElement('button');
     save.type = 'button';
     save.className = 'abtn primary longimg-save';
-    save.textContent = '下载长图';
+    save.textContent = t("下载长图"); save.setAttribute('data-i18n', "下载长图");
     save.addEventListener('click', () => this.downloadLongImage());
     foot.append(options, meta, save);
     this._longImageWidthsEl = widths;
@@ -227,18 +227,18 @@ export class LongImageMethods {
     const controls = document.createElement('div');
     controls.className = 'longimg-font-controls';
     controls.setAttribute('role', 'group');
-    controls.setAttribute('aria-label', '图片字号');
+    controls.setAttribute('aria-label', t("图片字号")); controls.setAttribute('data-i18n-aria-label', "图片字号");
     const decrease = document.createElement('button');
     decrease.type = 'button';
     decrease.textContent = 'A−';
-    decrease.setAttribute('aria-label', '减小图片字号');
+    decrease.setAttribute('aria-label', t("减小图片字号")); decrease.setAttribute('data-i18n-aria-label', "减小图片字号");
     decrease.addEventListener('click', () => this.adjustLongImageFont(-LONG_IMAGE_FONT_STEP));
     const value = document.createElement('span');
     value.className = 'longimg-font-value';
     const increase = document.createElement('button');
     increase.type = 'button';
     increase.textContent = 'A+';
-    increase.setAttribute('aria-label', '增大图片字号');
+    increase.setAttribute('aria-label', t("增大图片字号")); increase.setAttribute('data-i18n-aria-label', "增大图片字号");
     increase.addEventListener('click', () => this.adjustLongImageFont(LONG_IMAGE_FONT_STEP));
     controls.append(decrease, value, increase);
     this._longImageFontDecEl = decrease;
@@ -253,8 +253,8 @@ export class LongImageMethods {
     option.type = 'button';
     option.className = 'longimg-segment';
     option.dataset.longimgWidth = preset.id;
-    option.textContent = preset.label;
-    option.title = preset.hint;
+    option.textContent = preset.label; option.setAttribute('data-i18n', preset.id === 'phone' ? '手机' : '标准');
+    option.title = preset.hint; option.setAttribute('data-i18n-title', preset.id === 'phone' ? '宽版心，适合小红书等手机竖屏分享' : '与沉浸式阅读版心一致');
     option.addEventListener('click', () => this.setLongImageWidth(preset.id));
     return option;
   }
@@ -285,7 +285,7 @@ export class LongImageMethods {
     }
     if (this._longImageSaveEl) {
       this._longImageSaveEl.disabled = !!this._longImageBusy;
-      if (!this._longImageBusy) this._longImageSaveEl.textContent = paged ? '下载多图' : '下载长图';
+      if (!this._longImageBusy) this._longImageSaveEl.textContent = paged ? t("下载多图") : t("下载长图");
     }
   }
 
@@ -386,13 +386,12 @@ export class LongImageMethods {
     if (this.longImageAutoCrop && this.longImageWidth === 'phone' && this._longImagePoster) {
       const pages = this._longImagePagePlan || [];
       const scale = pickLongImageScale(width, PHONE_PAGE_HEIGHT) || 1;
-      this._longImageMetaEl.textContent = '预计 ' + pages.length + ' 张 · 每张 '
-        + Math.round(width * scale) + ' × ' + Math.round(PHONE_PAGE_HEIGHT * scale) + ' px';
+      this._longImageMetaEl.textContent = t("预计 {count} 张 · 每张 {width} × {height} px", { count: pages.length, width: Math.round(width * scale), height: Math.round(PHONE_PAGE_HEIGHT * scale) });
       return;
     }
     const scale = pickLongImageScale(width, height);
     if (!scale) {
-      this._longImageMetaEl.textContent = '文章太长，超出画布上限 · 换「手机」宽度或拆篇再导出';
+      this._longImageMetaEl.textContent = t("文章太长，超出画布上限 · 换「手机」宽度或拆篇再导出");
       return;
     }
     const parts = [
@@ -421,7 +420,7 @@ export class LongImageMethods {
       appendLongImageAnnotations(content, this.comments, this._longImageSelection?.commentIds);
     }
     else this._stripPosterMarks(content);
-    const fileTitle = String(this.fileName || '').replace(/\.md$/i, '') || '未命名';
+    const fileTitle = String(this.fileName || '').replace(/\.md$/i, '') || t("未命名");
     const title = this._longImageSelection ? fileTitle : this._takePosterTitle(content);
     this._posterTitle = title;
     poster.append(this._buildPosterHead(title, content), content, this._buildPosterFoot());
@@ -462,7 +461,7 @@ export class LongImageMethods {
         return text;
       }
     }
-    return String(this.fileName || '').replace(/\.md$/i, '') || '未命名';
+    return String(this.fileName || '').replace(/\.md$/i, '') || t("未命名");
   }
 
 
@@ -479,7 +478,7 @@ export class LongImageMethods {
     head.className = 'longimg-head';
     const brand = document.createElement('div');
     brand.className = 'longimg-brand';
-    brand.textContent = '墨笺 Markdown';
+    brand.textContent = t("墨笺 Markdown"); brand.setAttribute('data-i18n', "墨笺 Markdown");
     const heading = document.createElement('h1');
     heading.className = 'longimg-title';
     heading.textContent = title;
@@ -494,12 +493,12 @@ export class LongImageMethods {
 
 
   _posterMetaText(content) {
-    const parts = [this._posterWordCount(content).toLocaleString('zh-CN') + ' 字'];
+    const parts = [t("{count} 字", { count: this._posterWordCount(content).toLocaleString(getLocale()) })];
     if (this.longImageMarks) {
       const ids = new Set();
       content.querySelectorAll('[data-comment-id]')
         .forEach((span) => ids.add(span.getAttribute('data-comment-id')));
-      if (ids.size) parts.push(ids.size + ' 处划线');
+      if (ids.size) parts.push(t("{count} 处划线", { count: ids.size }));
     }
     parts.push(longImageDate());
     return parts.join(' · ');
@@ -518,7 +517,7 @@ export class LongImageMethods {
     const foot = document.createElement('div');
     foot.className = 'longimg-foot';
     const left = document.createElement('span');
-    left.textContent = '墨笺 Markdown';
+    left.textContent = t("墨笺 Markdown"); left.setAttribute('data-i18n', "墨笺 Markdown");
     const right = document.createElement('span');
     right.textContent = this.fileName || '';
     foot.append(left, right);
@@ -611,7 +610,7 @@ export class LongImageMethods {
       }
       const missing = document.createElement('div');
       missing.className = 'longimg-missing';
-      missing.textContent = '图片未能载入 · ' + (img.getAttribute('alt') || src);
+      missing.textContent = t("图片未能载入 · {name}", { name: img.getAttribute('alt') || src });
       img.replaceWith(missing);
     }));
   }
@@ -631,18 +630,18 @@ export class LongImageMethods {
       const result = await this._rasterizePoster(this._longImagePoster, (done, total) => {
         if (!this._longImageSaveEl) return;
         this._longImageSaveEl.textContent = total > 1
-          ? '正在生成 ' + (done + 1) + '/' + total + '…'
-          : '正在生成…';
+          ? t("正在生成 {index}/{total}…", { index: done + 1, total })
+          : t("正在生成…");
       });
       const blob = await new Promise((resolve) => result.canvas.toBlob(resolve, 'image/png'));
-      if (!blob) throw new Error('长图导出失败 · 图片超出浏览器可编码的上限');
+      if (!blob) throw new Error(t("长图导出失败 · 图片超出浏览器可编码的上限"));
       const name = longImageFileName(this._posterTitle, longImageDate());
       this._saveLongImageBlob(blob, name);
       this._updateLongImageMeta(result.width, result.height, blob.size);
-      this._setStatus('✓ 已保存长图 ' + name + ' · ' + formatByteSize(blob.size));
+      this._setStatus(t("✓ 已保存长图 {name} · {size}", { name, size: formatByteSize(blob.size) }));
       this.closeLongImage();
     } catch (error) {
-      const message = (error && error.message) || '长图生成失败';
+      const message = (error && error.message) || t("长图生成失败");
       if (this._longImageMetaEl) this._longImageMetaEl.textContent = message;
       this._setStatus(message);
     } finally {
@@ -654,7 +653,7 @@ export class LongImageMethods {
     const poster = this._longImagePoster;
     const width = longImageWidth('phone');
     const pages = this._longImagePagePlan || [];
-    if (!pages.length) throw new Error('分页预览尚未准备好，请稍后重试');
+    if (!pages.length) throw new Error(t("分页预览尚未准备好，请稍后重试"));
     const scale = pickLongImageScale(width, PHONE_PAGE_HEIGHT);
     const clone = poster.cloneNode(true);
     await this._inlinePosterImages(clone);
@@ -663,11 +662,11 @@ export class LongImageMethods {
     const base = longImageFileName(this._posterTitle, longImageDate()).replace(/\.png$/i, '');
     const files = [];
     for (let index = 0; index < pages.length; index += 1) {
-      this._longImageSaveEl.textContent = '正在生成 ' + (index + 1) + '/' + pages.length + '…';
+      this._longImageSaveEl.textContent = t("正在生成 {index}/{total}…", { index: index + 1, total: pages.length });
       const image = await this._loadPosterTile(pages[index], { width, scale, css, markup });
       const canvas = this._pagedImageCanvas(width, scale, image, index + 1, pages.length);
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-      if (!blob) throw new Error('分页图片导出失败');
+      if (!blob) throw new Error(t("分页图片导出失败"));
       files.push({
         name: base + '-' + String(index + 1).padStart(2, '0') + '.png',
         data: blob
@@ -676,9 +675,8 @@ export class LongImageMethods {
     const zip = await buildStoredZip(files);
     const zipName = base + '-手机分页.zip';
     this._saveLongImageBlob(zip, zipName);
-    this._longImageMetaEl.textContent = pages.length + ' 张 · ' + Math.round(width * scale) + ' × '
-      + Math.round(PHONE_PAGE_HEIGHT * scale) + ' px · ' + formatByteSize(zip.size);
-    this._setStatus('✓ 已保存手机分页图片 · ' + pages.length + ' 张 · ' + zipName);
+    this._longImageMetaEl.textContent = t("{count} 张 · {width} × {height} px · {size}", { count: pages.length, width: Math.round(width * scale), height: Math.round(PHONE_PAGE_HEIGHT * scale), size: formatByteSize(zip.size) });
+    this._setStatus(t("✓ 已保存手机分页图片 · {count} 张 · {name}", { count: pages.length, name: zipName }));
   }
   _pagedImageCanvas(width, scale, image, pageNumber, pageCount) {
     const canvas = document.createElement('canvas');
@@ -743,7 +741,7 @@ export class LongImageMethods {
     const width = poster.offsetWidth;
     const height = poster.offsetHeight;
     const scale = pickLongImageScale(width, height);
-    if (!scale) throw new Error('文章太长，超出画布上限 · 换「手机」宽度或拆篇再导出');
+    if (!scale) throw new Error(t("文章太长，超出画布上限 · 换「手机」宽度或拆篇再导出"));
     const clone = poster.cloneNode(true);
     await this._inlinePosterImages(clone);
     const css = (await this._posterFontCss()) + '\n' + (this._posterCssText || '');
@@ -791,7 +789,7 @@ export class LongImageMethods {
     return new Promise((resolve, reject) => {
       const image = new Image();
       image.onload = () => resolve(image);
-      image.onerror = () => reject(new Error('长图渲染失败 · 请稍后重试'));
+      image.onerror = () => reject(new Error(t("长图渲染失败 · 请稍后重试")));
       image.src = url;
     });
   }

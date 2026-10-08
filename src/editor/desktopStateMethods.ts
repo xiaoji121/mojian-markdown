@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { t } from './i18n.ts';
 import { createDesktopFileHandle } from './desktopFileHandle.ts';
 
 // Desktop-only lifecycle. Web storage and browser file permissions remain unchanged.
@@ -9,7 +10,7 @@ export class DesktopStateMethods {
     try {
       // Capture even edits that have not reached the 600ms autosave timer.
       if (!this._persist()) {
-        this._setStatus('桌面草稿保存失败 · 请重试保存或另存为');
+        this._setStatus(t("桌面草稿保存失败 · 请重试保存或另存为"));
         return false;
       }
       await this._localRestorePromise;
@@ -18,7 +19,7 @@ export class DesktopStateMethods {
       const saved = this._persist(false);
       return saved && !(this.localFilePath && this.dirty);
     } catch {
-      this._setStatus('退出前保存失败 · 请重试保存或另存为');
+      this._setStatus(t("退出前保存失败 · 请重试保存或另存为"));
       return false;
     }
   }
@@ -45,7 +46,7 @@ export class DesktopStateMethods {
       } else if (this.dirty) {
         if (!baseline || file.lastModified !== baseline) {
           this._localFileConflict = true;
-          this._setStatus('已恢复草稿 · 本地文件也已更改，请检查后保存或另存为');
+          this._setStatus(t("已恢复草稿 · 本地文件也已更改，请检查后保存或另存为"));
         } else {
           await this._maybeWriteThroughLocalFile();
         }
@@ -54,7 +55,7 @@ export class DesktopStateMethods {
       }
       if (this.fileHandle === handle) this._startLocalFileWatcher();
     } catch {
-      if (current()) this._setStatus('已恢复草稿 · 原文件不可用，请检查路径或另存为');
+      if (current()) this._setStatus(t("已恢复草稿 · 原文件不可用，请检查路径或另存为"));
     }
   }
 }

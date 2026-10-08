@@ -1,3 +1,4 @@
+import { t } from './i18n.ts';
 // 「保存长图」的纯逻辑：尺寸档位、倍率选择、切片规划、样式抽取。
 // 这里不碰真实 DOM 渲染，只做可预测的计算与字符串处理，便于单测直接调用
 // （见 tests/unit/longImageComposer.test.ts）；渲染与交互在 longImageMethods.ts。
@@ -14,8 +15,8 @@ export interface LongImagePreset {
 // 标准档与沉浸式阅读版心一致。
 // 再多一档就变成「让用户逐像素纠结」，与设计规范第 5 条相悖。
 export const LONG_IMAGE_PRESETS: LongImagePreset[] = [
-  { id: 'phone', label: '手机', width: 1080, hint: '宽版心，适合小红书等手机竖屏分享' },
-  { id: 'standard', label: '标准', width: 900, hint: '与沉浸式阅读版心一致' }
+  { id: 'phone', get label() { return t("手机"); }, width: 1080, get hint() { return t("宽版心，适合小红书等手机竖屏分享"); } },
+  { id: 'standard', get label() { return t("标准"); }, width: 900, get hint() { return t("与沉浸式阅读版心一致"); } }
 ];
 
 export const DEFAULT_LONG_IMAGE_PRESET = 'standard';
@@ -236,7 +237,7 @@ export function longImageFileName(title: string, date: string): string {
     .replace(/[\\/:*?"<>|]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
-    .slice(0, 60) || '长图';
+    .slice(0, 60) || t("长图");
   return base + '-' + date + '.png';
 }
 

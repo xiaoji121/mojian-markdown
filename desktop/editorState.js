@@ -2,12 +2,14 @@
 import * as fs from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { desktopLocales, nativeText } from './locale.js';
 
 const stringFields = ['content', 'fileName', 'bridgeDocumentId', 'longImageWidth', 'localFilePath'];
 const numberFields = ['fontSize', 'longImagePhoneFontSize', 'longImageStandardFontSize', 'savedAt', 'localFileModifiedAt',
   'aiPanelWidth', 'commentsPanelWidth', 'documentSidebarWidth'];
 const booleanFields = ['immersiveWide', 'longImageMarks', 'dirty'];
 const choices = {
+  locale: desktopLocales,
   theme: ['dark', 'light'], aiEngine: ['claude', 'codex', 'gemini'],
   paper: ['ink', 'parchment', 'cream', 'snow', 'green'],
   paperDark: ['ink', 'parchment', 'cream', 'snow', 'green'],
@@ -62,7 +64,7 @@ export function sanitizeEditorState(value) {
   return result;
 }
 
-export function createEditorStateStore(userData, io = fs) {
+export function createEditorStateStore(userData, io = fs, getLocale = () => 'en') {
   const path = join(userData, 'editor-state.json');
   let blocked = null;
   function load() {
@@ -73,8 +75,8 @@ export function createEditorStateStore(userData, io = fs) {
       return { ok: true, state };
     } catch (error) {
       if (error.code === 'ENOENT') return { ok: true, state: null };
-      blocked = `无法读取桌面草稿，原文件已保留：${error.message}`;
-      return { ok: false, error: blocked };
+      blocked = error.message || String(error);
+      return { ok: false, error: nativeText(getLocale(), 'draftReadFailure', { detail: blocked }) };
     }
   }
   function save(value) {
@@ -82,7 +84,7 @@ export function createEditorStateStore(userData, io = fs) {
     let fd;
     try {
       // Check the existing record even if this renderer did not load it first.
-      if (blocked || !load().ok) throw new Error(blocked);
+      if (blocked || !load().ok) throw new Error(nativeText(getLocale(), 'draftReadFailure', { detail: blocked }));
       const state = sanitizeEditorState(value);
       io.mkdirSync(userData, { recursive: true, mode: 0o700 });
       temp = `${path}.${randomUUID()}.tmp`;

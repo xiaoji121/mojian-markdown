@@ -18,6 +18,7 @@ import { startAgentBridge } from '../scripts/agent-bridge.js';
 import { readLocalAsset } from './localAssets.js';
 import { createEditorStateStore, isTrustedEditorSender } from './editorState.js';
 import { createCloseCoordinator } from './closeCoordinator.js';
+import { desktopLocales, initialDesktopLocale, nativeText, nativeMenuTemplate } from './locale.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MARKDOWN_EXTENSIONS = new Set(['.md', '.markdown', '.txt']);
@@ -25,6 +26,8 @@ const MARKDOWN_EXTENSIONS = new Set(['.md', '.markdown', '.txt']);
 // 自动化测试隔离用户数据目录（含授权清单）；必须在 ready 之前设置。
 if (process.env.MOJIAN_USER_DATA) app.setPath('userData', process.env.MOJIAN_USER_DATA);
 
+let activeLocale = 'en';
+const t = (key, values) => nativeText(activeLocale, key, values);
 let mainWindow = null;
 let bridge = null;
 let editorStateStore = null;
@@ -48,10 +51,15 @@ async function waitForWrites() {
 function registerEditorStateIpc() {
   const trusted = (event) => isTrustedEditorSender(event, mainWindow, bridge?.url);
   ipcMain.on('desktop:load-editor-state', (event) => {
-    event.returnValue = trusted(event) ? editorStateStore.load() : { ok: false, error: 'Untrusted editor' };
+    event.returnValue = trusted(event) ? editorStateStore.load() : { ok: false, error: t('untrusted') };
   });
   ipcMain.on('desktop:save-editor-state', (event, state) => {
-    event.returnValue = trusted(event) ? editorStateStore.save(state) : { ok: false, error: 'Untrusted editor' };
+    const result = trusted(event) ? editorStateStore.save(state) : { ok: false, error: t('untrusted') };
+    if (result.ok && desktopLocales.includes(state.locale) && state.locale !== activeLocale) {
+      activeLocale = state.locale;
+      Menu.setApplicationMenu(buildMenu());
+    }
+    event.returnValue = result;
   });
   ipcMain.on('desktop:close-ready', (event, token, success) => {
     if (trusted(event)) void closeCoordinator?.complete(token, success);
@@ -78,10 +86,10 @@ function protectWindowClose(window) {
     },
     confirmLoss: async () => {
       const result = await dialog.showMessageBox(window, {
-        type: 'warning', title: '草稿尚未安全保存',
-        message: '无法确认最新修改已保存。现在退出可能丢失修改。',
-        detail: '请选择“留在编辑器”重试保存。只有选择“仍然退出”才会放弃本次保存保护。',
-        buttons: ['留在编辑器', '仍然退出'], defaultId: 0, cancelId: 0, noLink: true
+        type: 'warning', title: t('draftTitle'),
+        message: t('draftMessage'),
+        detail: t('draftDetail'),
+        buttons: [t('stay'), t('exit')], defaultId: 0, cancelId: 0, noLink: true
       });
       if (result.response !== 1) quittingRequested = false;
       return result.response === 1;
@@ -134,7 +142,7 @@ function grantPath(filePath) {
 
 function assertGranted(filePath) {
   if (!grantedPaths.has(resolve(String(filePath)))) {
-    throw new Error('未授权的文件路径：' + filePath);
+    throw new Error(t('ungrantedPath', { detail: filePath }));
   }
 }
 
@@ -180,6 +188,7 @@ function registerIpcHandlers() {
 
   ipcMain.handle('desktop:open-file', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
+      title: t('openTitle'),
       properties: ['openFile'],
       filters: [{ name: 'Markdown', extensions: ['md', 'markdown', 'txt'] }]
     });
@@ -192,9 +201,9 @@ function registerIpcHandlers() {
     let filePath = String(inputPath || '').trim();
     if ((filePath.startsWith('"') && filePath.endsWith('"'))
       || (filePath.startsWith("'") && filePath.endsWith("'"))) filePath = filePath.slice(1, -1).trim();
-    if (!isAbsolute(filePath)) throw new Error('请输入文件的绝对路径');
+    if (!isAbsolute(filePath)) throw new Error(t('absolutePath'));
     if (!MARKDOWN_EXTENSIONS.has(extname(filePath).toLowerCase())) {
-      throw new Error('仅支持 .md、.markdown 或 .txt 文件');
+      throw new Error(t('markdownOnly'));
     }
     const normalized = resolve(filePath);
     const picked = await readPickedFile(normalized);
@@ -204,6 +213,7 @@ function registerIpcHandlers() {
 
   handleWrite('desktop:save-file-as', async (_event, suggestedName, content) => {
     const result = await dialog.showSaveDialog(mainWindow, {
+      title: t('saveTitle'),
       defaultPath: String(suggestedName || 'document.md'),
       filters: [{ name: 'Markdown', extensions: ['md', 'markdown'] }]
     });
@@ -235,7 +245,7 @@ function registerIpcHandlers() {
     const sourcePath = resolve(String(filePath));
     const nextName = String(requestedName || '').trim();
     if (!nextName || basename(nextName) !== nextName || !MARKDOWN_EXTENSIONS.has(extname(nextName).toLowerCase())) {
-      throw new Error('请使用有效的 Markdown 文件名');
+      throw new Error(t('validName'));
     }
     const targetPath = resolve(dirname(sourcePath), nextName);
     if (targetPath === sourcePath) return readPickedFile(sourcePath);
@@ -244,7 +254,7 @@ function registerIpcHandlers() {
     try {
       const targetInfo = await stat(targetPath);
       const sameFile = sourceInfo.dev === targetInfo.dev && sourceInfo.ino === targetInfo.ino;
-      if (!sameFile) throw new Error('同名文件已存在，请换一个名称');
+      if (!sameFile) throw new Error(t('nameExists'));
     } catch (error) {
       if (error.code !== 'ENOENT') throw error;
     }
@@ -285,46 +295,7 @@ function sendMenu(action) {
 }
 
 function buildMenu() {
-  const isMac = process.platform === 'darwin';
-  return Menu.buildFromTemplate([
-    ...(isMac ? [{ role: 'appMenu' }] : []),
-    {
-      label: '文件',
-      submenu: [
-        { label: '新建', accelerator: 'CmdOrCtrl+N', click: () => sendMenu('new') },
-        { label: '打开…', accelerator: 'CmdOrCtrl+O', click: () => sendMenu('open') },
-        { label: '输入绝对路径打开…', click: () => sendMenu('open-path') },
-        { label: '保存', accelerator: 'CmdOrCtrl+S', click: () => sendMenu('save') },
-        { label: '另存为…', accelerator: 'CmdOrCtrl+Shift+S', click: () => sendMenu('save-as') },
-        { type: 'separator' },
-        isMac ? { role: 'close', label: '关闭窗口' } : { role: 'quit', label: '退出' }
-      ]
-    },
-    {
-      // 撤销/重做由编辑器自带的历史系统处理（⌘Z 直达渲染层），菜单只补齐剪贴板项。
-      label: '编辑',
-      submenu: [
-        { role: 'cut', label: '剪切' },
-        { role: 'copy', label: '复制' },
-        { role: 'paste', label: '粘贴' },
-        { role: 'selectAll', label: '全选' }
-      ]
-    },
-    {
-      label: '视图',
-      submenu: [
-        { role: 'reload', label: '重新加载' },
-        { role: 'toggleDevTools', label: '开发者工具' },
-        { type: 'separator' },
-        { role: 'resetZoom', label: '实际大小' },
-        { role: 'zoomIn', label: '放大' },
-        { role: 'zoomOut', label: '缩小' },
-        { type: 'separator' },
-        { role: 'togglefullscreen', label: '全屏' }
-      ]
-    },
-    { role: 'windowMenu', label: '窗口' }
-  ]);
+  return Menu.buildFromTemplate(nativeMenuTemplate(activeLocale, process.platform === 'darwin', sendMenu));
 }
 
 // ===== 窗口与生命周期 =====
@@ -386,7 +357,10 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(async () => {
     try {
-      editorStateStore = createEditorStateStore(app.getPath('userData'));
+      activeLocale = initialDesktopLocale(null, app.getLocale());
+      editorStateStore = createEditorStateStore(app.getPath('userData'), undefined, () => activeLocale);
+      const savedState = editorStateStore.load();
+      activeLocale = initialDesktopLocale(savedState.ok ? savedState.state : null, app.getLocale());
       aiSettingsStore = createSettingsStore(workspaceRoot(), {
         credentialAdapter: createSafeStorageAdapter({ safeStorage, app, platform: process.platform })
       });
@@ -399,7 +373,7 @@ if (!app.requestSingleInstanceLock()) {
         desktopCapability
       });
     } catch (error) {
-      dialog.showErrorBox('墨笺 Markdown 启动失败', error.message || String(error));
+      dialog.showErrorBox(t('startupFailure'), error.message || String(error));
       app.quit();
       return;
     }

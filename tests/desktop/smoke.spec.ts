@@ -28,7 +28,7 @@ test('桌面端启动并与本地文件双向同步', async () => {
   await writeFile(join(userData, 'granted-paths.json'), JSON.stringify([docPath]));
 
   const app = await electron.launch({
-    args: ['.'],
+    args: ['.', '--lang=zh-CN'],
     env: {
       ...mockCliEnv(workspace),
       ...(process.env.DISPLAY ? { DISPLAY: process.env.DISPLAY } : {}),
@@ -134,7 +134,7 @@ test('文章链接交给系统浏览器打开，应用窗口不动', async () =>
   const userData = await mkdtemp(join(tmpdir(), 'mojian-user-'));
 
   const app = await electron.launch({
-    args: ['.'],
+    args: ['.', '--lang=zh-CN'],
     env: {
       ...mockCliEnv(workspace),
       ...(process.env.DISPLAY ? { DISPLAY: process.env.DISPLAY } : {}),
@@ -207,7 +207,7 @@ test('重启恢复且内容一致时，相对路径图片仍能展示', async ()
   }, null, 2));
 
   const app = await electron.launch({
-    args: ['.'],
+    args: ['.', '--lang=zh-CN'],
     env: {
       ...mockCliEnv(workspace),
       ...(process.env.DISPLAY ? { DISPLAY: process.env.DISPLAY } : {}),
@@ -256,7 +256,7 @@ test('桌面端批注面板的复制与删除按钮可用', async () => {
   }, null, 2));
 
   const app = await electron.launch({
-    args: ['.'],
+    args: ['.', '--lang=zh-CN'],
     env: {
       ...mockCliEnv(workspace),
       ...(process.env.DISPLAY ? { DISPLAY: process.env.DISPLAY } : {}),
@@ -317,7 +317,7 @@ test('重启后自动恢复最近阅读并重建本地文件同步', async () =>
   }, null, 2));
 
   const app = await electron.launch({
-    args: ['.'],
+    args: ['.', '--lang=zh-CN'],
     env: {
       ...mockCliEnv(workspace),
       ...(process.env.DISPLAY ? { DISPLAY: process.env.DISPLAY } : {}),

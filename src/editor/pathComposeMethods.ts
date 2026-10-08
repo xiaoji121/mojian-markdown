@@ -3,23 +3,21 @@
 // 批注与原文交给 AI，整理成长文（article）或写成一篇二创（remix）。
 // 节点点击的劫持入口在 readingMapMethods，选择模式开启时转交到这里；
 // 选择状态、浮动操作条、/api/compose 的流式生成与结果打开都归本模块。
+import { t } from './i18n.ts';
 import { bridgeUrl } from './bridgeClient.ts';
 
 // 两种成文模式的说明（问号浮层用）。上下文相同，差别只在写作任务。
 const PATH_HELP = {
   article: {
     title: '整理成长文',
-    body: '忠于这条阅读路径的「梳理」：以你的追问与批注为主线，融合原文观点与各节点回答，'
-      + '保留必要的原文引用，重组成一篇结构完整、有起承转合的长文。适合把一次深读沉淀成完整笔记。'
+    body: '忠于这条阅读路径的「梳理」：以你的追问与批注为主线，融合原文观点与各节点回答，保留必要的原文引用，重组成一篇结构完整、有起承转合的长文。适合把一次深读沉淀成完整笔记。'
   },
   remix: {
     title: '写一篇二创',
-    body: '以路径中的思考为素材的「再创作」：围绕你在追问里真正关心的问题重新立意，'
-      + '写一篇有独立视角的新文章；可引用原文观点，但不复述原文结构。适合把阅读启发变成你自己的文章。'
+    body: '以路径中的思考为素材的「再创作」：围绕你在追问里真正关心的问题重新立意，写一篇有独立视角的新文章；可引用原文观点，但不复述原文结构。适合把阅读启发变成你自己的文章。'
   }
 };
-const PATH_HELP_FOOTER = '两种模式读到的上下文相同：原文全文 + 路径节点的问答与回答 + 你的批注。'
-  + '个性化要求（如「用第一人称写」）写进旁边的补充要求输入框即可。';
+const PATH_HELP_FOOTER = '两种模式读到的上下文相同：原文全文 + 路径节点的问答与回答 + 你的批注。个性化要求（如「用第一人称写」）写进旁边的补充要求输入框即可。';
 
 export class PathComposeMethods {
   _isReadingMapView() {
@@ -60,8 +58,8 @@ export class PathComposeMethods {
     this._syncReadingPathBar();
     this._applyReadingPathHighlight();
     this._setStatus(this.readingPathSelectMode
-      ? '路径选择已开启 · 点击节点选中它与它的上级链路'
-      : '路径选择已关闭 · 点击节点打开对应子文档');
+      ? t('路径选择已开启 · 点击节点选中它与它的上级链路')
+      : t('路径选择已关闭 · 点击节点打开对应子文档'));
   }
 
 
@@ -69,7 +67,7 @@ export class PathComposeMethods {
     if (this._readingPathSelection) this._readingPathSelection.clear();
     this._syncReadingPathBar();
     this._applyReadingPathHighlight();
-    this._setStatus('已清空路径选择');
+    this._setStatus(t('已清空路径选择'));
   }
 
 
@@ -111,8 +109,8 @@ export class PathComposeMethods {
     const countEl = this.readingPathCountRef && this.readingPathCountRef.current;
     if (countEl) {
       countEl.textContent = this.readingPathSelectMode
-        ? (count ? '已选 ' + count + ' 个节点' : '点击图中节点选中整条路径')
-        : '开启选择后点选节点，AI 按路径成文';
+        ? (count ? t('已选 {count} 个节点', { count }) : t('点击图中节点选中整条路径'))
+        : t('开启选择后点选节点，AI 按路径成文');
     }
     if (bar.querySelectorAll) {
       bar.querySelectorAll('[data-compose-action]').forEach((button) => {
@@ -163,11 +161,11 @@ export class PathComposeMethods {
     }
     pop.innerHTML = '';
     const title = document.createElement('strong');
-    title.textContent = info.title;
+    title.textContent = t(info.title);
     const body = document.createElement('p');
-    body.textContent = info.body;
+    body.textContent = t(info.body);
     const footer = document.createElement('small');
-    footer.textContent = PATH_HELP_FOOTER;
+    footer.textContent = t(PATH_HELP_FOOTER);
     pop.append(title, body, footer);
     pop.classList.add('is-visible');
     this._readingPathHelpMode = mode;
@@ -244,21 +242,20 @@ export class PathComposeMethods {
     const selected = this._readingPathSelection;
     const documentId = this._readingPathDocId || this.bridgeDocumentId;
     if (!selected || !selected.size || !documentId) {
-      this._setStatus('请先开启「选择路径」并点选脉络图中的节点');
+      this._setStatus(t('请先开启「选择路径」并点选脉络图中的节点'));
       return;
     }
-    const label = mode === 'remix' ? '路径二创' : '路径长文';
+    const label = mode === 'remix' ? t('路径二创') : t('路径长文');
     const engineLabel = this._aiEngineLabel();
     const instructionInput = this.readingPathInstructionRef && this.readingPathInstructionRef.current;
     const instruction = String((instructionInput && instructionInput.value) || '').trim() || undefined;
     const mapMarkdown = this.previewOverrideMarkdown;
-    const streamHeader = '# ' + label + ' · 生成中…\n\n> ' + engineLabel + ' 正在阅读你选择的 '
-      + selected.size + ' 个节点 · 成文将自动存入最近阅读\n\n';
+    const streamHeader = t('# {label} · 生成中…\n\n> {engine} 正在阅读你选择的 {count} 个节点 · 成文将自动存入最近阅读\n\n', { label, engine: engineLabel, count: selected.size });
     this._composeBusy = true;
     this._syncReadingPathBar();
     this.previewOverrideMarkdown = streamHeader;
     this._renderPreview();
-    this._setStatus(engineLabel + ' 正在按阅读路径撰写' + label + '…');
+    this._setStatus(t('{engine} 正在按阅读路径撰写{label}…', { engine: engineLabel, label }));
     let generated = '';
     let result = null;
     // 用户中途切走视图（打开别的文档等）后不再抢占预览，也不自动打开结果。
@@ -276,7 +273,7 @@ export class PathComposeMethods {
           engine: (this.aiEngine === 'codex' || this.aiEngine === 'gemini') ? this.aiEngine : 'claude'
         })
       });
-      if (!response.ok || !response.body) throw new Error('本地 Agent Bridge 无响应');
+      if (!response.ok || !response.body) throw new Error(t('本地 Agent Bridge 无响应'));
       await this._readComposeStream(response, {
         delta: (data) => {
           if (!data || !data.text) return;
@@ -286,22 +283,22 @@ export class PathComposeMethods {
           this._scheduleComposeRender();
         },
         done: (data) => { result = data || null; },
-        error: (data) => { throw new Error((data && data.message) || '生成失败'); }
+        error: (data) => { throw new Error((data && data.message) || t('生成失败')); }
       });
-      if (!result || !result.composedDocumentId) throw new Error('生成结果为空');
+      if (!result || !result.composedDocumentId) throw new Error(t('生成结果为空'));
       this._clearComposeRender();
       const openHere = stillHere();
       if (openHere) this._renderPreview();
       await this._refreshRecentDocuments();
       if (openHere) await this.openRecentDocument(result.composedDocumentId);
-      this._setStatus(label + '已生成 · ' + (result.fileName || '已存入最近阅读'));
+      this._setStatus(t('{label}已生成 · {name}', { label, name: result.fileName || t('已存入最近阅读') }));
     } catch (error) {
       this._clearComposeRender();
       if (stillHere()) {
         this.previewOverrideMarkdown = mapMarkdown;
         this._renderPreview();
       }
-      this._setStatus(label + '生成失败 · ' + ((error && error.message) ? error.message : String(error)));
+      this._setStatus(t('{label}生成失败 · {error}', { label, error: (error && error.message) ? error.message : String(error) }));
     } finally {
       this._composeBusy = false;
       this._syncReadingPathBar();

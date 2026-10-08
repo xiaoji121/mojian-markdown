@@ -1,6 +1,7 @@
 // @ts-nocheck
 // AI 历史与阅读树之间的恢复入口。隐藏动作在 bridgeMethods，
 // 这里只负责已隐藏历史卡片的操作渲染和恢复请求。
+import { t } from './i18n.ts';
 import { bridgeUrl } from './bridgeClient.ts';
 
 export class AIReadingTreeMethods {
@@ -13,12 +14,12 @@ export class AIReadingTreeMethods {
     button.type = 'button';
     if (message.hiddenFromReadingTree) {
       button.className = 'ai-reading-tree-restore';
-      button.textContent = message.restoringToReadingTree ? '正在恢复…' : '重新加入阅读树';
+      button.textContent = message.restoringToReadingTree ? t('正在恢复…') : t('重新加入阅读树');
       button.disabled = !!message.restoringToReadingTree;
       button.addEventListener('click', () => this.restoreAIMessageToTree(message));
     } else {
       button.className = 'ai-reading-tree-open';
-      button.textContent = '打开阅读节点';
+      button.textContent = t('打开阅读节点');
       button.addEventListener('click', () => this._openAIReadingNode(message));
     }
     actions.appendChild(button);
@@ -43,13 +44,13 @@ export class AIReadingTreeMethods {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ hiddenFromReadingTree: false })
       });
-      if (!response.ok) throw new Error('恢复失败');
+      if (!response.ok) throw new Error(t('恢复失败'));
       message.hiddenFromReadingTree = false;
       restored = true;
       await this._refreshRecentDocuments();
-      this._setStatus('已重新加入阅读树');
+      this._setStatus(t('已重新加入阅读树'));
     } catch {
-      this._setStatus('恢复失败 · Reading Workspace 不可用');
+      this._setStatus(t('恢复失败 · Reading Workspace 不可用'));
     } finally {
       message.restoringToReadingTree = false;
       this._renderAIMessages();

@@ -1,6 +1,7 @@
 // @ts-nocheck
 // Desktop settings use narrow validated IPC; the plaintext CLI mode remains
 // separate and is explicitly disclosed. Password inputs are never restored.
+import { t } from './i18n.ts';
 import { bridgeUrl } from './bridgeClient.ts';
 
 const GEMINI_FALLBACK = { configured: false, model: 'gemini-2.5-flash', proxy: '' };
@@ -59,14 +60,14 @@ export class AISettingsMethods {
     const desktop = typeof window !== 'undefined' && window.mojianDesktop;
     if (desktop?.aiSettings) {
       const result = await desktop.aiSettings(operation, payload);
-      if (!result.ok) throw new Error(result.error || '设置操作失败');
+      if (!result.ok) throw new Error(result.error || t('设置操作失败'));
       return result.value;
     }
     const path = operation === 'test' ? '/api/settings/test' : '/api/settings';
     const response = await fetch(bridgeUrl(path), operation === 'load' ? undefined : {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
     });
-    if (!response.ok) throw new Error('设置操作失败');
+    if (!response.ok) throw new Error(t('设置操作失败'));
     const value = await response.json();
     return operation === 'test' ? value : { providers: value, secureStorage: null };
   }
@@ -76,11 +77,46 @@ export class AISettingsMethods {
     this._aiSecureStorage = result.secureStorage;
   }
 
+  // Keep locale updates text-only: never reset unsaved credentials or form state.
+  _aiSettingsText(element, source, property = 'textContent') {
+    if (!this._aiSettingsLocaleBindings) this._aiSettingsLocaleBindings = [];
+    const update = () => {
+      if (property === 'aria-label') element.setAttribute(property, t(source));
+      else element[property] = t(source);
+    };
+    this._aiSettingsLocaleBindings.push(update);
+    update();
+  }
+
+  _refreshAISettingsLocale() {
+    (this._aiSettingsLocaleBindings || []).forEach((update) => update());
+    const inputs = this._aiSettingsInputs;
+    if (!inputs) return;
+    const configured = this.aiProviderSettings?.gemini?.configured;
+    inputs.key.placeholder = configured ? t('已配置，留空保持不变') : t('粘贴 Gemini API Key');
+    if (!this._aiSettingsTestStarted) {
+      this._setAISettingsNote(this._aiSettingsStorageDisclosure(), this._aiSettingsLoadError ? 'error' : '');
+    }
+  }
+
+  _aiSettingsStorageDisclosure() {
+    const gemini = this.aiProviderSettings?.gemini || GEMINI_FALLBACK;
+    const secure = this._aiSecureStorage;
+    const legacy = gemini.credentialStatus === 'migration-required';
+    return this._aiSettingsLoadError ? t('设置读取失败；未覆盖原有文件。')
+      : legacy ? t('发现旧明文 Key。点击“同意迁移”才会用系统安全存储加密并替换原文件；不会联网，也不会保留明文备份。')
+      : secure ? (secure.available
+        ? t('保存会使用本机系统安全存储加密 Key；保存不联网。')
+        : ({ unsupported: t('此平台暂不支持密钥安全存储。'), locked: t('系统安全存储已锁定或拒绝访问。'), unavailable: t('系统安全存储暂不可用。') }[secure.status]
+          || t('系统安全存储暂不可用。')) + t('不会回退为明文；普通编辑不受影响。'))
+        : t('命令行网页版将 Key 以明文保存在本机 settings.json；保存不联网。');
+  }
+
   _aiSettingsField(labelText, input) {
     const field = document.createElement('label');
     field.className = 'ai-settings-field';
     const label = document.createElement('span');
-    label.textContent = labelText;
+    this._aiSettingsText(label, labelText);
     field.append(label, input);
     return field;
   }
@@ -94,17 +130,17 @@ export class AISettingsMethods {
     modal.className = 'ai-settings-modal';
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
-    modal.setAttribute('aria-label', 'AI 设置');
+    this._aiSettingsText(modal, 'AI 设置', 'aria-label');
     modal.setAttribute('tabindex', '-1');
     const title = document.createElement('strong');
     title.className = 'ai-settings-title';
-    title.textContent = '设置';
+    this._aiSettingsText(title, '设置');
     const overline = document.createElement('div');
     overline.className = 'ai-settings-overline';
-    overline.textContent = 'AI 渠道';
+    this._aiSettingsText(overline, 'AI 渠道');
     const hint = document.createElement('p');
     hint.className = 'ai-settings-hint';
-    hint.textContent = '阅读问答使用所选渠道回答；渠道点击即生效。划词翻译固定走 Gemini。';
+    this._aiSettingsText(hint, '阅读问答使用所选渠道回答；渠道点击即生效。划词翻译固定走 Gemini。');
 
     const note = document.createElement('div');
     note.className = 'ai-settings-note';
@@ -112,7 +148,7 @@ export class AISettingsMethods {
     note.setAttribute('aria-live', 'polite');
     const disclosure = document.createElement('p');
     disclosure.className = 'ai-settings-disclosure ai-settings-hint';
-    disclosure.textContent = '“测试 Gemini 连接”只验证 Gemini，不验证所选的 Claude / Codex。仅点击测试才会将 Key 发送给 Google，可能产生 API 使用费用；使用已保存的代理（留空时使用系统代理变量）。修改代理后请先保存。测试最长等待 15 秒；打开设置和保存不会联网。';
+    this._aiSettingsText(disclosure, '“测试 Gemini 连接”只验证 Gemini，不验证所选的 Claude / Codex。仅点击测试才会将 Key 发送给 Google，可能产生 API 使用费用；使用已保存的代理（留空时使用系统代理变量）。修改代理后请先保存。测试最长等待 15 秒；打开设置和保存不会联网。');
 
     modal.append(title, overline, hint, this._buildAIChannelSection(), disclosure, note, this._buildAISettingsActions());
     overlay.appendChild(modal);
@@ -158,15 +194,15 @@ export class AISettingsMethods {
       const head = document.createElement('div');
       head.className = 'ai-channel-head';
       const name = document.createElement('strong');
-      name.textContent = channel.name;
+      this._aiSettingsText(name, channel.name);
       const desc = document.createElement('small');
       desc.className = 'ai-channel-desc';
-      desc.textContent = channel.desc;
+      this._aiSettingsText(desc, channel.desc);
       head.append(name, desc);
       const options = document.createElement('div');
       options.className = 'ai-channel-options';
       options.setAttribute('role', 'radiogroup');
-      options.setAttribute('aria-label', channel.name);
+      this._aiSettingsText(options, channel.name, 'aria-label');
       channel.engines.forEach((item) => options.appendChild(this._aiChannelOption(item)));
       group.append(head, options);
       if (channel.key === 'api') group.appendChild(this._buildGeminiForm());
@@ -218,7 +254,7 @@ export class AISettingsMethods {
     const proxy = document.createElement('input');
     proxy.type = 'text';
     proxy.spellcheck = false;
-    proxy.placeholder = '如 http://127.0.0.1:7890，留空自动用系统代理变量';
+    this._aiSettingsText(proxy, '如 http://127.0.0.1:7890，留空自动用系统代理变量', 'placeholder');
     form.append(
       this._aiSettingsField('Gemini API Key', key),
       this._aiSettingsField('模型', model),
@@ -238,29 +274,29 @@ export class AISettingsMethods {
     const testBtn = document.createElement('button');
     testBtn.type = 'button';
     testBtn.className = 'tbtn ai-settings-test';
-    testBtn.textContent = '测试 Gemini 连接';
+    this._aiSettingsText(testBtn, '测试 Gemini 连接');
     testBtn.addEventListener('click', () => this._testAISettings());
     const clear = document.createElement('button');
     clear.type = 'button';
     clear.className = 'tbtn ai-settings-clear';
-    clear.textContent = '清除 Key';
+    this._aiSettingsText(clear, '清除 Key');
     clear.addEventListener('click', () => this._clearAIKey());
     const spacer = document.createElement('span');
     spacer.className = 'spacer';
     const close = document.createElement('button');
     close.type = 'button';
     close.className = 'abtn secondary';
-    close.textContent = '关闭';
+    this._aiSettingsText(close, '关闭');
     close.addEventListener('click', () => this.closeAISettings());
     const save = document.createElement('button');
     save.type = 'button';
     save.className = 'abtn primary';
-    save.textContent = '保存';
+    this._aiSettingsText(save, '保存');
     save.addEventListener('click', () => this._saveAISettings());
     const migrate = document.createElement('button');
     migrate.type = 'button';
     migrate.className = 'tbtn ai-settings-migrate';
-    migrate.textContent = '同意迁移旧明文 Key';
+    this._aiSettingsText(migrate, '同意迁移旧明文 Key');
     migrate.style.display = 'none';
     migrate.addEventListener('click', () => this._migrateAIKey());
     actions.append(testBtn, clear, migrate, spacer, close, save);
@@ -291,7 +327,7 @@ export class AISettingsMethods {
 
   _invalidateAISettingsTest() {
     this._aiSettingsFormRevision = (this._aiSettingsFormRevision || 0) + 1;
-    if (this._aiSettingsTestStarted) this._setAISettingsNote('Gemini 配置已更改，请重新测试。', '');
+    if (this._aiSettingsTestStarted) this._setAISettingsNote(t('Gemini 配置已更改，请重新测试。'), '');
   }
 
   // Test the typed key/model, but use the saved proxy. Never test on open/save.
@@ -310,15 +346,15 @@ export class AISettingsMethods {
     const key = String(inputs.key.value || '').trim();
     if (key) payload.gemini.apiKey = key;
     this._setAISettingsBusy(true);
-    this._setAISettingsNote('正在验证 Gemini 连接…', '');
+    this._setAISettingsNote(t('正在验证 Gemini 连接…'), '');
     try {
       const result = await this._requestAISettings('test', payload);
       if (epoch !== this._aiSettingsEpoch || revision !== (this._aiSettingsFormRevision || 0)) return;
-      if (result.ok) this._setAISettingsNote('✓ Gemini 连接成功' + (result.model ? ' · ' + result.model : ''), 'ok');
-      else this._setAISettingsNote('✗ ' + (result.message || '验证失败'), 'error');
+      if (result.ok) this._setAISettingsNote(t('✓ Gemini 连接成功') + (result.model ? ' · ' + result.model : ''), 'ok');
+      else this._setAISettingsNote('✗ ' + (result.message || t('验证失败')), 'error');
     } catch (error) {
       if (epoch === this._aiSettingsEpoch && revision === (this._aiSettingsFormRevision || 0)) {
-        this._setAISettingsNote('✗ ' + (error.message || '验证失败'), 'error');
+        this._setAISettingsNote('✗ ' + (error.message || t('验证失败')), 'error');
       }
     } finally { this._setAISettingsBusy(false); }
   }
@@ -347,19 +383,12 @@ export class AISettingsMethods {
     const gemini = (this.aiProviderSettings && this.aiProviderSettings.gemini) || GEMINI_FALLBACK;
     const secure = this._aiSecureStorage;
     const legacy = gemini.credentialStatus === 'migration-required';
-    const disclosure = this._aiSettingsLoadError ? '设置读取失败；未覆盖原有文件。'
-      : legacy ? '发现旧明文 Key。点击“同意迁移”才会用系统安全存储加密并替换原文件；不会联网，也不会保留明文备份。'
-      : secure ? (secure.available
-        ? '保存会使用本机系统安全存储加密 Key；保存不联网。'
-        : ({ unsupported: '此平台暂不支持密钥安全存储。', locked: '系统安全存储已锁定或拒绝访问。', unavailable: '系统安全存储暂不可用。' }[secure.status]
-          || '系统安全存储暂不可用。') + '不会回退为明文；普通编辑不受影响。')
-        : '命令行网页版将 Key 以明文保存在本机 settings.json；保存不联网。';
-    this._setAISettingsNote(disclosure, this._aiSettingsLoadError ? 'error' : '');
+    this._setAISettingsNote(this._aiSettingsStorageDisclosure(), this._aiSettingsLoadError ? 'error' : '');
     if (this._aiSettingsMigrateBtn) this._aiSettingsMigrateBtn.style.display = legacy ? '' : 'none';
     inputs.key.value = '';
     inputs.key.placeholder = gemini.configured
-      ? '已配置，留空保持不变'
-      : '粘贴 Gemini API Key';
+      ? t('已配置，留空保持不变')
+      : t('粘贴 Gemini API Key');
     inputs.model.value = gemini.model || GEMINI_FALLBACK.model;
     inputs.proxy.value = gemini.proxy || '';
     if (this._aiSettingsClearBtn) this._aiSettingsClearBtn.style.display = (gemini.configured || legacy) ? '' : 'none';
@@ -391,9 +420,9 @@ export class AISettingsMethods {
       this.closeAISettings();
       const configured = this.aiProviderSettings && this.aiProviderSettings.gemini
         && this.aiProviderSettings.gemini.configured;
-      this._setStatus(configured ? 'AI 设置已保存 · Gemini 已配置' : 'AI 设置已保存');
+      this._setStatus(configured ? t('AI 设置已保存 · Gemini 已配置') : t('AI 设置已保存'));
     } catch (error) {
-      if (epoch === this._aiSettingsEpoch) this._setStatus(error.message || '设置保存失败');
+      if (epoch === this._aiSettingsEpoch) this._setStatus(error.message || t('设置保存失败'));
     } finally { this._setAISettingsBusy(false); }
   }
 
@@ -408,8 +437,8 @@ export class AISettingsMethods {
       if (epoch !== this._aiSettingsEpoch) return;
       this._acceptAISettings(result);
       this._syncAISettingsForm();
-      this._setStatus('旧 Key 已迁移为本机加密存储');
-    } catch (error) { if (epoch === this._aiSettingsEpoch) this._setStatus(error.message || '迁移失败，原文件已保留'); }
+      this._setStatus(t('旧 Key 已迁移为本机加密存储'));
+    } catch (error) { if (epoch === this._aiSettingsEpoch) this._setStatus(error.message || t('迁移失败，原文件已保留')); }
     finally { this._setAISettingsBusy(false); }
   }
 
@@ -424,9 +453,9 @@ export class AISettingsMethods {
       if (epoch !== this._aiSettingsEpoch) return;
       this._acceptAISettings(result);
       this._syncAISettingsForm();
-      this._setStatus('已清除 Gemini API Key');
+      this._setStatus(t('已清除 Gemini API Key'));
     } catch (error) {
-      if (epoch === this._aiSettingsEpoch) this._setStatus(error.message || 'Key 清除失败');
+      if (epoch === this._aiSettingsEpoch) this._setStatus(error.message || t('Key 清除失败'));
     } finally { this._setAISettingsBusy(false); }
   }
 }
