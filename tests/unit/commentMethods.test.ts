@@ -198,10 +198,10 @@ test('_applyCommentsPanelWidth 按窗口夹取宽度并同步面板与分栏变�
     assert.equal(vars['--active-side-panel-width'], '500px', '开启时同步分栏宽度变量');
 
     editor._applyCommentsPanelWidth(100);
-    assert.equal(editor.commentsPanelWidth, 280, '不小于下限 280');
+    assert.equal(editor.commentsPanelWidth, 320, '不小于与 AI 面板一致的下限 320');
 
     editor._applyCommentsPanelWidth(2000);
-    assert.equal(editor.commentsPanelWidth, 760, '不超过 min(760, 窗口 60%)');
+    assert.equal(editor.commentsPanelWidth, 760, '不超过 min(760, 窗口 55%)');
   } finally {
     if (prev) Object.defineProperty(globalThis, 'window', prev);
     else delete (globalThis as Record<string, unknown>).window;
