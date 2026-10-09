@@ -132,10 +132,11 @@ export class AIMethods {
     const aside = this.aiPanelRef.current;
     const split = this.splitRef.current;
     if (!aside || !split) return;
-    const max = Math.max(380, Math.min(920, window.innerWidth * 0.72));
-    this.aiPanelWidth = Math.round(Math.max(380, Math.min(max, width || 480)));
+    const max = Math.max(320, Math.min(760, window.innerWidth * 0.55));
+    this.aiPanelWidth = Math.round(Math.max(320, Math.min(max, width || 360)));
     aside.style.width = this.aiPanelWidth + 'px';
     split.style.setProperty('--active-side-panel-width', this.aiPanelWidth + 'px');
+    this._syncWorkspacePanelWidth?.();
   }
 
 
@@ -191,7 +192,10 @@ export class AIMethods {
     this.aiPanelOpen = (show === undefined || show === null) ? !this.aiPanelOpen : show;
     if (!this.aiPanelOpen) this._aiActionEpoch = (this._aiActionEpoch || 0) + 1;
     aside.style.display = this.aiPanelOpen ? 'flex' : 'none';
-    if (this.aiPanelOpen) this._applyAIPanelWidth(this.aiPanelWidth);
+    if (this.aiPanelOpen) {
+      const sharedWidth = this.panelOpen ? this.commentsPanelWidth : this.aiPanelWidth;
+      this._applyAIPanelWidth(sharedWidth);
+    }
     if (this.aiPanelOpen && this.panelOpen) {
       this.panelOpen = false;
       if (this.commentsRef.current) this.commentsRef.current.style.display = 'none';
@@ -418,7 +422,7 @@ export class AIMethods {
       empty.className = 'ai-empty';
       const prompt = document.createElement('span'), hint = document.createElement('small');
       prompt.textContent = t('选择一段原文，然后提出你的疑问。');
-      hint.textContent = t('回答由所选 AI 渠道（本地 Agent 或 API Key）生成，并归档到阅读工作区。渠道在顶栏「设置」里更换。');
+      hint.textContent = t('回答由所选 AI 渠道（本地 Agent 或 API Key）生成，并归档到阅读工作区。渠道在「设置 → AI」中更换。');
       empty.append(prompt, hint);
       list.appendChild(empty);
       return;

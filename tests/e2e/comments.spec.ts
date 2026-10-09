@@ -4,10 +4,17 @@ import type { Page } from '@playwright/test';
 // 在预览里用真实鼠标手势划选一段文字，浮出划词工具条。
 async function selectInPreview(page: Page) {
   const paragraph = page.locator('.md-preview p').first();
-  const box = (await paragraph.boundingBox())!;
-  await page.mouse.move(box.x + 2, box.y + box.height / 2);
+  const box = await paragraph.evaluate(element => {
+    const node = element.firstChild!;
+    const range = document.createRange();
+    range.setStart(node, 0);
+    range.setEnd(node, Math.min(8, node.textContent!.length));
+    const rect = range.getClientRects()[0];
+    return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+  });
+  await page.mouse.move(box.x + 1, box.y + box.height / 2);
   await page.mouse.down();
-  await page.mouse.move(box.x + Math.min(box.width - 4, 160), box.y + box.height / 2, { steps: 6 });
+  await page.mouse.move(box.x + box.width - 1, box.y + box.height / 2, { steps: 6 });
   await page.mouse.up();
   await expect(page.locator('.selection-toolbar')).toBeVisible();
 }

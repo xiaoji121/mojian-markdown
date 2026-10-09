@@ -37,7 +37,7 @@ for (const paper of ['ink', 'green', 'snow']) {
     await page.locator(`.paper-dot[data-paper="${paper}"]`).click();
     await page.locator('.reading-appearance-panel .appearance-close').click();
     await page.getByRole('button', { name: '沉浸式阅读', exact: true }).click();
-    const button = page.locator('.file-menu-toggle');
+    const button = page.locator('.focus-settings-button');
     await page.locator('.md-preview h1').first().hover();
     await expect(button).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
     const paperText = await button.evaluate(el => {
@@ -53,8 +53,7 @@ for (const paper of ['ink', 'green', 'snow']) {
     await button.focus();
     await expect(button).toHaveCSS('outline-style', 'solid');
     await page.keyboard.press('Enter');
-    await expect(page.locator('.file-menu')).toBeVisible();
-    await page.locator('.global-settings-entry').click();
+    await expect(page.locator('.reading-appearance-panel')).toBeVisible();
     await expect(page.locator('.reading-appearance-panel')).toBeVisible();
   });
 }

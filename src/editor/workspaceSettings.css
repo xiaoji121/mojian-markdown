@@ -1,0 +1,32 @@
+/* Full preferences and lightweight reading adjustments share the same values. */
+.workspace-settings-backdrop { position: fixed; inset: 0; z-index: 180; display: grid; place-items: center; padding: 24px; background: color-mix(in srgb, var(--text) 16%, transparent); }
+.workspace-settings-backdrop[hidden] { display: none; }
+.workspace-settings.preferences-panel { position: relative; inset: auto; width: min(820px, 100%); max-width: 100%; height: min(640px, calc(100dvh - 48px)); max-height: none; padding: 0; gap: 0; overflow: hidden; background: var(--bg); box-shadow: var(--shadow-lg); }
+.workspace-settings > .appearance-panel-header { flex: none; min-height: 64px; padding: 16px 24px; border-bottom: 1px solid var(--border-soft); }
+.workspace-settings-layout { display: grid; grid-template-columns: 180px minmax(0, 1fr); min-height: 0; flex: 1; }
+.workspace-settings-nav { display: flex; flex-direction: column; gap: 6px; padding: 20px 12px; border-right: 1px solid var(--border-soft); }
+.workspace-settings-nav button { text-align: left; border: 0; border-radius: var(--radius-control); background: transparent; color: var(--text-2); padding: 12px; font: var(--fs-md)/1.4 var(--sans); cursor: pointer; }
+.workspace-settings-nav button[aria-selected='true'] { color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+.workspace-settings-content { min-height: 0; overflow-y: auto; padding: 24px; }
+.workspace-settings-content [role='tabpanel'] { display: flex; flex-direction: column; gap: 20px; }
+.workspace-settings-content [role='tabpanel'][hidden] { display: none; }
+.workspace-settings-content h3 { margin: 0; font: 600 var(--fs-lg)/1.5 var(--sans); }
+.workspace-settings .interface-language-panel { display: block; position: static; width: auto; padding: 0; border: 0; box-shadow: none; }
+.workspace-settings .appearance-note { line-height: 1.7; margin: 0; }
+.workspace-settings .reading-font-select { padding: 10px; }
+.workspace-settings .appearance-row { min-height: 32px; }
+.workspace-settings .settings-home-link { align-self: flex-start; }
+.quick-appearance-panel { width: 290px; right: auto; }
+.quick-paper-dot { height: 24px; width: 24px; border-radius: 50%; border: 1px solid var(--border); cursor: pointer; }
+.quick-paper-dot[aria-pressed='true'] { outline: 2px solid var(--accent); outline-offset: 2px; }
+.quick-appearance-panel .tbtn { padding-inline: 8px; }
+.quick-font-value { min-width: 36px; text-align: center; }
+@media (max-width: 600px) {
+  .workspace-settings-backdrop { padding: 12px; }
+  .workspace-settings.preferences-panel { height: calc(100dvh - 24px); }
+  .workspace-settings > .appearance-panel-header { min-height: 48px; padding: 8px 16px; }
+  .workspace-settings-layout { display: flex; flex-direction: column; }
+  .workspace-settings-nav { flex: none; flex-direction: row; overflow-x: auto; gap: 2px; padding: 8px; border-right: 0; border-bottom: 1px solid var(--border-soft); }
+  .workspace-settings-nav button { padding: 8px 10px; white-space: nowrap; font-size: var(--fs-sm); }
+  .workspace-settings-content { padding: 16px; }
+}

@@ -10,8 +10,7 @@ for (const immersive of [false, true]) {
     const preview = page.locator('.md-preview');
     await preview.evaluate(element => { element.scrollTop = 700; });
     await expect.poll(() => preview.evaluate(element => element.scrollTop)).toBe(700);
-    await page.locator('.file-menu-toggle').click();
-    await page.locator('.global-settings-entry').click();
+    await openAppearance(page);
     const panel = page.locator('.reading-appearance-panel');
     await expect(panel).toBeVisible();
     await expect(panel).toHaveAttribute('role', 'dialog');
@@ -33,7 +32,7 @@ for (const immersive of [false, true]) {
     await expect(panel).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(panel).toBeHidden();
-    await expect(page.locator('.file-menu-toggle')).toBeFocused();
+    await expect(page.locator('.workspace-settings-button:visible, .focus-settings-button:visible')).toBeFocused();
     await expect.poll(() => preview.evaluate(element => element.scrollTop)).toBe(900);
     await expect(page.locator('.preview-pane')).toHaveClass(immersive ? /preview-pane-fullscreen/ : /^preview-pane$/);
   });
@@ -43,8 +42,7 @@ test('global settings work in source-only mode and fit short narrow screens', as
   await page.setViewportSize({ width: 390, height: 520 });
   await openEditor(page);
   await page.locator('[data-mode="editor"]').click();
-  await page.locator('.file-menu-toggle').click();
-  await page.locator('.global-settings-entry').click();
+  await openAppearance(page);
   await expect(page.locator('.editor-main')).toHaveClass(/editor-mode-active/);
   const panel = page.locator('.reading-appearance-panel');
   await expect(panel).toBeVisible();
@@ -58,7 +56,7 @@ test('global settings work in source-only mode and fit short narrow screens', as
   await page.screenshot({ path: testInfo.outputPath('global-settings-short-screen.png') });
   await page.locator('.reading-appearance-panel .appearance-close').click();
   await expect(panel).toBeHidden();
-  await expect(page.locator('.file-menu-toggle')).toBeFocused();
+  await expect(page.locator('.workspace-settings-button:visible, .focus-settings-button:visible')).toBeFocused();
 });
 
 for (const width of [390, 1440]) {
@@ -78,7 +76,7 @@ for (const width of [390, 1440]) {
       await page.locator('[data-mode="preview"]').click();
       const immersive = page.getByRole('button', { name: '沉浸式阅读', exact: true });
       await immersive.click();
-      const more = await page.locator('.file-menu-toggle').boundingBox();
+      const more = await page.locator('.focus-settings-button').boundingBox();
       const exit = await immersive.boundingBox();
       await page.screenshot({ path: testInfo.outputPath(`immersive-controls-${width}-wide-${wide}.png`) });
       expect(exit!.x + exit!.width).toBeLessThanOrEqual(more!.x);
@@ -120,8 +118,7 @@ test('reading preferences are global across new documents and reloads', async ({
   await page.locator('.immersive-wide-toggle').click();
   await page.keyboard.press('Escape');
   page.once('dialog', dialog => dialog.accept());
-  await page.locator('.file-menu-toggle').click();
-  await page.getByRole('menuitem', { name: '新建文档', exact: true }).click();
+  await page.getByRole('button', { name: '新建文档', exact: true }).click();
   await expect(page.locator('.md-source')).toHaveValue('');
   await setSource(page, '# 第二篇文档\n\n沿用全局排版偏好。');
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('md-editor-warm-v1') || '{}').content)).toContain('第二篇文档');

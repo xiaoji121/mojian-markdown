@@ -1,4 +1,4 @@
-import { test, expect, openEditor, setSource } from './fixtures';
+import { test, expect, openEditor, openAppearance, setSource } from './fixtures';
 import type { Page } from '@playwright/test';
 
 // 注入假的 File System Access API：window.__fakeLocalFile 模拟磁盘上的真实文件，
@@ -33,8 +33,7 @@ async function installFakeLocalFile(page: Page, content: string) {
 }
 
 async function openFakeLocalFile(page: Page) {
-  await page.getByRole('button', { name: '更多操作' }).click();
-  await page.locator('.file-menu').getByRole('menuitem', { name: /^打开/ }).click();
+  await page.getByRole('button', { name: '打开文件', exact: true }).click();
   await expect(page.locator('.md-source')).toHaveValue(/原始内容/);
   // 正文会先出现，随后才完成工作区认领与本地句柄初始化；等打开流程真正结束再编辑。
   await expect(page.locator('.save-status')).toContainText('已打开 · 本地笔记.md');
@@ -68,11 +67,11 @@ test('关联文件夹后显示文档的本地相对路径', async ({ page }) => 
   await openEditor(page);
   await openFakeLocalFile(page);
 
-  await page.getByRole('button', { name: '更多操作' }).click();
-  const folderItem = page.getByRole('menuitem', { name: /关联本地文件夹/ });
-  // 菜单项自带用途说明：hover 提示 + 常显副标题
+  await openAppearance(page);
+  await page.locator('[data-settings-tab=integrations]').click();
+  const folderItem = page.getByRole('button', { name: /关联本地文件夹/ });
+  // 设置入口保留本地路径用途提示
   await expect(folderItem).toHaveAttribute('title', /本地路径/);
-  await expect(folderItem.locator('.menu-item-hint')).toContainText('本地路径');
   await folderItem.click();
 
   await expect(page.locator('.file-name')).toHaveAttribute(

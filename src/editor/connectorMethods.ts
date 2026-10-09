@@ -27,7 +27,8 @@ export class ConnectorMethods {
 
 
   _applyConnectorCapabilities(capabilities) {
-    const menu = this.fileMenuRef && this.fileMenuRef.current;
+    const fileMenu = this.fileMenuRef && this.fileMenuRef.current;
+    const menu = fileMenu?.closest?.('.app-shell')?.querySelector('.export-menu') || fileMenu;
     if (!menu || !menu.querySelectorAll) return;
     menu.querySelectorAll('.publish-menu-item[data-target]').forEach((button) => {
       const target = button.dataset.target;

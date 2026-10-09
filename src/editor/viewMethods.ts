@@ -86,6 +86,7 @@ export class ViewMethods {
   }
 
   _applyPaper() {
+    this._syncQuickAppearance?.();
     const active = this._resolvedPaper();
     try { document.body.setAttribute('data-paper', active); } catch (e) {}
     const picker = this.paperPickerRef.current;
@@ -137,37 +138,12 @@ export class ViewMethods {
     };
   }
 
-  _initReadingAppearance() {
-    if (this.appearancePanelRef.current) this.appearancePanelRef.current.hidden = true;
-    this._appearanceOutsideH = (event) => {
-      const panel = this.appearancePanelRef.current, button = this.fileMenuButtonRef.current;
-      if (!this.appearanceOpen || panel?.contains(event.target) || button?.contains(event.target)) return;
-      this.toggleReadingAppearance(false);
-    };
-    this._appearanceFocusH = this._appearanceOutsideH;
-    document.addEventListener('pointerdown', this._appearanceOutsideH);
-    document.addEventListener('focusin', this._appearanceFocusH);
-  }
-
-  toggleReadingAppearance(force, returnFocus = false) {
-    const panel = this.appearancePanelRef.current;
-    if (!panel) return;
-    this.appearanceOpen = typeof force === 'boolean' ? force : !this.appearanceOpen;
-    panel.hidden = !this.appearanceOpen;
-    if (this.appearanceOpen) this._renderUserReadingFonts?.();
-    if (this.appearanceOpen) panel.focus({ preventScroll: true });
-    else if (returnFocus) this.fileMenuButtonRef.current?.focus({ preventScroll: true });
-  }
-
-  _disposeReadingAppearance() {
-    document.removeEventListener('pointerdown', this._appearanceOutsideH);
-    document.removeEventListener('focusin', this._appearanceFocusH);
-  }
-
   togglePreviewFullscreen(force) {
     const pane = this.previewPaneRef.current;
     if (!pane) return;
     const next = typeof force === 'boolean' ? force : !this.previewFullscreen;
+    if (next === this.previewFullscreen) return;
+    this._focusWorkspacePanels?.(next);
     this.previewFullscreen = next;
     this._syncPreviewEditable();
     pane.classList.toggle('preview-pane-fullscreen', this.previewFullscreen);
@@ -577,6 +553,7 @@ export class ViewMethods {
 
   _setDirty(d) {
     this.dirty = d;
+    this._syncWorkspaceChrome?.();
     if (this.dirtyDotRef.current) this.dirtyDotRef.current.style.background = d ? 'var(--accent)' : 'var(--text-4)';
   }
 
@@ -594,10 +571,14 @@ export class ViewMethods {
   }
 
 
-  _setStatus(msg) { if (this.saveStatusRef.current) this.saveStatusRef.current.textContent = msg; }
+  _setStatus(msg) {
+    if (this.saveStatusRef.current) this.saveStatusRef.current.textContent = msg;
+    this._syncWorkspaceChrome?.();
+  }
 
 
   _applyFont() {
+    this._syncQuickAppearance?.();
     const px = this.fontSize;
     const prev = this.previewRef.current, src = this.sourceRef.current;
     if (prev) prev.style.fontSize = px + 'px';
@@ -617,6 +598,7 @@ export class ViewMethods {
 
   _setFileName(name) {
     this.fileName = name;
+    if (!this.agentBridgeEnabled) this._renderRecentDocuments?.();
     if (this.fileNameRef.current) this.fileNameRef.current.textContent = name;
     if (typeof this._syncFileNameTooltip === 'function') this._syncFileNameTooltip();
     if (typeof this._updateFooterPath === 'function') this._updateFooterPath();

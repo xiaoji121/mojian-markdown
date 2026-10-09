@@ -1,8 +1,8 @@
 import { landingCopy } from './copy.ts';
 import { landingLocales, localeFromPath } from './route.ts';
+import { SITE_URL } from './site.ts';
 export { localeFromPath, localeHref } from './route.ts';
-// Existing public deployment, verified in README.md and README.en.md.
-export const SITE_URL = 'https://yuxizhai.com/md-editor/';
+export { SITE_URL } from './site.ts';
 const REPO = 'https://github.com/xiaoji121/mojian-markdown';
 export const escapeHtml = (value: string) => value.replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]!));
 export function renderMetadata(locale: string, path = `/md-editor/${locale}/`): string {

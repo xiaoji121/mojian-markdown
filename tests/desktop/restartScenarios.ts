@@ -88,14 +88,16 @@ async function editBeforeDebounce(page: Page, content: string) {
 }
 
 async function openPath(page: Page, path: string) {
-  await page.getByRole('button', { name: '更多操作', exact: true }).click();
-  await page.getByRole('menuitem', { name: '输入绝对路径打开…' }).click();
+  await page.keyboard.press('ControlOrMeta+,');
+  await page.locator('[data-settings-tab=general]').click();
+  await page.getByRole('button', { name: '输入绝对路径打开…' }).click();
   await page.locator('.file-path-input').fill(path);
   await page.getByRole('button', { name: '打开该路径' }).click();
 }
 
 async function openSettings(page: Page) {
-  await page.getByRole('button', { name: '更多操作', exact: true }).click();
+  await page.keyboard.press('ControlOrMeta+,');
+  await page.locator('[data-settings-tab=ai]').click();
   await page.locator('.settings-entry').click();
   await expect(page.locator('.ai-settings-modal')).toBeVisible();
 }
@@ -156,6 +158,7 @@ export function registerRestartScenarios(label: string, executablePath?: string)
       await openSettings(page);
       await page.getByRole('radio', { name: /Gemini/ }).click();
       await page.locator('.ai-settings-modal').getByRole('button', { name: '关闭', exact: true }).click();
+      await page.keyboard.press('Escape');
       const content = original + '\n窗口关闭前最后输入，不能等待自动保存。\n';
       await editBeforeDebounce(page, content);
       await closeEditorWindow(app);

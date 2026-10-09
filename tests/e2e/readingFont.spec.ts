@@ -37,7 +37,7 @@ test('offline bundled roman, bold and italic load; prose, code and UI stay separ
     ]);
     await document.fonts.ready;
     const family = (selector: string) => getComputedStyle(document.querySelector(selector)!).fontFamily;
-    return { loaded: loaded.map(list => list.length), prose: family('.md-preview'), code: family('.md-preview code'), ui: family('.file-menu-toggle'), format: family('.fmt-h') };
+    return { loaded: loaded.map(list => list.length), prose: family('.md-preview'), code: family('.md-preview code'), ui: family('.export-menu-toggle'), format: family('.fmt-h') };
   });
   expect(result.loaded.every(count => count > 0)).toBe(true);
   expect(result.prose).toContain('Source Serif 4');
@@ -63,7 +63,7 @@ test('old draft migration preserves content, invalid font IDs cannot inject CSS'
 test('long-image waits for bundled fonts and snapshots chosen face and document rhythm', async ({ page }) => {
   await openEditor(page);
   await setSource(page, '# Font export\n\nReadable **bold** and *italic* mixed with 阅读 閱讀 読む.');
-  await page.getByRole('button', { name: '更多操作', exact: true }).click();
+  await page.getByRole('button', { name: '导出', exact: true }).click();
   await page.getByRole('menuitem', { name: '导出长图', exact: true }).click();
   await expect(page.locator('.longimg-poster')).toBeVisible();
   const result = await page.evaluate(async () => {
@@ -88,7 +88,7 @@ test('immediate export stays disabled until current font preparation settles', a
     Object.defineProperty(fonts, 'ready', { configurable: true,
       value: new Promise(resolve => { fonts.releaseForTest = () => resolve(fonts); }) });
   });
-  await page.getByRole('button', { name: '更多操作', exact: true }).click();
+  await page.getByRole('button', { name: '导出', exact: true }).click();
   await page.getByRole('menuitem', { name: '导出长图', exact: true }).click();
   await expect(page.locator('.longimg-poster')).toBeVisible();
   await expect(page.locator('.longimg-save')).toBeDisabled();

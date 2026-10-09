@@ -69,7 +69,8 @@ export function registerSecureSettingsScenario(label: string, executablePath?: s
       expect(await readFile(settingsPath, 'utf8')).toContain(fakeKey);
       expect((await call('migrate', { consent: false })).ok).toBe(false);
       expect(await readFile(settingsPath, 'utf8')).toContain(fakeKey);
-      await current.page.getByRole('button', { name: '更多操作', exact: true }).click();
+      await current.page.keyboard.press('ControlOrMeta+,');
+      await current.page.locator('[data-settings-tab=ai]').click();
       await current.page.locator('.settings-entry').click();
       await expect(current.page.locator('.ai-settings-note')).toContainText('点击“同意迁移”');
       await current.page.getByRole('button', { name: '同意迁移旧明文 Key', exact: true }).click();

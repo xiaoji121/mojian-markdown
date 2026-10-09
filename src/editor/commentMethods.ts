@@ -251,10 +251,11 @@ export class CommentMethods {
     const aside = this.commentsRef.current;
     const split = this.splitRef.current;
     if (!aside) return;
-    const max = Math.max(300, Math.min(760, window.innerWidth * 0.6));
-    this.commentsPanelWidth = Math.round(Math.max(280, Math.min(max, width || 340)));
+    const max = Math.max(320, Math.min(760, window.innerWidth * 0.55));
+    this.commentsPanelWidth = Math.round(Math.max(320, Math.min(max, width || 360)));
     aside.style.width = this.commentsPanelWidth + 'px';
     if (this.panelOpen && split) split.style.setProperty('--active-side-panel-width', this.commentsPanelWidth + 'px');
+    this._syncWorkspacePanelWidth?.();
   }
 
   _initCommentsResize() {
@@ -290,7 +291,10 @@ export class CommentMethods {
     if (!aside) return;
     this.panelOpen = (show === undefined || show === null) ? !this.panelOpen : show;
     aside.style.display = this.panelOpen ? 'flex' : 'none';
-    if (this.panelOpen) this._applyCommentsPanelWidth(this.commentsPanelWidth);
+    if (this.panelOpen) {
+      const sharedWidth = this.aiPanelOpen ? this.aiPanelWidth : this.commentsPanelWidth;
+      this._applyCommentsPanelWidth(sharedWidth);
+    }
     if (this.panelOpen && this.aiPanelOpen) {
       this.aiPanelOpen = false;
       if (this.aiPanelRef.current) this.aiPanelRef.current.style.display = 'none';
@@ -303,8 +307,10 @@ export class CommentMethods {
   _syncFullscreenLayout() {
     const split = this.splitRef.current;
     if (!split) return;
+    this._syncWorkspaceChrome?.();
     split.classList.toggle('preview-fullscreen-active', this.previewFullscreen);
     split.classList.toggle('fullscreen-comments-open', this.previewFullscreen && (this.panelOpen || this.aiPanelOpen));
+    this._syncWorkspacePanelWidth?.();
   }
 
 
@@ -342,6 +348,7 @@ export class CommentMethods {
 
 
   _renderComments() {
+    this._syncWorkspaceChrome?.();
     const list = this.commentListRef.current;
     if (this.commentCountRef.current) this.commentCountRef.current.textContent = this.comments.length;
     if (this.previewCommentCountRef.current) this.previewCommentCountRef.current.textContent = this.comments.length;

@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { filterWorkspaceDocuments } from './workspaceNavigationMethods.ts';
 import { t, getLocale } from './i18n.ts';
 import { saveEditorState } from './storage.ts';
 import { isPristineSample } from './sample.ts';
@@ -76,8 +77,19 @@ export class BridgeMethods {
     this._updateFooterPath();
     this._syncDocumentSidebar();
     list.innerHTML = '';
-    const docs = [...this.recentDocuments].sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
+    const docs = filterWorkspaceDocuments(this.recentDocuments, this.workspaceDocumentQuery).sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
     if (this.documentCountRef.current) this.documentCountRef.current.textContent = String(docs.length);
+    if (!this.agentBridgeEnabled && this._renderLocalWorkspaceDocument) {
+      this._renderLocalWorkspaceDocument(list);
+      return;
+    }
+    if (!docs.length && this.workspaceDocumentQuery?.trim()) {
+      const empty = document.createElement('p');
+      empty.className = 'recent-documents-empty';
+      empty.textContent = t('没有匹配的文档');
+      list.appendChild(empty);
+      return;
+    }
     if (!docs.length) {
       const empty = document.createElement('div');
       empty.className = 'recent-documents-empty';
@@ -103,7 +115,7 @@ export class BridgeMethods {
     }
     // 最近区：默认只留最近 N 篇，另加当前打开与本会话开过的，其余折叠。
     const sessionOpened = this._sessionOpenedIds instanceof Set ? this._sessionOpenedIds : new Set();
-    const expanded = !!this.recentListExpanded;
+    const expanded = !!this.recentListExpanded || !!this.workspaceDocumentQuery?.trim();
     const keep = (doc, index) => index < RECENT_VISIBLE_LIMIT
       || doc.documentId === this.bridgeDocumentId
       || sessionOpened.has(doc.documentId);
@@ -140,9 +152,10 @@ export class BridgeMethods {
     button.type = 'button';
     button.setAttribute('aria-current', doc.documentId === this.bridgeDocumentId ? 'page' : 'false');
     const icon = document.createElement('span');
-    // 左侧图标兼作固定态常显指示：固定为 ★，未固定为普通图标，且不与文件名重叠。
+    // 统一使用轻量文件图标，固定状态由列表分组表达。
     icon.className = 'recent-document-icon' + (isPinned ? ' is-pinned' : '');
-    icon.textContent = isPinned ? '★' : '▧';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.innerHTML = '<svg viewBox="0 0 20 22"><path d="M4 2h7l5 5v13H4Z M11 2v5h5 M7 11h6 M7 15h6"/></svg>';
     const body = document.createElement('span');
     body.className = 'recent-document-body';
     const name = document.createElement('strong');
@@ -151,6 +164,8 @@ export class BridgeMethods {
     const time = document.createElement('small');
     time.textContent = this._formatRecentTime(doc.updatedAt) +
       t(" · {annotations} 批注 · {questions} 问答", { annotations: doc.annotationCount || 0, questions: doc.questionCount || 0 });
+    button.title = doc.fileName + '\n' + time.textContent;
+    button.setAttribute('aria-description', time.textContent);
     body.append(name, time);
     button.append(icon, body);
     button.addEventListener('click', () => this.openRecentDocument(doc.documentId));
@@ -630,10 +645,12 @@ export class BridgeMethods {
   _syncDocumentSidebar() {
     const sidebar = this.documentSidebarRef?.current;
     if (!sidebar) return;
-    const open = this._sidebarExplicitOpen ?? !!this.recentDocuments.length;
+    const open = this._sidebarExplicitOpen ?? true;
     sidebar.classList.toggle('is-collapsed', !open);
     if (typeof document !== 'undefined') {
-      document.querySelector?.('.document-toggle')?.setAttribute('aria-expanded', String(open));
+      const mobile = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 760px)').matches;
+      const expanded = mobile ? sidebar.classList.contains('is-mobile-open') : open;
+      document.querySelector?.('.document-toggle')?.setAttribute('aria-expanded', String(expanded));
     }
   }
 

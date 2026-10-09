@@ -268,6 +268,38 @@ test('输入绝对路径后通过桌面端打开 Markdown', async () => {
   }
 });
 
+test('桌面文件异步认领期间的新输入不会被打开流程标记为已保存', async () => {
+  const source = createSource('旧内容', 0);
+  const editor = createEditor(source) as EditingFileLayoutMethods & Record<string, any>;
+  const previousWindow = globalThis.window;
+  let releaseAdoption: (() => void) | undefined;
+  const adoptionReady = new Promise<void>((resolve) => { releaseAdoption = resolve; });
+  editor._setFileName = (name: string) => { editor.fileName = name; };
+  editor._attachLocalFile = async () => {};
+  editor._adoptBridgeDocument = async () => { await adoptionReady; };
+  editor._renderComments = () => {};
+  editor._renderPreview = () => {};
+  editor._setStatus = () => {};
+  editor._setDirty = (dirty: boolean) => { editor.dirty = dirty; };
+  editor._autosave = () => {};
+  globalThis.window = {};
+  try {
+    const opening = editor._openDesktopFile({
+      path: '/tmp/异步打开.md', name: '异步打开.md', content: '# 初始内容'
+    });
+    source.value = '# 用户已经输入的新内容';
+    editor._documentEditRevision = 1;
+    editor.dirty = true;
+    releaseAdoption!();
+    await opening;
+
+    assert.equal(source.value, '# 用户已经输入的新内容');
+    assert.equal(editor.dirty, true);
+  } finally {
+    globalThis.window = previousWindow;
+  }
+});
+
 test('取消输入绝对路径时不读取文件', async () => {
   let opened = 0;
   (globalThis as { window?: unknown }).window = {
@@ -322,13 +354,18 @@ test('桌面端 _initDesktop 给 body 打上 is-desktop-app 标记（CSS 据此�
     }
   };
   const classes = new Set<string>();
+  const homeLink = { href: '#', target: '', rel: '' };
   (globalThis as { document?: unknown }).document = {
-    body: { classList: { add: (name: string) => classes.add(name) } }
+    body: { classList: { add: (name: string) => classes.add(name) } },
+    querySelector: (selector: string) => selector === '.settings-home-link' ? homeLink : null
   };
   try {
     const editor = new EditingFileLayoutMethods() as EditingFileLayoutMethods & Record<string, any>;
     editor._initDesktop();
     assert.ok(classes.has('is-desktop-app'));
+    assert.equal(homeLink.href, 'https://yuxizhai.com/md-editor/');
+    assert.equal(homeLink.target, '_blank');
+    assert.equal(homeLink.rel, 'noopener noreferrer');
   } finally {
     delete (globalThis as { window?: unknown }).window;
     delete (globalThis as { document?: unknown }).document;

@@ -36,13 +36,30 @@ export async function selectInSource(page: Page, text: string) {
   }, text);
 }
 
-// Global preferences are reachable from the same More menu in every editor layout.
+// Preferences are fixed in the workspace sidebar, with a focus-mode shortcut.
 export async function openAppearance(page: Page) {
+  await expect(page.locator('.md-source')).toHaveAttribute('lang', /.*/);
   const panel = page.locator('.reading-appearance-panel');
-  if (await panel.isVisible()) return;
-  await page.locator('.file-menu-toggle').click();
-  await page.locator('.global-settings-entry').click();
+  if (!(await panel.isVisible())) {
+    if (await page.locator('.focus-settings-button').isVisible()) {
+      await page.locator('.focus-settings-button').click();
+    } else {
+      const sidebarClosed = await page.locator('.document-sidebar').evaluate(sidebar =>
+        window.matchMedia('(max-width: 760px)').matches
+          ? !sidebar.classList.contains('is-mobile-open') : sidebar.classList.contains('is-collapsed'));
+      if (sidebarClosed) await page.locator('.document-toggle').click();
+      await page.locator('.workspace-settings-button').click();
+    }
+  }
+  await panel.locator('[data-settings-tab="reading"]').click();
   await expect(panel).toBeVisible();
+}
+
+export async function openAISettings(page: Page) {
+  await openAppearance(page);
+  await page.locator('[data-settings-tab="ai"]').click();
+  await page.locator('.settings-entry').click();
+  await expect(page.locator('.ai-settings-overlay')).toBeVisible();
 }
 
 // Font import and licensing details live behind an optional disclosure.

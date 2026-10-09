@@ -48,8 +48,9 @@ test('Windows packaged app saves Chinese/space paths and survives restart', asyn
     expect(await page.evaluate(() => fetch('/health').then((response) => response.json())))
       .toEqual({ ok: true });
 
-    await page.getByRole('button', { name: '更多操作', exact: true }).click();
-    await page.getByRole('menuitem', { name: '输入绝对路径打开…' }).click();
+    await page.keyboard.press('ControlOrMeta+,');
+  await page.locator('[data-settings-tab=general]').click();
+    await page.getByRole('button', { name: '输入绝对路径打开…' }).click();
     await page.locator('.file-path-input').fill(docPath);
     await page.getByRole('button', { name: '打开该路径' }).click();
     await expect(source).toHaveValue(/初始内容/);

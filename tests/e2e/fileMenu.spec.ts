@@ -30,23 +30,20 @@ async function installFakeSavePicker(page: Page) {
   });
 }
 
-test('顶栏文件菜单包含新建、打开、保存与另存为，点击外部关闭', async ({ page }) => {
+test('顶栏仅保留导出菜单，保存与另存为可见，点击外部关闭', async ({ page }) => {
   await openEditor(page);
 
-  await page.getByRole('button', { name: '更多操作' }).click();
-  await expect(page.locator('.file-menu')).toHaveClass(/is-open/);
-  const fileMenu = page.locator('.file-menu');
-  await expect(fileMenu.getByRole('menuitem', { name: '新建文档' })).toBeVisible();
-  await expect(fileMenu.getByRole('menuitem', { name: /^打开/ })).toBeVisible();
-  const pathOpen = fileMenu.locator('.desktop-path-menu-item');
-  await expect(pathOpen).toHaveCount(1);
-  await expect(pathOpen).toBeHidden();
+  await page.getByRole('button', { name: '导出' }).click();
+  await expect(page.locator('.export-menu')).toHaveClass(/is-open/);
+  const fileMenu = page.locator('.export-menu');
+  await expect(page.locator('.file-menu-toggle')).toHaveCount(0);
+  await expect(fileMenu.getByRole('menuitem', { name: /新建|打开|设置/ })).toHaveCount(0);
   await expect(fileMenu.getByRole('menuitem', { name: /^保存/ })).toBeVisible();
   await expect(fileMenu.getByRole('menuitem', { name: /另存为/ })).toBeVisible();
 
-  // 顶栏不再保留独立的新建/打开按钮
-  await expect(page.getByRole('button', { name: '新建文档' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: '打开文件' })).toHaveCount(0);
+  // 新建和打开仅在侧栏保留入口
+  await expect(page.locator('.document-sidebar').getByRole('button', { name: '新建文档' })).toBeVisible();
+  await expect(page.locator('.document-sidebar').getByRole('button', { name: '打开文件' })).toBeVisible();
 
   // 菜单完整落在视口内，不被右缘裁切
   const menuBox = await fileMenu.boundingBox();
@@ -56,19 +53,18 @@ test('顶栏文件菜单包含新建、打开、保存与另存为，点击外�
   expect(menuBox!.x + menuBox!.width).toBeLessThanOrEqual(viewport!.width);
 
   await page.locator('.md-source').click();
-  await expect(page.locator('.file-menu')).not.toHaveClass(/is-open/);
+  await expect(page.locator('.export-menu')).not.toHaveClass(/is-open/);
 });
 
-test('通过文件菜单新建空白文档', async ({ page }) => {
+test('通过侧栏新建空白文档', async ({ page }) => {
   await openEditor(page);
   await setSource(page, '# 旧内容');
   page.on('dialog', (dialog) => dialog.accept());
 
-  await page.getByRole('button', { name: '更多操作' }).click();
-  await page.locator('.file-menu').getByRole('menuitem', { name: '新建文档' }).click();
+  await page.getByRole('button', { name: '新建文档', exact: true }).click();
 
   await expect(page.locator('.md-source')).toHaveValue('');
-  await expect(page.locator('.file-menu')).not.toHaveClass(/is-open/);
+  await expect(page.locator('.export-menu')).not.toHaveClass(/is-open/);
 });
 
 test('另存为把内容写入新文件并切换关联', async ({ page }) => {
@@ -76,8 +72,8 @@ test('另存为把内容写入新文件并切换关联', async ({ page }) => {
   await openEditor(page);
   await setSource(page, '# 副本内容');
 
-  await page.getByRole('button', { name: '更多操作' }).click();
-  await page.locator('.file-menu').getByRole('menuitem', { name: /另存为/ }).click();
+  await page.getByRole('button', { name: '导出' }).click();
+  await page.locator('.export-menu').getByRole('menuitem', { name: /另存为/ }).click();
 
   await expect(page.locator('.file-name')).toHaveText('另存目标.md');
   await expect(page.locator('.save-status')).toHaveText(/已保存到 另存目标\.md/);

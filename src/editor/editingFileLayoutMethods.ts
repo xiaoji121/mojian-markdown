@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { t } from './i18n.ts';
 import { createDesktopFileHandle } from './desktopFileHandle.ts';
+import { SITE_URL } from '../landing/site.ts';
 
 export class EditingFileLayoutMethods {
   _captureEditingState() {
@@ -328,6 +329,12 @@ export class EditingFileLayoutMethods {
     if (!desktop) return;
     // 网页版专属 UI（关联文件夹入口、宽屏下的 ⋯ 菜单）由 CSS 按此标记隐藏。
     document.body.classList.add('is-desktop-app');
+    const homeLink = document.querySelector?.('.settings-home-link');
+    if (homeLink) {
+      homeLink.href = SITE_URL;
+      homeLink.target = '_blank';
+      homeLink.rel = 'noopener noreferrer';
+    }
     this._desktopCloseCleanup = desktop.onBeforeClose?.(() => this._prepareDesktopClose());
     desktop.onMenu((action) => {
       if (action === 'new') this.onNew();
@@ -379,17 +386,23 @@ export class EditingFileLayoutMethods {
     const src = this.sourceRef.current;
     if (!picked || !picked.path || !src) return;
     const text = this._cleanOpenedMarkdown(picked.content);
+    const generation = this._documentOpenGeneration = (this._documentOpenGeneration || 0) + 1;
     this.bridgeDocumentId = null;
     this.activeDocumentId = null;
     this._setFileName(picked.name);
     src.value = text;
     this._resetEditingHistory();
+    const openRevision = this._documentEditRevision || 0;
+    const superseded = () => generation !== this._documentOpenGeneration;
+    const changedDuringOpen = () => src.value !== text
+      || (this._documentEditRevision || 0) !== openRevision;
     this.comments = [];
     await this._attachLocalFile(createDesktopFileHandle(picked.path, picked.name));
     await this._adoptBridgeDocument(picked.name);
+    if (superseded()) return;
     this._renderComments();
     this._renderPreview();
-    this._setDirty(false);
+    this._setDirty(changedDuringOpen());
     this._autosave();
     this._setStatus(t("已打开 · {name}", { name: picked.name }));
   }

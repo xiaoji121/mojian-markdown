@@ -73,7 +73,7 @@ test('Japanese sample uses Japanese fallback, while an explicit local choice is 
   await page.keyboard.press('Escape');
   await chooseLanguage(page, 'zh-CN');
   await expect(page.locator('.md-preview')).toHaveAttribute('lang', 'ja');
-  await page.getByRole('button', { name: '更多操作', exact: true }).click();
+  await page.getByRole('button', { name: '导出', exact: true }).click();
   await page.getByRole('menuitem', { name: '导出长图', exact: true }).click();
   await expect(page.locator('.longimg-poster')).toBeVisible();
   expect(await family(page.locator('.longimg-poster'))).toEqual(await family(page.locator('.md-preview')));
