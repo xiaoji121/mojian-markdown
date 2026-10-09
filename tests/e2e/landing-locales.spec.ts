@@ -32,7 +32,8 @@ for (const [locale, title, open] of [['zh-CN', '墨笺 Markdown', '打开编辑�
     await expect(page.locator('.md-source')).toHaveAttribute('lang', locale);
     await expect(page.locator('.md-preview')).toHaveAttribute('lang', locale);
     await setSource(page, '# Keep my draft\n\nUntouched across navigation.');
-    await page.locator('.brand-mark').click();
+    await page.locator('.file-menu-toggle').click();
+    await page.locator('.return-home-entry').click();
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
     await expect(page.locator('#landing-page')).toBeVisible();
     await page.goBack();
@@ -71,7 +72,8 @@ test('explicit saved editor language wins over a different landing route', async
   await expect(page.locator('html')).toHaveAttribute('data-editor-locale', 'ja');
   await expect(page.locator('.md-source')).toHaveValue('# Saved draft');
   await expect(page.locator('html')).toHaveAttribute('lang','ja');
-  await page.locator('.brand-mark').click();
+  await page.locator('.file-menu-toggle').click();
+  await page.locator('.return-home-entry').click();
   await expect(page.locator('html')).toHaveAttribute('lang','zh-TW');
 });
 test('desktop landing language navigation stays on the trusted root document', async ({ page }) => {
@@ -98,7 +100,8 @@ test('changing landing locale preserves a draft with its save debounce still pen
   await page.clock.install();
   await page.clock.pauseAt(new Date());
   await setSource(page, '# Immediate edit before choosing a language');
-  await page.locator('.brand-mark').click();
+  await page.locator('.file-menu-toggle').click();
+  await page.locator('.return-home-entry').click();
   await page.locator('.landing-language-toggle').click();
   await page.locator('.landing-languages a[lang="ja"]').click();
   await expect(page).toHaveURL(/\/ja\/$/);
@@ -106,13 +109,15 @@ test('changing landing locale preserves a draft with its save debounce still pen
   await expect(page.locator('.md-source')).toHaveValue('# Immediate edit before choosing a language');
   await expect(page.locator('html')).toHaveAttribute('data-editor-locale', 'en');
 });
-test('root to locale to first editor resolves the original template image', async ({ page }) => {
+test('root to locale to first editor preserves the favicon URL', async ({ page }) => {
   await page.goto('/');
   await page.locator('.landing-language-toggle').click();
   await page.locator('.landing-languages a[lang="en"]').click();
   await page.locator('.landing-open').click();
   await expect(page.locator('.md-source')).toBeVisible();
-  await expect.poll(() => page.locator('.brand-mark img').evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
+  const icon = await page.locator('link[rel=icon]').getAttribute('href');
+  expect(icon).toBeTruthy();
+  expect((await page.request.get(new URL(icon!, page.url()).href)).ok()).toBe(true);
 });
 
 test('landing disclosure dismisses and reopens without changing navigation', async ({ page }) => {

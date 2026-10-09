@@ -56,7 +56,7 @@ test('global settings work in source-only mode and fit short narrow screens', as
   await page.getByRole('button', { name: '放大字号', exact: true }).click();
   await expect(page.locator('.md-preview')).toHaveCSS('font-size', '17px');
   await page.screenshot({ path: testInfo.outputPath('global-settings-short-screen.png') });
-  await page.locator('.appearance-close').click();
+  await page.locator('.reading-appearance-panel .appearance-close').click();
   await expect(panel).toBeHidden();
   await expect(page.locator('.file-menu-toggle')).toBeFocused();
 });

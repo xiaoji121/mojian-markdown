@@ -1,4 +1,5 @@
 export const viewMessages: Record<string, [string, string, string]> = {
+  "字体管理": ["字型管理", "Manage fonts", "フォント管理"],
   "已导入：{name}（{format}，{size} KB，仅此应用）": ["已匯入：{name}（{format}，{size} KB，僅此應用程式）", "Imported: {name} ({format}, {size} KB, this app only)", "読み込み済み：{name}（{format}、{size} KB、このアプリのみ）"],
   "项目字体（font:fetch）": ["專案字型（font:fetch）", "Project font (font:fetch)", "プロジェクトフォント（font:fetch）"],
   "已导入字体": ["已匯入字型", "Imported font", "読み込んだフォント"],

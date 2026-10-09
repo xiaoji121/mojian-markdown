@@ -52,13 +52,11 @@ test('LaTeX 行内公式与块级公式正常排版', async ({ page }) => {
   await expect(preview).not.toContainText('$7\\text{ km/h}$');
 });
 
-test('顶栏使用产品图标并支持双击重命名文档', async ({ page }) => {
-  const productIcon = page.locator('.brand-mark');
+test('精简顶栏保留文档名称并支持双击重命名', async ({ page }) => {
   const fileName = page.locator('.file-name');
 
   await expect(page.locator('.brand-dot')).toHaveCount(0);
-  await expect(productIcon).toBeVisible();
-  await expect(productIcon.locator('img')).toHaveAttribute('src', '/favicon.svg');
+  await expect(page.locator('.brand-mark, .brand-title')).toHaveCount(0);
   await expect(fileName).toHaveAttribute('title', /双击重命名/);
 
   await fileName.dblclick();
@@ -150,7 +148,7 @@ test('字数统计跟随内容更新', async ({ page }) => {
   await expect(page.locator('.word-count')).toHaveText('5 字 · 2 行');
 });
 
-test('主题移入排版后仍有清晰图标与足够的点击区域', async ({ page }) => {
+test('独立的界面主题设置有清晰图标与足够的点击区域', async ({ page }) => {
   await openAppearance(page);
   const theme = page.getByRole('button', { name: '切换亮色或暗黑主题' });
   const bounds = await theme.boundingBox();

@@ -397,7 +397,6 @@
       gap: 10px !important;
       padding: max(8px, env(safe-area-inset-top)) 12px 8px !important;
     }
-    .brand-title { font-size: var(--fs-xl) !important; }
     .file-meta { display: none !important; }
     .header-actions { gap: 6px !important; }
     .view-mode-switcher { padding: 2px; }
@@ -524,9 +523,6 @@
   }
 
   @media (max-width: 400px) {
-    .brand-dot { display: none; }
-    .header-brand .brand-mark { display: block; }
-    .brand-title { display: none !important; }
     .app-header { gap: 6px !important; }
     .header-actions .abtn { padding-inline: 8px !important; }
   }

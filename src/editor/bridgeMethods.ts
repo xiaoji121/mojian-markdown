@@ -507,7 +507,6 @@ export class BridgeMethods {
       // Publish the open status when content becomes interactive. Local-file
       // reattachment can finish after newer user feedback (for example, Copy).
       this._setStatus(restoring ? t('已恢复最近阅读 · {name}', { name: this.fileName }) : t('已从 Reading Workspace 打开 · {name}', { name: this.fileName }));
-      this.closeDocumentSidebar();
       // 若之前打开过同名本地文件，重新接上句柄；本地文件内容优先于工作区副本。
       await this._reattachLocalFileForDocument(doc);
       // localFilePath 到这里才可用；内容与磁盘一致时上面不会再重渲染，
@@ -545,7 +544,6 @@ export class BridgeMethods {
       this._setStatus(reply
         ? t("正在阅读摘录回答 · {name}", { name: this._crumbLabel(reply.note || t('未命名想法')) })
         : t("正在阅读 AI 问答 · {name}", { name: this._crumbLabel(item.question || t('未命名问题')) }));
-      this.closeDocumentSidebar();
     } catch (error) {
       this._setStatus(error.message || t("AI 问答读取失败"));
     }

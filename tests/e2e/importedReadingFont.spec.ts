@@ -1,6 +1,7 @@
+import { chooseLanguage } from './localeHelpers';
 import { assertImportedGlyphs } from '../helpers/fontGlyphs';
 import { readFileSync } from 'node:fs';
-import { test, expect, openEditor, openAppearance, setSource } from './fixtures';
+import { test, expect, openEditor, openFontManagement, setSource } from './fixtures';
 const font = readFileSync(new URL('../../src/fonts/source-serif-4/SourceSerif4Variable-Roman.ttf.woff2', import.meta.url));
 const dataUrl = 'data:font/woff2;base64,' + font.toString('base64');
 const italicDataUrl = 'data:font/woff2;base64,' + readFileSync(new URL('../../src/fonts/source-serif-4/SourceSerif4Variable-Italic.ttf.woff2', import.meta.url)).toString('base64');
@@ -41,19 +42,19 @@ async function installFontFixture(page, project = false) {
 
 test('imported font decodes, preserves exact glyphs, persists and exports without remote requests', async ({ page }, info) => {
   await installFontFixture(page);
-  await openEditor(page); await openAppearance(page);
+  await openEditor(page); await openFontManagement(page);
   await page.locator('.reading-font-import').click();
   await expect(page.locator('body')).toHaveAttribute('data-reading-font', 'imported-font');
   await expect(page.locator('.reading-font-import-status')).toContainText('OFL Source Serif fixture.woff2');
   await assertImportedGlyphs(page);
   for (const locale of ['zh-TW', 'en', 'ja', 'zh-CN']) {
-    await page.locator(`.interface-language-option[data-locale="${locale}"]`).click();
+    await chooseLanguage(page, locale);
     await expect(page.locator('body')).toHaveAttribute('data-reading-font', 'imported-font');
   }
   await page.keyboard.press('Escape');
   await setSource(page, '# Imported font\n\nReading **bold**, *italic*, 中文 and 日本語 with `code()`.');
-  await openAppearance(page); await page.locator('.reading-font-select').selectOption('imported-font');
-  await page.reload(); await openAppearance(page);
+  await openFontManagement(page); await page.locator('.reading-font-select').selectOption('imported-font');
+  await page.reload(); await openFontManagement(page);
   await expect(page.locator('.reading-font-import-status')).toContainText('OFL Source Serif fixture.woff2');
   await assertImportedGlyphs(page);
   await page.screenshot({ path: info.outputPath('imported-ofl-fixture.png') });
@@ -80,7 +81,7 @@ test('imported font decodes, preserves exact glyphs, persists and exports withou
   expect(firstSvg.join('').includes(dataUrl)).toBe(true);
   expect(firstSvg.join('')).toContain('Mojian Imported Reading Font');
   await page.evaluate(() => localStorage.setItem('fixture-font-mode', 'italic'));
-  await openAppearance(page); await page.locator('.reading-font-import').click();
+  await openFontManagement(page); await page.locator('.reading-font-import').click();
   await expect(page.locator('.reading-font-import')).toBeEnabled();
   await page.keyboard.press('Escape');
   await page.locator('.file-menu-toggle').click();
@@ -97,7 +98,7 @@ test('imported font decodes, preserves exact glyphs, persists and exports withou
 });
 
 test('cancel and malformed fonts do not replace the old font; removing only clears app copy', async ({ page }) => {
-  await installFontFixture(page); await openEditor(page); await openAppearance(page);
+  await installFontFixture(page); await openEditor(page); await openFontManagement(page);
   await page.locator('.reading-font-import').click();
   await expect(page.locator('body')).toHaveAttribute('data-reading-font', 'imported-font');
   const original = await page.evaluate(() => localStorage.getItem('fixture-font-copy'));
@@ -114,9 +115,9 @@ test('cancel and malformed fonts do not replace the old font; removing only clea
 });
 
 test('project font has a distinct choice and never replaces an explicit system preference', async ({ page }) => {
-  await installFontFixture(page, true); await openEditor(page); await openAppearance(page);
+  await installFontFixture(page, true); await openEditor(page); await openFontManagement(page);
   await page.locator('.reading-font-select').selectOption('system-serif');
-  await page.reload(); await openAppearance(page);
+  await page.reload(); await openFontManagement(page);
   await expect(page.locator('body')).toHaveAttribute('data-reading-font', 'system-serif');
   await expect(page.locator('.reading-font-select option[value=project-jinkai]')).toBeEnabled();
   await page.locator('.reading-font-select').selectOption('project-jinkai');
@@ -126,7 +127,7 @@ test('project font has a distinct choice and never replaces an explicit system p
 
 
 test('a newer explicit system choice wins while a font import is pending', async ({ page }) => {
-  await installFontFixture(page); await openEditor(page); await openAppearance(page);
+  await installFontFixture(page); await openEditor(page); await openFontManagement(page);
   await page.evaluate(() => localStorage.setItem('fixture-font-mode', 'delayed'));
   await page.locator('.reading-font-import').click();
   await expect(page.locator('.reading-font-import')).toBeDisabled();
@@ -140,7 +141,7 @@ test('a newer explicit system choice wins while a font import is pending', async
 test('font activation never rewrites or removes similarly marked user-authored styles', async ({ page }) => {
   await installFontFixture(page); await openEditor(page);
   await setSource(page, '# User content\n\n<style data-user-reading-font="imported">/* user-owned */</style>\n\nReading.');
-  await openAppearance(page); await page.locator('.reading-font-import').click();
+  await openFontManagement(page); await page.locator('.reading-font-import').click();
   await expect(page.locator('body')).toHaveAttribute('data-reading-font', 'imported-font');
   expect(await page.locator('.md-preview style[data-user-reading-font]').evaluate(element => element.textContent)).toBe('/* user-owned */');
   expect(await page.locator('head style[data-user-reading-font="imported"]').textContent()).toContain(dataUrl);

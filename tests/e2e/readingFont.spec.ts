@@ -1,5 +1,5 @@
 import { chooseLanguage } from './localeHelpers';
-import { test, expect, openEditor, openAppearance, setSource } from './fixtures';
+import { test, expect, openEditor, openAppearance, openFontManagement, setSource } from './fixtures';
 
 for (const locale of ['zh-CN', 'zh-TW', 'en', 'ja']) {
   test(`reading font survives ${locale} UI changes and reload`, async ({ page }, testInfo) => {
@@ -14,6 +14,7 @@ for (const locale of ['zh-CN', 'zh-TW', 'en', 'ja']) {
     await openAppearance(page);
     await expect(page.locator('.reading-font-select')).toHaveValue('system-serif');
     await page.locator('.reading-font-select').selectOption('local-jinkai');
+    await openFontManagement(page);
     await expect(page.locator('.reading-font-note')).toBeVisible();
     await expect(page.locator('.reading-font-status')).not.toBeEmpty();
     await page.locator('.reading-font-select').selectOption('source-serif-4');
@@ -36,13 +37,12 @@ test('offline bundled roman, bold and italic load; prose, code and UI stay separ
     ]);
     await document.fonts.ready;
     const family = (selector: string) => getComputedStyle(document.querySelector(selector)!).fontFamily;
-    return { loaded: loaded.map(list => list.length), prose: family('.md-preview'), code: family('.md-preview code'), ui: family('.file-menu-toggle'), brand: family('.brand-title'), format: family('.fmt-h') };
+    return { loaded: loaded.map(list => list.length), prose: family('.md-preview'), code: family('.md-preview code'), ui: family('.file-menu-toggle'), format: family('.fmt-h') };
   });
   expect(result.loaded.every(count => count > 0)).toBe(true);
   expect(result.prose).toContain('Source Serif 4');
   expect(result.code).not.toContain('Source Serif 4');
   expect(result.ui).not.toContain('Source Serif 4');
-  expect(result.brand).not.toContain('Source Serif 4');
   expect(result.format).not.toContain('Source Serif 4');
   await setSource(page, '# 日本語\n\n日本語の文章。中文阅读与思考。');
   await expect(page.locator('.md-preview')).toHaveAttribute('data-reading-script', 'cjk');

@@ -19,6 +19,11 @@ export class WorkspaceMenuMethods {
       }),
       menuAppearance: run(() => {
         this.toggleReadingAppearance(true);
+      }),
+      menuLanguage: run(() => this.toggleInterfaceLanguage(true)),
+      closeInterfaceLanguage: () => this.toggleInterfaceLanguage(false, true),
+      menuReturnHome: run(() => {
+        if (this.previewFullscreen) this.togglePreviewFullscreen(false);
       })
     };
   }
@@ -31,6 +36,7 @@ export class WorkspaceMenuMethods {
     button?.setAttribute('aria-expanded', String(open));
     if (open) {
       if (this.appearanceOpen) this.toggleReadingAppearance(false);
+      if (this.languageOpen) this.toggleInterfaceLanguage(false);
       this._refreshConnectorCapabilities?.();
     }
     if (open && !this._fileMenuDocH) {

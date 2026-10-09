@@ -17,6 +17,7 @@ export class LocaleMethods {
     document.documentElement.dataset.editorLocale = getLocale();
     syncLocaleSettings(document, getLocale());
     this._disposeLocaleSettings = bindLocaleSettings(document, value => this._changeLocale(value));
+    this._initLanguagePanel();
     translateChrome(document);
     this._readingFontStatus = 'unknown';
     const link = document.querySelector('.reading-font-link');
@@ -25,6 +26,36 @@ export class LocaleMethods {
       this._readingFontStatus = status;
       this._renderReadingFontStatus();
     });
+  }
+
+  _initLanguagePanel() {
+    this._languagePanel = document.querySelector('.interface-language-panel');
+    if (this._languagePanel) this._languagePanel.hidden = true;
+    this._languageOutsideH = event => {
+      if (!this.languageOpen || this._languagePanel?.contains(event.target)
+        || this.fileMenuButtonRef.current?.contains(event.target)) return;
+      this.toggleInterfaceLanguage(false);
+    };
+    this._languageKeyH = event => {
+      if (!this.languageOpen || event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      this.toggleInterfaceLanguage(false, true);
+    };
+    document.addEventListener('pointerdown', this._languageOutsideH);
+    document.addEventListener('focusin', this._languageOutsideH);
+    document.addEventListener('keydown', this._languageKeyH);
+  }
+
+  toggleInterfaceLanguage(force, returnFocus = false) {
+    const panel = this._languagePanel;
+    if (!panel) return;
+    this.languageOpen = typeof force === 'boolean' ? force : !this.languageOpen;
+    panel.hidden = !this.languageOpen;
+    if (this.languageOpen) {
+      if (this.appearanceOpen) this.toggleReadingAppearance(false);
+      (panel.querySelector('[aria-checked="true"]') || panel).focus({ preventScroll: true });
+    } else if (returnFocus) this.fileMenuButtonRef.current?.focus({ preventScroll: true });
   }
 
   _changeLocale(value) {
@@ -74,5 +105,11 @@ export class LocaleMethods {
     node.textContent = t(key);
   }
 
-  _disposeLocale() { this._disposeReadingFont?.(); this._disposeLocaleSettings?.(); }
+  _disposeLocale() {
+    this._disposeReadingFont?.();
+    this._disposeLocaleSettings?.();
+    document.removeEventListener('pointerdown', this._languageOutsideH);
+    document.removeEventListener('focusin', this._languageOutsideH);
+    document.removeEventListener('keydown', this._languageKeyH);
+  }
 }
