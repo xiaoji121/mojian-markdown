@@ -47,6 +47,9 @@ export function registerAIReadinessScenario(label: string, executablePath?: stri
       console.info('[readiness fixture] open linked document');
       const source = page.locator('.md-source');
       await expect(source).toHaveValue(/First run/);
+      // Content appears before file attachment and workspace adoption finish.
+      // Wait for the completed open before testing edits and automatic writes.
+      await expect(page.locator('.save-status')).toContainText('已打开 · 没有 AI 也能编辑.md');
       console.info('[readiness fixture] open AI panel');
       await page.getByRole('button', { name: 'AI 助手', exact: true }).click();
       await page.locator('.ai-readiness').getByRole('button', { name: '配置 AI', exact: true }).click();

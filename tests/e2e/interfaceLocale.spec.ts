@@ -1,4 +1,4 @@
-import { chooseLanguage } from './localeHelpers';
+import { chooseLanguage, openLanguageSettings } from './localeHelpers';
 import { test, expect, openEditor, setSource, openAppearance } from './fixtures';
 
 const labels = {
@@ -51,7 +51,11 @@ test('language settings have keyboard selection, repeat selection and safe dismi
   await openEditor(page);
   await setSource(page, '# Untouched\n\nKeep my document.');
   await expect(page.locator('.header-actions > .interface-language-control')).toHaveCount(0);
+  await expect(page.locator('.interface-language-panel')).toBeHidden();
   await openAppearance(page);
+  await expect(page.locator('#reading-appearance-panel .interface-language-settings')).toHaveCount(0);
+  await openLanguageSettings(page);
+  await expect(page.locator('#reading-appearance-panel')).toBeHidden();
   const current = page.locator('.interface-language-option[aria-checked="true"]');
   await current.focus();
   await page.keyboard.press('End');
@@ -60,10 +64,29 @@ test('language settings have keyboard selection, repeat selection and safe dismi
   await page.keyboard.press('Space');
   await expect(page.locator('.md-source')).toHaveValue('# Untouched\n\nKeep my document.');
   await page.keyboard.press('Escape');
-  await expect(page.locator('#reading-appearance-panel')).toBeHidden();
+  await expect(page.locator('.interface-language-panel')).toBeHidden();
+  await expect(page.locator('.file-menu-toggle')).toBeFocused();
+  await openLanguageSettings(page);
+  await page.locator('.md-source').click();
+  await expect(page.locator('.interface-language-panel')).toBeHidden();
+  await expect(page.locator('.md-source')).toBeFocused();
+});
+
+test('language is a separate More menu item in immersive reading and on narrow screens', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openEditor(page);
+  await page.getByRole('button', { name: '沉浸式阅读', exact: true }).click();
+  await openLanguageSettings(page);
+  await expect(page.locator('.interface-language-option[data-locale=en]')).toBeInViewport();
+  await page.locator('.interface-language-option[data-locale=en]').click();
+  await expect(page.locator('html')).toHaveAttribute('data-editor-locale', 'en');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.interface-language-panel')).toBeHidden();
+  await expect(page.locator('.preview-pane')).toHaveClass(/preview-pane-fullscreen/);
+  await openLanguageSettings(page);
+  await page.locator('.interface-language-close').click();
   await expect(page.locator('.file-menu-toggle')).toBeFocused();
   await openAppearance(page);
-  await page.locator('.md-source').click();
-  await expect(page.locator('#reading-appearance-panel')).toBeHidden();
-  await expect(page.locator('.md-source')).toBeFocused();
+  await expect(page.locator('#reading-appearance-panel')).toBeVisible();
+  await expect(page.locator('.interface-language-panel')).toBeHidden();
 });

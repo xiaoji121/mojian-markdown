@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { readFile, writeFile, rename } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createReadingFontStore } from '../../desktop/readingFontStore.js';
-import { openAppearance } from '../e2e/fixtures';
+import { openFontManagement } from '../e2e/fixtures';
 import { assertImportedGlyphs } from '../helpers/fontGlyphs';
 
 export async function importedFontScenario(session, closeWindow) {
@@ -14,7 +14,7 @@ export async function importedFontScenario(session, closeWindow) {
   await app.evaluate(({ dialog }, path) => {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [path] });
   }, file);
-  await openAppearance(page);
+  await openFontManagement(page);
   await page.locator('.reading-font-import').click();
   await expect(page.locator('body')).toHaveAttribute('data-reading-font', 'imported-font');
   await expect(page.locator('.reading-font-import-status')).toContainText('用户选择的 OFL 字体.woff2');
@@ -28,7 +28,7 @@ export async function importedFontScenario(session, closeWindow) {
   await rename(file, moved); // App copy must remain usable without the original path.
   await closeWindow(app);
   ({ app, page } = await session.launch());
-  await openAppearance(page);
+  await openFontManagement(page);
   await expect(page.locator('body')).toHaveAttribute('data-reading-font', 'imported-font');
   await expect(page.locator('.reading-font-import-status')).toContainText('用户选择的 OFL 字体.woff2');
   await assertImportedGlyphs(page);

@@ -31,7 +31,6 @@ export class ReadingMapMethods {
       this._renderPreview();
       this._renderRecentDocuments();
       this._setStatus(t("正在查看阅读脉络 · {name}", { name: doc.fileName || t('未命名文档') }));
-      this.closeDocumentSidebar();
     } catch (error) {
       this._setStatus(error.message || t("阅读脉络读取失败"));
     }

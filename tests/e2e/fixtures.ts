@@ -44,3 +44,12 @@ export async function openAppearance(page: Page) {
   await page.locator('.global-settings-entry').click();
   await expect(panel).toBeVisible();
 }
+
+// Font import and licensing details live behind an optional disclosure.
+export async function openFontManagement(page: Page) {
+  await openAppearance(page);
+  const details = page.locator('.reading-font-management');
+  if (!(await details.evaluate(element => (element as HTMLDetailsElement).open))) {
+    await details.locator('summary').click();
+  }
+}
