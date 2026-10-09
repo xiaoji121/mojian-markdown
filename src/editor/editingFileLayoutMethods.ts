@@ -386,17 +386,23 @@ export class EditingFileLayoutMethods {
     const src = this.sourceRef.current;
     if (!picked || !picked.path || !src) return;
     const text = this._cleanOpenedMarkdown(picked.content);
+    const generation = this._documentOpenGeneration = (this._documentOpenGeneration || 0) + 1;
     this.bridgeDocumentId = null;
     this.activeDocumentId = null;
     this._setFileName(picked.name);
     src.value = text;
     this._resetEditingHistory();
+    const openRevision = this._documentEditRevision || 0;
+    const superseded = () => generation !== this._documentOpenGeneration;
+    const changedDuringOpen = () => src.value !== text
+      || (this._documentEditRevision || 0) !== openRevision;
     this.comments = [];
     await this._attachLocalFile(createDesktopFileHandle(picked.path, picked.name));
     await this._adoptBridgeDocument(picked.name);
+    if (superseded()) return;
     this._renderComments();
     this._renderPreview();
-    this._setDirty(false);
+    this._setDirty(changedDuringOpen());
     this._autosave();
     this._setStatus(t("已打开 · {name}", { name: picked.name }));
   }
