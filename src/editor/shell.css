@@ -155,25 +155,25 @@ button.is-copied {
   border-color: var(--good) !important;
 }
 .abtn.primary.is-copied { background: var(--good); color: var(--accent-ink) !important; }
-.file-menu .header-menu-item {
+.export-menu .header-menu-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
 }
-.file-menu .publish-menu-item {
+.export-menu .publish-menu-item {
   align-items: flex-start;
   flex-direction: column;
   gap: 2px;
   white-space: nowrap;
 }
-.file-menu .publish-menu-item .menu-item-hint { width: 100%; }
-.file-menu .publish-menu-item:disabled {
+.export-menu .publish-menu-item .menu-item-hint { width: 100%; }
+.export-menu .publish-menu-item:disabled {
   opacity: .46;
   color: var(--text-4);
   cursor: not-allowed;
 }
-.file-menu .publish-menu-item:disabled:hover { background: transparent; color: var(--text-4); }
+.export-menu .publish-menu-item:disabled:hover { background: transparent; color: var(--text-4); }
 .menu-shortcut {
   color: var(--text-4);
   font-family: var(--mono);
@@ -186,8 +186,8 @@ button.is-copied {
    关联文件夹是网页版拿不到绝对路径的变通，桌面端永久隐藏；
    宽屏下 ⋯ 菜单因此为空，一并隐藏——窄屏规则用 !important 恢复 ⋯，
    彼时它收纳的是 collapsible 条目（保存/新建/主题）。 */
-.file-menu .desktop-path-menu-item { display: none; }
-body.is-desktop-app .desktop-path-menu-item { display: flex; }
+.abtn.desktop-path-menu-item { display: none; }
+body.is-desktop-app .abtn.desktop-path-menu-item { display: flex; }
 body.is-desktop-app .folder-menu-item { display: none; }
 body.is-desktop-app .header-more { display: none; }
 
@@ -613,7 +613,7 @@ textarea.md-source {
   border-left: 1px solid var(--border);
   background: var(--bg-3);
 }
-.comments-panel { width: 340px; }
+.comments-panel { width: 360px; }
 .ai-panel { width: 480px; }
 .panel-header {
   flex: none;

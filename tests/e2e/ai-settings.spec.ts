@@ -1,4 +1,4 @@
-import { test, expect, openEditor } from './fixtures';
+import { test, expect, openEditor, openAISettings } from './fixtures';
 
 test('desktop settings disclose migration and clear unsaved passwords on close/reopen', async ({ page }) => {
   await openEditor(page);
@@ -20,8 +20,7 @@ test('desktop settings disclose migration and clear unsaved passwords on close/r
     };
   });
   const open = async () => {
-    await page.getByRole('button', { name: '更多操作', exact: true }).click();
-    await page.locator('.settings-entry').click();
+    await openAISettings(page);
     await expect(page.locator('.ai-settings-overlay')).toBeVisible();
   };
   await open();
@@ -58,8 +57,7 @@ async function installSettingsFixture(page) {
 }
 
 async function openSettings(page) {
-  await page.getByRole('button', { name: '更多操作', exact: true }).click();
-  await page.locator('.settings-entry').click();
+  await openAISettings(page);
   await expect(page.getByRole('dialog', { name: 'AI 设置' })).toBeVisible();
 }
 
@@ -101,7 +99,7 @@ test('settings traps keyboard focus and Escape clears password and returns focus
   await dialog.getByLabel('Gemini API Key', { exact: true }).fill('FAKE-key');
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
-  await expect(page.getByRole('button', { name: '更多操作', exact: true })).toBeFocused();
+  await expect(page.locator('.settings-entry')).toBeFocused();
   await openSettings(page);
   await expect(dialog.getByLabel('Gemini API Key', { exact: true })).toHaveValue('');
 });
@@ -149,7 +147,7 @@ for (const key of ['Escape', 'Tab']) {
     await page.keyboard.press(key);
     if (key === 'Escape') {
       await expect(dialog).toBeHidden();
-      await expect(page.getByRole('button', { name: '更多操作', exact: true })).toBeFocused();
+      await expect(page.locator('.settings-entry')).toBeFocused();
     } else {
       await expect(dialog.getByRole('radio').first()).toBeFocused();
       await page.keyboard.press('Escape');

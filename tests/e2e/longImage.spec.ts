@@ -26,7 +26,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('长图弹窗按预览排版渲染海报，首个标题升格为海报标题', async ({ page }) => {
-  await page.getByRole('button', { name: '更多操作', exact: true }).click();
+  await page.getByRole('button', { name: '导出', exact: true }).click();
   await page.getByRole('menuitem', { name: '导出长图', exact: true }).click();
 
   const headLayout = await page.evaluate(() => {
@@ -59,7 +59,7 @@ test('长图预览跟随当前阅读纸张颜色', async ({ page }) => {
   await page.locator('.paper-dot[data-paper="green"]').click();
   await page.keyboard.press('Escape');
   await expect(page.locator('body')).toHaveAttribute('data-paper', 'green');
-  await page.getByRole('button', { name: '更多操作', exact: true }).click();
+  await page.getByRole('button', { name: '导出', exact: true }).click();
   await page.getByRole('menuitem', { name: '导出长图', exact: true }).click();
 
   const colors = await page.evaluate(() => ({
@@ -162,7 +162,7 @@ test('选中段落生成图片时，批注以思考卡片跟在对应内容下�
 });
 
 test('静态长图里表格与代码块折行，不靠横向滚动', async ({ page }) => {
-  await page.getByRole('button', { name: '更多操作', exact: true }).click();
+  await page.getByRole('button', { name: '导出', exact: true }).click();
   await page.getByRole('menuitem', { name: '导出长图', exact: true }).click();
 
   const overflow = await page.locator('.longimg-poster .longimg-prose').evaluate((prose) => {
@@ -183,7 +183,7 @@ test('静态长图里表格与代码块折行，不靠横向滚动', async ({ pa
 test('静态长图保留 LaTeX 公式排版', async ({ page }) => {
   await setSource(page, '# 运动记录\n\n速度 $7\\text{ km/h}$，跑了 $3.5\\text{ 公里}$。');
   await expect(page.locator('.md-preview .katex').first()).toBeVisible();
-  await page.getByRole('button', { name: '更多操作', exact: true }).click();
+  await page.getByRole('button', { name: '导出', exact: true }).click();
   await page.getByRole('menuitem', { name: '导出长图', exact: true }).click();
 
   const formula = page.locator('.longimg-poster .katex').first();
@@ -197,7 +197,7 @@ flowchart LR
   A[用例] -->|派生任务与<br/>断言能力| B[执行器]
 \`\`\``);
   await expect(page.locator('.md-preview g.edgeLabel foreignObject').filter({ hasText: '派生任务与' })).toBeVisible();
-  await page.getByRole('button', { name: '更多操作', exact: true }).click();
+  await page.getByRole('button', { name: '导出', exact: true }).click();
   await page.getByRole('menuitem', { name: '导出长图', exact: true }).click();
 
   const label = page.locator('.longimg-poster g.edgeLabel foreignObject').filter({ hasText: '派生任务与' });
@@ -207,7 +207,7 @@ flowchart LR
 });
 
 test('长图字号在弹窗内独立调节，手机档默认 48px 且不改变编辑器字号', async ({ page }) => {
-  await page.getByRole('button', { name: '更多操作', exact: true }).click();
+  await page.getByRole('button', { name: '导出', exact: true }).click();
   await page.getByRole('menuitem', { name: '导出长图', exact: true }).click();
   const poster = page.locator('.longimg-poster');
   await expect(poster).toHaveCSS('width', '900px');
@@ -233,7 +233,7 @@ test('长图字号在弹窗内独立调节，手机档默认 48px 且不改变�
 });
 
 test('手机长图使用更舒展的左右页边距，标准档保持原版心', async ({ page }) => {
-  await page.getByRole('button', { name: '更多操作', exact: true }).click();
+  await page.getByRole('button', { name: '导出', exact: true }).click();
   await page.getByRole('menuitem', { name: '导出长图', exact: true }).click();
   await expect(page.locator('.longimg-poster')).toHaveCSS('padding-left', '48px');
   await expect(page.locator('.longimg-poster')).toHaveCSS('padding-right', '48px');
@@ -246,7 +246,7 @@ test('手机长图使用更舒展的左右页边距，标准档保持原版心',
 test('手机长图在 48px 字号下每行最多容纳 17 个汉字或标点', async ({ page }) => {
   const text = '天地玄黄，宇宙洪荒。日月盈昃，辰宿列张。寒来暑往，秋收冬藏。';
   await setSource(page, '# 字符行宽测试\n\n' + text);
-  await page.getByRole('button', { name: '更多操作', exact: true }).click();
+  await page.getByRole('button', { name: '导出', exact: true }).click();
   await page.getByRole('menuitem', { name: '导出长图', exact: true }).click();
   await page.locator('[data-longimg-width="phone"]').click();
 
@@ -268,7 +268,7 @@ test('手机长图在 48px 字号下每行最多容纳 17 个汉字或标点', a
 });
 
 test('手机长图页脚只保留简短品牌，品牌与文件名都保持单行', async ({ page }) => {
-  await page.getByRole('button', { name: '更多操作', exact: true }).click();
+  await page.getByRole('button', { name: '导出', exact: true }).click();
   await page.getByRole('menuitem', { name: '导出长图', exact: true }).click();
   await page.locator('[data-longimg-width="phone"]').click();
 
@@ -286,7 +286,7 @@ test('手机分页把长文保存为多张一屏尺寸图片', async ({ page }) 
     `## 第 ${index + 1} 节\n\n这是用于手机分页验证的一段正文。内容需要保持清晰易读，并在安全位置换页。`
   ).join('\n\n');
   await setSource(page, '# 手机分页测试\n\n' + sections);
-  await page.getByRole('button', { name: '更多操作', exact: true }).click();
+  await page.getByRole('button', { name: '导出', exact: true }).click();
   await page.getByRole('menuitem', { name: '导出长图', exact: true }).click();
   await page.locator('[data-longimg-width="phone"]').click();
   await page.locator('.longimg-crop-toggle').click();
@@ -354,7 +354,7 @@ test('下载的手机分页图片包含右下角页码', async ({ page }) => {
     `## 第 ${index + 1} 节\n\n这是用于验证导出页码的一段正文。`
   ).join('\n\n');
   await setSource(page, '# 导出页码测试\n\n' + sections);
-  await page.getByRole('button', { name: '更多操作', exact: true }).click();
+  await page.getByRole('button', { name: '导出', exact: true }).click();
   await page.getByRole('menuitem', { name: '导出长图', exact: true }).click();
   await page.locator('[data-longimg-width="phone"]').click();
   await page.locator('.longimg-crop-toggle').click();
@@ -384,7 +384,7 @@ test('下载的手机分页图片包含右下角页码', async ({ page }) => {
 test('大字号下长段落不会被整体推到下一页，第一页保持充分利用', async ({ page }) => {
   const longParagraph = Array.from({ length: 60 }, () => '这是一段需要在行间智能分页的正文内容。').join('');
   await setSource(page, '# 分页利用率\n\n## 长段落标题\n\n' + longParagraph + '\n\n## 下一节\n\n结尾。');
-  await page.getByRole('button', { name: '更多操作', exact: true }).click();
+  await page.getByRole('button', { name: '导出', exact: true }).click();
   await page.getByRole('menuitem', { name: '导出长图', exact: true }).click();
   await page.locator('[data-longimg-width="phone"]').click();
   await page.locator('.longimg-crop-toggle').click();
@@ -395,7 +395,7 @@ test('大字号下长段落不会被整体推到下一页，第一页保持充�
 });
 
 test('下载长图产出与海报同宽的 PNG', async ({ page }) => {
-  await page.getByRole('button', { name: '更多操作', exact: true }).click();
+  await page.getByRole('button', { name: '导出', exact: true }).click();
   await page.getByRole('menuitem', { name: '导出长图', exact: true }).click();
   await expect(page.locator('.longimg-poster')).toBeVisible();
 
@@ -431,7 +431,7 @@ test('关掉「含划线批注」后长图不带划线痕迹', async ({ page }) 
   await page.getByRole('button', { name: /马克笔/ }).click();
   await expect(page.locator('.md-preview [data-comment-id]')).toHaveCount(1);
 
-  await page.getByRole('button', { name: '更多操作', exact: true }).click();
+  await page.getByRole('button', { name: '导出', exact: true }).click();
   await page.getByRole('menuitem', { name: '导出长图', exact: true }).click();
   await expect(page.locator('.longimg-poster [data-comment-id]')).toHaveCount(1);
 

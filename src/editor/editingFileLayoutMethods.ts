@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { t } from './i18n.ts';
 import { createDesktopFileHandle } from './desktopFileHandle.ts';
+import { SITE_URL } from '../landing/site.ts';
 
 export class EditingFileLayoutMethods {
   _captureEditingState() {
@@ -328,6 +329,12 @@ export class EditingFileLayoutMethods {
     if (!desktop) return;
     // 网页版专属 UI（关联文件夹入口、宽屏下的 ⋯ 菜单）由 CSS 按此标记隐藏。
     document.body.classList.add('is-desktop-app');
+    const homeLink = document.querySelector?.('.settings-home-link');
+    if (homeLink) {
+      homeLink.href = SITE_URL;
+      homeLink.target = '_blank';
+      homeLink.rel = 'noopener noreferrer';
+    }
     this._desktopCloseCleanup = desktop.onBeforeClose?.(() => this._prepareDesktopClose());
     desktop.onMenu((action) => {
       if (action === 'new') this.onNew();

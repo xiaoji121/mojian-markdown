@@ -58,8 +58,9 @@ test('桌面端启动并与本地文件双向同步', async () => {
     const pathPreview = await page.evaluate((filePath) =>
       (window as any).mojianDesktop.openMarkdownPath(filePath), absolutePathDoc);
     expect(pathPreview).toMatchObject({ path: absolutePathDoc, name: '路径打开.md' });
-    await page.getByRole('button', { name: '更多操作', exact: true }).click();
-    await page.getByRole('menuitem', { name: '输入绝对路径打开…' }).click();
+    await page.keyboard.press('ControlOrMeta+,');
+  await page.locator('[data-settings-tab=general]').click();
+    await page.getByRole('button', { name: '输入绝对路径打开…' }).click();
     await page.locator('.file-path-input').fill(absolutePathDoc);
     await page.getByRole('button', { name: '打开该路径' }).click();
     await expect(page.locator('.md-source')).toHaveValue(/通过文件菜单读取/, { timeout: 10_000 });
@@ -127,9 +128,8 @@ test('桌面端启动并与本地文件双向同步', async () => {
   }
 });
 
-// 文章里的链接应交给系统浏览器打开：target=_blank 不自开 Electron 窗口，
-// 普通链接不把编辑器导航走，两者都转发给 shell.openExternal。
-test('文章链接交给系统浏览器打开，应用窗口不动', async () => {
+// 首页与文章链接都应交给系统浏览器打开，不自开 Electron 窗口或导航走编辑器。
+test('首页与文章链接交给系统浏览器打开，应用窗口不动', async () => {
   const workspace = await mkdtemp(join(tmpdir(), 'mojian-ws-'));
   const userData = await mkdtemp(join(tmpdir(), 'mojian-user-'));
 
@@ -158,6 +158,11 @@ test('文章链接交给系统浏览器打开，应用窗口不动', async () =>
       };
     });
 
+    await page.locator('.workspace-settings-button').click();
+    await page.locator('[data-settings-tab="general"]').click();
+    await expect(page.getByRole('button', { name: '输入绝对路径打开…', exact: true })).toBeVisible();
+    await page.getByRole('link', { name: '返回首页', exact: true }).click();
+
     // target=_blank 路径（AI 回答里的链接形态）：window.open 不应自开窗口。
     await page.evaluate(() => { window.open('https://example.com/blank'); });
 
@@ -167,7 +172,11 @@ test('文章链接交给系统浏览器打开，应用窗口不动', async () =>
 
     await expect.poll(() => app.evaluate(({ shell }) =>
       (shell as unknown as { _opened: string[] })._opened
-    ), { timeout: 10_000 }).toEqual(['https://example.com/blank', 'https://example.com/plain']);
+    ), { timeout: 10_000 }).toEqual([
+      'https://yuxizhai.com/md-editor/',
+      'https://example.com/blank',
+      'https://example.com/plain'
+    ]);
 
     // 窗口数量不变，编辑器仍在原地。
     expect(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1);

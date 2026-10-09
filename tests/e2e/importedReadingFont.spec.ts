@@ -59,7 +59,7 @@ test('imported font decodes, preserves exact glyphs, persists and exports withou
   await assertImportedGlyphs(page);
   await page.screenshot({ path: info.outputPath('imported-ofl-fixture.png') });
   await page.keyboard.press('Escape');
-  await page.locator('.file-menu-toggle').click();
+  await page.locator('.export-menu-toggle').click();
   await page.getByRole('menuitem', { name: '导出长图', exact: true }).click();
   await expect(page.locator('.longimg-save')).toBeEnabled();
   await page.evaluate(() => {
@@ -84,7 +84,7 @@ test('imported font decodes, preserves exact glyphs, persists and exports withou
   await openFontManagement(page); await page.locator('.reading-font-import').click();
   await expect(page.locator('.reading-font-import')).toBeEnabled();
   await page.keyboard.press('Escape');
-  await page.locator('.file-menu-toggle').click();
+  await page.locator('.export-menu-toggle').click();
   await page.getByRole('menuitem', { name: '导出长图', exact: true }).click();
   await expect(page.locator('.longimg-save')).toBeEnabled();
   await page.evaluate(() => { (window as any).fontExportSvg = []; });

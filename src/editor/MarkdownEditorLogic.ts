@@ -27,6 +27,8 @@ import { PreviewSearchMethods } from './previewSearchMethods';
 import { ReadingMapMethods } from './readingMapMethods';
 import { TranslateMethods } from './translateMethods';
 import { SearchReplaceMethods } from './searchReplaceMethods';
+import { WorkspaceSettingsMethods } from './workspaceSettingsMethods';
+import { WorkspaceNavigationMethods } from './workspaceNavigationMethods';
 import { WorkspaceMenuMethods } from './workspaceMenuMethods';
 import { ViewMethods } from './viewMethods';
 
@@ -139,8 +141,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.aiPanelOpen = false;
     this.aiBusy = false;
     this.aiBridgeOnline = false;
-    this.aiPanelWidth = 480;
-    this.commentsPanelWidth = 340;
+    this.aiPanelWidth = 360;
+    this.commentsPanelWidth = 360;
     this.documentSidebarWidth = 236;
     this.theme = 'dark';
     this.paperDark = ''; // 纸色按主题分别记忆；空 = 该主题默认
@@ -257,6 +259,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._setStatus(getEditorStorageError() ? t('草稿读取失败 · 原始数据已保留，请勿继续编辑并检查备份')
       : window.mojianDesktop ? t('编辑后自动保存桌面草稿') : t('编辑后自动保存草稿到此浏览器'));
     this._initReadingAppearance();
+    this._initWorkspaceNavigation();
     this._applyProps();
     this._initFileNameEditing();
 
@@ -272,7 +275,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     prev.addEventListener('dblclick', (e) => this._onPreviewDbl(e));
     src.addEventListener('keydown', (e) => this._sourceKeydown(e));
     this._keyHandler = (e) => {
-      if (this._handleWorkspaceMenuKey(e)) return;
+      if (this._handleWorkspaceSettingsKey(e) || this._handleWorkspaceMenuKey(e)) return;
       if (e.key === 'Escape' && this.appearanceOpen) {
         e.preventDefault();
         this.toggleReadingAppearance(false, true);
@@ -309,7 +312,6 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._renderComments();
     if (this.agentBridgeEnabled) {
       this._loadPinnedIds();
-      this._initDocumentSidebarResize();
       this._initAI();
       this._refreshRecentDocuments().then(() => this._maybeOpenLatestRecentDocument());
     }
@@ -335,6 +337,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
   }
 
   componentWillUnmount() {
+    this._disposeWorkspaceNavigation();
+    this.toggleExportMenu(false);
     this._disposeLocale();
     if (this._desktopCloseCleanup) this._desktopCloseCleanup();
     if (this._keyHandler) window.removeEventListener('keydown', this._keyHandler);
@@ -427,6 +431,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       togglePreviewFullscreen: () => this.togglePreviewFullscreen(),
       toggleImmersiveWide: () => this.toggleImmersiveWide(),
       ...this._workspaceMenuRenderVals(),
+      ...this._workspaceNavigationRenderVals(),
+      ...this._workspaceSettingsRenderVals(),
       openLastPublication: () => this.openLastPublication(),
       openLongImage: () => this.openLongImage(), openSelectionImage: () => this.openSelectionImage(),
       toggleSearch: () => this.toggleSearch(),
@@ -450,8 +456,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       toggleAIHistory: () => this.toggleAIHistory(),
       sendAIQuestion: () => this.sendAIQuestion(),
       openAISettings: () => this.openAISettings(),
-      menuPublishFeishu: () => { this.toggleFileMenu(false); this.publishToFeishu(); },
-      menuPublishDingtalk: () => { this.toggleFileMenu(false); this.publishToDingtalk(); },
+      menuPublishFeishu: () => { this.toggleFileMenu(false); this.toggleExportMenu(false); this.publishToFeishu(); },
+      menuPublishDingtalk: () => { this.toggleFileMenu(false); this.toggleExportMenu(false); this.publishToDingtalk(); },
       translateSel: () => this.translateSel(),
       askExplain: () => this.askAIQuick('请用更容易理解的语言解释这段话。'),
       askContext: () => this.askAIQuick('这段话在全文上下文中起什么作用？'),
@@ -485,6 +491,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     Component,
     ViewMethods,
     WorkspaceMenuMethods,
+    WorkspaceNavigationMethods,
+    WorkspaceSettingsMethods,
     BridgeMethods,
     ReadingMapMethods,
     PathComposeMethods,

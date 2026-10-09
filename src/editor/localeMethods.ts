@@ -30,32 +30,13 @@ export class LocaleMethods {
 
   _initLanguagePanel() {
     this._languagePanel = document.querySelector('.interface-language-panel');
-    if (this._languagePanel) this._languagePanel.hidden = true;
-    this._languageOutsideH = event => {
-      if (!this.languageOpen || this._languagePanel?.contains(event.target)
-        || this.fileMenuButtonRef.current?.contains(event.target)) return;
-      this.toggleInterfaceLanguage(false);
-    };
-    this._languageKeyH = event => {
-      if (!this.languageOpen || event.key !== 'Escape') return;
-      event.preventDefault();
-      event.stopPropagation();
-      this.toggleInterfaceLanguage(false, true);
-    };
-    document.addEventListener('pointerdown', this._languageOutsideH);
-    document.addEventListener('focusin', this._languageOutsideH);
-    document.addEventListener('keydown', this._languageKeyH);
   }
 
   toggleInterfaceLanguage(force, returnFocus = false) {
-    const panel = this._languagePanel;
-    if (!panel) return;
-    this.languageOpen = typeof force === 'boolean' ? force : !this.languageOpen;
-    panel.hidden = !this.languageOpen;
-    if (this.languageOpen) {
-      if (this.appearanceOpen) this.toggleReadingAppearance(false);
-      (panel.querySelector('[aria-checked="true"]') || panel).focus({ preventScroll: true });
-    } else if (returnFocus) this.fileMenuButtonRef.current?.focus({ preventScroll: true });
+    const open = typeof force === 'boolean' ? force : !this.languageOpen;
+    if (open) this.openWorkspaceSettings('general');
+    else this.toggleReadingAppearance(false, returnFocus);
+    this.languageOpen = open;
   }
 
   _changeLocale(value) {
@@ -68,6 +49,8 @@ export class LocaleMethods {
       document.title = getLocale() === 'en' ? 'Mojian Markdown' : '墨笺 Markdown';
     }
     translateChrome(document);
+    this._syncQuickAppearance?.();
+    this._syncWorkspaceChrome?.();
     this._applyTheme();
     this._buildPaperPicker();
     this._syncImmersiveWideButton();

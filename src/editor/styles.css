@@ -531,8 +531,6 @@
     .preview-pane-fullscreen .md-preview { padding: 70px 24px 60px !important; }
   }
 
-  body:not(.agent-bridge-enabled) .document-sidebar,
-  body:not(.agent-bridge-enabled) .document-toggle,
   body:not(.agent-bridge-enabled) .ai-panel,
   body:not(.agent-bridge-enabled) .ai-entry,
   body:not(.agent-bridge-enabled) .settings-entry,

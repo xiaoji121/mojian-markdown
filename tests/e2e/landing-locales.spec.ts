@@ -1,5 +1,5 @@
 import { chooseLanguage } from './localeHelpers';
-import { test, expect, setSource } from './fixtures';
+import { test, expect, setSource, openAppearance } from './fixtures';
 const sampleHeadings: Record<string, string> = {
   'zh-CN': '欢迎使用 Markdown 编辑器', 'zh-TW': '歡迎使用 Markdown 編輯器',
   en: 'Welcome to Mojian', ja: '墨笺へようこそ',
@@ -32,8 +32,9 @@ for (const [locale, title, open] of [['zh-CN', '墨笺 Markdown', '打开编辑�
     await expect(page.locator('.md-source')).toHaveAttribute('lang', locale);
     await expect(page.locator('.md-preview')).toHaveAttribute('lang', locale);
     await setSource(page, '# Keep my draft\n\nUntouched across navigation.');
-    await page.locator('.file-menu-toggle').click();
-    await page.locator('.return-home-entry').click();
+    await openAppearance(page);
+    await page.locator('[data-settings-tab=general]').click();
+    await page.locator('.settings-home-link').click();
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
     await expect(page.locator('#landing-page')).toBeVisible();
     await page.goBack();
@@ -72,8 +73,9 @@ test('explicit saved editor language wins over a different landing route', async
   await expect(page.locator('html')).toHaveAttribute('data-editor-locale', 'ja');
   await expect(page.locator('.md-source')).toHaveValue('# Saved draft');
   await expect(page.locator('html')).toHaveAttribute('lang','ja');
-  await page.locator('.file-menu-toggle').click();
-  await page.locator('.return-home-entry').click();
+  await openAppearance(page);
+    await page.locator('[data-settings-tab=general]').click();
+  await page.locator('.settings-home-link').click();
   await expect(page.locator('html')).toHaveAttribute('lang','zh-TW');
 });
 test('desktop landing language navigation stays on the trusted root document', async ({ page }) => {
@@ -100,8 +102,9 @@ test('changing landing locale preserves a draft with its save debounce still pen
   await page.clock.install();
   await page.clock.pauseAt(new Date());
   await setSource(page, '# Immediate edit before choosing a language');
-  await page.locator('.file-menu-toggle').click();
-  await page.locator('.return-home-entry').click();
+  await openAppearance(page);
+    await page.locator('[data-settings-tab=general]').click();
+  await page.locator('.settings-home-link').click();
   await page.locator('.landing-language-toggle').click();
   await page.locator('.landing-languages a[lang="ja"]').click();
   await expect(page).toHaveURL(/\/ja\/$/);

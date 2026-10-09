@@ -9,6 +9,9 @@ import './editor/shell.css';
 import './editor/aiPanel.css';
 import './editor/readingAppearance.css';
 import './editor/workspaceChrome.css';
+import './editor/workspaceLayout.css';
+import './editor/workspaceSettings.css';
+import './editor/workspaceVisual.css';
 import './editor/outline.css';
 import './editor/connector.css';
 // 必须排在最后：长图海报抄一份预览排版规则，靠加载顺序覆盖同特异度的 .md-preview

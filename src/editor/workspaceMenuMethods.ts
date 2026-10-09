@@ -1,16 +1,18 @@
 // @ts-nocheck
-// 文档与应用操作统一入口；格式工具仍由编辑区域负责。
+// 保存与导出共用一个菜单；新建、打开和全局设置各有固定入口。
 export class WorkspaceMenuMethods {
   _workspaceMenuRenderVals() {
     const run = (action) => () => { this.toggleFileMenu(false); action(); };
     return {
       toggleFileMenu: () => this.toggleFileMenu(),
+      toggleExportMenu: () => this.toggleExportMenu(),
+      exportWithComments: run(() => this.copyFull()),
       menuFileNew: run(() => this.onNew()),
       menuFileOpen: run(() => this.onOpen()),
-      menuOpenAbsolutePath: run(() => this.onOpenAbsolutePath()),
+      menuOpenAbsolutePath: run(() => { this.toggleReadingAppearance(false); this.onOpenAbsolutePath(); }),
       menuFileSave: run(() => this.onSave()),
       menuFileSaveAs: run(() => this.onSaveAs()),
-      menuFolder: run(() => this.associateLocalFolder()),
+      menuFolder: run(() => { this.toggleReadingAppearance(false); this.associateLocalFolder(); }),
       menuSettings: run(() => this.openAISettings()),
       menuLongImage: run(() => this.openLongImage()),
       menuFind: run(() => {
@@ -18,11 +20,12 @@ export class WorkspaceMenuMethods {
         else this.openSearch(false);
       }),
       menuAppearance: run(() => {
-        this.toggleReadingAppearance(true);
+        this.openWorkspaceSettings('reading');
       }),
       menuLanguage: run(() => this.toggleInterfaceLanguage(true)),
       closeInterfaceLanguage: () => this.toggleInterfaceLanguage(false, true),
       menuReturnHome: run(() => {
+        this.toggleReadingAppearance(false);
         if (this.previewFullscreen) this.togglePreviewFullscreen(false);
       })
     };
@@ -35,6 +38,7 @@ export class WorkspaceMenuMethods {
     menu.classList.toggle('is-open', open);
     button?.setAttribute('aria-expanded', String(open));
     if (open) {
+      this.toggleQuickAppearance?.(false);
       if (this.appearanceOpen) this.toggleReadingAppearance(false);
       if (this.languageOpen) this.toggleInterfaceLanguage(false);
       this._refreshConnectorCapabilities?.();
@@ -51,6 +55,10 @@ export class WorkspaceMenuMethods {
       document.removeEventListener('focusin', this._fileMenuDocH);
       this._fileMenuDocH = null;
     }
+  }
+
+  toggleExportMenu(force) {
+    this.toggleFileMenu(force);
   }
 
   _handleWorkspaceMenuKey(event) {

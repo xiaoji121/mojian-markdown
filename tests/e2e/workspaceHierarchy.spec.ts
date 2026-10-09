@@ -10,14 +10,15 @@ test('阅读工具属于正文，不再形成第二条通栏', async ({ page }) 
   expect(bounds!.width).toBeLessThan(500);
   await expect(tools.locator('.pane-title')).toBeHidden();
   await expect(tools.locator('.preview-toolbar-hint')).toHaveCount(0);
-  await expect(tools.getByRole('button')).toHaveCount(1);
+  await expect(tools.getByRole('button', { name: '查找文档', exact: true })).toBeVisible();
+  await expect(tools.getByRole('button', { name: '排版', exact: true })).toBeVisible();
   const title = await page.locator('.md-preview h1').boundingBox();
   expect(title!.y).toBeGreaterThan(bounds!.y + bounds!.height);
   await page.locator('[data-mode="split"]').click();
   await expect(page.getByRole('group', { name: 'Markdown 格式' })).toBeVisible();
 });
 
-test('顶栏只有一个更多菜单，主题从排版调整，搜索与导出从菜单进入', async ({ page }) => {
+test('主题从设置调整，正文查找与导出有独立入口', async ({ page }) => {
   await openEditor(page);
   await expect(page.locator('.app-header').getByRole('button', { name: '切换亮色或暗黑主题' })).toHaveCount(0);
   await expect(page.locator('.app-header').getByRole('button', { name: '打开设置' })).toHaveCount(0);
@@ -26,24 +27,23 @@ test('顶栏只有一个更多菜单，主题从排版调整，搜索与导出�
   await page.getByRole('button', { name: '切换亮色或暗黑主题' }).click();
   await expect(page.locator('body')).toHaveAttribute('data-theme', before === 'dark' ? 'light' : 'dark');
   await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: '更多操作', exact: true }).click();
-  await page.getByRole('menuitem', { name: '查找文档', exact: false }).click();
-  await expect(page.locator('.search-input').first()).toBeFocused();
+  await page.getByRole('button', { name: '查找文档', exact: true }).click();
+  await expect(page.locator('.preview-search-input')).toBeFocused();
   await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: '更多操作', exact: true }).click();
+  await page.getByRole('button', { name: '导出', exact: true }).click();
   await page.getByRole('menuitem', { name: '导出长图', exact: true }).click();
   await expect(page.locator('.longimg-overlay')).toBeVisible();
 });
 
-test('更多菜单可用方向键和 Esc 操作，阅读模式保留快捷搜索', async ({ page }) => {
+test('导出菜单可用方向键和 Esc 操作，阅读模式保留快捷搜索', async ({ page }) => {
   await openEditor(page);
-  const more = page.getByRole('button', { name: '更多操作', exact: true });
+  const more = page.getByRole('button', { name: '导出', exact: true });
   await more.focus();
   await page.keyboard.press('ArrowDown');
-  await expect(page.getByRole('menuitem', { name: '新建文档', exact: true })).toBeFocused();
+  await expect(page.getByRole('menuitem', { name: '保存', exact: true })).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(more).toBeFocused();
-  await expect(page.locator('.file-menu')).toBeHidden();
+  await expect(page.locator('.export-menu')).toBeHidden();
   await setSource(page, '# 搜索测试\n\n目标段落');
   await page.locator('[data-mode="preview"]').click();
   await page.keyboard.press('ControlOrMeta+f');
@@ -72,13 +72,12 @@ for (const immersive of [false, true]) {
   });
 }
 
-test('滚动后从更多菜单打开全局设置，保持文章阅读位置', async ({ page }) => {
+test('滚动后从侧栏打开全局设置，保持文章阅读位置', async ({ page }) => {
   await openEditor(page);
   await setSource(page, '# 菜单排版\n\n' + '段落。\n\n'.repeat(100));
   await page.locator('[data-mode="preview"]').click();
   await page.locator('.md-preview').evaluate((element) => { element.scrollTop = 500; });
-  await page.getByRole('button', { name: '更多操作', exact: true }).click();
-  await page.locator('.global-settings-entry').click();
+  await openAppearance(page);
   await expect.poll(() => page.locator('.md-preview').evaluate((element) => element.scrollTop)).toBe(500);
   await expect(page.locator('.reading-appearance-panel')).toBeVisible();
 });

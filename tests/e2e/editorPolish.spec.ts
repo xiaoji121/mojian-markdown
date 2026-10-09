@@ -10,9 +10,9 @@ test('排版面板集中调整纸色和字号，支持 Esc 和点击外部关闭
   await expect(page.locator('body')).toHaveAttribute('data-paper', 'cream');
   await page.keyboard.press('Escape');
   await expect(page.locator('.reading-appearance-panel')).toBeHidden();
-  await expect(page.locator('.file-menu-toggle')).toBeFocused();
+  await expect(page.locator('.workspace-settings-button')).toBeFocused();
   await openAppearance(page);
-  await page.locator('.source-pane .pane-title').click();
+  await page.locator('.workspace-settings-backdrop').click({ position: { x: 5, y: 5 } });
   await expect(page.locator('.reading-appearance-panel')).toBeHidden();
   await page.reload();
   await expect(page.locator('body')).toHaveAttribute('data-paper', 'cream');

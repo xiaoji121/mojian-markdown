@@ -7,6 +7,11 @@ This project keeps editor behavior grouped by feature. New code should go into t
 - `src/editor/MarkdownEditorLogic.ts`: component factory, refs, lifecycle wiring, and template bindings only.
 - `src/editor/viewMethods.ts`: preview rendering, outline, view mode, theme, font, status, and editor counts.
 - `src/editor/bridgeMethods.ts`: Reading Workspace / Agent Bridge document list and persistence sync.
+- `src/editor/workspaceNavigationMethods.ts`: document filtering, shared assistance chrome, responsive panel sizing, and temporary focus-mode state.
+- `src/editor/workspaceSettingsMethods.ts`: settings categories, keyboard/focus handling, and the synchronized quick appearance popover.
+- `src/editor/workspaceMenuMethods.ts`: the combined save/export menu; new/open live in the sidebar.
+- `src/editor/workspaceLayout.css` / `workspaceSettings.css`: the three-column workspace and settings surfaces; load after the base editor styles.
+- `src/editor/workspaceVisual.css`: workspace color, typography, spacing, document rows, and conversation surfaces; loaded after structural workspace styles.
 - `src/editor/navigationMethods.ts`: source-preview anchoring, scrolling, and highlight flash behavior.
 - `src/editor/commentMethods.ts`: selection toolbar, annotations, comment panel rendering, and copy helpers.
 - `src/editor/aiMethods.ts`: AI panel, AI history, chat streaming, AI message rendering, and per-request project-tool confirmation.

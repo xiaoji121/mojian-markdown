@@ -4,12 +4,14 @@ import { BridgeMethods } from '../../src/editor/bridgeMethods.ts';
 import { ViewMethods } from '../../src/editor/viewMethods.ts';
 import { createStubElement, createRef } from '../helpers/dom.ts';
 
-test('空侧栏自动收起，用户可主动展开，刷新列表不覆盖用户选择', () => {
+test('空侧栏保持工作区入口可见，用户可收起，刷新列表不覆盖用户选择', () => {
   const sidebar = createStubElement();
   const editor = Object.assign(Object.create(BridgeMethods.prototype), {
     documentSidebarRef: createRef(sidebar), recentDocuments: []
   });
   editor._syncDocumentSidebar();
+  assert.equal(sidebar.classList.contains('is-collapsed'), false);
+  editor.toggleDocumentSidebar();
   assert.equal(sidebar.classList.contains('is-collapsed'), true);
   editor.toggleDocumentSidebar();
   assert.equal(sidebar.classList.contains('is-collapsed'), false);

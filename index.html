@@ -72,6 +72,21 @@
 
 <div class="app-shell">
 
+    <aside ref="{{ documentSidebarRef }}" class="document-sidebar" aria-label="最近阅读文档" data-i18n-aria-label="最近阅读文档">
+      <div ref="{{ documentSidebarResizeRef }}" class="document-sidebar-resize" title="拖动调整目录宽度" data-i18n-title="拖动调整目录宽度" aria-hidden="true"></div>
+      <div class="workspace-brand"><span class="workspace-brand-lockup"><img class="workspace-brand-icon" src="/favicon.svg" alt="" aria-hidden="true" /><span class="workspace-wordmark">墨笺</span></span><button class="document-sidebar-close" onClick="{{ closeDocumentSidebar }}" aria-label="关闭最近阅读" data-i18n-aria-label="关闭最近阅读">‹</button></div>
+      <div class="workspace-file-actions"><button class="abtn primary" onClick="{{ onNew }}" aria-label="新建文档" data-i18n-aria-label="新建文档"><span aria-hidden="true">＋</span><span data-i18n="新建">新建</span></button><button class="abtn secondary" onClick="{{ onOpen }}" aria-label="打开文件" data-i18n-aria-label="打开文件"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5h6l2 2h10v13H3Z"/></svg><span data-i18n="打开">打开</span></button></div>
+      <label class="workspace-document-search"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg><input type="search" aria-label="搜索文档" data-i18n-aria-label="搜索文档" placeholder="搜索文档" data-i18n-placeholder="搜索文档" onInput="{{ filterDocuments }}" /></label>
+      <div class="document-sidebar-header">
+        <span class="document-sidebar-title"><span data-i18n="最近阅读">最近阅读</span></span>
+        <span class="document-sidebar-tools">
+          <span ref="{{ documentCountRef }}" class="document-count">0</span>
+        </span>
+      </div>
+      <div ref="{{ documentListRef }}" class="recent-document-list"></div>
+      <div class="workspace-sidebar-footer"><button class="abtn workspace-settings-button" onClick="{{ openWorkspaceSettings }}" aria-label="设置" data-i18n-aria-label="设置"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-1 3-3 1-2 4 2 3v4l4 2 3-1 4 1 3-3-1-4 2-3-2-4-4-1-1-2Z"/><circle cx="11" cy="12" r="3"/></svg><span data-i18n="设置">设置</span></button></div>
+    </aside>
+  <button class="abtn focus-settings-button" onClick="{{ openWorkspaceSettings }}" aria-label="设置" data-i18n-aria-label="设置">⚙</button>
   <!-- ===== HEADER ===== -->
   <header class="app-header">
     <div class="header-brand">
@@ -80,6 +95,7 @@
         <span ref="{{ dirtyDotRef }}" class="dirty-dot"></span>
         <span ref="{{ fileNameRef }}" class="file-name" aria-label="文档名称，双击重命名" data-i18n-aria-label="文档名称，双击重命名">未命名.md</span>
       </span>
+      <span class="workspace-save-label" data-i18n="草稿">草稿</span>
     </div>
     <div class="header-actions">
       <span ref="{{ viewModeSwitcherRef }}" class="view-mode-switcher" role="group" aria-label="编辑器视图" data-i18n-aria-label="编辑器视图">
@@ -89,49 +105,51 @@
       </span>
       <button class="abtn" onClick="{{ toggleComments }}" aria-label="批注" data-i18n-aria-label="批注"><span class="action-label"><span data-i18n="批注">批注</span></span> <span ref="{{ commentCountRef }}" class="count-badge">0</span></button>
       <button class="abtn ai-entry" onClick="{{ toggleAI }}" aria-label="AI 助手" data-i18n-aria-label="AI 助手" title="打开 AI 阅读助手" data-i18n-title="打开 AI 阅读助手"><span class="action-label"><span data-i18n="AI 助手">AI 助手</span></span><span class="accent-star">✦</span></button>
-      <span class="file-menu-wrap">
-        <button ref="{{ fileMenuButtonRef }}" class="abtn icon file-menu-toggle" onClick="{{ toggleFileMenu }}" aria-label="更多操作" data-i18n-aria-label="更多操作" title="更多操作：文件、导出与设置" data-i18n-title="更多操作：文件、导出与设置" aria-haspopup="menu" aria-expanded="false">⋯</button>
-        <div ref="{{ fileMenuRef }}" class="header-menu file-menu" role="menu" aria-label="文档与应用操作" data-i18n-aria-label="文档与应用操作">
-          <button class="header-menu-item" role="menuitem" onClick="{{ menuFileNew }}"><span data-i18n="新建文档">新建文档</span></button>
-          <button class="header-menu-item" role="menuitem" onClick="{{ menuFileOpen }}"><span data-i18n="打开…">打开…</span></button>
-          <button class="header-menu-item desktop-path-menu-item" role="menuitem" onClick="{{ menuOpenAbsolutePath }}"><span data-i18n="输入绝对路径打开…">输入绝对路径打开…</span><small class="menu-item-hint"><span data-i18n="桌面版">桌面版</span></small></button>
+      <span class="export-menu-wrap"><button ref="{{ fileMenuButtonRef }}" class="abtn secondary export-menu-toggle" onClick="{{ toggleExportMenu }}" aria-label="导出" data-i18n-aria-label="导出" aria-haspopup="menu" aria-expanded="false"><span data-i18n="导出">导出</span><svg class="menu-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></button>
+        <div ref="{{ fileMenuRef }}" class="header-menu export-menu" role="menu" aria-label="导出" data-i18n-aria-label="导出">
+          <button class="header-menu-item" role="menuitem" onClick="{{ menuFileSave }}"><span data-i18n="保存">保存</span><span class="menu-shortcut" aria-hidden="true">⌘S</span></button>
+          <button class="header-menu-item" role="menuitem" onClick="{{ menuFileSaveAs }}"><span data-i18n="另存为…">另存为…</span><span class="menu-shortcut" aria-hidden="true">⌘⇧S</span></button>
           <div class="header-menu-separator" role="separator"></div>
-          <button class="header-menu-item" role="menuitem" onClick="{{ menuFileSave }}"><span data-i18n="保存">保存</span><span class="menu-shortcut">⌘S</span></button>
-          <button class="header-menu-item" role="menuitem" onClick="{{ menuFileSaveAs }}"><span data-i18n="另存为…">另存为…</span><span class="menu-shortcut">⌘⇧S</span></button>
-          <div class="header-menu-separator" role="separator"></div>
-          <button class="header-menu-item" role="menuitem" onClick="{{ menuFind }}"><span data-i18n="查找文档">查找文档</span><span class="menu-shortcut">⌘F</span></button>
           <button class="header-menu-item longimg-entry" role="menuitem" onClick="{{ menuLongImage }}"><span data-i18n="导出长图">导出长图</span></button>
-          <button class="header-menu-item interface-language-entry" role="menuitem" onClick="{{ menuLanguage }}" aria-haspopup="dialog" aria-controls="interface-language-panel"><span data-i18n="界面语言">界面语言</span></button>
-          <button class="header-menu-item global-settings-entry" role="menuitem" onClick="{{ menuAppearance }}"><span data-i18n="设置">设置</span><small class="menu-item-hint"><span data-i18n="界面主题">界面主题</span> · <span data-i18n="阅读排版">阅读排版</span></small></button>
+          <button class="header-menu-item" role="menuitem" onClick="{{ exportWithComments }}"><span data-i18n="复制全文+批注">复制全文+批注</span></button>
           <div class="header-menu-separator publish-menu-item" role="separator"></div>
-          <!-- 飞书创建在线文档；钉钉上传原始 Markdown 文件。均走本机已登录的官方 CLI，凭据不经过墨笺 -->
-          <button class="header-menu-item publish-menu-item" data-target="feishu" role="menuitem" onClick="{{ menuPublishFeishu }}" disabled title="正在检测 lark-cli…" data-i18n-title="正在检测 lark-cli…"><span data-i18n="上传到飞书文档">上传到飞书文档</span><small class="menu-item-hint"><span data-i18n="上传完成后自动打开">上传完成后自动打开</span></small></button>
-          <button class="header-menu-item publish-menu-item" data-target="dingtalk" role="menuitem" onClick="{{ menuPublishDingtalk }}" disabled title="正在检测 dws…" data-i18n-title="正在检测 dws…"><span data-i18n="上传到钉钉云盘">上传到钉钉云盘</span><small class="menu-item-hint"><span data-i18n="保留 .md 文件，不转在线文档">保留 .md 文件，不转在线文档</span></small></button>
-          <div class="header-menu-separator" role="separator"></div>
-          <button class="header-menu-item folder-menu-item" role="menuitem" onClick="{{ menuFolder }}" title="选择文件夹，让文档显示本地路径" data-i18n-title="选择文件夹，让文档显示本地路径"><span data-i18n="关联本地文件夹">关联本地文件夹</span><small class="menu-item-hint"><span data-i18n="让文档显示本地路径">让文档显示本地路径</span></small></button>
-          <button class="header-menu-item settings-entry" role="menuitem" onClick="{{ menuSettings }}"><span data-i18n="AI 渠道与 API Key">AI 渠道与 API Key</span></button>
-          <div class="header-menu-separator" role="separator"></div>
-          <a class="header-menu-item return-home-entry" role="menuitem" href="#" onClick="{{ menuReturnHome }}" data-i18n="返回首页">返回首页</a>
+          <button class="header-menu-item publish-menu-item" data-target="feishu" role="menuitem" onClick="{{ menuPublishFeishu }}" disabled><span data-i18n="上传到飞书文档">上传到飞书文档</span><small class="menu-item-hint" data-i18n="上传完成后自动打开">上传完成后自动打开</small></button>
+          <button class="header-menu-item publish-menu-item" data-target="dingtalk" role="menuitem" onClick="{{ menuPublishDingtalk }}" disabled><span data-i18n="上传到钉钉云盘">上传到钉钉云盘</span><small class="menu-item-hint" data-i18n="保留 .md 文件，不转在线文档">保留 .md 文件，不转在线文档</small></button>
         </div>
       </span>
     </div>
   </header>
 
-  <section id="interface-language-panel" class="preferences-panel interface-language-panel" role="dialog" aria-label="界面语言" data-i18n-aria-label="界面语言" tabindex="-1" hidden>
-    <div class="appearance-panel-header"><h2 class="appearance-heading" data-i18n="界面语言">界面语言</h2><button type="button" class="tbtn appearance-close interface-language-close" onClick="{{ closeInterfaceLanguage }}" aria-label="关闭" data-i18n-aria-label="关闭">&times;</button></div>
-    <div class="interface-language-settings" role="radiogroup" aria-label="界面语言" data-i18n-aria-label="界面语言">
+
+
+  <div class="workspace-settings-backdrop" hidden>
+  <section ref="{{ appearancePanelRef }}" id="reading-appearance-panel" class="preferences-panel reading-appearance-panel workspace-settings" role="dialog" aria-modal="true" aria-label="设置" data-i18n-aria-label="设置" tabindex="-1" hidden>
+    <div class="appearance-panel-header"><h2 class="appearance-heading" data-i18n="设置">设置</h2><button type="button" class="tbtn appearance-close" onClick="{{ closeReadingAppearance }}" aria-label="关闭" data-i18n-aria-label="关闭">&times;</button></div>
+    <div class="workspace-settings-layout">
+      <nav class="workspace-settings-nav" role="tablist" aria-label="设置分类" data-i18n-aria-label="设置分类" aria-orientation="vertical">
+        <button role="tab" id="settings-tab-general" aria-controls="settings-general" data-settings-tab="general" onClick="{{ settingsGeneral }}" data-i18n="常规">常规</button>
+        <button role="tab" id="settings-tab-reading" aria-controls="settings-reading" data-settings-tab="reading" onClick="{{ settingsReading }}" data-i18n="外观与阅读">外观与阅读</button>
+        <button role="tab" id="settings-tab-ai" aria-controls="settings-ai" data-settings-tab="ai" onClick="{{ settingsAI }}">AI</button>
+        <button role="tab" id="settings-tab-integrations" aria-controls="settings-integrations" data-settings-tab="integrations" onClick="{{ settingsIntegrations }}" data-i18n="集成">集成</button>
+      </nav>
+      <div class="workspace-settings-content">
+        <section id="settings-general" role="tabpanel" aria-labelledby="settings-tab-general" data-settings-page="general" hidden>
+          <h3 data-i18n="界面语言">界面语言</h3>
+          <div id="interface-language-panel" class="interface-language-panel">    <div class="interface-language-settings" role="radiogroup" aria-label="界面语言" data-i18n-aria-label="界面语言">
       <div class="interface-language-options">
-        <button type="button" class="interface-language-option" role="radio" aria-checked="false" data-locale="zh-CN" lang="zh-CN">简体中文</button>
-        <button type="button" class="interface-language-option" role="radio" aria-checked="false" data-locale="zh-TW" lang="zh-TW">繁體中文</button>
-        <button type="button" class="interface-language-option" role="radio" aria-checked="false" data-locale="en" lang="en">English</button>
-        <button type="button" class="interface-language-option" role="radio" aria-checked="false" data-locale="ja" lang="ja">日本語</button>
+        <button type="button" class="interface-language-option" role="radio" aria-checked="false" data-locale="zh-CN" lang="zh-CN" aria-label="简体中文">简体中文</button>
+        <button type="button" class="interface-language-option" role="radio" aria-checked="false" data-locale="zh-TW" lang="zh-TW" aria-label="繁體中文">繁體中文</button>
+        <button type="button" class="interface-language-option" role="radio" aria-checked="false" data-locale="en" lang="en" aria-label="English">English</button>
+        <button type="button" class="interface-language-option" role="radio" aria-checked="false" data-locale="ja" lang="ja" aria-label="日本語">日本語</button>
       </div>
     </div>
-  </section>
-
-  <section ref="{{ appearancePanelRef }}" id="reading-appearance-panel" class="preferences-panel reading-appearance-panel" role="dialog" aria-label="设置" data-i18n-aria-label="设置" tabindex="-1" hidden>
-    <div class="appearance-panel-header"><h2 class="appearance-heading" data-i18n="设置">设置</h2><button type="button" class="tbtn appearance-close" onClick="{{ closeReadingAppearance }}" aria-label="关闭" data-i18n-aria-label="关闭">&times;</button></div>
-    <span class="appearance-row appearance-interface-theme"><span><span data-i18n="界面主题">界面主题</span></span><button class="tbtn appearance-theme" onClick="{{ toggleTheme }}" title="切换亮色或暗黑主题" data-i18n-title="切换亮色或暗黑主题" aria-label="切换亮色或暗黑主题" data-i18n-aria-label="切换亮色或暗黑主题"><span ref="{{ themeIconRef }}"></span><span ref="{{ themeLabelRef }}"><span data-i18n="亮色">亮色</span></span></button></span>
+</div>
+          <p class="appearance-note" data-i18n="界面语言不会改变文档内容">界面语言不会改变文档内容</p>
+          <button class="abtn secondary desktop-path-menu-item" onClick="{{ menuOpenAbsolutePath }}" data-i18n="输入绝对路径打开…">输入绝对路径打开…</button>
+          <a class="abtn settings-home-link" href="#" onClick="{{ menuReturnHome }}" data-i18n="返回首页">返回首页</a>
+        </section>
+        <section id="settings-reading" role="tabpanel" aria-labelledby="settings-tab-reading" data-settings-page="reading">
+          <span class="appearance-row appearance-interface-theme"><span><span data-i18n="界面主题">界面主题</span></span><button class="tbtn appearance-theme" onClick="{{ toggleTheme }}" title="切换亮色或暗黑主题" data-i18n-title="切换亮色或暗黑主题" aria-label="切换亮色或暗黑主题" data-i18n-aria-label="切换亮色或暗黑主题"><span ref="{{ themeIconRef }}"></span><span ref="{{ themeLabelRef }}"><span data-i18n="亮色">亮色</span></span></button></span>
     <span class="appearance-section-heading appearance-reading-heading" data-i18n="阅读排版">阅读排版</span>
     <label class="reading-font-field"><span data-i18n="阅读字体">阅读字体</span><select class="reading-font-select" aria-label="阅读字体" data-i18n-aria-label="阅读字体">
       <option value="system-default" data-i18n="系统默认">系统默认</option>
@@ -160,23 +178,31 @@
     <span class="appearance-row"><span><span data-i18n="纸色">纸色</span></span><span ref="{{ paperPickerRef }}" class="paper-picker" role="group" aria-label="选择纸色" data-i18n-aria-label="选择纸色"></span></span>
     <span class="appearance-row appearance-width"><span><span data-i18n="沉浸阅读宽度">沉浸阅读宽度</span></span><button ref="{{ immersiveWideRef }}" class="tbtn tool-pill immersive-wide-toggle" onClick="{{ toggleImmersiveWide }}" title="切换为宽屏阅读" data-i18n-title="切换为宽屏阅读" aria-pressed="false"><span data-i18n="宽屏">宽屏</span></button></span>
     <span class="appearance-note"><span data-i18n="排版偏好会自动记住">排版偏好会自动记住</span></span>
+</section>
+        <section id="settings-ai" role="tabpanel" aria-labelledby="settings-tab-ai" data-settings-page="ai" hidden>
+          <h3 data-i18n="AI 阅读助手">AI 阅读助手</h3>
+          <p class="appearance-note" data-i18n="阅读、编辑与批注无需配置 AI。">阅读、编辑与批注无需配置 AI。</p>
+          <button class="abtn secondary settings-entry" onClick="{{ openAISettings }}" data-i18n="AI 渠道与 API Key">AI 渠道与 API Key</button>
+          <p class="appearance-note workspace-service-note" data-i18n="AI 与文档历史需要桌面版或本地 Agent Bridge。">AI 与文档历史需要桌面版或本地 Agent Bridge。</p>
+        </section>
+        <section id="settings-integrations" role="tabpanel" aria-labelledby="settings-tab-integrations" data-settings-page="integrations" hidden>
+          <h3 data-i18n="集成">集成</h3>
+          <p class="appearance-note" data-i18n="在文档顶部的「导出」中上传到飞书或钉钉，使用本机已登录的连接器。">在文档顶部的「导出」中上传到飞书或钉钉，使用本机已登录的连接器。</p>
+          <button class="abtn secondary folder-menu-item" onClick="{{ menuFolder }}" title="选择文件夹，让文档显示本地路径" data-i18n-title="选择文件夹，让文档显示本地路径" data-i18n="关联本地文件夹">关联本地文件夹</button>
+        </section>
+      </div>
+    </div>
+  </section></div>
+  <section class="preferences-panel quick-appearance-panel" role="dialog" aria-label="快捷排版" data-i18n-aria-label="快捷排版" tabindex="-1" hidden>
+    <div class="appearance-panel-header"><strong data-i18n="阅读排版">阅读排版</strong><button class="tbtn" onClick="{{ closeQuickAppearance }}" aria-label="关闭" data-i18n-aria-label="关闭">×</button></div>
+    <div class="appearance-row"><span data-i18n="字号">字号</span><span class="appearance-font-controls"><button class="tbtn" onClick="{{ fontDec }}" aria-label="缩小字号" data-i18n-aria-label="缩小字号">A−</button><span class="quick-font-value">16px</span><button class="tbtn" onClick="{{ fontInc }}" aria-label="放大字号" data-i18n-aria-label="放大字号">A+</button></span></div>
+    <div class="appearance-row"><span data-i18n="纸色">纸色</span><span class="quick-paper-picker paper-picker"></span></div>
+    <button class="abtn" onClick="{{ openWorkspaceSettings }}" data-i18n="完整设置">完整设置</button>
   </section>
 
 
   <!-- ===== SPLIT BODY ===== -->
   <main ref="{{ splitRef }}" class="editor-main">
-
-    <aside ref="{{ documentSidebarRef }}" class="document-sidebar" aria-label="最近阅读文档" data-i18n-aria-label="最近阅读文档">
-      <div ref="{{ documentSidebarResizeRef }}" class="document-sidebar-resize" title="拖动调整目录宽度" data-i18n-title="拖动调整目录宽度" aria-hidden="true"></div>
-      <div class="document-sidebar-header">
-        <span class="document-sidebar-title"><span data-i18n="最近阅读">最近阅读</span></span>
-        <span class="document-sidebar-tools">
-          <span ref="{{ documentCountRef }}" class="document-count">0</span>
-          <button class="document-sidebar-close" onClick="{{ closeDocumentSidebar }}" aria-label="关闭最近阅读" data-i18n-aria-label="关闭最近阅读">&times;</button>
-        </span>
-      </div>
-      <div ref="{{ documentListRef }}" class="recent-document-list"></div>
-    </aside>
 
     <!-- LEFT: source -->
     <section class="source-pane">
@@ -241,6 +267,8 @@
       <div class="pane-toolbar reading-toolbar" role="toolbar" aria-label="阅读工具" data-i18n-aria-label="阅读工具">
         <span ref="{{ previewTitleRef }}" class="pane-title"><span data-i18n="预览 · 仅阅读">预览 · 仅阅读</span></span>
         <span class="preview-toolbar-actions">
+          <button class="tbtn tool-pill" onClick="{{ togglePreviewSearch }}" aria-label="查找文档" data-i18n-aria-label="查找文档"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg><span data-i18n="查找">查找</span></button>
+          <button class="tbtn tool-pill quick-appearance-toggle" onClick="{{ toggleQuickAppearance }}" aria-label="排版" data-i18n-aria-label="排版" aria-expanded="false"><span aria-hidden="true">Aa</span><span data-i18n="排版">排版</span></button>
           <button class="tbtn tool-pill fullscreen-only-control" onClick="{{ toggleComments }}" title="显示批注" data-i18n-title="显示批注" aria-label="显示批注" data-i18n-aria-label="显示批注">
             <span class="fullscreen-comments-label"><span data-i18n="批注">批注</span></span>
             <span ref="{{ previewCommentCountRef }}" class="count-badge">0</span>
@@ -289,11 +317,12 @@
       </div>
     </section>
 
+  </main>
     <!-- COMMENTS PANEL -->
     <aside ref="{{ commentsRef }}" class="comments-panel">
       <div ref="{{ commentsResizeRef }}" class="comments-resize-handle" title="拖动调整侧栏宽度" data-i18n-title="拖动调整侧栏宽度" aria-hidden="true"></div>
       <div class="panel-header">
-        <span class="panel-title"><span data-i18n="我的批注">我的批注</span></span>
+        <div class="assistance-tabs" role="tablist" aria-label="辅助面板" data-i18n-aria-label="辅助面板"><button role="tab" aria-selected="true" onClick="{{ showCommentsTab }}" aria-label="批注" data-i18n-aria-label="批注"><span data-i18n="批注">批注</span><span class="assistance-count">0</span></button><button class="ai-entry" role="tab" aria-selected="false" onClick="{{ showAITab }}">AI</button></div>
         <button class="panel-close" onClick="{{ closePanel }}" title="收起" data-i18n-title="收起" aria-label="收起批注面板" data-i18n-aria-label="收起批注面板">&times;</button>
       </div>
       <div class="panel-actions">
@@ -307,15 +336,17 @@
     <aside ref="{{ aiPanelRef }}" class="ai-panel">
       <div ref="{{ aiResizeRef }}" class="ai-resize-handle" title="拖动调整侧栏宽度" data-i18n-title="拖动调整侧栏宽度" aria-hidden="true"></div>
       <div class="panel-header">
-        <span class="panel-title"><span data-i18n="AI 阅读助手">AI 阅读助手</span></span>
+        <div class="assistance-tabs" role="tablist" aria-label="辅助面板" data-i18n-aria-label="辅助面板"><button role="tab" aria-selected="false" onClick="{{ showCommentsTab }}" aria-label="批注" data-i18n-aria-label="批注"><span data-i18n="批注">批注</span><span class="assistance-count">0</span></button><button class="ai-entry" role="tab" aria-selected="true" onClick="{{ showAITab }}">AI</button></div>
         <span class="panel-header-tools">
-          <!-- 引擎切换与 API Key 都在顶栏「设置」里；这里只读显示当前渠道，点击直达设置 -->
-          <button ref="{{ aiEngineChipRef }}" class="ai-engine-chip" onClick="{{ openAISettings }}"
-            title="当前 AI 渠道 · 点击到设置中更换" data-i18n-title="当前 AI 渠道 · 点击到设置中更换" aria-label="当前 AI 渠道，点击打开设置" data-i18n-aria-label="当前 AI 渠道，点击打开设置">Codex</button>
-          <button class="ai-history-toggle" onClick="{{ toggleAIHistory }}" title="本地对话历史" data-i18n-title="本地对话历史"><span data-i18n="历史">历史</span></button>
           <button class="panel-close" onClick="{{ closeAI }}" title="收起" data-i18n-title="收起" aria-label="收起 AI 面板" data-i18n-aria-label="收起 AI 面板">&times;</button>
         </span>
       </div>
+      <div class="workspace-ai-tools">
+        <!-- 渠道与 API Key 归入设置；当前渠道可在此快捷访问。 -->
+          <button ref="{{ aiEngineChipRef }}" class="ai-engine-chip" onClick="{{ openAISettings }}"
+            title="当前 AI 渠道 · 点击到设置中更换" data-i18n-title="当前 AI 渠道 · 点击到设置中更换" aria-label="当前 AI 渠道，点击打开设置" data-i18n-aria-label="当前 AI 渠道，点击打开设置">Codex</button>
+          <button class="ai-history-toggle" onClick="{{ toggleAIHistory }}" title="本地对话历史" data-i18n-title="本地对话历史"><span data-i18n="历史">历史</span></button>
+</div>
       <div ref="{{ aiHistoryRef }}" class="ai-history-panel">
         <div class="ai-history-header">
           <strong class="ai-history-title"><span data-i18n="本地问答历史">本地问答历史</span></strong>
@@ -343,7 +374,7 @@
         </div>
       </div>
     </aside>
-  </main>
+
 
   <div ref="{{ publishToastRef }}" class="publish-toast" data-state="loading" role="status" aria-live="assertive" aria-atomic="true">
     <span class="publish-toast-icon" aria-hidden="true"></span>

@@ -3,10 +3,13 @@ import { test, expect, openEditor } from './fixtures';
 test('文件菜单的上传操作保持横排标题，并为不可用工具提供原因', async ({ page }) => {
   await openEditor(page);
   await page.locator('body').evaluate((body) => body.classList.add('agent-bridge-enabled'));
-  await page.locator('.file-menu-toggle').click();
+  await page.locator('.export-menu-toggle').click();
 
   const upload = page.getByRole('menuitem', { name: /上传到飞书文档/ });
   await expect(upload).toBeVisible();
+  const publishSeparator = page.locator('.export-menu .header-menu-separator.publish-menu-item');
+  await expect(publishSeparator).toBeVisible();
+  expect((await publishSeparator.boundingBox())!.height).toBeLessThanOrEqual(1);
   const box = await upload.boundingBox();
   expect(box).not.toBeNull();
   expect(box!.height).toBeLessThanOrEqual(58);
