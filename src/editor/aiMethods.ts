@@ -26,6 +26,16 @@ export class AIMethods {
   }
 
 
+  // 顶栏 AI：有 Bridge 时开关面板；静态弱入口打开设置 AI 页并说明原因（避免 TypeError）
+  toggleAIEntry() {
+    if (this.agentBridgeEnabled) {
+      this._openAIPanel();
+      return;
+    }
+    this.openWorkspaceSettings?.('ai');
+    this._setStatus?.(t('阅读、编辑与批注无需配置 AI。') + ' · ' + t('当前不可用 · 需要桌面版或本地 Agent Bridge'));
+  }
+
   // ===== AI 引擎切换（Claude / Codex / Gemini） =====
 
   _aiEngineLabel(engine) {

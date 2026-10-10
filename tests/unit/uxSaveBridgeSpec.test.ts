@@ -113,3 +113,22 @@ test('static selection AI entries use hidden attribute (not only CSS)', async ()
     globalThis.document = prev;
   }
 });
+
+
+test('toggleAIEntry opens settings when Bridge is off', async () => {
+  const { AIMethods } = await import('../../src/editor/aiMethods.ts');
+  const calls: string[] = [];
+  const editor = Object.assign(new AIMethods(), {
+    agentBridgeEnabled: false,
+    openWorkspaceSettings(page: string) { calls.push('settings:' + page); },
+    _setStatus(msg: string) { calls.push('status:' + msg); },
+    _openAIPanel() { calls.push('panel'); }
+  });
+  editor.toggleAIEntry();
+  assert.deepEqual(calls[0], 'settings:ai');
+  assert.ok(calls.some((c) => c.startsWith('status:')));
+  editor.agentBridgeEnabled = true;
+  calls.length = 0;
+  editor.toggleAIEntry();
+  assert.deepEqual(calls, ['panel']);
+});

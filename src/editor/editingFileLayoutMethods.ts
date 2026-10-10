@@ -642,7 +642,7 @@ export class EditingFileLayoutMethods {
         this._setDirty(src.value !== content); this._autosave();
         this._setStatus(t("✓ 已保存到 {name}", { name: handle.name }));
       } catch (e) {
-        if (e && e.name === 'AbortError') return;
+        if (e && e.name === 'AbortError') { this._setStatus?.(t('已取消保存')); return; }
         this._setStatus(t('另存为失败：{error}', { error: (e && e.message) || e || t('未知错误') }));
       }
       return;
