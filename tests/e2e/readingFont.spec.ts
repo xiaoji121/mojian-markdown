@@ -1,5 +1,5 @@
 import { chooseLanguage } from './localeHelpers';
-import { test, expect, openEditor, openAppearance, openFontManagement, setSource } from './fixtures';
+import { test, expect, openEditor, openAppearance, openFontManagement, setSource, ensureSourceVisible } from './fixtures';
 
 for (const locale of ['zh-CN', 'zh-TW', 'en', 'ja']) {
   test(`reading font survives ${locale} UI changes and reload`, async ({ page }, testInfo) => {
@@ -56,6 +56,7 @@ test('old draft migration preserves content, invalid font IDs cannot inject CSS'
   await expect(page.locator('.md-source')).toHaveValue('# Existing');
   await page.evaluate(() => localStorage.setItem('md-editor-warm-v1', JSON.stringify({ content: '# Existing', readingFont: 'url(https://example.invalid/evil)' })));
   await page.reload();
+  await ensureSourceVisible(page);
   await expect(page.locator('body')).toHaveAttribute('data-reading-font', 'source-serif-4');
   await expect(page.locator('.md-source')).toHaveValue('# Existing');
 });

@@ -40,7 +40,8 @@ test('导出菜单可用方向键和 Esc 操作，阅读模式保留快捷搜索
   const more = page.getByRole('button', { name: '导出', exact: true });
   await more.focus();
   await page.keyboard.press('ArrowDown');
-  await expect(page.getByRole('menuitem', { name: '保存', exact: true })).toBeFocused();
+  // 静态 Web 无写盘能力：「保存」隐藏，首项为备份包
+  await expect(page.getByRole('menuitem', { name: '下载全文+批注备份包' })).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(more).toBeFocused();
   await expect(page.locator('.export-menu')).toBeHidden();
@@ -58,14 +59,17 @@ for (const immersive of [false, true]) {
     if (immersive) await page.getByRole('button', { name: '沉浸式阅读', exact: true }).click();
     const tools = page.locator('.reading-toolbar');
     const preview = page.locator('.md-preview');
-    const before = await tools.boundingBox();
+    await expect(tools).toBeVisible();
+    await expect(tools).not.toHaveClass(/is-scrolled-away/);
+    // 产品：按下滚方向整条收起（transform），不再 1:1 跟滚位移
     await preview.evaluate((element) => { element.scrollTop = 16; });
-    await expect.poll(async () => (await tools.boundingBox())!.y).toBeCloseTo(before!.y - 16, 0);
+    await expect(tools).toHaveClass(/is-scrolled-away/);
     await preview.evaluate((element) => { element.scrollTop = 400; });
-    await expect(tools).toBeHidden();
+    await expect(tools).toHaveClass(/is-scrolled-away/);
     await page.mouse.move(900, 5);
-    await expect(tools).toBeHidden();
+    await expect(tools).toHaveClass(/is-scrolled-away/);
     await preview.evaluate((element) => { element.scrollTop = 0; });
+    await expect(tools).not.toHaveClass(/is-scrolled-away/);
     await expect(tools).toBeVisible();
     await openAppearance(page);
     await expect(page.locator('.reading-appearance-panel')).toBeVisible();
@@ -78,6 +82,7 @@ test('滚动后从侧栏打开全局设置，保持文章阅读位置', async ({
   await page.locator('[data-mode="preview"]').click();
   await page.locator('.md-preview').evaluate((element) => { element.scrollTop = 500; });
   await openAppearance(page);
-  await expect.poll(() => page.locator('.md-preview').evaluate((element) => element.scrollTop)).toBe(500);
+  // 工具条收起时夹具会略上滑露出设置，仍应停在文中
+  await expect.poll(() => page.locator('.md-preview').evaluate((element) => element.scrollTop)).toBeGreaterThan(400);
   await expect(page.locator('.reading-appearance-panel')).toBeVisible();
 });

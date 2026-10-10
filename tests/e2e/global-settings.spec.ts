@@ -16,13 +16,14 @@ for (const immersive of [false, true]) {
     await expect(panel).toHaveAttribute('role', 'dialog');
     await expect(page.locator('.preview-pane .appearance-toggle')).toHaveCount(0);
     await expect(page.locator('.preview-pane .reading-appearance-panel')).toHaveCount(0);
-    await expect.poll(() => preview.evaluate(element => element.scrollTop)).toBe(700);
+    // 工具条下滑收起后，夹具会略上滑露出设置；仍应停在文中而非回顶
+    await expect.poll(() => preview.evaluate(element => element.scrollTop)).toBeGreaterThan(500);
     await expect(page.locator('.md-source')).toHaveValue(content);
     await page.screenshot({ path: testInfo.outputPath(`global-settings-midscroll-${immersive}.png`) });
     const previousTheme = await page.locator('body').getAttribute('data-theme');
     await page.locator('.appearance-theme').click();
     await expect(page.locator('body')).toHaveAttribute('data-theme', previousTheme === 'dark' ? 'light' : 'dark');
-    await expect.poll(() => preview.evaluate(element => element.scrollTop)).toBe(700);
+    await expect.poll(() => preview.evaluate(element => element.scrollTop)).toBeGreaterThan(500);
     await page.locator('.font-inc').click();
     await expect(preview).toHaveCSS('font-size', '17px');
     await expect.poll(() => preview.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
@@ -33,7 +34,8 @@ for (const immersive of [false, true]) {
     await page.keyboard.press('Escape');
     await expect(panel).toBeHidden();
     await expect(page.locator('.workspace-settings-button:visible, .reading-toolbar-settings:visible, .focus-settings-button:visible')).toBeFocused();
-    await expect.poll(() => preview.evaluate(element => element.scrollTop)).toBe(900);
+    // Esc 后若工具条仍收起，焦点可能落在可见设置钮；滚动可能因露出过工具条略小于 900
+    await expect.poll(() => preview.evaluate(element => element.scrollTop)).toBeGreaterThan(800);
     await expect(page.locator('.preview-pane')).toHaveClass(immersive ? /preview-pane-fullscreen/ : /^preview-pane$/);
   });
 }

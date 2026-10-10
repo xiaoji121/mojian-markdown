@@ -33,10 +33,10 @@ async function installFakeLocalFile(page: Page, content: string) {
 }
 
 async function openFakeLocalFile(page: Page) {
-  await page.getByRole('button', { name: '打开文件', exact: true }).click();
+  await page.getByRole('button', { name: '导入 Markdown', exact: true }).click();
   await expect(page.locator('.md-source')).toHaveValue(/原始内容/);
   // 正文会先出现，随后才完成工作区认领与本地句柄初始化；等打开流程真正结束再编辑。
-  await expect(page.locator('.save-status')).toContainText('已打开 · 本地笔记.md');
+  await expect(page.locator('.save-status-toast')).toContainText('已打开 · 本地笔记.md');
 }
 
 test('编辑内容自动写回打开的本地文件', async ({ page }) => {

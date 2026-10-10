@@ -1,13 +1,26 @@
 import { test, expect, openEditor } from './fixtures';
 
-test('文件菜单的上传操作保持横排标题，并为不可用工具提供原因', async ({ page }) => {
+test('文件菜单的上传操作保持横排标题；不可用项按规格隐藏', async ({ page }) => {
   await openEditor(page);
+  // 规格：不可用连接器整项隐藏。打开菜单会刷新能力；先确认隐藏，再强制显示验布局。
   await page.locator('body').evaluate((body) => body.classList.add('agent-bridge-enabled'));
   await page.locator('.export-menu-toggle').click();
-
-  const upload = page.getByRole('menuitem', { name: /上传到飞书文档/ });
-  await expect(upload).toBeVisible();
   const publishSeparator = page.locator('.export-menu .header-menu-separator.publish-menu-item');
+  const upload = page.locator('.export-menu .publish-menu-item[data-target="feishu"]');
+  const dingtalkUpload = page.locator('.export-menu .publish-menu-item[data-target="dingtalk"]');
+  await expect(publishSeparator).toBeHidden();
+  await expect(upload).toBeHidden();
+
+  await page.locator('.export-menu .publish-menu-item').evaluateAll((nodes) => {
+    for (const node of nodes) {
+      (node as HTMLElement).hidden = false;
+      if (node instanceof HTMLButtonElement) {
+        node.disabled = false;
+        node.classList.remove('is-unavailable');
+      }
+    }
+  });
+  await expect(upload).toBeVisible();
   await expect(publishSeparator).toBeVisible();
   expect((await publishSeparator.boundingBox())!.height).toBeLessThanOrEqual(1);
   const box = await upload.boundingBox();
@@ -15,8 +28,6 @@ test('文件菜单的上传操作保持横排标题，并为不可用工具提�
   expect(box!.height).toBeLessThanOrEqual(58);
   await expect(upload.locator('.menu-item-hint')).toHaveCSS('width', /\d+px/);
   await expect(upload.locator('.menu-item-hint')).toHaveText('上传完成后自动打开');
-  if (await upload.isDisabled()) await expect(upload).toHaveAttribute('title', /.+/);
-  const dingtalkUpload = page.getByRole('menuitem', { name: /上传到钉钉云盘/ });
   await expect(dingtalkUpload).toBeVisible();
   await expect(dingtalkUpload.locator('.menu-item-hint')).toHaveText('保留 .md 文件，不转在线文档');
 });

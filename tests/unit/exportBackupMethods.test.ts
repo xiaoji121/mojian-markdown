@@ -84,3 +84,50 @@ test('onNew 对已恢复的浏览器草稿（dirty=false）也会确认', () => 
     else delete (globalThis as { window?: unknown }).window;
   }
 });
+
+test('_initUnloadGuard 桌面端不挂 beforeunload（交给原生关闭协调）', () => {
+  const listeners: Array<[string, Function]> = [];
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'window');
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: {
+      mojianDesktop: {},
+      addEventListener(type: string, fn: Function) { listeners.push([type, fn]); },
+      removeEventListener() {}
+    }
+  });
+  try {
+    const editor = Object.create(ExportBackupMethods.prototype);
+    editor._beforeUnloadHandler = null;
+    editor._initUnloadGuard();
+    assert.equal(editor._beforeUnloadHandler, null);
+    assert.deepEqual(listeners, []);
+  } finally {
+    if (previous) Object.defineProperty(globalThis, 'window', previous);
+    else delete (globalThis as { window?: unknown }).window;
+  }
+});
+
+test('_initUnloadGuard 网页端仍挂 beforeunload', () => {
+  const listeners: Array<[string, Function]> = [];
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'window');
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: {
+      addEventListener(type: string, fn: Function) { listeners.push([type, fn]); },
+      removeEventListener() {}
+    }
+  });
+  try {
+    const editor = Object.create(ExportBackupMethods.prototype);
+    editor._beforeUnloadHandler = null;
+    editor._shouldConfirmLeave = () => false;
+    editor._initUnloadGuard();
+    assert.equal(typeof editor._beforeUnloadHandler, 'function');
+    assert.equal(listeners.length, 1);
+    assert.equal(listeners[0][0], 'beforeunload');
+  } finally {
+    if (previous) Object.defineProperty(globalThis, 'window', previous);
+    else delete (globalThis as { window?: unknown }).window;
+  }
+});

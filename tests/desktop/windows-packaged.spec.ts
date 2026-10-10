@@ -1,4 +1,5 @@
 import { _electron as electron, expect, test } from '@playwright/test';
+import { ensureSourceVisible } from '../e2e/fixtures';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -44,7 +45,7 @@ test('Windows packaged app saves Chinese/space paths and survives restart', asyn
     expect(await app.evaluate(({ app }) => app.isPackaged)).toBe(true);
     const page = await app.firstWindow();
     const source = page.locator('.md-source');
-    await expect(source).toBeVisible({ timeout: 15_000 });
+    await ensureSourceVisible(page, 15_000);
     expect(await page.evaluate(() => fetch('/health').then((response) => response.json())))
       .toEqual({ ok: true });
 
@@ -89,7 +90,7 @@ test('Windows packaged app saves Chinese/space paths and survives restart', asyn
     await closeEditorWindow(app);
     app = await launch();
     const reopened = await app.firstWindow();
-    await expect(reopened.locator('.md-source')).toBeVisible({ timeout: 15_000 });
+    await ensureSourceVisible(reopened, 15_000);
     // No new file grant on this process: verify persisted permission and content.
     const restored = await reopened.evaluate((path) => (window as any).mojianDesktop.readFile(path), renamedPath);
     expect(restored.content).toContain('重启后仍可继续写回');
@@ -133,7 +134,7 @@ test('Windows packaged bridge calls npm Claude and Codex shims without a shell',
   try {
     expect(await app.evaluate(({ app }) => app.isPackaged)).toBe(true);
     const page = await app.firstWindow();
-    await expect(page.locator('.md-source')).toBeVisible({ timeout: 15_000 });
+    await ensureSourceVisible(page, 15_000);
     const question = '中文 " & echo injected | < > ^ %PATH% !VALUE!';
     for (const engine of ['claude', 'codex']) {
       const result = await page.evaluate(async ({ engine, question }) => {

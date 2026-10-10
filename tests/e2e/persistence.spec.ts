@@ -1,4 +1,4 @@
-import { test, expect, openEditor, openAppearance, setSource } from './fixtures';
+import { test, expect, openEditor, openAppearance, setSource, ensureSourceVisible } from './fixtures';
 
 const STORAGE_KEY = 'md-editor-warm-v1';
 
@@ -13,7 +13,7 @@ test('编辑内容自动保存，刷新后恢复', async ({ page }) => {
   }, [STORAGE_KEY]);
 
   await page.reload();
-
+  await ensureSourceVisible(page);
   await expect(page.locator('.md-source')).toHaveValue('# 持久化测试\n\n刷新后我还在。');
   await expect(page.locator('.md-preview h1')).toHaveText('持久化测试');
 });

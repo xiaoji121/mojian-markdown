@@ -1,5 +1,5 @@
 import { chooseLanguage } from './localeHelpers';
-import { test, expect, setSource, openAppearance } from './fixtures';
+import { test, expect, setSource, openAppearance, ensureSourceVisible } from './fixtures';
 const sampleHeadings: Record<string, string> = {
   'zh-CN': '欢迎使用墨笺', 'zh-TW': '歡迎使用墨箋',
   en: 'Welcome to Mojian', ja: '墨笺へようこそ',
@@ -26,7 +26,7 @@ for (const [locale, title, open] of [['zh-CN', '墨笺 Markdown', '打开编辑�
   test(`${locale} editor entry, return and browser history keep document`, async ({ page }) => {
     await page.goto(`/${locale}/`);
     await page.locator('.landing-open').click();
-    await expect(page.locator('.md-source')).toBeVisible();
+    await ensureSourceVisible(page);
     await expect(page.locator('html')).toHaveAttribute('data-editor-locale', locale);
     await expect(page.locator('.md-preview h1').first()).toHaveText(sampleHeadings[locale]);
     await expect(page.locator('.md-source')).toHaveAttribute('lang', locale);
@@ -38,6 +38,7 @@ for (const [locale, title, open] of [['zh-CN', '墨笺 Markdown', '打开编辑�
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
     await expect(page.locator('#landing-page')).toBeVisible();
     await page.goBack();
+    await ensureSourceVisible(page);
     await expect(page.locator('.md-source')).toHaveValue('# Keep my draft\n\nUntouched across navigation.');
     await page.goForward();
     await expect(page.locator('#landing-page')).toBeVisible();
@@ -64,12 +65,14 @@ test('locale links are keyboard accessible on mobile and at 200% sizing', async 
 });
 test('explicit saved editor language wins over a different landing route', async ({ page }) => {
   await page.goto('/en/#editor');
+  await ensureSourceVisible(page);
   await expect(page.locator('html')).toHaveAttribute('data-editor-locale', 'en');
   await chooseLanguage(page, 'ja');
   await setSource(page, '# Saved draft');
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('md-editor-warm-v1') || '{}').locale)).toBe('ja');
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('md-editor-warm-v1') || '{}').content)).toBe('# Saved draft');
   await page.goto('/zh-TW/#editor');
+  await ensureSourceVisible(page);
   await expect(page.locator('html')).toHaveAttribute('data-editor-locale', 'ja');
   await expect(page.locator('.md-source')).toHaveValue('# Saved draft');
   await expect(page.locator('html')).toHaveAttribute('lang','ja');
@@ -98,7 +101,7 @@ test('desktop landing language navigation stays on the trusted root document', a
 });
 test('changing landing locale preserves a draft with its save debounce still pending', async ({ page }) => {
   await page.goto('/en/#editor');
-  await expect(page.locator('.md-source')).toBeVisible();
+  await ensureSourceVisible(page);
   await page.clock.install();
   await page.clock.pauseAt(new Date());
   await setSource(page, '# Immediate edit before choosing a language');
@@ -117,7 +120,7 @@ test('root to locale to first editor preserves the favicon URL', async ({ page }
   await page.locator('.landing-language-toggle').click();
   await page.locator('.landing-languages a[lang="en"]').click();
   await page.locator('.landing-open').click();
-  await expect(page.locator('.md-source')).toBeVisible();
+  await ensureSourceVisible(page);
   const icon = await page.locator('link[rel=icon]').getAttribute('href');
   expect(icon).toBeTruthy();
   expect((await page.request.get(new URL(icon!, page.url()).href)).ok()).toBe(true);

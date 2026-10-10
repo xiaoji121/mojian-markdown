@@ -1,4 +1,5 @@
 import { _electron as electron, expect, test } from '@playwright/test';
+import { ensureSourceVisible } from '../e2e/fixtures';
 import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -56,7 +57,7 @@ export function registerSecureSettingsScenario(label: string, executablePath?: s
         const url = new URL(route.request().url());
         return ['127.0.0.1', 'localhost'].includes(url.hostname) ? route.continue() : route.abort();
       });
-      await expect(page.locator('.md-source')).toBeVisible();
+      await ensureSourceVisible(page);
       return { app, page };
     };
     let current = await launch();

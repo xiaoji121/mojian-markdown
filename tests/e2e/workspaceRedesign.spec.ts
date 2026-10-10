@@ -21,7 +21,7 @@ test('文档侧栏常驻，新建打开与设置有明确归属，导出独立',
   await expect(sidebar.locator('img.workspace-brand-icon')).toHaveAttribute('src', '/favicon.svg');
   await expect(sidebar.locator('img.workspace-brand-icon')).toHaveAttribute('alt', '');
   await expect(sidebar.getByRole('button', { name: '新建文档', exact: true })).toBeVisible();
-  await expect(sidebar.getByRole('button', { name: '打开文件', exact: true })).toBeVisible();
+  await expect(sidebar.getByRole('button', { name: '导入 Markdown', exact: true })).toBeVisible();
   await expect(sidebar.getByRole('button', { name: '设置', exact: true })).toBeVisible();
   expect((await sidebar.boundingBox())!.y).toBe(0);
   await page.getByRole('button', { name: '导出', exact: true }).click();

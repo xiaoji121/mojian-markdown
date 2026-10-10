@@ -1,5 +1,6 @@
 import { chooseLanguage } from '../e2e/localeHelpers';
 import { _electron as electron, expect, test } from '@playwright/test';
+import { ensureSourceVisible } from '../e2e/fixtures';
 import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -25,7 +26,7 @@ test('language switches persist across real desktop restarts and update native m
     .find(item => item.submenu?.items.some(child => child.accelerator === 'CmdOrCtrl+N'))!.label);
   try {
     let page = await app.firstWindow();
-    await expect(page.locator('.md-source')).toBeVisible();
+    await ensureSourceVisible(page);
     expect(await fileLabel()).toBe('File');
     const content = '# 保持される下書き\n\n中文 English 日本語\n';
     for (const [locale, label] of [['zh-TW', '檔案'], ['ja', 'ファイル'], ['zh-CN', '文件'], ['en', 'File']]) {
@@ -37,6 +38,7 @@ test('language switches persist across real desktop restarts and update native m
       await closeEditorWindow(app);
       app = await launch();
       page = await app.firstWindow();
+      await ensureSourceVisible(page);
       await expect(page.locator('.md-source')).toHaveValue(content);
       await expect(page.locator('html')).toHaveAttribute('data-editor-locale', locale);
       expect(await fileLabel()).toBe(label);

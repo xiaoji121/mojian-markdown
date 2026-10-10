@@ -94,7 +94,7 @@ test('划词工具条可把选中内容单独生成图片', async ({ page }) => 
   await expect(poster).toContainText('列表第二项');
   await expect(poster.locator('.longimg-prose > ul > li')).toHaveCount(2);
   await expect(poster).not.toContainText('引用块也要出现在长图里');
-  await expect(poster.locator('.longimg-title')).toHaveText('未命名');
+  await expect(poster.locator('.longimg-title')).toHaveText('欢迎');
 });
 
 test('选中段落生成图片时，批注以思考卡片跟在对应内容下方', async ({ page }) => {
@@ -338,7 +338,7 @@ test('手机分页把长文保存为多张一屏尺寸图片', async ({ page }) 
     page.waitForEvent('download', { timeout: 60_000 }),
     page.locator('.longimg-save').click()
   ]);
-  await expect(page.locator('.save-status')).toContainText('已保存手机分页图片', { timeout: 60_000 });
+  await expect(page.locator('.save-status-toast')).toContainText('已保存手机分页图片', { timeout: 60_000 });
 
   expect(download.suggestedFilename()).toMatch(/-手机分页\.zip$/);
   const path = await download.path();
