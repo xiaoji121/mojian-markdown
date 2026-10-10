@@ -1,6 +1,7 @@
 // @ts-nocheck
 import {
   planSelectionToolbarLayout,
+  selectionToolbarBudgetWidth,
   SEL_TOOL_PRIORITY,
   SEL_TOOLBAR_DEFAULTS
 } from './selectionToolbarLayout.ts';
@@ -33,11 +34,37 @@ export class SelectionToolbarMethods {
     return w || SEL_TOOLBAR_DEFAULTS.annotateWidth;
   }
 
+  /** Prefer a visible annotate .seltool width over the static fallback (hidden overflow nodes report 0). */
+  _measureSelToolFallbackWidth(bar) {
+    const ann = bar?.querySelector?.('[data-sel-annotate]');
+    const w = ann?.offsetWidth;
+    return w > 0 ? w : SEL_TOOLBAR_DEFAULTS.toolWidth;
+  }
+
   _selToolWidth(el, fallback = SEL_TOOLBAR_DEFAULTS.toolWidth) {
     if (!el) return fallback;
     // hidden nodes report 0 — use fallback so planning still reserves a slot size
     const w = el.offsetWidth;
     return w > 0 ? w : fallback;
+  }
+
+  /**
+   * Available width for the floating bar: min(window, preview pane) minus side pads.
+   * Split-view narrow preview must drive collapse, not only window.innerWidth.
+   */
+  _selectionToolbarAvailableWidth() {
+    const sidePad = SEL_TOOLBAR_DEFAULTS.sidePad;
+    const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 640;
+    const pane =
+      this.previewPaneRef?.current ||
+      this.previewRef?.current?.closest?.('.preview-pane') ||
+      this.previewRef?.current ||
+      null;
+    const paneWidth =
+      pane && typeof pane.clientWidth === 'number' && pane.clientWidth > 0
+        ? pane.clientWidth
+        : null;
+    return selectionToolbarBudgetWidth({ windowWidth, paneWidth, sidePad });
   }
 
   _closeSelOverflowMenu() {
@@ -72,17 +99,20 @@ export class SelectionToolbarMethods {
       else el.hidden = false;
     }
 
-    const maxW = typeof window !== 'undefined' ? Math.max(0, window.innerWidth - 16) : 640;
+    const maxW = this._selectionToolbarAvailableWidth();
+    bar.style.maxWidth = `${maxW}px`;
+
     const annotateWidth = this._measureSelAnnotateWidth(bar);
+    const toolFallback = this._measureSelToolFallbackWidth(bar);
     const dividerWidth = toolsDivider
       ? Math.max(toolsDivider.offsetWidth || 0, SEL_TOOLBAR_DEFAULTS.dividerWidth)
       : SEL_TOOLBAR_DEFAULTS.dividerWidth;
-    const moreWidth = this._selToolWidth(moreBtn, SEL_TOOLBAR_DEFAULTS.moreWidth);
+    const moreWidth = this._selToolWidth(moreBtn, toolFallback);
 
     const plan = planSelectionToolbarLayout({
       availableWidth: maxW,
       annotateWidth,
-      toolWidth: (id) => this._selToolWidth(byId[id]),
+      toolWidth: (id) => this._selToolWidth(byId[id], toolFallback),
       dividerWidth,
       moreWidth,
       chromePad: SEL_TOOLBAR_DEFAULTS.chromePad,
