@@ -86,11 +86,17 @@ for (const width of [390, 1440]) {
       const settingsBox = (await settings.boundingBox())!;
       const exitBox = (await exit.boundingBox())!;
       await page.screenshot({ path: testInfo.outputPath(`immersive-controls-${width}-wide-${wide}.png`) });
-      // 退出独占右上：全文可见且不与工具条设置重叠
-      expect(exitBox.width).toBeGreaterThan(80);
+      // 桌面：退出独占右上、与设置同行不重叠；窄屏：退出在上、工具条在下
+      expect(exitBox.width).toBeGreaterThan(60);
       expect(exitBox.x + exitBox.width).toBeLessThanOrEqual(width - 15);
-      expect(settingsBox.x + settingsBox.width).toBeLessThanOrEqual(exitBox.x - 8);
-      if (width === 390) await expect(page.locator('.reading-toolbar')).toHaveCSS('right', '152px');
+      if (width === 390) {
+        await expect(exit.locator('.focus-exit-esc-hint')).toBeHidden();
+        expect(exitBox.height).toBeGreaterThanOrEqual(44);
+        expect(exitBox.y + exitBox.height).toBeLessThanOrEqual(settingsBox.y - 8);
+        await expect(page.locator('.view-mode-switcher')).toBeHidden();
+      } else {
+        expect(settingsBox.x + settingsBox.width).toBeLessThanOrEqual(exitBox.x - 8);
+      }
       await exit.click();
       await expect(page.locator('.preview-pane')).not.toHaveClass(/preview-pane-fullscreen/);
     });

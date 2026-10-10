@@ -298,7 +298,7 @@
           </button>
         </span>
       </div>
-      <button type="button" class="focus-exit-sticky" onClick="{{ togglePreviewFullscreen }}" hidden aria-label="退出专注 · Esc" data-i18n-aria-label="退出专注"><span data-i18n="退出专注">退出专注</span><span aria-hidden="true"> · Esc</span></button>
+      <button type="button" class="focus-exit-sticky" onClick="{{ togglePreviewFullscreen }}" hidden aria-label="退出专注" data-i18n-aria-label="退出专注"><span data-i18n="退出专注">退出专注</span><span class="focus-exit-esc-hint" aria-hidden="true"> · Esc</span></button>
       <div ref="{{ previewSearchBarRef }}" class="preview-search-bar" role="search" aria-label="搜索预览内容" data-i18n-aria-label="搜索预览内容">
         <input ref="{{ previewSearchInputRef }}" class="search-input preview-search-input" type="text" placeholder="搜索预览…" data-i18n-placeholder="搜索预览…" aria-label="搜索预览" data-i18n-aria-label="搜索预览" spellCheck="false" />
         <span ref="{{ previewSearchCountRef }}" class="search-count preview-search-count" aria-live="polite"></span>
