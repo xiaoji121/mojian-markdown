@@ -15,6 +15,11 @@ import {
 export class ExportBackupMethods {
   _initUnloadGuard() {
     if (this._beforeUnloadHandler || typeof window === 'undefined') return;
+    // Electron already guards drafts via the native close coordinator
+    // (desktop:prepare-close + showMessageBox). A second beforeunload dialog
+    // races Playwright (Page.handleJavaScriptDialog) and also pops when
+    // intercepted external links fire will-navigate after the leave prompt.
+    if (window.mojianDesktop) return;
     this._beforeUnloadHandler = (event) => {
       if (!this._shouldConfirmLeave()) return;
       event.preventDefault();

@@ -19,7 +19,7 @@ async function createSession(executablePath?: string) {
   let child: ChildProcess | undefined;
   const env: Record<string, string> = {};
   for (const key of ['SystemRoot', 'SYSTEMROOT', 'WINDIR', 'COMSPEC', 'TEMP', 'TMP',
-    'DISPLAY', 'WAYLAND_DISPLAY', 'XDG_RUNTIME_DIR', 'DBUS_SESSION_BUS_ADDRESS', 'LANG']) {
+    'DISPLAY', 'WAYLAND_DISPLAY', 'XAUTHORITY', 'XDG_RUNTIME_DIR', 'DBUS_SESSION_BUS_ADDRESS', 'LANG']) {
     if (process.env[key]) env[key] = process.env[key]!;
   }
   Object.assign(env, {
