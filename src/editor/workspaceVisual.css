@@ -233,6 +233,52 @@ body.editor-active[data-theme='light'][data-paper='snow'] { --paper-bg: #fffefa;
 .editor-main > .preview-pane-fullscreen > .md-preview {
   padding-top: 72px;
 }
+
+/* 手机专注顶栏（≤720px）：退出独占安全区顶行，阅读工具条次行，弱化模式切换 */
+@media (max-width: 720px) {
+  .preview-pane-fullscreen {
+    --reading-tools-edge: 12px;
+    --focus-exit-top: max(10px, env(safe-area-inset-top, 0px));
+    --focus-exit-height: 44px;
+    --focus-tools-gap: 8px;
+    --focus-tools-top: calc(var(--focus-exit-top) + var(--focus-exit-height) + var(--focus-tools-gap));
+  }
+  /* M5：窄屏专注时隐藏编辑/分屏/阅读，顶区 ≤ 两行 */
+  .app-shell:has(.preview-pane-fullscreen) .view-mode-switcher {
+    display: none !important;
+  }
+  /* M2 / M4 / M6：退出独占顶安全区；触控高度 ≥44；藏 Esc */
+  .preview-pane-fullscreen .focus-exit-sticky {
+    top: var(--focus-exit-top);
+    right: max(12px, env(safe-area-inset-right, 0px));
+    left: auto;
+    min-height: var(--focus-exit-height);
+    padding: 10px 16px;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    z-index: 22;
+  }
+  .preview-pane-fullscreen .focus-exit-sticky .focus-exit-esc-hint {
+    display: none !important;
+  }
+  /* M3：阅读工具条在退出下方另起一行，不与退出同行抢宽 */
+  .editor-main.preview-mode-active > .preview-pane.preview-pane-fullscreen > .reading-toolbar,
+  .editor-main > .preview-pane-fullscreen > .reading-toolbar {
+    top: var(--focus-tools-top) !important;
+    right: max(12px, env(safe-area-inset-right, 0px)) !important;
+    left: auto !important;
+    width: max-content;
+    max-width: calc(100% - 24px);
+    height: auto !important;
+    min-height: 36px;
+  }
+  /* M6：正文首行让出退出 + 间距 + 工具条 */
+  .editor-main.preview-mode-active > .preview-pane.preview-pane-fullscreen > .md-preview,
+  .editor-main > .preview-pane-fullscreen > .md-preview {
+    padding-top: calc(var(--focus-tools-top) + 44px + 8px) !important;
+  }
+}
 .abtn.ai-entry-weak {
   color: var(--text-3);
   font-weight: 450;
