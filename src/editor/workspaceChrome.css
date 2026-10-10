@@ -72,3 +72,16 @@ html[lang="en"] .header-menu-item, html[lang="ja"] .header-menu-item { white-spa
 }
 .reading-font-note { display: grid; gap: 5px; max-width: 290px; white-space: normal; line-height: 1.5; }
 .reading-font-link { color: var(--accent); text-decoration: underline; }
+
+/* 按滚动方向收起：瞬时或轻过渡；reduced-motion 不做位移动画 */
+.preview-pane > .reading-toolbar {
+  transition: opacity .18s ease, visibility .18s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .preview-pane > .reading-toolbar { transition: none; }
+}
+.reading-toolbar.is-scrolled-away {
+  visibility: hidden;
+  pointer-events: none;
+  opacity: 0;
+}
