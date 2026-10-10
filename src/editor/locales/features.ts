@@ -163,6 +163,7 @@ export const featureMessages: Record<string, [string, string, string]> = {
   "重命名失败：{error}": ["重新命名失敗：{error}","Rename failed: {error}","名前の変更失敗：{error}"],
   "打开失败 · {error}": ["開啟失敗 · {error}","Open failed · {error}","開けませんでした · {error}"],
   "保存失败：{error}": ["儲存失敗：{error}","Save failed: {error}","保存失敗：{error}"],
+  "已取消保存": ["已取消儲存","Save cancelled","保存をキャンセルしました"],
   "另存为失败：{error}": ["另存新檔失敗：{error}","Save as failed: {error}","名前を付けて保存に失敗：{error}"],
   "✓ 已下载 {name}": ["✓ 已下載 {name}","✓ Downloaded {name}","✓ {name} をダウンロードしました"],
   "✓ 已下载纯源文 {name}": ["✓ 已下載純源文 {name}","✓ Downloaded source {name}","✓ 原文 {name} をダウンロードしました"],
