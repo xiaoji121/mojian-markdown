@@ -51,6 +51,32 @@
 .workspace-sidebar-footer { flex: none; padding: 4px 16px; border-top: 1px solid var(--border-soft); }
 .workspace-sidebar-footer .abtn { height: 32px; width: 100%; justify-content: flex-start; padding-inline: 10px; }
 .workspace-local-note { margin: 16px 12px; color: var(--text-3); font: var(--fs-xs)/1.7 var(--sans); }
+.recent-reconnect {
+  display: flex;
+  width: calc(100% - 24px);
+  margin: 0 12px 16px;
+  justify-content: center;
+}
+.integration-status-list {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.integration-status-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-surface);
+  background: var(--bg-input);
+}
+.integration-status-row.is-unavailable { opacity: 0.92; }
+.integration-status-row.is-available { border-color: color-mix(in srgb, var(--accent) 35%, var(--border-soft)); }
+.integration-status-row [data-integration-status] { margin: 0; }
 .app-shell > :is(.comments-panel, .ai-panel) > .panel-header { height: var(--workspace-header-height); padding: 0 16px; background: var(--bg); border-color: var(--border-soft); }
 .assistance-tabs { height: 100%; display: flex; align-items: stretch; gap: 16px; }
 .assistance-tabs [role='tab'] { display: inline-flex; align-items: center; gap: 8px; padding: 0 12px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--text-3); font: 500 var(--fs-md)/1 var(--sans); cursor: pointer; }

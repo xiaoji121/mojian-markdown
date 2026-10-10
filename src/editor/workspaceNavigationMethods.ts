@@ -82,6 +82,23 @@ export class WorkspaceNavigationMethods {
   }
 
 
+  _appendRecentReconnect(list) {
+    if (!list || list.querySelector('.recent-reconnect')) return;
+    const action = document.createElement('button');
+    action.type = 'button';
+    action.className = 'abtn secondary recent-reconnect';
+    action.textContent = t('重新连接');
+    action.title = t('尝试连接本机 Agent Bridge');
+    action.setAttribute('aria-label', t('重新连接'));
+    action.addEventListener('click', () => {
+      this._setStatus(t('正在重新连接本地服务…'));
+      if (typeof this._refreshRecentDocuments === 'function') {
+        this._refreshRecentDocuments({ fromReconnect: true });
+      }
+    });
+    list.appendChild(action);
+  }
+
   _renderOfflineOrEmptyRecent(list) {
     if (this._recentDocumentsOffline && this._renderLocalWorkspaceDocument) {
       this._renderLocalWorkspaceDocument(list);
@@ -89,15 +106,7 @@ export class WorkspaceNavigationMethods {
       if (note) {
         note.textContent = t('本地服务未连接。当前稿仅保存在此浏览器；跨文档历史需桌面版或本地服务。');
       }
-      const action = document.createElement('button');
-      action.className = 'abtn secondary recent-reconnect';
-      action.textContent = t('重新连接');
-      action.title = t('尝试连接本机 Agent Bridge');
-      action.addEventListener('click', () => {
-        this._setStatus(t('正在重新连接本地服务…'));
-        this._refreshRecentDocuments({ fromReconnect: true });
-      });
-      list.appendChild(action);
+      this._appendRecentReconnect(list);
       return;
     }
     const empty = document.createElement('div');
@@ -105,18 +114,16 @@ export class WorkspaceNavigationMethods {
     empty.textContent = this._recentDocumentsOffline
       ? t('本地服务未连接。当前稿仅保存在此浏览器；跨文档历史需桌面版或本地服务。')
       : t('还没有最近阅读，打开一篇文档开始。');
+    if (this._recentDocumentsOffline) {
+      list.appendChild(empty);
+      this._appendRecentReconnect(list);
+      return;
+    }
     const action = document.createElement('button');
+    action.type = 'button';
     action.className = 'abtn secondary';
-    action.textContent = this._recentDocumentsOffline ? t('重新连接') : t('打开文档');
-    action.title = this._recentDocumentsOffline ? t('尝试连接本机 Agent Bridge') : '';
-    action.addEventListener('click', () => {
-      if (this._recentDocumentsOffline) {
-        this._setStatus(t('正在重新连接本地服务…'));
-        this._refreshRecentDocuments({ fromReconnect: true });
-      } else {
-        this.onOpen();
-      }
-    });
+    action.textContent = t('打开文档');
+    action.addEventListener('click', () => { this.onOpen(); });
     empty.appendChild(action);
     list.appendChild(empty);
   }

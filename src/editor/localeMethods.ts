@@ -6,7 +6,7 @@ import { localeFromPath } from '../landing/route.ts';
 import { bindLocaleSettings, syncLocaleSettings } from './localeSettings.ts';
 import { translateChrome } from './localeChrome.ts';
 import { resolveInitialLocale } from './localeResolve.ts';
-import { syncMenuShortcuts } from './platformShortcuts.ts';
+import { syncMenuShortcuts, syncModTitles } from './platformShortcuts.ts';
 
 export class LocaleMethods {
   _initLocale(saved) {
@@ -28,6 +28,7 @@ export class LocaleMethods {
     this._initLanguagePanel();
     translateChrome(document);
     syncMenuShortcuts(document);
+    syncModTitles(document);
     this._readingFontStatus = 'unknown';
     const link = document.querySelector('.reading-font-link');
     if (link) link.href = READING_FONT_OFFICIAL_URL;
@@ -59,6 +60,7 @@ export class LocaleMethods {
     }
     translateChrome(document);
     syncMenuShortcuts(document);
+    syncModTitles(document);
     this._syncQuickAppearance?.();
     this._syncWorkspaceChrome?.();
     this._applyTheme();

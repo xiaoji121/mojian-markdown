@@ -196,3 +196,59 @@ test('连接器不可用时菜单按钮置灰并用 title 说明原因', () => {
   assert.equal(dingtalk.disabled, false);
   assert.match(dingtalk.title, /上传到钉钉云盘/);
 });
+
+test('无 Bridge 时刷新连接器直接标不可用，并写入设置页说明', async () => {
+  const statuses: Record<string, { textContent: string; classList: { toggle(name: string, on: boolean): void } }> = {};
+  const rows = ['feishu', 'dingtalk'].map((target) => {
+    const state = { textContent: '', classList: { toggle() {} } };
+    statuses[target] = state;
+    return {
+      classList: {
+        toggled: {} as Record<string, boolean>,
+        toggle(name: string, on: boolean) { this.toggled[name] = on; }
+      },
+      querySelector(sel: string) {
+        if (sel === '[data-integration-name]') return { textContent: '' };
+        if (sel === '[data-integration-status]') return state;
+        return null;
+      }
+    };
+  });
+  const root = {
+    querySelector: () => ({ textContent: '' }),
+    querySelectorAll(sel: string) {
+      if (sel === '[data-integration-target]') return [];
+      return [];
+    }
+  };
+  // Minimal getElementById stub
+  const original = globalThis.document;
+  (globalThis as any).document = {
+    getElementById(id: string) {
+      if (id !== 'settings-integrations') return null;
+      return {
+        querySelector(sel: string) {
+          if (sel === '[data-integrations-note]') return { textContent: '' };
+          const m = String(sel).match(/data-integration-target="(\w+)"/);
+          if (m) return rows[['feishu', 'dingtalk'].indexOf(m[1])];
+          return null;
+        },
+        querySelectorAll(sel: string) {
+          if (sel === '[data-integration-status]') return rows.map(r => r.querySelector('[data-integration-status]'));
+          return [];
+        }
+      };
+    }
+  };
+  const { calls, restore } = stubFetch(() => ({ ok: true, payload: {} }));
+  const editor = createEditor({ agentBridgeEnabled: false, fileMenuRef: { current: null } });
+  try {
+    await editor._refreshConnectorCapabilities();
+    assert.equal(calls.length, 0, 'no Bridge should not hit /api/connectors');
+    assert.match(statuses.feishu.textContent, /需要桌面版或本地 Agent Bridge/);
+    assert.match(statuses.dingtalk.textContent, /需要桌面版或本地 Agent Bridge/);
+  } finally {
+    restore();
+    (globalThis as any).document = original;
+  }
+});

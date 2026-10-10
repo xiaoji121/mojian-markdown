@@ -30,5 +30,9 @@ export const workspaceMessages: Record<string, [string, string, string]> = {
   '当前修改尚未写回文件，确定新建空白文档？': ['目前修改尚未寫回檔案，確定新增空白文件？', 'Edits are not written back to the file yet. Create a blank document?', '変更はまだファイルに書き戻されていません。空の文書を作成しますか？'],
   '当前只有浏览器草稿，新建将清空此稿（可先导出保存）。确定新建？': ['目前只有瀏覽器草稿，新增將清空此稿（可先匯出儲存）。確定新增？', 'Only a browser draft exists; creating new will clear it (export first if needed). Continue?', 'ブラウザー下書きのみです。新規作成すると消えます（必要なら先に書き出してください）。続行しますか？'],
   '大纲': ['大綱', 'Outline', 'アウトライン'],
-  '在文档顶部的「导出」中上传到飞书或钉钉，使用本机已登录的连接器。': ['在文件頂部的「匯出」中上傳至飛書或釘釘，使用本機已登入的連接器。', 'Use Export at the top of the document to upload to Feishu or DingTalk with your signed-in local connectors.', '文書上部の「書き出し」から、ログイン済みのローカル連携を使って Feishu または DingTalk にアップロードします。']
+  '在文档顶部的「导出」中上传到飞书或钉钉，使用本机已登录的连接器。': ['在文件頂部的「匯出」中上傳至飛書或釘釘，使用本機已登入的連接器。', 'Use Export at the top of the document to upload to Feishu or DingTalk with your signed-in local connectors.', '文書上部の「書き出し」から、ログイン済みのローカル連携を使って Feishu または DingTalk にアップロードします。'],
+  '当前不可用 · 需要桌面版或本地 Agent Bridge': ['目前無法使用 · 需要桌面版或本機 Agent Bridge', 'Unavailable · Needs the desktop app or local Agent Bridge', '利用不可 · デスクトップアプリまたはローカル Agent Bridge が必要です'],
+  '当前不可用 · 本地服务未连接或未登录连接器': ['目前無法使用 · 本機服務未連線或未登入連接器', 'Unavailable · Local service offline or connector not signed in', '利用不可 · ローカルサービス未接続、または連携未ログイン'],
+  '可用 · 可从「导出」菜单上传': ['可用 · 可從「匯出」選單上傳', 'Available · Upload from the Export menu', '利用可能 · 「書き出し」メニューからアップロードできます'],
+  '正在检测连接器状态…': ['正在偵測連接器狀態…', 'Checking connector status…', '連携の状態を確認中…'],
 };

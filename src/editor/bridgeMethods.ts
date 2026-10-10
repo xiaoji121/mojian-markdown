@@ -79,9 +79,22 @@ export class BridgeMethods {
     list.innerHTML = '';
     const docs = filterWorkspaceDocuments(this.recentDocuments, this.workspaceDocumentQuery).sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
     if (this.documentCountRef.current) this.documentCountRef.current.textContent = String(docs.length);
+    // Web / preview builds still show recent-reading chrome. Expose Reconnect so
+    // offline Bridge (or a Bridge started later on :4317) is one click away.
     if (!this.agentBridgeEnabled && this._renderLocalWorkspaceDocument) {
-      this._renderLocalWorkspaceDocument(list);
-      return;
+      const softConnected = this._recentDocumentsOffline === false && docs.length > 0;
+      if (!softConnected) {
+        this._renderLocalWorkspaceDocument(list);
+        if (this._recentDocumentsOffline) {
+          const note = list.querySelector('.workspace-local-note');
+          if (note) {
+            note.textContent = t('本地服务未连接。当前稿仅保存在此浏览器；跨文档历史需桌面版或本地服务。');
+          }
+        }
+        this._appendRecentReconnect?.(list);
+        return;
+      }
+      // Soft reconnect succeeded: fall through and render the fetched list.
     }
     if (!docs.length && this.workspaceDocumentQuery?.trim()) {
       const empty = document.createElement('p');

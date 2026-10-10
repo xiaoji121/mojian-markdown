@@ -187,7 +187,17 @@
         </section>
         <section id="settings-integrations" role="tabpanel" aria-labelledby="settings-tab-integrations" data-settings-page="integrations" hidden>
           <h3 data-i18n="集成">集成</h3>
-          <p class="appearance-note" data-i18n="在文档顶部的「导出」中上传到飞书或钉钉，使用本机已登录的连接器。">在文档顶部的「导出」中上传到飞书或钉钉，使用本机已登录的连接器。</p>
+          <p class="appearance-note" data-integrations-note data-i18n="在文档顶部的「导出」中上传到飞书或钉钉，使用本机已登录的连接器。">在文档顶部的「导出」中上传到飞书或钉钉，使用本机已登录的连接器。</p>
+          <ul class="integration-status-list" aria-live="polite">
+            <li class="integration-status-row is-unavailable" data-integration-target="feishu">
+              <strong data-integration-name>飞书文档</strong>
+              <span class="appearance-note" data-integration-status data-i18n="当前不可用 · 需要桌面版或本地 Agent Bridge">当前不可用 · 需要桌面版或本地 Agent Bridge</span>
+            </li>
+            <li class="integration-status-row is-unavailable" data-integration-target="dingtalk">
+              <strong data-integration-name>钉钉云盘</strong>
+              <span class="appearance-note" data-integration-status data-i18n="当前不可用 · 需要桌面版或本地 Agent Bridge">当前不可用 · 需要桌面版或本地 Agent Bridge</span>
+            </li>
+          </ul>
           <button class="abtn secondary folder-menu-item" onClick="{{ menuFolder }}" title="选择文件夹，让文档显示本地路径" data-i18n-title="选择文件夹，让文档显示本地路径" data-i18n="关联本地文件夹">关联本地文件夹</button>
         </section>
       </div>
@@ -210,10 +220,10 @@
         <div class="source-toolbar-leading">
           <span class="pane-title"><span data-i18n="Markdown 原文">Markdown 原文</span></span>
           <div class="history-toolbar-actions" role="group" aria-label="编辑历史" data-i18n-aria-label="编辑历史">
-          <button ref="{{ undoButtonRef }}" class="tbtn fmt history-action" onClick="{{ undoEdit }}" title="撤销（⌘Z / Ctrl+Z）" data-i18n-title="撤销（⌘Z / Ctrl+Z）" aria-label="撤销" data-i18n-aria-label="撤销" disabled><svg class="history-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"></path><path d="M4 9h10.5a5.5 5.5 0 1 1 0 11H11"></path></svg></button>
-          <button ref="{{ redoButtonRef }}" class="tbtn fmt history-action" onClick="{{ redoEdit }}" title="重做（⌘⇧Z / Ctrl+Y）" data-i18n-title="重做（⌘⇧Z / Ctrl+Y）" aria-label="重做" data-i18n-aria-label="重做" disabled><svg class="history-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"></path><path d="M20 9H9.5a5.5 5.5 0 1 0 0 11H13"></path></svg></button>
+          <button ref="{{ undoButtonRef }}" class="tbtn fmt history-action" onClick="{{ undoEdit }}" title="撤销（Ctrl+Z）" data-i18n-title="撤销（Ctrl+Z）" data-mod-title="undo" aria-label="撤销" data-i18n-aria-label="撤销" disabled><svg class="history-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"></path><path d="M4 9h10.5a5.5 5.5 0 1 1 0 11H11"></path></svg></button>
+          <button ref="{{ redoButtonRef }}" class="tbtn fmt history-action" onClick="{{ redoEdit }}" title="重做（Ctrl+Y）" data-i18n-title="重做（Ctrl+Y）" data-mod-title="redo" aria-label="重做" data-i18n-aria-label="重做" disabled><svg class="history-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"></path><path d="M20 9H9.5a5.5 5.5 0 1 0 0 11H13"></path></svg></button>
           </div>
-          <button class="tbtn fmt history-action search-toggle" onClick="{{ toggleSearch }}" title="搜索替换（⌘F）" data-i18n-title="搜索替换（⌘F）" aria-label="搜索替换" data-i18n-aria-label="搜索替换"><svg class="history-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg></button>
+          <button class="tbtn fmt history-action search-toggle" onClick="{{ toggleSearch }}" title="搜索替换（Ctrl+F）" data-i18n-title="搜索替换（Ctrl+F）" data-mod-title="find" aria-label="搜索替换" data-i18n-aria-label="搜索替换"><svg class="history-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg></button>
         </div>
         <div class="source-toolbar-actions" role="group" aria-label="Markdown 格式" data-i18n-aria-label="Markdown 格式">
           <button class="tbtn fmt fmt-h" onClick="{{ fmtH }}" title="标题" data-i18n-title="标题">H</button>
@@ -226,7 +236,7 @@
         </div>
       </div>
       <div ref="{{ searchBarRef }}" class="search-bar" role="search" aria-label="搜索与替换" data-i18n-aria-label="搜索与替换">
-        <button ref="{{ searchExpandRef }}" class="search-expand-toggle" onClick="{{ toggleSearchReplaceRow }}" title="切换替换（⌘⌥F）" data-i18n-title="切换替换（⌘⌥F）" aria-label="展开或收起替换" data-i18n-aria-label="展开或收起替换" aria-expanded="false"><span class="search-expand-icon">›</span></button>
+        <button ref="{{ searchExpandRef }}" class="search-expand-toggle" onClick="{{ toggleSearchReplaceRow }}" title="切换替换（Ctrl+H）" data-i18n-title="切换替换（Ctrl+H）" data-mod-title="toggle-replace" aria-label="展开或收起替换" data-i18n-aria-label="展开或收起替换" aria-expanded="false"><span class="search-expand-icon">›</span></button>
         <div class="search-bar-rows">
           <div class="search-row">
             <span class="search-input-wrap">
