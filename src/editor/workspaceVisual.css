@@ -234,11 +234,16 @@ body.editor-active[data-theme='light'][data-paper='snow'] { --paper-bg: #fffefa;
   padding-top: 72px;
 }
 
-/* 手机专注顶栏（≤720px）：退出独占安全区顶行，阅读工具条次行，弱化模式切换 */
+/* 手机专注顶栏（≤720px）：退出独占内容区顶行，阅读工具条次行，弱化模式切换 */
 @media (max-width: 720px) {
   .preview-pane-fullscreen {
     --reading-tools-edge: 12px;
-    --focus-exit-top: max(10px, env(safe-area-inset-top, 0px));
+    /* 让出顶壳（导出/AI）高度，退出落在预览内容区顶而非盖住 chrome */
+    --focus-chrome-clearance: var(--workspace-header-height, 56px);
+    --focus-exit-top: max(
+      calc(var(--focus-chrome-clearance) + 8px),
+      calc(env(safe-area-inset-top, 0px) + 8px)
+    );
     --focus-exit-height: 44px;
     --focus-tools-gap: 8px;
     --focus-tools-top: calc(var(--focus-exit-top) + var(--focus-exit-height) + var(--focus-tools-gap));
@@ -247,7 +252,7 @@ body.editor-active[data-theme='light'][data-paper='snow'] { --paper-bg: #fffefa;
   .app-shell:has(.preview-pane-fullscreen) .view-mode-switcher {
     display: none !important;
   }
-  /* M2 / M4 / M6：退出独占顶安全区；触控高度 ≥44；藏 Esc */
+  /* M2 / M4 / M6：退出在内容区顶；触控高度 ≥44；藏 Esc；不压顶壳导出 */
   .preview-pane-fullscreen .focus-exit-sticky {
     top: var(--focus-exit-top);
     right: max(12px, env(safe-area-inset-right, 0px));
@@ -272,6 +277,10 @@ body.editor-active[data-theme='light'][data-paper='snow'] { --paper-bg: #fffefa;
     max-width: calc(100% - 24px);
     height: auto !important;
     min-height: 36px;
+  }
+  /* M-C：按 focus-tools-top 加大收起位移，工具条须真正离屏（桌面仍用 -100%-28px） */
+  .preview-pane-fullscreen .reading-toolbar.is-scrolled-away {
+    transform: translateY(calc(-100% - var(--focus-tools-top) - 16px));
   }
   /* M6：正文首行让出退出 + 间距 + 工具条 */
   .editor-main.preview-mode-active > .preview-pane.preview-pane-fullscreen > .md-preview,

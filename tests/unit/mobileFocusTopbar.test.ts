@@ -26,6 +26,21 @@ test('narrow focus stacks exit above reading toolbar with safe-area and 44px tou
   );
 });
 
+test('narrow focus exit clears workspace header so Export is not covered', () => {
+  const mobile = visual().slice(visual().indexOf('手机专注顶栏'));
+  assert.match(mobile, /--focus-chrome-clearance:\s*var\(--workspace-header-height/);
+  assert.match(mobile, /--focus-exit-top:\s*max\(/);
+  assert.match(mobile, /focus-chrome-clearance/);
+});
+
+test('narrow focus scroll-hide translate accounts for focus-tools-top', () => {
+  const mobile = visual().slice(visual().indexOf('手机专注顶栏'));
+  assert.match(
+    mobile,
+    /reading-toolbar\.is-scrolled-away\s*\{[\s\S]*?translateY\(calc\(-100%\s*-\s*var\(--focus-tools-top\)/
+  );
+});
+
 test('narrow focus hides view-mode switcher', () => {
   const mobile = visual().slice(visual().indexOf('手机专注顶栏'));
   assert.match(
