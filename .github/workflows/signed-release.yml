@@ -1,0 +1,167 @@
+# Signed production release skeleton (N-E).
+# Manual only. Does not run on pull_request / push.
+# Requires repository secrets listed in docs/SIGNING.md.
+# Without secrets, the guard job fails with a clear checklist — it never
+# falls back to shipping an unsigned "release" artifact.
+# TEST unsigned installers remain in test-installers.yml and are unchanged.
+name: Signed release (skeleton)
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform matrix slice'
+        type: choice
+        options:
+          - mac
+          - win
+          - both
+        default: both
+      confirm:
+        description: 'Type SIGN to confirm a real signed build attempt'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: signed-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    name: Require secrets and confirmation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Confirm intentional signed build
+        run: |
+          if [ "${{ inputs.confirm }}" != "SIGN" ]; then
+            echo "::error::Refusing: set confirm=SIGN. This workflow is for signed releases only (see docs/SIGNING.md)."
+            exit 1
+          fi
+      - name: Check required secret names are present
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+        run: |
+          missing=0
+          need_mac=0
+          need_win=0
+          case "${{ inputs.platform }}" in
+            mac) need_mac=1 ;;
+            win) need_win=1 ;;
+            both) need_mac=1; need_win=1 ;;
+          esac
+          check() {
+            name="$1"; value="$2"
+            if [ -z "$value" ]; then
+              echo "MISSING secret: $name"
+              missing=1
+            else
+              echo "present: $name (value not printed)"
+            fi
+          }
+          if [ "$need_mac" = 1 ]; then
+            check CSC_LINK "$CSC_LINK"
+            check CSC_KEY_PASSWORD "$CSC_KEY_PASSWORD"
+            check APPLE_API_KEY "$APPLE_API_KEY"
+            check APPLE_API_KEY_ID "$APPLE_API_KEY_ID"
+            check APPLE_API_ISSUER "$APPLE_API_ISSUER"
+            check APPLE_TEAM_ID "$APPLE_TEAM_ID"
+          fi
+          if [ "$need_win" = 1 ]; then
+            # OV .pfx path. Azure Trusted Signing (AZURE_*) is documented in SIGNING.md
+            # and can replace WIN_CSC_* once the user account is ready.
+            check WIN_CSC_LINK "$WIN_CSC_LINK"
+            check WIN_CSC_KEY_PASSWORD "$WIN_CSC_KEY_PASSWORD"
+          fi
+          if [ "$missing" = 1 ]; then
+            echo "::error::Engineering skeleton is ready; waiting for user certificates in repository secrets. See docs/SIGNING.md."
+            exit 1
+          fi
+
+  build-mac:
+    name: Sign and notarize macOS
+    needs: guard
+    if: inputs.platform == 'mac' || inputs.platform == 'both'
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Use stable npm
+        run: |
+          npm install -g npm@11.12.1
+          npm config set registry https://registry.npmmirror.com
+          npm config set replace-registry-host always
+      - run: npm ci --no-audit --no-fund
+      - name: Build signed + notarized macOS DMG
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          npm run build:bridge
+          npx electron-builder --config desktop/electron-builder.release.cjs --mac dmg --arm64 --x64 --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Mojian-Markdown-signed-mac-${{ github.run_number }}
+          path: |
+            release/*.dmg
+            release/*.blockmap
+          if-no-files-found: error
+          retention-days: 14
+
+  build-win:
+    name: Sign Windows
+    needs: guard
+    if: inputs.platform == 'win' || inputs.platform == 'both'
+    runs-on: windows-2025
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Use stable npm
+        shell: bash
+        run: |
+          npm install -g npm@11.12.1
+          npm config set registry https://registry.npmmirror.com
+          npm config set replace-registry-host always
+      - run: npm ci --no-audit --no-fund
+      - name: Build signed Windows NSIS
+        env:
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          npm run build:bridge
+          npx electron-builder --config desktop/electron-builder.release.cjs --win nsis --x64 --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Mojian-Markdown-signed-win-${{ github.run_number }}
+          path: |
+            release/*.exe
+            release/*.blockmap
+          if-no-files-found: error
+          retention-days: 14

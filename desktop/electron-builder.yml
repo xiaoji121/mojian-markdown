@@ -1,5 +1,11 @@
 # 桌面端打包配置。前端依赖已打进 dist；Agent Bridge 仍依赖 undici。
 # 保留 electron-builder 默认的生产依赖收集，避免漏掉运行时模块。
+#
+# 签名说明（N-E）：
+# - 本文件是默认「可本地打未签名包」路径；不强制公证。
+# - 有证书时用 CSC_LINK / WIN_CSC_LINK 等环境变量即可签名；见 docs/SIGNING.md。
+# - 正式签名+公证发布请用 desktop/electron-builder.release.cjs（forceCodeSigning）。
+# - TEST 未签名流水线仍只用 desktop/electron-builder.test.cjs，互不影响。
 appId: com.yuxizhai.mojian-markdown
 productName: 墨笺 Markdown
 directories:
@@ -22,6 +28,22 @@ fileAssociations:
     role: Editor
 mac:
   category: public.app-category.productivity
+  hardenedRuntime: true
+  entitlements: desktop/entitlements.mac.plist
+  entitlementsInherit: desktop/entitlements.mac.plist
+  gatekeeperAssess: false
+  # notarize 默认关闭：无 Apple 凭证时本地/CI 未签名构建不得失败。
   target:
     - target: dmg
-      arch: [arm64]
+      arch: [arm64, x64]
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  # 有 WIN_CSC_LINK / CSC_LINK 时 electron-builder 自动签名；无证书则跳过。
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true

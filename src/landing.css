@@ -381,6 +381,22 @@ body.editor-active #landing-page { display: none; }
 .desktop-run-note { margin: 0; color: var(--landing-faint); font-size: var(--fs-sm); line-height: 1.7; }
 .desktop-run-note a { color: var(--landing-muted); text-decoration: underline; text-underline-offset: 3px; }
 .desktop-run-note a:hover { color: var(--landing-accent); }
+.landing-desktop-badge {
+  display: inline-block;
+  margin: 14px 0 0;
+  padding: 6px 10px;
+  border: 1px solid rgba(212, 168, 83, .55);
+  border-radius: var(--radius-pill);
+  color: var(--landing-accent);
+  font: 600 var(--fs-2xs)/1 var(--landing-mono);
+  letter-spacing: .06em;
+}
+.landing-signing-note {
+  margin: 0 0 18px;
+  color: var(--landing-muted);
+  font-size: var(--fs-sm);
+  line-height: 1.7;
+}
 .landing-footer {
   display: flex;
   flex-wrap: wrap;

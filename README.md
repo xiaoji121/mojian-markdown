@@ -48,6 +48,8 @@ npm run build:desktop  # 打包安装包（输出到 release/）
 npm run test:desktop   # 桌面端冒烟测试（需先 npm run build:bridge）
 ```
 
+> 当前公开安装包路径仍是 **TEST / 未正式签名**。签名与公证工程骨架见 [`docs/SIGNING.md`](./docs/SIGNING.md)；证书与账号费用在你这边。默认 `npm run build:desktop` 不要求证书；正式签名请用 `npm run build:desktop:release`（需环境变量）。
+
 桌面端解决的是网页版做不到的部分：
 
 - **Agent Bridge 内嵌到主进程**——随机端口、同源托管前端，无需手动 `npm run dev`，也不再暴露带 CORS 的固定 4317 端口；
