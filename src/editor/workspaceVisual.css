@@ -172,19 +172,20 @@ body.editor-active[data-theme='light'][data-paper='snow'] { --paper-bg: #fffefa;
   font-weight: 600;
   color: var(--text-2) !important;
 }
+/* 专注：工具条内隐藏「退出」以免与 sticky 双入口；顶栏不透明不透字 */
+.preview-pane-fullscreen .reading-toolbar .focus-toggle-btn { display: none !important; }
 .focus-exit-sticky {
   position: sticky;
   top: 10px;
-  z-index: 8;
+  z-index: 12;
   align-self: flex-end;
   margin: 0 16px 0 auto;
   padding: 6px 12px;
   border: 1px solid var(--border);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
-  color: var(--text-2);
+  background: var(--paper-bg);
+  color: var(--paper-text-2);
   font: 550 var(--fs-xs)/1.2 var(--sans);
-  backdrop-filter: blur(8px);
   cursor: pointer;
   box-shadow: var(--shadow-md, 0 8px 20px rgba(0,0,0,.12));
 }
@@ -194,6 +195,14 @@ body.editor-active[data-theme='light'][data-paper='snow'] { --paper-bg: #fffefa;
   top: 14px;
   right: 18px;
   margin: 0;
+  z-index: 20;
+}
+.editor-main > .preview-pane-fullscreen > .reading-toolbar {
+  background: var(--paper-bg) !important;
+  box-shadow: 0 1px 0 var(--paper-border), var(--shadow-md, 0 8px 20px rgba(0,0,0,.08));
+}
+.editor-main > .preview-pane-fullscreen > .md-preview {
+  padding-top: 72px;
 }
 .abtn.ai-entry-weak {
   color: var(--text-3);

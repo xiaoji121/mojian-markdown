@@ -33,6 +33,7 @@ import { WorkspaceMenuMethods } from './workspaceMenuMethods';
 import { ExportBackupMethods } from './exportBackupMethods';
 import { ViewMethods } from './viewMethods';
 import { OutlineMethods } from './outlineMethods';
+import { OnboardingMethods } from './onboardingMethods';
 
 export function createMarkdownEditorComponent(DCLogic, React) {
   const Component = class Component extends DCLogic {
@@ -322,6 +323,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._initComments();
     this._renderComments();
     this._initOutlinePanel();
+    this._initOnboarding?.();
     if (this.agentBridgeEnabled) {
       this._loadPinnedIds();
       this._initAI();
@@ -508,6 +510,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     Component,
     ViewMethods,
     OutlineMethods,
+    OnboardingMethods,
     WorkspaceMenuMethods,
     ExportBackupMethods,
     WorkspaceNavigationMethods,

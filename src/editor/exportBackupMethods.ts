@@ -64,7 +64,7 @@ export class ExportBackupMethods {
     const src = this.sourceRef?.current?.value ?? '';
     const name = sourceMarkdownFileName(this.fileName || '未命名.md');
     this._downloadTextFile(src, name);
-    this._setStatus(t('✓ 已下载纯源文 {name}', { name }));
+    if (!this._noteNdExported?.()) this._setStatus(t('✓ 已下载纯源文 {name}', { name }));
   }
 
   /** Annotations Markdown export (title + quotes + ideas + time). Source untouched. */
@@ -77,7 +77,7 @@ export class ExportBackupMethods {
     );
     const name = annotationsMarkdownFileName(this.fileName || '未命名.md');
     this._downloadTextFile(md, name);
-    this._setStatus(t('✓ 已下载批注 {name}', { name }));
+    if (!this._noteNdExported?.()) this._setStatus(t('✓ 已下载批注 {name}', { name }));
   }
 
   /** One-click zip: pure source + annotations.md + annotations.json sidecar. */
@@ -96,6 +96,8 @@ export class ExportBackupMethods {
     })));
     const name = backupZipFileName(this.fileName || '未命名.md');
     this._downloadBlob(zip, name);
-    this._setStatus(t('✓ 已下载备份包 {name}', { name }));
+    // One toast only: celebrate if N-D just completed, otherwise N6 backup success.
+    const celebrated = !!this._noteNdExported?.();
+    if (!celebrated) this._setStatus(t('✓ 已下载备份包 {name}', { name }));
   }
 }

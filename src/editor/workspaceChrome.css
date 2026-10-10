@@ -26,6 +26,10 @@
 .editor-main.preview-mode-active > .preview-pane > .md-preview {
   padding: 80px max(32px, calc((100% - 820px) / 2)) 72px;
 }
+.editor-main > .preview-pane-fullscreen > .md-preview {
+  padding: 80px max(32px, calc((100% - 820px) / 2)) 72px;
+}
+
 .editor-main > .preview-pane-fullscreen.immersive-wide > .reading-toolbar {
   right: max(64px, calc((100% - 1240px) / 2));
 }
