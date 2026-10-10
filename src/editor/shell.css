@@ -615,7 +615,7 @@ textarea.md-source {
   background: var(--bg-3);
 }
 .comments-panel,
-.outline-panel { width: 360px; }
+.outline-panel { width: 300px; max-width: 360px; }
 .ai-panel { width: 480px; }
 .panel-header {
   flex: none;
@@ -679,13 +679,33 @@ textarea.md-source {
   font-size: var(--fs-xs);
   letter-spacing: 0.04em;
 }
-/* 状态文案可能带问题摘要，单行省略兜底，不许把 30px 底栏撑高 */
+/* 底栏双槽：左常驻草稿/文件安全，右临时 toast（≤5s）；toast 不得覆盖常驻 */
+.footer-status-slots {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+  max-width: 62%;
+}
 .save-status {
   color: var(--text-3);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.save-status-persist {
+  flex: 0 1 auto;
+  color: var(--text-3);
+}
+.save-status-toast:empty,
+.save-status-toast[hidden] {
+  display: none;
+}
+.save-status-toast {
+  flex: 1 1 auto;
+  color: var(--text-2);
 }
 /* 当前文档的本地路径（原列表项内的路径迁到此处）：占据中段弹性空间，
    过长时末尾省略，完整路径见 title 悬浮。无路径时隐藏。 */

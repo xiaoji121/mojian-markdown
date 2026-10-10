@@ -2,10 +2,10 @@ import { chooseLanguage } from './localeHelpers';
 import { test, expect, setSource } from './fixtures';
 
 const samples = [
-  { locale: 'zh-CN', title: '欢迎使用 Markdown 编辑器', name: '未命名.md' },
-  { locale: 'zh-TW', title: '歡迎使用 Markdown 編輯器', name: '未命名.md' },
-  { locale: 'en', title: 'Welcome to Mojian', name: 'Untitled.md' },
-  { locale: 'ja', title: '墨笺へようこそ', name: '無題.md' }
+  { locale: 'zh-CN', title: '欢迎使用墨笺', name: '欢迎.md' },
+  { locale: 'zh-TW', title: '歡迎使用墨箋', name: '歡迎.md' },
+  { locale: 'en', title: 'Welcome to Mojian', name: 'Welcome.md' },
+  { locale: 'ja', title: '墨笺へようこそ', name: 'ようこそ.md' }
 ];
 for (const sample of samples) {
   test(`fresh ${sample.locale} sample follows detected language and survives UI changes`, async ({ page }, testInfo) => {

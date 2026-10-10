@@ -41,6 +41,7 @@ test('大纲侧栏渲染 H1–H6 缩进树', () => {
       outlineTreeRef: createRef(tree),
       _syncActiveOutlineItem() {},
       _outlineSlug: OutlineMethods.prototype._outlineSlug,
+      _outlinePlainText: OutlineMethods.prototype._outlinePlainText,
       _outlineTreeItem: OutlineMethods.prototype._outlineTreeItem,
       _jumpToOutlineHeading() {}
     };

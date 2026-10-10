@@ -63,8 +63,8 @@ test('编辑器直链 #editor 可直接打开并渲染示例文档', async ({ pa
   await page.goto('/#editor');
 
   await expect(page.locator('body')).toHaveClass(/editor-active/);
-  await expect(page.locator('.md-source')).toHaveValue(/# 欢迎使用 Markdown 编辑器/);
-  await expect(page.locator('.md-preview h1').first()).toHaveText('欢迎使用 Markdown 编辑器');
+  await expect(page.locator('.md-source')).toHaveValue(/# 欢迎使用墨笺/);
+  await expect(page.locator('.md-preview h1').first()).toHaveText('欢迎使用墨笺');
 });
 
 test('落地页包含桌面端介绍区块', async ({ page }) => {

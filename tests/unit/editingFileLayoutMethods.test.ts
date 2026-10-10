@@ -196,15 +196,39 @@ test('已关联本地文件时保存原地写入，不弹对话框', async () =>
   }
 });
 
-test('未关联文件时保存委托给另存为', async () => {
+test('未关联文件且无写盘能力时保存导向备份包', async () => {
+  const source = createSource('# 正文', 0);
+  const editor = createEditor(source);
+  let backupCount = 0;
+  let saveAsCount = 0;
+  editor.downloadFullBackup = async () => { backupCount += 1; };
+  editor.onSaveAs = async () => { saveAsCount += 1; };
+  editor._setStatus = () => {};
+
+  const prev = (globalThis as { window?: unknown }).window;
+  (globalThis as { window?: unknown }).window = { showSaveFilePicker: undefined, mojianDesktop: undefined };
+  try {
+    await (editor as { onSave: () => Promise<void> }).onSave();
+    assert.equal(backupCount, 1);
+    assert.equal(saveAsCount, 0);
+  } finally {
+    (globalThis as { window?: unknown }).window = prev;
+  }
+});
+
+test('未关联文件但浏览器可另存为时委托给另存为', async () => {
   const source = createSource('# 正文', 0);
   const editor = createEditor(source);
   let saveAsCount = 0;
   editor.onSaveAs = async () => { saveAsCount += 1; };
-
-  await (editor as { onSave: () => Promise<void> }).onSave();
-
-  assert.equal(saveAsCount, 1);
+  const prev = (globalThis as { window?: unknown }).window;
+  (globalThis as { window?: unknown }).window = { showSaveFilePicker: async () => ({}), mojianDesktop: undefined };
+  try {
+    await (editor as { onSave: () => Promise<void> }).onSave();
+    assert.equal(saveAsCount, 1);
+  } finally {
+    (globalThis as { window?: unknown }).window = prev;
+  }
 });
 
 test('桌面端菜单 save-as 动作触发另存为', () => {

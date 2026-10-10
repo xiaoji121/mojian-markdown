@@ -13,8 +13,8 @@ export class OutlineMethods {
     const aside = this.outlineSidebarRef?.current;
     const split = this.splitRef?.current;
     if (!aside) return;
-    const max = Math.max(240, Math.min(560, window.innerWidth * 0.45));
-    this.commentsPanelWidth = Math.round(Math.max(240, Math.min(max, width || this.commentsPanelWidth || 360)));
+    const max = Math.max(260, Math.min(360, window.innerWidth * 0.42));
+    this.commentsPanelWidth = Math.round(Math.max(260, Math.min(max, width || this.commentsPanelWidth || 300)));
     aside.style.width = this.commentsPanelWidth + 'px';
     if (this.outlinePanelOpen && split) {
       split.style.setProperty('--active-side-panel-width', this.commentsPanelWidth + 'px');
@@ -69,6 +69,18 @@ export class OutlineMethods {
     this._syncFullscreenLayout?.();
   }
 
+
+  /** 大纲/摘要抽取时剥离批注角标，避免数字污染标题（B4）。 */
+  _outlinePlainText(node) {
+    if (!node) return '';
+    if (typeof node.cloneNode === 'function') {
+      const clone = node.cloneNode(true);
+      clone.querySelectorAll?.('[data-comment-badge], .annotation-badge, sup[data-comment-id]').forEach((el) => el.remove());
+      return (clone.textContent || '').replace(/\s+/g, ' ').trim();
+    }
+    return String(node.textContent || '').replace(/\s+/g, ' ').trim();
+  }
+
   _outlineSlug(text, index, used) {
     const base = String(text || '')
       .trim()
@@ -88,8 +100,12 @@ export class OutlineMethods {
     let node = heading.nextElementSibling;
     while (node && !/^H[1-6]$/.test(node.tagName) && parts.length < 2) {
       const listItems = Array.from(node.querySelectorAll?.(':scope > li') || []);
-      const text = (listItems.length ? listItems.map((item) => item.textContent).join(' · ') : node.textContent)
-        .replace(/\s+/g, ' ').trim();
+      const plain = (n) => (typeof this._outlinePlainText === 'function'
+        ? this._outlinePlainText(n)
+        : String(n?.textContent || '').replace(/\s+/g, ' ').trim());
+      const text = (listItems.length
+        ? listItems.map((item) => plain(item)).join(' · ')
+        : plain(node));
       if (text) parts.push(text);
       node = node.nextElementSibling;
     }
@@ -129,9 +145,9 @@ export class OutlineMethods {
       return;
     }
     headings.forEach((heading, index) => {
-      heading.id = this._outlineSlug(heading.textContent, index, used);
+      const title = this._outlinePlainText(heading) || t('未命名标题');
+      heading.id = this._outlineSlug(title, index, used);
       heading.dataset.outlineIndex = String(index);
-      const title = heading.textContent.trim() || t('未命名标题');
       tree.appendChild(this._outlineTreeItem(heading, title, index));
     });
     this._syncActiveOutlineItem();

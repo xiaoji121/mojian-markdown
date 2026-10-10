@@ -133,7 +133,7 @@ export class AIMethods {
     const split = this.splitRef.current;
     if (!aside || !split) return;
     const max = Math.max(320, Math.min(760, window.innerWidth * 0.55));
-    this.aiPanelWidth = Math.round(Math.max(320, Math.min(max, width || 360)));
+    this.aiPanelWidth = Math.round(Math.max(280, Math.min(max, width || 300)));
     aside.style.width = this.aiPanelWidth + 'px';
     split.style.setProperty('--active-side-panel-width', this.aiPanelWidth + 'px');
     this._syncWorkspacePanelWidth?.();

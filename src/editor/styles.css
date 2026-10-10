@@ -516,7 +516,7 @@
       gap: 8px !important;
       padding: 0 12px calc(env(safe-area-inset-bottom) / 2) !important;
     }
-    .save-status { max-width: 48%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .footer-status-slots { max-width: 70%; } .save-status { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .font-controls { display: none !important; }
     .footer-stats { gap: 0 !important; }
     .selection-toolbar {
@@ -538,11 +538,30 @@
   }
 
   body:not(.agent-bridge-enabled) .ai-panel,
-  body:not(.agent-bridge-enabled) .ai-entry,
+  body:not(.agent-bridge-enabled) .selection-toolbar .ai-entry,
   body:not(.agent-bridge-enabled) .settings-entry,
   body:not(.agent-bridge-enabled) .publish-menu-item,
   body:not(.agent-bridge-enabled) .translate-entry {
     display: none !important;
+  }
+  /* 静态：顶栏 AI 弱化保留发现性，选区「问 AI」已隐藏 */
+  body:not(.agent-bridge-enabled) .app-header .ai-entry-weak {
+    display: inline-flex !important;
+  }
+  body:not(.agent-bridge-enabled) .export-menu .desktop-need-link {
+    display: flex !important;
+  }
+  body.agent-bridge-enabled .export-menu .desktop-need-link {
+    display: none !important;
+  }
+  /* 刻度残留双保险：旧右缘大纲刻度永不显示 */
+  .outline-ticks,
+  .outline-rail,
+  .preview-outline-ticks,
+  .reading-outline-rail {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
   }
 
   /* ===== 划词翻译浮层 ===== */
