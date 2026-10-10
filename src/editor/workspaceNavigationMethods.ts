@@ -58,7 +58,7 @@ export class WorkspaceNavigationMethods {
       status.title = this.saveStatusRef.current?.textContent || t(
         hasFile
           ? (this.dirty ? '已改动，尚未写回打开的文件' : '已与打开的文件同步')
-          : '草稿已自动保存在此浏览器；导出或另存为可落到文件'
+          : '草稿仅存此浏览器，清除缓存会丢失；请用导出下载全文+批注备份'
       );
     }
   }
