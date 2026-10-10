@@ -39,8 +39,7 @@
 .preview-pane-fullscreen .reading-toolbar .tbtn:hover { color: var(--paper-accent); }
 /* 工具组随正文滚走；容器边界裁切，避免滚到顶栏上方。 */
 .preview-pane { overflow: hidden; }
-.preview-pane > .reading-toolbar { transition: none; }
-.reading-toolbar.is-scrolled-away { visibility: hidden; pointer-events: none; }
+.preview-pane > .reading-toolbar { /* transition owned below for scroll-hide */ }
 
 @media (max-width: 760px) {
   .header-brand { gap: 6px; }
@@ -72,3 +71,22 @@ html[lang="en"] .header-menu-item, html[lang="ja"] .header-menu-item { white-spa
 }
 .reading-font-note { display: grid; gap: 5px; max-width: 290px; white-space: normal; line-height: 1.5; }
 .reading-font-link { color: var(--accent); text-decoration: underline; }
+
+/* 按滚动方向收起：不透明底 + transform 上移离屏；勿用 opacity 淡出（会叠字） */
+.preview-pane > .reading-toolbar {
+  background: var(--paper-bg);
+  transition: transform .18s ease;
+  will-change: transform;
+}
+.reading-toolbar.is-scrolled-away {
+  transform: translateY(calc(-100% - 28px));
+  pointer-events: none;
+  /* 保持 opacity:1 + visibility，纸底全程不透字 */
+}
+@media (prefers-reduced-motion: reduce) {
+  .preview-pane > .reading-toolbar { transition: none; }
+  .reading-toolbar.is-scrolled-away {
+    transform: none;
+    visibility: hidden;
+  }
+}

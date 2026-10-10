@@ -276,10 +276,18 @@ test('网页版或未关联本地文件时不改写图片', () => {
 });
 
 
-test('focus mode keeps sticky exit and allows toolbar to scroll away', () => {
-  const toolbar = { offsetTop: 0, offsetHeight: 36, style: { transform: '' }, classList: { remove() {}, toggle(name, on) { this._scrolled = !!on; }, _scrolled: false } };
+test('scroll direction hides toolbar on down and shows on up or top', () => {
+  const toolbar = {
+    style: { transform: 'x' },
+    classList: {
+      _away: false,
+      contains(name) { return name === 'is-scrolled-away' && this._away; },
+      remove(name) { if (name === 'is-scrolled-away') this._away = false; },
+      toggle(name, on) { if (name === 'is-scrolled-away') this._away = !!on; }
+    }
+  };
   const sticky = { hidden: true };
-  const prev = { scrollTop: 80 };
+  const prev = { scrollTop: 0 };
   const pane = {
     querySelector(sel) {
       if (sel === '.reading-toolbar') return toolbar;
@@ -291,15 +299,24 @@ test('focus mode keeps sticky exit and allows toolbar to scroll away', () => {
     previewPaneRef: { current: pane },
     previewRef: { current: prev },
     previewFullscreen: true,
-    viewMode: 'preview'
+    viewMode: 'preview',
+    _readingToolbarLastScroll: 0
   });
   editor._syncReadingToolbarScroll();
   assert.equal(sticky.hidden, false);
-  assert.equal(toolbar.style.transform, 'translateY(-80px)');
-  assert.equal(toolbar.classList._scrolled, true);
-  editor.previewFullscreen = false;
-  editor.viewMode = 'split';
+  assert.equal(toolbar.classList._away, false);
+  prev.scrollTop = 40;
+  editor._syncReadingToolbarScroll();
+  assert.equal(toolbar.classList._away, true);
+  assert.equal(sticky.hidden, false);
+  assert.equal(toolbar.style.transform, '');
+  prev.scrollTop = 20;
+  editor._syncReadingToolbarScroll();
+  assert.equal(toolbar.classList._away, false);
+  prev.scrollTop = 60;
+  editor._syncReadingToolbarScroll();
+  assert.equal(toolbar.classList._away, true);
   prev.scrollTop = 0;
   editor._syncReadingToolbarScroll();
-  assert.equal(sticky.hidden, true);
+  assert.equal(toolbar.classList._away, false);
 });

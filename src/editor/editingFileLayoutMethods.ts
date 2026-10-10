@@ -697,7 +697,7 @@ export class EditingFileLayoutMethods {
     const sidebar = this.documentSidebarRef.current;
     if (!sidebar) return;
     const max = Math.max(220, Math.min(460, window.innerWidth * 0.42));
-    this.documentSidebarWidth = Math.round(Math.max(180, Math.min(max, width || 236)));
+    this.documentSidebarWidth = Math.round(Math.max(200, Math.min(max, width || 236)));
     if (!(window.matchMedia && window.matchMedia('(max-width: 760px)').matches)) {
       sidebar.style.width = this.documentSidebarWidth + 'px';
       sidebar.style.flexBasis = this.documentSidebarWidth + 'px';

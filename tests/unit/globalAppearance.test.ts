@@ -24,12 +24,21 @@ test('global appearance opens without a preview button and returns focus without
 
 test('scrolling reading tools out of view leaves global settings open', () => {
   const toolbar = Object.assign(createStubElement(), { offsetTop: 20, offsetHeight: 36 });
+  const prev = { scrollTop: 0 };
   const context = {
-    previewPaneRef: createRef({ querySelector: () => toolbar }),
-    previewRef: createRef({ scrollTop: 500 }), viewMode: 'preview',
+    previewPaneRef: createRef({
+      querySelector(sel: string) {
+        if (sel === '.reading-toolbar') return toolbar;
+        if (sel === '.focus-exit-sticky') return { hidden: true };
+        return null;
+      }
+    }),
+    previewRef: createRef(prev), viewMode: 'preview',
     appearanceOpen: true, previewFullscreen: false,
     toggleReadingAppearance() { throw new Error('Global settings must stay open'); }
   };
+  ViewMethods.prototype._syncReadingToolbarScroll.call(context);
+  prev.scrollTop = 500;
   ViewMethods.prototype._syncReadingToolbarScroll.call(context);
   assert.equal(toolbar.classList.contains('is-scrolled-away'), true);
   assert.equal(context.appearanceOpen, true);

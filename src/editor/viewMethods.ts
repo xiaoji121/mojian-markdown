@@ -190,8 +190,8 @@ export class ViewMethods {
     btn.setAttribute('aria-pressed', this.immersiveWide ? 'true' : 'false');
   }
 
-  // 正文仍是独立滚动容器；阅读/专注工具条可随滚动移出。
-  // 专注模式：仅右上 sticky「退出专注」常驻；工具条内不再重复退出（可滚走）。
+  // 阅读/专注工具条按滚动方向收起：下滑藏、上滑或回顶再显示。
+  // sticky「退出专注」专注态常驻，不随工具条收起。
   _syncReadingToolbarScroll() {
     const pane = this.previewPaneRef?.current, prev = this.previewRef?.current;
     if (!pane || !prev) return;
@@ -201,10 +201,23 @@ export class ViewMethods {
     const focus = !!this.previewFullscreen;
     const reading = focus || this.viewMode === 'preview';
     if (sticky) sticky.hidden = !focus;
-    const offset = reading ? prev.scrollTop : 0;
-    const gone = offset >= toolbar.offsetTop + toolbar.offsetHeight;
-    toolbar.style.transform = offset ? `translateY(${-offset}px)` : '';
-    toolbar.classList.toggle('is-scrolled-away', reading && gone);
+    if (!reading) {
+      toolbar.style.transform = '';
+      toolbar.classList.remove('is-scrolled-away');
+      this._readingToolbarLastScroll = 0;
+      return;
+    }
+    const top = prev.scrollTop || 0;
+    const last = this._readingToolbarLastScroll ?? top;
+    const delta = top - last;
+    this._readingToolbarLastScroll = top;
+    let hide = toolbar.classList.contains('is-scrolled-away');
+    if (top <= 8) hide = false;
+    else if (delta > 2) hide = true;
+    else if (delta < -2) hide = false;
+    // 方向收起用 class，不再跟滚 translate（避免半透明叠字感）
+    toolbar.style.transform = '';
+    toolbar.classList.toggle('is-scrolled-away', hide);
   }
 
 
