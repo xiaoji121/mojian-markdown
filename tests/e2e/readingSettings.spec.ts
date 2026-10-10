@@ -28,7 +28,7 @@ test('editor header uses the document name without the logo and product name', a
 });
 
 for (const paper of ['ink', 'green', 'snow']) {
-  test(`immersive more button blends into ${paper} paper in dark theme`, async ({ page }) => {
+  test(`immersive settings live in reading toolbar on ${paper} paper`, async ({ page }) => {
     await openEditor(page);
     await openAppearance(page);
     if (await page.locator('body').getAttribute('data-theme') !== 'dark') {
@@ -37,23 +37,10 @@ for (const paper of ['ink', 'green', 'snow']) {
     await page.locator(`.paper-dot[data-paper="${paper}"]`).click();
     await page.locator('.reading-appearance-panel .appearance-close').click();
     await page.getByRole('button', { name: '沉浸式阅读', exact: true }).click();
-    const button = page.locator('.focus-settings-button');
-    await page.locator('.md-preview h1').first().hover();
-    await expect(button).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-    const paperText = await button.evaluate(el => {
-      const probe = document.createElement('span');
-      probe.style.color = 'var(--paper-text-3)';
-      el.append(probe);
-      const paperText = getComputedStyle(probe).color;
-      probe.remove();
-      return paperText;
-    });
-    await expect(button).toHaveCSS('color', paperText);
-    await page.keyboard.press('Tab');
-    await button.focus();
-    await expect(button).toHaveCSS('outline-style', 'solid');
-    await page.keyboard.press('Enter');
-    await expect(page.locator('.reading-appearance-panel')).toBeVisible();
+    await expect(page.locator('.focus-settings-button')).toBeHidden();
+    const button = page.locator('.reading-toolbar-settings');
+    await expect(button).toBeVisible();
+    await button.click();
     await expect(page.locator('.reading-appearance-panel')).toBeVisible();
   });
 }

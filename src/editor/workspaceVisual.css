@@ -55,6 +55,7 @@ body.editor-active[data-theme='light'][data-paper='snow'] { --paper-bg: #fffefa;
 .workspace-sidebar-footer .ui-icon { width: 17px; height: 17px; stroke-width: 1.5; }
 /* Editing keeps a compact toolbar; reading gives the page its own breathing room. */
 .pane-toolbar { background: var(--bg); border-color: var(--border-soft); }
+.preview-pane > .reading-toolbar { background: var(--paper-bg); border-bottom-color: color-mix(in srgb, var(--paper-border, var(--border-soft)) 65%, transparent); }
 .pane-title { font-family: var(--sans); letter-spacing: .02em; font-size: 11px; }
 .tbtn { border-radius: 5px; }
 .source-toolbar-leading, .source-toolbar-actions { opacity: .85; }
@@ -180,12 +181,13 @@ body.editor-active[data-theme='light'][data-paper='snow'] { --paper-bg: #fffefa;
   z-index: 12;
   align-self: flex-end;
   margin: 0 16px 0 auto;
-  padding: 6px 12px;
+  padding: 6px 16px;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--paper-bg);
   color: var(--paper-text-2);
   font: 550 var(--fs-xs)/1.2 var(--sans);
+  white-space: nowrap;
   cursor: pointer;
   box-shadow: var(--shadow-md, 0 8px 20px rgba(0,0,0,.12));
 }
@@ -193,7 +195,7 @@ body.editor-active[data-theme='light'][data-paper='snow'] { --paper-bg: #fffefa;
 .preview-pane-fullscreen .focus-exit-sticky {
   position: fixed;
   top: 14px;
-  right: 18px;
+  right: max(16px, env(safe-area-inset-right, 0px));
   margin: 0;
   z-index: 20;
 }

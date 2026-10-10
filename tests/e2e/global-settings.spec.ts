@@ -32,7 +32,7 @@ for (const immersive of [false, true]) {
     await expect(panel).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(panel).toBeHidden();
-    await expect(page.locator('.workspace-settings-button:visible, .focus-settings-button:visible')).toBeFocused();
+    await expect(page.locator('.workspace-settings-button:visible, .reading-toolbar-settings:visible, .focus-settings-button:visible')).toBeFocused();
     await expect.poll(() => preview.evaluate(element => element.scrollTop)).toBe(900);
     await expect(page.locator('.preview-pane')).toHaveClass(immersive ? /preview-pane-fullscreen/ : /^preview-pane$/);
   });
@@ -56,7 +56,7 @@ test('global settings work in source-only mode and fit short narrow screens', as
   await page.screenshot({ path: testInfo.outputPath('global-settings-short-screen.png') });
   await page.locator('.reading-appearance-panel .appearance-close').click();
   await expect(panel).toBeHidden();
-  await expect(page.locator('.workspace-settings-button:visible, .focus-settings-button:visible')).toBeFocused();
+  await expect(page.locator('.workspace-settings-button:visible, .reading-toolbar-settings:visible, .focus-settings-button:visible')).toBeFocused();
 });
 
 for (const width of [390, 1440]) {
@@ -76,12 +76,20 @@ for (const width of [390, 1440]) {
       await page.locator('[data-mode="preview"]').click();
       const immersive = page.getByRole('button', { name: '沉浸式阅读', exact: true });
       await immersive.click();
-      const more = await page.locator('.focus-settings-button').boundingBox();
-      const exit = await immersive.boundingBox();
+      await expect(page.locator('.focus-settings-button')).toBeHidden();
+      const settings = page.locator('.reading-toolbar-settings');
+      const exit = page.locator('.focus-exit-sticky');
+      await expect(exit).toBeVisible();
+      await expect(settings).toBeVisible();
+      const settingsBox = (await settings.boundingBox())!;
+      const exitBox = (await exit.boundingBox())!;
       await page.screenshot({ path: testInfo.outputPath(`immersive-controls-${width}-wide-${wide}.png`) });
-      expect(exit!.x + exit!.width).toBeLessThanOrEqual(more!.x);
-      if (width === 390) await expect(page.locator('.reading-toolbar')).toHaveCSS('right', '64px');
-      await immersive.click();
+      // 退出独占右上：全文可见且不与工具条设置重叠
+      expect(exitBox.width).toBeGreaterThan(80);
+      expect(exitBox.x + exitBox.width).toBeLessThanOrEqual(width - 15);
+      expect(settingsBox.x + settingsBox.width).toBeLessThanOrEqual(exitBox.x - 8);
+      if (width === 390) await expect(page.locator('.reading-toolbar')).toHaveCSS('right', '152px');
+      await exit.click();
       await expect(page.locator('.preview-pane')).not.toHaveClass(/preview-pane-fullscreen/);
     });
   }

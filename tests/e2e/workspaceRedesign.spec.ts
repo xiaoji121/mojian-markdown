@@ -191,7 +191,8 @@ test('专注中调整辅助面板宽度，正文与侧栏保持相邻且设置�
     const panel = (await page.locator(`.${kind}-panel`).boundingBox())!;
     const preview = (await page.locator('.preview-pane').boundingBox())!;
     expect(Math.abs(preview.x + preview.width - panel.x)).toBeLessThanOrEqual(2);
-    const settings = (await page.locator('.focus-settings-button').boundingBox())!;
-    expect(settings.x + settings.width).toBeLessThanOrEqual(panel.x);
+    await expect(page.locator('.focus-settings-button')).toBeHidden();
+    const settings = (await page.locator('.reading-toolbar-settings').boundingBox())!;
+    expect(settings.x + settings.width).toBeLessThanOrEqual(panel.x + 2);
   }
 });

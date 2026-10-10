@@ -65,7 +65,7 @@ test('language settings have keyboard selection, repeat selection and safe dismi
   await expect(page.locator('.md-source')).toHaveValue('# Untouched\n\nKeep my document.');
   await page.keyboard.press('Escape');
   await expect(page.locator('.interface-language-panel')).toBeHidden();
-  await expect(page.locator('.workspace-settings-button:visible, .focus-settings-button:visible')).toBeFocused();
+  await expect(page.locator('.workspace-settings-button:visible, .reading-toolbar-settings:visible, .focus-settings-button:visible')).toBeFocused();
   await openLanguageSettings(page);
   await page.locator('.workspace-settings-backdrop').click({ position: { x: 5, y: 5 } });
   await expect(page.locator('.interface-language-panel')).toBeHidden();
@@ -85,7 +85,7 @@ test('language stays available in General settings during immersive reading and 
   await expect(page.locator('.preview-pane')).toHaveClass(/preview-pane-fullscreen/);
   await openLanguageSettings(page);
   await page.locator('.appearance-close').click();
-  await expect(page.locator('.workspace-settings-button:visible, .focus-settings-button:visible')).toBeFocused();
+  await expect(page.locator('.workspace-settings-button:visible, .reading-toolbar-settings:visible, .focus-settings-button:visible')).toBeFocused();
   await openAppearance(page);
   await expect(page.locator('#reading-appearance-panel')).toBeVisible();
   await expect(page.locator('.interface-language-panel')).toBeHidden();

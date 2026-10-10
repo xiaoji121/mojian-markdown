@@ -91,13 +91,13 @@
 .ai-input { background: transparent; }
 .panel-actions { flex-wrap: wrap; border-color: var(--border-soft); }
 .panel-actions .abtn.primary { color: var(--text-2); background: transparent; border-color: var(--border); font-weight: 500; }
-.focus-settings-button { transition: color .15s, background .15s; display: none; position: fixed; z-index: 170; right: calc(var(--workspace-assistance-width, 0px) + 16px); top: 12px; width: 34px; padding: 0; color: var(--paper-text-3); font-size: var(--fs-2xl); }
-.app-shell:has(.preview-fullscreen-active) > .focus-settings-button { display: flex; }
+.focus-settings-button { display: none !important; }
+/* 专注态设置并入阅读工具条；独立浮钮不再显示，避免压住退出 */
 .app-shell:has(.preview-fullscreen-active) > .document-sidebar { visibility: hidden; }
 .app-shell:has(.preview-fullscreen-active) .file-menu-wrap { display: none; }
 .app-shell:has(.preview-fullscreen-active) > :is(.comments-panel, .outline-panel, .ai-panel) { position: fixed; z-index: 110; right: 0; top: 0; bottom: 0; height: 100dvh; }
 .reading-toolbar .preview-toolbar-actions { gap: 6px; }
-.reading-toolbar .pane-title { font-family: var(--sans); letter-spacing: 0; }
+.reading-toolbar .pane-title { font-family: var(--sans); letter-spacing: 0.02em; text-transform: none; color: var(--paper-text-3); font-size: var(--fs-xs); }
 @media (max-width: 1180px) and (min-width: 761px) {
   .app-header { padding-inline: 12px; }
   .workspace-save-label { display: none; }
@@ -125,7 +125,6 @@
   .app-shell > :is(.comments-panel, .outline-panel, .ai-panel) { max-width: 100vw; grid-column: auto; grid-row: auto; }
   .app-shell > :is(.comments-panel, .outline-panel, .ai-panel) > .panel-header { height: 48px; }
   .app-shell:has(.preview-fullscreen-active) > :is(.comments-panel, .outline-panel, .ai-panel) { top: auto; height: min(72dvh, 640px); }
-  .focus-settings-button { right: 16px; }
   .preview-toolbar-actions .tool-pill { padding-inline: 6px; }
 }
 @media (hover: none) {
