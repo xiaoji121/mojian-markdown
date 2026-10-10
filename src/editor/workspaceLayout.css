@@ -11,7 +11,7 @@
 .app-footer { grid-column: 2 / 4; grid-row: 3; height: 28px; background: var(--bg); border-color: var(--border-soft); }
 .app-shell > .comments-panel,
 .app-shell > .outline-panel,
-.app-shell > .ai-panel { grid-column: 3; grid-row: 1 / 3; width: 360px; max-width: 42vw; background: var(--bg); border-color: var(--border-soft); }
+.app-shell > .ai-panel { grid-column: 3; grid-row: 1 / 3; width: 300px; max-width: min(360px, 42vw); background: var(--bg); border-color: var(--border-soft); }
 .header-brand { gap: 6px; flex: 1; }
 .file-meta { min-width: 40px; gap: 8px; }
 .file-name { font: 500 var(--fs-md)/1.4 var(--sans); }

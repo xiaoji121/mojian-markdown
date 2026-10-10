@@ -26,6 +26,16 @@ export class AIMethods {
   }
 
 
+  // 顶栏 AI：有 Bridge 时开关面板；静态弱入口打开设置 AI 页并说明原因（避免 TypeError）
+  toggleAIEntry() {
+    if (this.agentBridgeEnabled) {
+      this._openAIPanel();
+      return;
+    }
+    this.openWorkspaceSettings?.('ai');
+    this._setStatus?.(t('阅读、编辑与批注无需配置 AI。') + ' · ' + t('当前不可用 · 需要桌面版或本地 Agent Bridge'));
+  }
+
   // ===== AI 引擎切换（Claude / Codex / Gemini） =====
 
   _aiEngineLabel(engine) {
@@ -133,7 +143,7 @@ export class AIMethods {
     const split = this.splitRef.current;
     if (!aside || !split) return;
     const max = Math.max(320, Math.min(760, window.innerWidth * 0.55));
-    this.aiPanelWidth = Math.round(Math.max(320, Math.min(max, width || 360)));
+    this.aiPanelWidth = Math.round(Math.max(280, Math.min(max, width || 300)));
     aside.style.width = this.aiPanelWidth + 'px';
     split.style.setProperty('--active-side-panel-width', this.aiPanelWidth + 'px');
     this._syncWorkspacePanelWidth?.();

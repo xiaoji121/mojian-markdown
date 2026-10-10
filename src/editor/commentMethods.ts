@@ -201,6 +201,7 @@ export class CommentMethods {
     if (!span) return;
     const badge = document.createElement('sup');
     badge.setAttribute('data-comment-badge', id);
+    badge.setAttribute('aria-hidden', 'true');
     badge.textContent = num;
     badge.style.cssText = 'display:inline-block; min-width:14px; height:14px; line-height:14px; text-align:center; font-family:var(--mono); font-size:var(--fs-2xs); font-weight:700; color:var(--accent-ink); background:var(--accent); border-radius:var(--radius-pill); padding:0 3px; margin:0 1px 0 2px; vertical-align:super; cursor:pointer; user-select:none;';
     span.parentNode.insertBefore(badge, span.nextSibling);
@@ -301,8 +302,8 @@ export class CommentMethods {
     const aside = this.commentsRef.current;
     const split = this.splitRef.current;
     if (!aside) return;
-    const max = Math.max(320, Math.min(760, window.innerWidth * 0.55));
-    this.commentsPanelWidth = Math.round(Math.max(320, Math.min(max, width || 360)));
+    const max = Math.max(260, Math.min(360, window.innerWidth * 0.42));
+    this.commentsPanelWidth = Math.round(Math.max(260, Math.min(max, width || 300)));
     aside.style.width = this.commentsPanelWidth + 'px';
     if (this.panelOpen && split) split.style.setProperty('--active-side-panel-width', this.commentsPanelWidth + 'px');
     this._syncWorkspacePanelWidth?.();
@@ -311,7 +312,7 @@ export class CommentMethods {
   _initCommentsResize() {
     try {
       const saved = Number(!window.mojianDesktop && localStorage.getItem('md-editor-comments-panel-width'));
-      if (saved) this.commentsPanelWidth = saved;
+      if (saved) this.commentsPanelWidth = Math.round(Math.max(260, Math.min(360, saved)));
     } catch (e) {}
     const handle = this.commentsResizeRef && this.commentsResizeRef.current;
     if (!handle) return;

@@ -565,6 +565,16 @@ export class EditingFileLayoutMethods {
     const src = this.sourceRef.current;
     if (!src) return;
     const handle = this.fileHandle;
+    // 无写盘能力时禁止静默 Save：说明并导向备份包
+    if ((!handle || !handle.createWritable) && !(typeof window !== 'undefined' && window.mojianDesktop)) {
+      if (!(typeof window !== 'undefined' && window.showSaveFilePicker)) {
+        this._setStatus?.(t('浏览器无法写盘，请用下载备份包'));
+        await this.downloadFullBackup?.();
+        return;
+      }
+      await this.onSaveAs();
+      return;
+    }
     if (!handle || !handle.createWritable) { await this.onSaveAs(); return; }
     const content = src.value;
     const save = async () => {
@@ -578,6 +588,9 @@ export class EditingFileLayoutMethods {
         this._setDirty(src.value !== content);
         this._autosave();
         this._setStatus(this.dirty ? t("已保存较早版本 · 最新修改仍待同步") : t("✓ 已保存到 {name}", { name: this.fileName }));
+        const now = new Date();
+        this._lastWriteBackLabel = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+        this._syncPersistentStatus?.();
       } catch (e) { this._setStatus(t("保存失败：{error}", { error: e.message || e })); }
     };
     if (this._queueLocalFileWrite) await this._queueLocalFileWrite(save);
@@ -629,7 +642,7 @@ export class EditingFileLayoutMethods {
         this._setDirty(src.value !== content); this._autosave();
         this._setStatus(t("✓ 已保存到 {name}", { name: handle.name }));
       } catch (e) {
-        if (e && e.name === 'AbortError') return;
+        if (e && e.name === 'AbortError') { this._setStatus?.(t('已取消保存')); return; }
         this._setStatus(t('另存为失败：{error}', { error: (e && e.message) || e || t('未知错误') }));
       }
       return;

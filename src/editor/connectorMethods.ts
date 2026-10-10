@@ -41,15 +41,22 @@ export class ConnectorMethods {
     const fileMenu = this.fileMenuRef && this.fileMenuRef.current;
     const menu = fileMenu?.closest?.('.app-shell')?.querySelector('.export-menu') || fileMenu;
     if (menu?.querySelectorAll) {
-      menu.querySelectorAll('.publish-menu-item[data-target]').forEach((button) => {
+      const publishButtons = [...menu.querySelectorAll('.publish-menu-item[data-target]')];
+      let anyAvailable = false;
+      publishButtons.forEach((button) => {
         const target = button.dataset.target;
         const state = capabilities && capabilities[target];
         const available = !!state?.available;
+        anyAvailable = anyAvailable || available;
         button.disabled = !available;
+        button.hidden = !available; // 禁止同级灰按钮（规格 §4.1 / V6）
         button.title = available
           ? t('上传到{label}', { label: t(TARGETS[target]?.label || '在线文档') })
           : (state?.reason || t('本地工具不可用'));
         button.classList.toggle('is-unavailable', !available);
+      });
+      menu.querySelectorAll('.publish-menu-item[role="separator"]').forEach((sep) => {
+        sep.hidden = !anyAvailable;
       });
     }
     this._syncIntegrationsSettings?.();

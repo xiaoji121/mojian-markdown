@@ -74,8 +74,9 @@ test('offline recent chrome appends a visible Reconnect button', () => {
   try {
     WorkspaceNavigationMethods.prototype._renderOfflineOrEmptyRecent.call(context, list);
     assert.ok(children.some(c => String(c.className).includes('recent-reconnect')));
+    assert.ok(String(fakeButton.className).includes('recent-reconnect-link'));
     assert.equal(fakeButton.textContent, '重新连接');
-    assert.match(note.textContent, /本地服务未连接/);
+    assert.match(note.textContent, /跨文档历史需桌面版|浏览器试用/);
     fakeButton._listener?.();
     assert.equal(context.refreshed, true);
     assert.ok(statuses.some(s => s.includes('正在重新连接')));

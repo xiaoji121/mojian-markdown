@@ -1,7 +1,7 @@
 import { chooseLanguage } from './localeHelpers';
 import { test, expect, setSource, openAppearance } from './fixtures';
 const sampleHeadings: Record<string, string> = {
-  'zh-CN': '欢迎使用 Markdown 编辑器', 'zh-TW': '歡迎使用 Markdown 編輯器',
+  'zh-CN': '欢迎使用墨笺', 'zh-TW': '歡迎使用墨箋',
   en: 'Welcome to Mojian', ja: '墨笺へようこそ',
 };
 for (const [locale, title, open] of [['zh-CN', '墨笺 Markdown', '打开编辑器'], ['zh-TW','墨箋 Markdown','開啟編輯器'], ['en','Mojian Markdown','Open editor'], ['ja','墨箋 Markdown','エディターを開く']]) {

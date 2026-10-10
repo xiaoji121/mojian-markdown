@@ -190,14 +190,23 @@ export class ViewMethods {
     btn.setAttribute('aria-pressed', this.immersiveWide ? 'true' : 'false');
   }
 
-  // 正文仍是独立滚动容器（导出、批注和定位依赖它）；工具组同步同一
-  // 滚动距离，保持位于文章开头，滚出边界后不再接收点击或键盘焦点。
+  // 正文仍是独立滚动容器；阅读模式工具条随滚动移出。
+  // 专注模式：退出控件 sticky 常驻，不随工具条滚出视口（F1）。
   _syncReadingToolbarScroll() {
     const pane = this.previewPaneRef?.current, prev = this.previewRef?.current;
     if (!pane || !prev) return;
     const toolbar = pane.querySelector('.reading-toolbar');
+    const sticky = pane.querySelector('.focus-exit-sticky');
     if (!toolbar) return;
-    const reading = this.previewFullscreen || this.viewMode === 'preview';
+    const focus = !!this.previewFullscreen;
+    const reading = focus || this.viewMode === 'preview';
+    if (focus) {
+      toolbar.style.transform = '';
+      toolbar.classList.remove('is-scrolled-away');
+      if (sticky) sticky.hidden = false;
+      return;
+    }
+    if (sticky) sticky.hidden = true;
     const offset = reading ? prev.scrollTop : 0;
     const gone = offset >= toolbar.offsetTop + toolbar.offsetHeight;
     toolbar.style.transform = offset ? `translateY(${-offset}px)` : '';
@@ -418,14 +427,53 @@ export class ViewMethods {
     const now = new Date();
     const hh = String(now.getHours()).padStart(2, '0');
     const mm = String(now.getMinutes()).padStart(2, '0');
-    this._setStatus(saved === false ? t('草稿保存失败 · 请保存到文件') : t(typeof window !== 'undefined' && window.mojianDesktop ? '桌面草稿已保存 · {time}' : '草稿已保存到此浏览器 · {time}', { time: hh + ':' + mm }));
+    this._draftSavedAt = Date.now();
+    this._lastWriteBackLabel = `${hh}:${mm}`;
+    if (saved === false) {
+      this._setStatus(t('草稿保存失败 · 请保存到文件'));
+    }
+    this._syncPersistentStatus?.();
     // 打开了本地文件时，草稿同时写穿回本地（异步，不阻塞输入）。
     if (typeof this._maybeWriteThroughLocalFile === 'function') this._maybeWriteThroughLocalFile();
   }
 
+  /** 底栏常驻槽：草稿/文件安全句，不被临时 toast 覆盖。 */
+  _syncPersistentStatus() {
+    const node = this.persistStatusRef?.current;
+    if (!node) return;
+    const hasFile = !!(this.fileHandle || this.localFilePath);
+    let text;
+    if (this._localFileConflict) {
+      text = t('文件冲突');
+    } else if (hasFile) {
+      text = this._lastWriteBackLabel
+        ? t('已写回 · {time}', { time: this._lastWriteBackLabel })
+        : t('已与文件同步');
+    } else if (typeof window !== 'undefined' && window.mojianDesktop) {
+      text = t('编辑后自动保存桌面草稿');
+    } else {
+      text = t('草稿已自动保存在此浏览器');
+    }
+    node.textContent = text;
+    this._syncWorkspaceChrome?.();
+  }
 
+  /** 临时 toast 槽：≤5s，不得替换常驻槽。 */
   _setStatus(msg) {
-    if (this.saveStatusRef.current) this.saveStatusRef.current.textContent = msg;
+    const toast = this.saveStatusRef?.current;
+    if (toast) {
+      toast.textContent = msg || '';
+      toast.hidden = !msg;
+      clearTimeout(this._statusToastT);
+      if (msg) {
+        this._statusToastT = setTimeout(() => {
+          if (this.saveStatusRef?.current === toast) {
+            toast.textContent = '';
+            toast.hidden = true;
+          }
+        }, 5000);
+      }
+    }
     this._syncWorkspaceChrome?.();
   }
 

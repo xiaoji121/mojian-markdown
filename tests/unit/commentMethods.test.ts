@@ -192,16 +192,16 @@ test('_applyCommentsPanelWidth 按窗口夹取宽度并同步面板与分栏变�
       panelOpen: true, commentsPanelWidth: 340
     });
 
-    editor._applyCommentsPanelWidth(500);
-    assert.equal(editor.commentsPanelWidth, 500);
-    assert.equal(aside.style.width, '500px');
-    assert.equal(vars['--active-side-panel-width'], '500px', '开启时同步分栏宽度变量');
+    editor._applyCommentsPanelWidth(300);
+    assert.equal(editor.commentsPanelWidth, 300);
+    assert.equal(aside.style.width, '300px');
+    assert.equal(vars['--active-side-panel-width'], '300px', '开启时同步分栏宽度变量');
 
     editor._applyCommentsPanelWidth(100);
-    assert.equal(editor.commentsPanelWidth, 320, '不小于与 AI 面板一致的下限 320');
+    assert.equal(editor.commentsPanelWidth, 260, '不小于规格下限 260');
 
     editor._applyCommentsPanelWidth(2000);
-    assert.equal(editor.commentsPanelWidth, 760, '不超过 min(760, 窗口 55%)');
+    assert.equal(editor.commentsPanelWidth, 360, '不超过规格上限 360');
   } finally {
     if (prev) Object.defineProperty(globalThis, 'window', prev);
     else delete (globalThis as Record<string, unknown>).window;
@@ -221,8 +221,8 @@ test('批注面板收起时不写分栏宽度变量', () => {
       panelOpen: false, commentsPanelWidth: 340
     });
 
-    editor._applyCommentsPanelWidth(420);
-    assert.equal(aside.style.width, '420px', '仍更新面板自身宽度');
+    editor._applyCommentsPanelWidth(300);
+    assert.equal(aside.style.width, '300px', '仍更新面板自身宽度');
     assert.equal(wroteVar, false, '面板未开启时不改分栏变量');
   } finally {
     if (prev) Object.defineProperty(globalThis, 'window', prev);

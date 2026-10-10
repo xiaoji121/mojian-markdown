@@ -56,6 +56,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.fileMenuButtonRef = React.createRef();
     this.dirtyDotRef = React.createRef();
     this.saveStatusRef = React.createRef();
+    this.persistStatusRef = React.createRef();
     this.publishToastRef = React.createRef();
     this.countRef = React.createRef();
     this.fontSizeRef = React.createRef();
@@ -142,8 +143,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.aiPanelOpen = false;
     this.aiBusy = false;
     this.aiBridgeOnline = false;
-    this.aiPanelWidth = 360;
-    this.commentsPanelWidth = 360;
+    this.aiPanelWidth = 300;
+    this.commentsPanelWidth = 300;
     this.documentSidebarWidth = 236;
     this.theme = 'dark';
     this.paperDark = ''; // 纸色按主题分别记忆；空 = 该主题默认
@@ -258,8 +259,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._renderPreview();
     this._updateCount();
     this._resetEditingHistory();
-    this._setStatus(getEditorStorageError() ? t('草稿读取失败 · 原始数据已保留，请勿继续编辑并检查备份')
-      : window.mojianDesktop ? t('编辑后自动保存桌面草稿') : t('编辑后自动保存草稿到此浏览器'));
+    if (getEditorStorageError()) this._setStatus(t('草稿读取失败 · 原始数据已保留，请勿继续编辑并检查备份'));
+    this._syncPersistentStatus?.();
     this._initReadingAppearance();
     this._initWorkspaceNavigation();
     this._initUnloadGuard();
@@ -287,8 +288,15 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       if (this._handleSearchShortcut(e)) return;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
-        if (e.shiftKey) this.onSaveAs();
-        else this.onSave();
+        if (e.shiftKey) {
+          if (this._canWriteToDisk?.()) this.onSaveAs();
+          else void this.downloadFullBackup?.();
+        } else if (this._canWriteOpenFile?.()) {
+          this.onSave();
+        } else {
+          // 静态 Web：⌘/Ctrl+S → 下载备份包，禁止无反馈 Save
+          void this.downloadFullBackup?.();
+        }
       }
       if (e.key === 'Escape' && this._fullscreenMermaidHost) {
         e.preventDefault();
@@ -379,6 +387,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       fileMenuButtonRef: this.fileMenuButtonRef,
       dirtyDotRef: this.dirtyDotRef,
       saveStatusRef: this.saveStatusRef,
+      persistStatusRef: this.persistStatusRef,
       publishToastRef: this.publishToastRef,
       countRef: this.countRef,
       fontSizeRef: this.fontSizeRef,
@@ -458,7 +467,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       toggleOutline: () => this._openOutlinePanel(),
       closeOutline: () => this._openOutlinePanel(false),
       showOutlineTab: () => this._openOutlinePanel(true),
-      toggleAI: () => this._openAIPanel(),
+      toggleAI: () => this.toggleAIEntry(),
       closeAI: () => this._openAIPanel(false),
       toggleAIHistory: () => this.toggleAIHistory(),
       sendAIQuestion: () => this.sendAIQuestion(),
@@ -478,6 +487,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       copyAll: (e) => this.copyAll(e),
       copyFull: (e) => this.copyFull(e),
       noop: (e) => { if (e && e.preventDefault) e.preventDefault(); },
+      toggleSelOverflow: (e) => this.toggleSelOverflow?.(e),
       onOpen: () => this.onOpen(),
       onSave: () => this.onSave(),
       onSaveAs: () => this.onSaveAs(),

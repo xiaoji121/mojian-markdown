@@ -75,7 +75,7 @@
     <aside ref="{{ documentSidebarRef }}" class="document-sidebar" aria-label="最近阅读文档" data-i18n-aria-label="最近阅读文档">
       <div ref="{{ documentSidebarResizeRef }}" class="document-sidebar-resize" title="拖动调整目录宽度" data-i18n-title="拖动调整目录宽度" aria-hidden="true"></div>
       <div class="workspace-brand"><span class="workspace-brand-lockup"><img class="workspace-brand-icon" src="/favicon.svg" alt="" aria-hidden="true" /><span class="workspace-wordmark">墨笺</span></span><button class="document-sidebar-close" onClick="{{ closeDocumentSidebar }}" aria-label="关闭最近阅读" data-i18n-aria-label="关闭最近阅读">‹</button></div>
-      <div class="workspace-file-actions"><button class="abtn primary" onClick="{{ onNew }}" aria-label="新建文档" data-i18n-aria-label="新建文档"><span aria-hidden="true">＋</span><span data-i18n="新建">新建</span></button><button class="abtn secondary" onClick="{{ onOpen }}" aria-label="打开文件" data-i18n-aria-label="打开文件"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5h6l2 2h10v13H3Z"/></svg><span data-i18n="打开">打开</span></button></div>
+      <div class="workspace-file-actions"><button class="abtn primary" onClick="{{ onNew }}" aria-label="新建文档" data-i18n-aria-label="新建文档"><span aria-hidden="true">＋</span><span data-i18n="新建">新建</span></button><button class="abtn secondary open-doc-btn" onClick="{{ onOpen }}" aria-label="打开文件" data-i18n-aria-label="打开文件"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5h6l2 2h10v13H3Z"/></svg><span class="open-doc-label" data-i18n="打开">打开</span></button></div>
       <label class="workspace-document-search"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg><input type="search" aria-label="搜索文档" data-i18n-aria-label="搜索文档" placeholder="搜索文档" data-i18n-placeholder="搜索文档" onInput="{{ filterDocuments }}" /></label>
       <div class="document-sidebar-header">
         <span class="document-sidebar-title"><span data-i18n="最近阅读">最近阅读</span></span>
@@ -105,21 +105,21 @@
       </span>
       <button class="abtn" onClick="{{ toggleComments }}" aria-label="批注" data-i18n-aria-label="批注"><span class="action-label"><span data-i18n="批注">批注</span></span> <span ref="{{ commentCountRef }}" class="count-badge">0</span></button>
       <button class="abtn" onClick="{{ toggleOutline }}" aria-label="大纲" data-i18n-aria-label="大纲"><span class="action-label"><span data-i18n="大纲">大纲</span></span></button>
-      <button class="abtn ai-entry" onClick="{{ toggleAI }}" aria-label="AI 助手" data-i18n-aria-label="AI 助手" title="打开 AI 阅读助手" data-i18n-title="打开 AI 阅读助手"><span class="action-label"><span data-i18n="AI 助手">AI 助手</span></span><span class="accent-star">✦</span></button>
+      <button class="abtn ai-entry ai-entry-weak" onClick="{{ toggleAI }}" aria-label="AI 助手" data-i18n-aria-label="AI 助手" title="打开 AI 阅读助手" data-i18n-title="打开 AI 阅读助手"><span class="action-label"><span data-i18n="AI 助手">AI 助手</span></span><span class="accent-star">✦</span></button>
       <span class="export-menu-wrap"><button ref="{{ fileMenuButtonRef }}" class="abtn secondary export-menu-toggle" onClick="{{ toggleExportMenu }}" aria-label="导出" data-i18n-aria-label="导出" aria-haspopup="menu" aria-expanded="false"><span data-i18n="导出">导出</span><svg class="menu-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></button>
         <div ref="{{ fileMenuRef }}" class="header-menu export-menu" role="menu" aria-label="导出" data-i18n-aria-label="导出">
-          <button class="header-menu-item" role="menuitem" onClick="{{ menuFileSave }}"><span data-i18n="保存">保存</span><span class="menu-shortcut" data-mod-shortcut="S" aria-hidden="true">⌘S</span></button>
-          <button class="header-menu-item" role="menuitem" onClick="{{ menuFileSaveAs }}"><span data-i18n="另存为…">另存为…</span><span class="menu-shortcut" data-mod-shortcut="Shift+S" aria-hidden="true">⌘⇧S</span></button>
-          <div class="header-menu-separator" role="separator"></div>
-          <button class="header-menu-item longimg-entry" role="menuitem" onClick="{{ menuLongImage }}"><span data-i18n="导出长图">导出长图</span></button>
-          <div class="header-menu-separator" role="separator"></div>
+          <button class="header-menu-item export-primary" role="menuitem" onClick="{{ downloadFullBackup }}"><span data-i18n="下载全文+批注备份包">下载全文+批注备份包</span><small class="menu-item-hint" data-i18n="zip：源文 + 批注资产">zip：源文 + 批注资产</small></button>
           <button class="header-menu-item" role="menuitem" onClick="{{ downloadSourceMarkdown }}"><span data-i18n="下载纯源文.md">下载纯源文.md</span><small class="menu-item-hint" data-i18n="仅正文，不含批注">仅正文，不含批注</small></button>
           <button class="header-menu-item" role="menuitem" onClick="{{ downloadAnnotationsMarkdown }}"><span data-i18n="下载批注 Markdown">下载批注 Markdown</span><small class="menu-item-hint" data-i18n="引用块+想法+时间 · 不改源文">引用块+想法+时间 · 不改源文</small></button>
-          <button class="header-menu-item" role="menuitem" onClick="{{ downloadFullBackup }}"><span data-i18n="下载全文+批注备份包">下载全文+批注备份包</span><small class="menu-item-hint" data-i18n="zip：源文 + 批注资产">zip：源文 + 批注资产</small></button>
+          <button class="header-menu-item longimg-entry" role="menuitem" onClick="{{ menuLongImage }}"><span data-i18n="导出长图">导出长图</span></button>
           <button class="header-menu-item" role="menuitem" onClick="{{ exportWithComments }}"><span data-i18n="复制全文+批注">复制全文+批注</span></button>
+          <div class="header-menu-separator write-disk-menu-item" role="separator" data-menu-group="write" hidden></div>
+          <button class="header-menu-item write-disk-menu-item" role="menuitem" onClick="{{ menuFileSave }}" hidden><span data-i18n="保存">保存</span><span class="menu-shortcut" data-mod-shortcut="S" aria-hidden="true">⌘S</span></button>
+          <button class="header-menu-item write-disk-menu-item" role="menuitem" onClick="{{ menuFileSaveAs }}" hidden><span data-i18n="另存为…">另存为…</span><span class="menu-shortcut" data-mod-shortcut="Shift+S" aria-hidden="true">⌘⇧S</span></button>
           <div class="header-menu-separator publish-menu-item" role="separator"></div>
           <button class="header-menu-item publish-menu-item" data-target="feishu" role="menuitem" onClick="{{ menuPublishFeishu }}" disabled><span data-i18n="上传到飞书文档">上传到飞书文档</span><small class="menu-item-hint" data-i18n="上传完成后自动打开">上传完成后自动打开</small></button>
           <button class="header-menu-item publish-menu-item" data-target="dingtalk" role="menuitem" onClick="{{ menuPublishDingtalk }}" disabled><span data-i18n="上传到钉钉云盘">上传到钉钉云盘</span><small class="menu-item-hint" data-i18n="保留 .md 文件，不转在线文档">保留 .md 文件，不转在线文档</small></button>
+          <button class="header-menu-item desktop-need-link" role="menuitem" onClick="{{ menuDesktopNeed }}" hidden><span data-i18n="桌面版可上传到飞书/钉钉">桌面版可上传到飞书/钉钉</span></button>
         </div>
       </span>
     </div>
@@ -291,12 +291,13 @@
           <button class="tbtn tool-pill fullscreen-only-control" onClick="{{ toggleOutline }}" title="显示大纲" data-i18n-title="显示大纲" aria-label="大纲" data-i18n-aria-label="大纲">
             <span data-i18n="大纲">大纲</span>
           </button>
-          <button class="tbtn tool-pill" onClick="{{ togglePreviewFullscreen }}" title="沉浸式阅读（Esc 退出）" data-i18n-title="沉浸式阅读（Esc 退出）" aria-label="沉浸式阅读" data-i18n-aria-label="沉浸式阅读">
+          <button class="tbtn tool-pill focus-toggle-btn" onClick="{{ togglePreviewFullscreen }}" title="沉浸式阅读（Esc 退出）" data-i18n-title="沉浸式阅读（Esc 退出）" aria-label="沉浸式阅读" data-i18n-aria-label="沉浸式阅读">
             <svg ref="{{ fullscreenIconRef }}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"></path></svg>
             <span ref="{{ fullscreenLabelRef }}" class="fullscreen-button-label"><span data-i18n="专注">专注</span></span>
           </button>
         </span>
       </div>
+      <button type="button" class="focus-exit-sticky" onClick="{{ togglePreviewFullscreen }}" hidden aria-label="退出专注" data-i18n-aria-label="退出专注"><span data-i18n="退出专注">退出专注</span> · Esc</button>
       <div ref="{{ previewSearchBarRef }}" class="preview-search-bar" role="search" aria-label="搜索预览内容" data-i18n-aria-label="搜索预览内容">
         <input ref="{{ previewSearchInputRef }}" class="search-input preview-search-input" type="text" placeholder="搜索预览…" data-i18n-placeholder="搜索预览…" aria-label="搜索预览" data-i18n-aria-label="搜索预览" spellCheck="false" />
         <span ref="{{ previewSearchCountRef }}" class="search-count preview-search-count" aria-live="polite"></span>
@@ -408,7 +409,10 @@
 
   <!-- ===== STATUS BAR ===== -->
   <footer class="app-footer">
-    <span ref="{{ saveStatusRef }}" class="save-status" role="status" aria-live="polite"><span data-i18n="就绪">就绪</span></span>
+    <span class="footer-status-slots">
+      <span ref="{{ persistStatusRef }}" class="save-status save-status-persist" role="status"><span data-i18n="草稿已自动保存在此浏览器">草稿已自动保存在此浏览器</span></span>
+      <span ref="{{ saveStatusRef }}" class="save-status save-status-toast" role="status" aria-live="polite"></span>
+    </span>
     <span ref="{{ footerPathRef }}" class="footer-path" title="" role="button" tabindex="0" onClick="{{ copyFooterPath }}"></span>
     <span class="footer-stats">
       <span ref="{{ countRef }}" class="word-count"><span data-i18n="0 字 · 0 行">0 字 · 0 行</span></span>
@@ -417,13 +421,6 @@
 
   <!-- ===== SELECTION TOOLBAR ===== -->
   <div ref="{{ selBarRef }}" class="selection-toolbar" onMouseDown="{{ noop }}">
-    <button class="seltool" onClick="{{ copySel }}" title="复制选中文字" data-i18n-title="复制选中文字">
-      <span class="seltool-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h8"></path></svg></span><span data-i18n="复制">复制
-    </span></button>
-    <button class="seltool selection-image-entry" onClick="{{ openSelectionImage }}" title="把选中内容生成图片" data-i18n-title="把选中内容生成图片">
-      <span class="seltool-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="8.5" cy="9" r="1.5"></circle><path d="m5 17 4-4 3 3 2.5-2.5L19 18"></path></svg></span><span data-i18n="生成图片">生成图片
-    </span></button>
-    <span class="seltool-divider"></span>
     <button class="seltool" onClick="{{ markMarker }}" title="马克笔高亮" data-i18n-title="马克笔高亮">
       <span class="seltool-icon"><span class="seltool-glyph glyph-mark">A</span></span><span data-i18n="马克笔">马克笔
     </span></button>
@@ -433,16 +430,29 @@
     <button class="seltool" onClick="{{ markStraight }}" title="直线" data-i18n-title="直线">
       <span class="seltool-icon"><span class="seltool-glyph glyph-line">A</span></span><span data-i18n="直线">直线
     </span></button>
-    <span class="seltool-divider"></span>
     <button class="seltool" onClick="{{ writeIdea }}" title="写想法（加批注）" data-i18n-title="写想法（加批注）">
       <span class="seltool-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M12 7v6M9 10h6" strokeWidth="1.6"></path></svg></span><span data-i18n="写想法">写想法
     </span></button>
-    <button class="seltool translate-entry" onClick="{{ translateSel }}" title="翻译选中文字（需在 AI 设置里配置 Gemini Key）" data-i18n-title="翻译选中文字（需在 AI 设置里配置 Gemini Key）">
-      <span class="seltool-icon"><span class="seltool-glyph"><span data-i18n="译">译</span></span></span><span data-i18n="翻译">翻译
-    </span></button>
-    <button class="seltool ai-entry" onClick="{{ aiAsk }}" title="复制为 AI 提问" data-i18n-title="复制为 AI 提问">
-      <span class="seltool-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg></span><span data-i18n="问 AI">问 AI
-    </span></button>
+    <span class="seltool-divider"></span>
+    <span class="seltool-overflow">
+      <button class="seltool seltool-more" onClick="{{ toggleSelOverflow }}" title="更多" data-i18n-title="更多" aria-haspopup="menu" aria-expanded="false" aria-label="更多" data-i18n-aria-label="更多">
+        <span class="seltool-icon"><span class="seltool-glyph">⋯</span></span><span data-i18n="更多">更多
+      </span></button>
+      <div class="seltool-overflow-menu" role="menu" hidden>
+        <button class="seltool" role="menuitem" onClick="{{ copySel }}" title="复制选中文字" data-i18n-title="复制选中文字">
+          <span class="seltool-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h8"></path></svg></span><span data-i18n="复制">复制
+        </span></button>
+        <button class="seltool selection-image-entry" role="menuitem" onClick="{{ openSelectionImage }}" title="把选中内容生成图片" data-i18n-title="把选中内容生成图片">
+          <span class="seltool-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="8.5" cy="9" r="1.5"></circle><path d="m5 17 4-4 3 3 2.5-2.5L19 18"></path></svg></span><span data-i18n="生成图片">生成图片
+        </span></button>
+        <button class="seltool translate-entry" role="menuitem" onClick="{{ translateSel }}" title="翻译选中文字（需在 AI 设置里配置 Gemini Key）" data-i18n-title="翻译选中文字（需在 AI 设置里配置 Gemini Key）">
+          <span class="seltool-icon"><span class="seltool-glyph"><span data-i18n="译">译</span></span></span><span data-i18n="翻译">翻译
+        </span></button>
+        <button class="seltool ai-entry" role="menuitem" onClick="{{ aiAsk }}" title="复制为 AI 提问" data-i18n-title="复制为 AI 提问">
+          <span class="seltool-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg></span><span data-i18n="问 AI">问 AI
+        </span></button>
+      </div>
+    </span>
   </div>
 </div>
 </x-dc>

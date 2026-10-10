@@ -10,6 +10,9 @@ export class WorkspaceNavigationMethods {
   _initWorkspaceNavigation() {
     this._syncDocumentSidebar();
     this._initDocumentSidebarResize();
+    this._syncExportMenuCapabilities?.();
+    this._syncOpenDocLabel?.();
+    this._syncPersistentStatus?.();
     this._workspaceResize = () => {
       this._syncDocumentSidebar();
       this._syncWorkspacePanelWidth();
@@ -57,6 +60,19 @@ export class WorkspaceNavigationMethods {
     const shell = this.splitRef?.current?.closest?.('.app-shell');
     shell?.classList.toggle('has-assistance', !!(this.panelOpen || this.aiPanelOpen || this.outlinePanelOpen));
     shell?.querySelectorAll('.assistance-count').forEach(node => { node.textContent = String(this.comments.length); });
+    const aiWeak = shell?.querySelector?.('.app-header .ai-entry-weak');
+    if (aiWeak && !this.agentBridgeEnabled && typeof aiWeak.setAttribute === 'function') {
+      aiWeak.setAttribute('data-optional-label', t('可选'));
+      aiWeak.title = t('可选') + ' · ' + t('AI 与文档历史需要桌面版或本地 Agent Bridge。');
+    }
+    // 静态：选区「问 AI」/翻译不挂可见 DOM（hidden，非仅 CSS）；Bridge 在线再显示
+    const doc = typeof document !== 'undefined' ? document : null;
+    doc?.querySelectorAll?.('.selection-toolbar .ai-entry, .selection-toolbar .translate-entry')?.forEach((el) => {
+      el.hidden = !this.agentBridgeEnabled;
+    });
+    doc?.querySelectorAll?.('.assistance-tabs .ai-entry')?.forEach((el) => {
+      el.hidden = !this.agentBridgeEnabled;
+    });
     const status = shell?.querySelector('.workspace-save-label');
     if (status) {
       const hasFile = !!(this.fileHandle || this.localFilePath);
@@ -67,8 +83,9 @@ export class WorkspaceNavigationMethods {
           : hasFile ? (this.dirty ? '未写回文件' : '已保存')
           : '仅浏览器草稿'
       );
-      status.title = this.saveStatusRef.current?.textContent || t(
-        hasFile
+      status.title = t(
+        this._localFileConflict ? '文件冲突'
+          : hasFile
           ? (this.dirty ? '已改动，尚未写回打开的文件' : '已与打开的文件同步')
           : '草稿仅存此浏览器，清除缓存会丢失；请用导出下载全文+批注备份'
       );
@@ -87,18 +104,23 @@ export class WorkspaceNavigationMethods {
       empty.textContent = t('没有匹配的文档');
       list.appendChild(empty);
     }
+    const mode = document.createElement('p');
+    mode.className = 'workspace-local-note workspace-trial-mode';
+    mode.textContent = t('浏览器试用模式');
+    list.appendChild(mode);
     const note = document.createElement('p');
     note.className = 'workspace-local-note';
-    note.textContent = t('当前文档保存在此浏览器。跨文档历史可在桌面版或本地服务中使用。');
+    note.textContent = t('跨文档历史需桌面版');
     list.appendChild(note);
   }
 
 
   _appendRecentReconnect(list) {
     if (!list || list.querySelector('.recent-reconnect')) return;
+    // 非首屏主按钮：次要文字链，收在列表底部
     const action = document.createElement('button');
     action.type = 'button';
-    action.className = 'abtn secondary recent-reconnect';
+    action.className = 'recent-reconnect recent-reconnect-link';
     action.textContent = t('重新连接');
     action.title = t('尝试连接本机 Agent Bridge');
     action.setAttribute('aria-label', t('重新连接'));
@@ -116,8 +138,10 @@ export class WorkspaceNavigationMethods {
       this._renderLocalWorkspaceDocument(list);
       const note = list.querySelector('.workspace-local-note');
       if (note) {
-        note.textContent = t('本地服务未连接。当前稿仅保存在此浏览器；跨文档历史需桌面版或本地服务。');
+        note.textContent = t('跨文档历史需桌面版');
       }
+      const trial = list.querySelector('.workspace-trial-mode');
+      if (trial) trial.textContent = t('浏览器试用模式');
       this._appendRecentReconnect(list);
       return;
     }
