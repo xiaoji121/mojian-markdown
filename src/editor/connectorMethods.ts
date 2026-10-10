@@ -13,8 +13,8 @@ const TARGETS = {
 export class ConnectorMethods {
   async _refreshConnectorCapabilities() {
     const unavailable = {
-      feishu: { available: false, reason: t('无法检测 lark-cli，请确认本地 Agent Bridge 已启动') },
-      dingtalk: { available: false, reason: t('无法检测 dws，请确认本地 Agent Bridge 已启动') }
+      feishu: { available: false, reason: t('需要本地服务才能上传到飞书') },
+      dingtalk: { available: false, reason: t('需要本地服务才能上传到钉钉') }
     };
     try {
       const response = await fetch(bridgeUrl('/api/connectors'));

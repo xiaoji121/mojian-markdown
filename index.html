@@ -95,7 +95,7 @@
         <span ref="{{ dirtyDotRef }}" class="dirty-dot"></span>
         <span ref="{{ fileNameRef }}" class="file-name" aria-label="文档名称，双击重命名" data-i18n-aria-label="文档名称，双击重命名">未命名.md</span>
       </span>
-      <span class="workspace-save-label" data-i18n="草稿">草稿</span>
+      <span class="workspace-save-label" data-i18n="仅浏览器草稿">仅浏览器草稿</span>
     </div>
     <div class="header-actions">
       <span ref="{{ viewModeSwitcherRef }}" class="view-mode-switcher" role="group" aria-label="编辑器视图" data-i18n-aria-label="编辑器视图">
@@ -107,8 +107,8 @@
       <button class="abtn ai-entry" onClick="{{ toggleAI }}" aria-label="AI 助手" data-i18n-aria-label="AI 助手" title="打开 AI 阅读助手" data-i18n-title="打开 AI 阅读助手"><span class="action-label"><span data-i18n="AI 助手">AI 助手</span></span><span class="accent-star">✦</span></button>
       <span class="export-menu-wrap"><button ref="{{ fileMenuButtonRef }}" class="abtn secondary export-menu-toggle" onClick="{{ toggleExportMenu }}" aria-label="导出" data-i18n-aria-label="导出" aria-haspopup="menu" aria-expanded="false"><span data-i18n="导出">导出</span><svg class="menu-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></button>
         <div ref="{{ fileMenuRef }}" class="header-menu export-menu" role="menu" aria-label="导出" data-i18n-aria-label="导出">
-          <button class="header-menu-item" role="menuitem" onClick="{{ menuFileSave }}"><span data-i18n="保存">保存</span><span class="menu-shortcut" aria-hidden="true">⌘S</span></button>
-          <button class="header-menu-item" role="menuitem" onClick="{{ menuFileSaveAs }}"><span data-i18n="另存为…">另存为…</span><span class="menu-shortcut" aria-hidden="true">⌘⇧S</span></button>
+          <button class="header-menu-item" role="menuitem" onClick="{{ menuFileSave }}"><span data-i18n="保存">保存</span><span class="menu-shortcut" data-mod-shortcut="S" aria-hidden="true">⌘S</span></button>
+          <button class="header-menu-item" role="menuitem" onClick="{{ menuFileSaveAs }}"><span data-i18n="另存为…">另存为…</span><span class="menu-shortcut" data-mod-shortcut="Shift+S" aria-hidden="true">⌘⇧S</span></button>
           <div class="header-menu-separator" role="separator"></div>
           <button class="header-menu-item longimg-entry" role="menuitem" onClick="{{ menuLongImage }}"><span data-i18n="导出长图">导出长图</span></button>
           <button class="header-menu-item" role="menuitem" onClick="{{ exportWithComments }}"><span data-i18n="复制全文+批注">复制全文+批注</span></button>
@@ -288,6 +288,7 @@
       </div>
       <div ref="{{ previewRef }}" class="md-preview" contentEditable="false" spellCheck="false"></div>
       <nav ref="{{ outlinePanelRef }}" class="outline-rail" aria-label="文章大纲" data-i18n-aria-label="文章大纲" hidden>
+        <span class="outline-rail-label" data-i18n="大纲" aria-hidden="true">大纲</span>
         <div ref="{{ outlineMarkersRef }}" class="outline-markers"></div>
         <div class="outline-popover" role="tooltip">
           <div ref="{{ outlinePreviewTitleRef }}" class="outline-preview-title"></div>

@@ -229,3 +229,31 @@ test('批注面板收起时不写分栏宽度变量', () => {
     else delete (globalThis as Record<string, unknown>).window;
   }
 });
+
+test('_quoteRange keeps marker on the selected sentence, not the whole paragraph', () => {
+  const editor = createEditor();
+  const full = '这是本地预览里随手写的一段。预览应立刻跟上。下一句不受影响。';
+  const quote = '预览应立刻跟上。';
+  const start = full.indexOf(quote);
+  const range = editor._quoteRange(full, { quote, occ: 0, start });
+  assert.deepEqual(range, { start, end: start + quote.length });
+  assert.equal(full.slice(range.start, range.end), quote);
+});
+
+test('_quoteRange recovers from a slightly skewed start offset', () => {
+  const editor = createEditor();
+  const full = '前半句。后半句选区。';
+  const quote = '后半句选区。';
+  const start = full.indexOf(quote);
+  const range = editor._quoteRange(full, { quote, occ: 0, start: start + 2 });
+  assert.deepEqual(range, { start, end: start + quote.length });
+});
+
+test('_quoteRange prefers exact start over an earlier duplicate quote', () => {
+  const editor = createEditor();
+  const full = '重复句。中间。重复句。';
+  const quote = '重复句。';
+  const start = full.lastIndexOf(quote);
+  const range = editor._quoteRange(full, { quote, occ: 1, start });
+  assert.deepEqual(range, { start, end: start + quote.length });
+});

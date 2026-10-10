@@ -12,19 +12,24 @@ test('文档搜索忽略大小写和首尾空格，支持中文，保留原始�
 });
 
 
-test('保存状态识别桌面文件路径，未写入和冲突状态优先显示', () => {
+test('保存状态区分浏览器草稿、未写回文件与冲突', () => {
   const status = { textContent: '', title: '' };
   const shell = { classList: { toggle() {} }, querySelectorAll: () => [], querySelector: () => status };
   const context = {
     splitRef: { current: { closest: () => shell } }, comments: [],
-    saveStatusRef: { current: { textContent: '已保存到文件' } },
-    localFilePath: '/workspace/article.md', dirty: false, _localFileConflict: false
+    saveStatusRef: { current: { textContent: '草稿已保存到此浏览器 · 10:00' } },
+    localFilePath: '', fileHandle: null, dirty: true, _localFileConflict: false
   };
+  WorkspaceNavigationMethods.prototype._syncWorkspaceChrome.call(context);
+  assert.equal(status.textContent, '仅浏览器草稿');
+
+  context.localFilePath = '/workspace/article.md';
+  context.dirty = false;
   WorkspaceNavigationMethods.prototype._syncWorkspaceChrome.call(context);
   assert.equal(status.textContent, '已保存');
   context.dirty = true;
   WorkspaceNavigationMethods.prototype._syncWorkspaceChrome.call(context);
-  assert.equal(status.textContent, '未保存到文件');
+  assert.equal(status.textContent, '未写回文件');
   context._localFileConflict = true;
   WorkspaceNavigationMethods.prototype._syncWorkspaceChrome.call(context);
   assert.equal(status.textContent, '文件冲突');

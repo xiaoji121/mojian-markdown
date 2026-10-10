@@ -91,17 +91,7 @@ export class BridgeMethods {
       return;
     }
     if (!docs.length) {
-      const empty = document.createElement('div');
-      empty.className = 'recent-documents-empty';
-      empty.textContent = this._recentDocumentsOffline
-        ? t("本地服务未连接，仍可编辑和保存当前文档。")
-        : t("还没有最近阅读，打开一篇文档开始。");
-      const action = document.createElement('button');
-      action.className = 'abtn secondary';
-      action.textContent = this._recentDocumentsOffline ? t("重新连接") : t("打开文档");
-      action.addEventListener('click', () => this._recentDocumentsOffline ? this._refreshRecentDocuments() : this.onOpen());
-      empty.appendChild(action);
-      list.appendChild(empty);
+      if (this._renderOfflineOrEmptyRecent) this._renderOfflineOrEmptyRecent(list);
       return;
     }
     const pinnedSet = this._pinnedSet();
@@ -415,7 +405,7 @@ export class BridgeMethods {
 
 
 
-  async _refreshRecentDocuments() {
+  async _refreshRecentDocuments(options = {}) {
     try {
       const response = await fetch(bridgeUrl('/api/documents'));
       if (!response.ok) throw new Error('Reading Workspace unavailable');
@@ -431,9 +421,13 @@ export class BridgeMethods {
           this._persist(false);
         }
       }
+      if (options.fromReconnect) this._setStatus(t('本地服务已连接'));
     } catch {
       this._recentDocumentsOffline = true;
       this.recentDocuments = [];
+      if (options.fromReconnect) {
+        this._setStatus(t('仍未连上本地服务 · 编辑与批注可继续使用'));
+      }
     }
     this._renderRecentDocuments();
   }

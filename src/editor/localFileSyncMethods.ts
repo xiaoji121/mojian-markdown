@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { t } from './i18n.ts';
+import { saveShortcutPhrase } from './platformShortcuts.ts';
 import { isPristineSample } from './sample.ts';
 // 本地文件双向同步：
 //   编辑器 → 本地：autosave 时把内容写穿回打开的本地文件（需要 readwrite 权限）。
@@ -164,7 +165,7 @@ export class LocalFileSyncMethods {
       }
       if (this.dirty) {
         this._localFileConflict = true;
-        this._setStatus(t("本地文件已被其他程序修改 · ⌘S 保存将覆盖对方改动"));
+        this._setStatus(t('本地文件已被其他程序修改 · {shortcut} 保存将覆盖对方改动', { shortcut: saveShortcutPhrase() }));
         return;
       }
       this._reloadFromLocalFile(text, file);

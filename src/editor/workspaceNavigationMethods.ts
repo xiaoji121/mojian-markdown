@@ -47,8 +47,19 @@ export class WorkspaceNavigationMethods {
     shell?.querySelectorAll('.assistance-count').forEach(node => { node.textContent = String(this.comments.length); });
     const status = shell?.querySelector('.workspace-save-label');
     if (status) {
-      status.textContent = t(this._localFileConflict ? '文件冲突' : this.dirty ? '未保存到文件' : (this.fileHandle || this.localFilePath) ? '已保存' : '草稿');
-      status.title = this.saveStatusRef.current?.textContent || '';
+      const hasFile = !!(this.fileHandle || this.localFilePath);
+      // Browser autosave and “save to file” are different. Without a file, say
+      // the draft is browser-only so the badge does not fight the footer.
+      status.textContent = t(
+        this._localFileConflict ? '文件冲突'
+          : hasFile ? (this.dirty ? '未写回文件' : '已保存')
+          : '仅浏览器草稿'
+      );
+      status.title = this.saveStatusRef.current?.textContent || t(
+        hasFile
+          ? (this.dirty ? '已改动，尚未写回打开的文件' : '已与打开的文件同步')
+          : '草稿已自动保存在此浏览器；导出或另存为可落到文件'
+      );
     }
   }
 
@@ -68,6 +79,46 @@ export class WorkspaceNavigationMethods {
     note.className = 'workspace-local-note';
     note.textContent = t('当前文档保存在此浏览器。跨文档历史可在桌面版或本地服务中使用。');
     list.appendChild(note);
+  }
+
+
+  _renderOfflineOrEmptyRecent(list) {
+    if (this._recentDocumentsOffline && this._renderLocalWorkspaceDocument) {
+      this._renderLocalWorkspaceDocument(list);
+      const note = list.querySelector('.workspace-local-note');
+      if (note) {
+        note.textContent = t('本地服务未连接。当前稿仅保存在此浏览器；跨文档历史需桌面版或本地服务。');
+      }
+      const action = document.createElement('button');
+      action.className = 'abtn secondary recent-reconnect';
+      action.textContent = t('重新连接');
+      action.title = t('尝试连接本机 Agent Bridge');
+      action.addEventListener('click', () => {
+        this._setStatus(t('正在重新连接本地服务…'));
+        this._refreshRecentDocuments({ fromReconnect: true });
+      });
+      list.appendChild(action);
+      return;
+    }
+    const empty = document.createElement('div');
+    empty.className = 'recent-documents-empty';
+    empty.textContent = this._recentDocumentsOffline
+      ? t('本地服务未连接。当前稿仅保存在此浏览器；跨文档历史需桌面版或本地服务。')
+      : t('还没有最近阅读，打开一篇文档开始。');
+    const action = document.createElement('button');
+    action.className = 'abtn secondary';
+    action.textContent = this._recentDocumentsOffline ? t('重新连接') : t('打开文档');
+    action.title = this._recentDocumentsOffline ? t('尝试连接本机 Agent Bridge') : '';
+    action.addEventListener('click', () => {
+      if (this._recentDocumentsOffline) {
+        this._setStatus(t('正在重新连接本地服务…'));
+        this._refreshRecentDocuments({ fromReconnect: true });
+      } else {
+        this.onOpen();
+      }
+    });
+    empty.appendChild(action);
+    list.appendChild(empty);
   }
 
   _syncWorkspacePanelWidth() {

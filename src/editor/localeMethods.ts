@@ -1,15 +1,23 @@
 // @ts-nocheck
 import { detectLocalReadingFont, READING_FONT_OFFICIAL_URL } from '../fonts/localReadingFont.ts';
-import { detectLocale, getLocale, isLocale, setLocale, t } from './i18n.ts';
+import { getLocale, isLocale, setLocale, t } from './i18n.ts';
 
 import { localeFromPath } from '../landing/route.ts';
 import { bindLocaleSettings, syncLocaleSettings } from './localeSettings.ts';
 import { translateChrome } from './localeChrome.ts';
+import { resolveInitialLocale } from './localeResolve.ts';
+import { syncMenuShortcuts } from './platformShortcuts.ts';
 
 export class LocaleMethods {
   _initLocale(saved) {
-    const landingLocale = window.mojianDesktop ? document.documentElement.dataset.desktopLandingLocale : localeFromPath(window.location.pathname);
-    setLocale(isLocale(saved?.locale) ? saved.locale : isLocale(landingLocale) ? landingLocale : detectLocale(navigator.language));
+    setLocale(resolveInitialLocale({
+      savedLocale: saved?.locale,
+      pathLocale: localeFromPath(window.location.pathname),
+      documentLang: document.documentElement.lang,
+      browserLanguage: navigator.language,
+      desktopLandingLocale: document.documentElement.dataset.desktopLandingLocale,
+      isDesktop: !!window.mojianDesktop
+    }));
     if (window.location.hash === '#editor') {
       document.documentElement.lang = getLocale();
       document.title = getLocale() === 'en' ? 'Mojian Markdown' : '墨笺 Markdown';
@@ -19,6 +27,7 @@ export class LocaleMethods {
     this._disposeLocaleSettings = bindLocaleSettings(document, value => this._changeLocale(value));
     this._initLanguagePanel();
     translateChrome(document);
+    syncMenuShortcuts(document);
     this._readingFontStatus = 'unknown';
     const link = document.querySelector('.reading-font-link');
     if (link) link.href = READING_FONT_OFFICIAL_URL;
@@ -49,6 +58,7 @@ export class LocaleMethods {
       document.title = getLocale() === 'en' ? 'Mojian Markdown' : '墨笺 Markdown';
     }
     translateChrome(document);
+    syncMenuShortcuts(document);
     this._syncQuickAppearance?.();
     this._syncWorkspaceChrome?.();
     this._applyTheme();
