@@ -278,9 +278,13 @@ body.editor-active[data-theme='light'][data-paper='snow'] { --paper-bg: #fffefa;
     height: auto !important;
     min-height: 36px;
   }
-  /* M-C：按 focus-tools-top 加大收起位移，工具条须真正离屏（桌面仍用 -100%-28px） */
+  /* M-C：收起须整条离开视口（bottom≤0）。
+     抵消 absolute top（--focus-tools-top）+ 自身高度后，再让过顶壳高度，
+     避免停在「导出」带（69113f3 只减 tools-top 时 bottom≈40）。桌面仍用 -100%-28px。 */
   .preview-pane-fullscreen .reading-toolbar.is-scrolled-away {
-    transform: translateY(calc(-100% - var(--focus-tools-top) - 16px));
+    transform: translateY(
+      calc(-100% - var(--focus-tools-top) - var(--workspace-header-height, 56px) - 24px)
+    );
   }
   /* M6：正文首行让出退出 + 间距 + 工具条 */
   .editor-main.preview-mode-active > .preview-pane.preview-pane-fullscreen > .md-preview,

@@ -33,11 +33,17 @@ test('narrow focus exit clears workspace header so Export is not covered', () =>
   assert.match(mobile, /focus-chrome-clearance/);
 });
 
-test('narrow focus scroll-hide translate accounts for focus-tools-top', () => {
+test('narrow focus scroll-hide translate clears viewport above header', () => {
   const mobile = visual().slice(visual().indexOf('手机专注顶栏'));
+  // Must cancel absolute top + self height, then clear workspace header so bottom ≤ 0
+  // (not stop in the Export band). Prefer transform only — no opacity fade.
   assert.match(
     mobile,
-    /reading-toolbar\.is-scrolled-away\s*\{[\s\S]*?translateY\(calc\(-100%\s*-\s*var\(--focus-tools-top\)/
+    /reading-toolbar\.is-scrolled-away\s*\{[\s\S]*?translateY\([\s\S]*?-100%[\s\S]*?--focus-tools-top[\s\S]*?--workspace-header-height/
+  );
+  assert.doesNotMatch(
+    mobile,
+    /reading-toolbar\.is-scrolled-away\s*\{[^}]*opacity\s*:/
   );
 });
 
