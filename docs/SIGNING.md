@@ -118,3 +118,7 @@ npm run build:desktop:release -- --win
   direct distribution + Developer ID remains the plan.
 - This skeleton does **not** enable auto-update; that still depends on signed
   releases (roadmap §2.3).
+
+## CI workflow file
+
+Canonical Actions workflow is staged at [`docs/examples/signed-release.yml`](./examples/signed-release.yml) until a credential with the GitHub `workflow` scope can place it under `.github/workflows/`.
