@@ -15,11 +15,13 @@
 - 验收：两平台安装包可安装、可启动、图标正确。
 
 ### 1.2 代码签名与公证 · L（外部流程，最先启动）
-- [ ] 申请 Apple Developer（$99/年）→ Developer ID Application 证书（账号侧任务）
-- [ ] electron-builder 接入 macOS 签名 + notarization（notarytool）
-- [ ] Windows 签名：优先 Azure Trusted Signing（约 $10/月），或传统 OV/EV 证书
+- [x] **工程骨架（N-E，2026-10）**：`desktop/electron-builder.release.cjs`、`entitlements.mac.plist`、默认 yml 预留 Hardened Runtime、手动 CI `signed-release.yml`、落地页诚实说明、`docs/SIGNING.md`
+- [ ] 申请 Apple Developer（$99/年）→ Developer ID Application 证书（**用户侧**）
+- [ ] 配置 notarization API Key / Team ID → 写入 GitHub Secrets（**用户侧**）
+- [ ] Windows 签名：优先 Azure Trusted Signing（约 $10/月），或传统 OV/EV `.pfx`（**用户侧**）
+- [ ] 用 `build:desktop:release` / Actions「Signed release」打出首个已签名包，并在真机验证
 - 验收：macOS 双击直接打开无 Gatekeeper 拦截；Windows 安装无红色 SmartScreen 警告（信誉需时间积累，黄色提示可接受）。
-- 备注：申请与审核周期比开发久，**应立即启动**；自动更新（2.3）依赖签名。
+- 备注：证书与费用在用户侧；工程已可接 secrets，无证书时不破坏 TEST/未签名路径。自动更新（2.3）仍依赖真实签名包。详见 [SIGNING.md](./SIGNING.md)。
 
 ### 1.3 GUI 启动时的 PATH 修复 · M（当前打包版 AI 实际不可用）
 - 问题：Finder/Dock 启动的应用只继承 launchd 最小 PATH，`spawn('claude')` ENOENT；此前冒烟从终端启动，未暴露。

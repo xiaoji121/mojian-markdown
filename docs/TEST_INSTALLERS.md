@@ -58,3 +58,9 @@ Verified against the official [GitHub runner reference](https://docs.github.com/
 `windows-2025` x64, `macos-15` arm64, `macos-15-intel` x64. The workflow fails if
 `process.arch` disagrees, rather than silently testing under emulation.
 NSIS behavior follows the [electron-builder NSIS documentation](https://www.electron.build/docs/nsis/).
+
+## Formal signing
+
+This pipeline stays unsigned. Formal Developer ID / notarization / Windows
+signing preparation lives in [SIGNING.md](./SIGNING.md). Do not treat TEST
+artifacts as a signed public release.

@@ -27,7 +27,8 @@
     "check": "npm run check:size && tsc --noEmit && npm test && vite build && npm run build:ext",
     "check:full": "npm run check && npm run test:e2e",
     "font:subset": "node scripts/subset-font.mjs",
-    "font:fetch": "node scripts/fetch-font.mjs && npm run font:subset"
+    "font:fetch": "node scripts/fetch-font.mjs && npm run font:subset",
+    "build:desktop:release": "npm run build:bridge && electron-builder --config desktop/electron-builder.release.cjs"
   },
   "dependencies": {
     "@mozilla/readability": "^0.6.0",
