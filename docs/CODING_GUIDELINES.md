@@ -5,7 +5,8 @@ This project keeps editor behavior grouped by feature. New code should go into t
 ## Module Boundaries
 
 - `src/editor/MarkdownEditorLogic.ts`: component factory, refs, lifecycle wiring, and template bindings only.
-- `src/editor/viewMethods.ts`: preview rendering, outline, view mode, theme, font, status, and editor counts.
+- `src/editor/viewMethods.ts`: preview rendering, view mode, theme, font, status, and editor counts.
+- `src/editor/outlineMethods.ts`: document outline sidebar (title tree, jump, active section); right-edge rail is deferred.
 - `src/editor/bridgeMethods.ts`: Reading Workspace / Agent Bridge document list and persistence sync.
 - `src/editor/workspaceNavigationMethods.ts`: document filtering, shared assistance chrome, responsive panel sizing, and temporary focus-mode state.
 - `src/editor/workspaceSettingsMethods.ts`: settings categories, keyboard/focus handling, and the synchronized quick appearance popover.

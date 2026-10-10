@@ -348,6 +348,10 @@ export class CommentMethods {
       this.aiPanelOpen = false;
       if (this.aiPanelRef.current) this.aiPanelRef.current.style.display = 'none';
     }
+    if (this.panelOpen && this.outlinePanelOpen) {
+      this.outlinePanelOpen = false;
+      if (this.outlineSidebarRef?.current) this.outlineSidebarRef.current.style.display = 'none';
+    }
     if (this.panelOpen) requestAnimationFrame(() => this._resizeCommentTextareas());
     this._syncFullscreenLayout();
   }
@@ -358,7 +362,7 @@ export class CommentMethods {
     if (!split) return;
     this._syncWorkspaceChrome?.();
     split.classList.toggle('preview-fullscreen-active', this.previewFullscreen);
-    split.classList.toggle('fullscreen-comments-open', this.previewFullscreen && (this.panelOpen || this.aiPanelOpen));
+    split.classList.toggle('fullscreen-comments-open', this.previewFullscreen && (this.panelOpen || this.aiPanelOpen || this.outlinePanelOpen));
     this._syncWorkspacePanelWidth?.();
   }
 

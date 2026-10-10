@@ -97,6 +97,11 @@ export const viewMessages: Record<string, [string, string, string]> = {
     "Untitled heading",
     "無題の見出し"
   ],
+  "本文暂无标题": [
+    "本文暫無標題",
+    "No headings in this document",
+    "この文書には見出しがありません"
+  ],
   "这一段暂时没有正文内容。": [
     "此段目前沒有內文。",
     "This section has no content yet.",

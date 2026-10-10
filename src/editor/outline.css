@@ -1,133 +1,65 @@
-/* 文章段落导航：右侧常驻轻量刻度；悬停或键盘聚焦时预览对应段落。 */
+/* 大纲侧栏目录面板；首版隐藏右缘刻度，只留侧栏。 */
 
-.outline-rail-label {
-  position: absolute;
-  top: 10px;
-  right: 2px;
-  color: color-mix(in srgb, var(--paper-text-3) 72%, transparent);
-  font: 600 10px/1 var(--sans);
-  letter-spacing: 0.08em;
-  writing-mode: vertical-rl;
-  pointer-events: none;
-  user-select: none;
-  opacity: 0.85;
-}
-.outline-rail {
-  position: absolute;
-  z-index: 24;
-  top: 42px;
-  bottom: 0;
-  right: 6px;
-  width: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-.outline-rail[hidden] { display: none; }
-.outline-markers {
-  display: flex;
-  width: 48px;
-  max-height: min(64%, 440px);
-  margin-top: 28px;
-  padding: 10px 6px;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0;
-  overflow-y: auto;
-  pointer-events: auto;
-  scrollbar-width: none;
-}
-.outline-markers::-webkit-scrollbar { display: none; }
-.outline-marker {
+.outline-panel {
   flex: none;
+  display: none;
+  flex-direction: column;
+  width: 360px;
+  min-height: 0;
+  border-left: 1px solid var(--border);
+  background: var(--bg-3);
   position: relative;
+}
+
+.outline-tree {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 10px 16px;
+}
+
+.outline-tree-empty {
+  margin: 24px 12px;
+  color: var(--text-3);
+  font: var(--fs-sm)/1.55 var(--sans);
+  text-align: center;
+}
+
+.outline-tree-item {
+  display: block;
   width: 100%;
-  height: 11px;
-  padding: 0;
+  margin: 0;
+  padding: 7px 10px;
+  padding-inline-start: calc(10px + (var(--outline-level, 1) - 1) * 14px);
   border: 0;
+  border-radius: 8px;
   background: transparent;
+  color: var(--text-2);
+  font: 450 var(--fs-sm)/1.45 var(--sans);
+  text-align: start;
   cursor: pointer;
-}
-.outline-marker::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  right: 0;
-  /* Visible line stays ≤10px for E2E lightness; hit target height stays ≥8. */
-  width: 10px;
-  height: 2.5px;
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--paper-text-3) 48%, transparent);
-  transform: translateY(-50%);
-  transition: width .14s ease, background .14s ease;
-}
-.outline-marker.is-nearby::before { background: color-mix(in srgb, var(--paper-text-3) 66%, transparent); }
-.outline-marker.is-active::before { background: color-mix(in srgb, var(--paper-text-2) 74%, transparent); }
-.outline-marker:focus-visible { outline: none; }
-.outline-marker:focus-visible::before {
-  width: 32px;
-  background: color-mix(in srgb, var(--paper-text-2) 86%, transparent);
-}
-.outline-markers.is-hovering .outline-marker[data-hover-distance='3']::before { width: 8px; }
-.outline-markers.is-hovering .outline-marker[data-hover-distance='2']::before { width: 13px; }
-.outline-markers.is-hovering .outline-marker[data-hover-distance='1']::before { width: 21px; }
-.outline-markers.is-hovering .outline-marker[data-hover-distance='0']::before {
-  width: 32px;
-  background: color-mix(in srgb, var(--paper-text-2) 86%, transparent);
-}
-.outline-popover {
-  position: absolute;
-  top: 50%;
-  right: 52px;
-  width: clamp(250px, 34cqw, 370px);
-  max-width: calc(100cqw - 70px);
-  padding: 16px 18px;
   overflow: hidden;
-  border: 1px solid var(--paper-border);
-  border-radius: 18px;
-  background: color-mix(in srgb, var(--paper-bg) 96%, transparent);
-  box-shadow: var(--shadow-md);
-  opacity: 0;
-  pointer-events: none;
-  transform: translate(8px, -50%);
-  visibility: hidden;
-  transition: opacity .16s ease, transform .16s ease, visibility .16s;
-  backdrop-filter: blur(18px);
-}
-.outline-markers.is-hovering + .outline-popover,
-.outline-markers:has(.outline-marker:focus) + .outline-popover {
-  opacity: 1;
-  transform: translate(0, -50%);
-  visibility: visible;
-}
-.outline-preview-title {
-  overflow: hidden;
-  color: var(--paper-text);
-  font: 650 var(--fs-lg)/1.45 var(--sans);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.outline-preview-summary {
-  display: -webkit-box;
-  margin-top: 7px;
-  overflow: hidden;
-  color: var(--paper-text-3);
-  font: var(--fs-md)/1.65 var(--sans);
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+
+.outline-tree-item:hover {
+  background: color-mix(in srgb, var(--accent-soft) 70%, transparent);
+  color: var(--text);
 }
 
-.preview-pane-fullscreen .outline-rail,
-.editor-main.preview-mode-active .outline-rail { top: 0; }
-
-@media (max-width: 760px) {
-  .outline-rail { top: 44px; right: 0; width: 42px; }
-  .outline-markers { width: 42px; padding-inline: 7px; }
-  .outline-popover {
-    right: 42px;
-    width: min(340px, calc(100cqw - 54px));
-    max-width: calc(100cqw - 54px);
-    border-radius: 14px;
-  }
+.outline-tree-item.is-active {
+  background: var(--accent-soft);
+  color: var(--text);
+  font-weight: 600;
 }
+
+.outline-tree-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.outline-tree-item[data-outline-level='1'] { font-weight: 600; }

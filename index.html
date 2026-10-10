@@ -104,6 +104,7 @@
         <button class="view-mode-option" data-mode="preview" onClick="{{ showPreviewMode }}" aria-pressed="false" title="阅读与批注文章" data-i18n-title="阅读与批注文章"><span data-i18n="阅读">阅读</span></button>
       </span>
       <button class="abtn" onClick="{{ toggleComments }}" aria-label="批注" data-i18n-aria-label="批注"><span class="action-label"><span data-i18n="批注">批注</span></span> <span ref="{{ commentCountRef }}" class="count-badge">0</span></button>
+      <button class="abtn" onClick="{{ toggleOutline }}" aria-label="大纲" data-i18n-aria-label="大纲"><span class="action-label"><span data-i18n="大纲">大纲</span></span></button>
       <button class="abtn ai-entry" onClick="{{ toggleAI }}" aria-label="AI 助手" data-i18n-aria-label="AI 助手" title="打开 AI 阅读助手" data-i18n-title="打开 AI 阅读助手"><span class="action-label"><span data-i18n="AI 助手">AI 助手</span></span><span class="accent-star">✦</span></button>
       <span class="export-menu-wrap"><button ref="{{ fileMenuButtonRef }}" class="abtn secondary export-menu-toggle" onClick="{{ toggleExportMenu }}" aria-label="导出" data-i18n-aria-label="导出" aria-haspopup="menu" aria-expanded="false"><span data-i18n="导出">导出</span><svg class="menu-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></button>
         <div ref="{{ fileMenuRef }}" class="header-menu export-menu" role="menu" aria-label="导出" data-i18n-aria-label="导出">
@@ -283,6 +284,9 @@
             <span class="fullscreen-comments-label"><span data-i18n="批注">批注</span></span>
             <span ref="{{ previewCommentCountRef }}" class="count-badge">0</span>
           </button>
+          <button class="tbtn tool-pill fullscreen-only-control" onClick="{{ toggleOutline }}" title="显示大纲" data-i18n-title="显示大纲" aria-label="大纲" data-i18n-aria-label="大纲">
+            <span data-i18n="大纲">大纲</span>
+          </button>
           <button class="tbtn tool-pill" onClick="{{ togglePreviewFullscreen }}" title="沉浸式阅读（Esc 退出）" data-i18n-title="沉浸式阅读（Esc 退出）" aria-label="沉浸式阅读" data-i18n-aria-label="沉浸式阅读">
             <svg ref="{{ fullscreenIconRef }}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"></path></svg>
             <span ref="{{ fullscreenLabelRef }}" class="fullscreen-button-label"><span data-i18n="专注">专注</span></span>
@@ -297,14 +301,6 @@
         <button class="tbtn search-tool search-close" onClick="{{ closePreviewSearch }}" title="关闭（Esc）" data-i18n-title="关闭（Esc）" aria-label="关闭预览搜索" data-i18n-aria-label="关闭预览搜索">&times;</button>
       </div>
       <div ref="{{ previewRef }}" class="md-preview" contentEditable="false" spellCheck="false"></div>
-      <nav ref="{{ outlinePanelRef }}" class="outline-rail" aria-label="文章大纲" data-i18n-aria-label="文章大纲" hidden>
-        <span class="outline-rail-label" data-i18n="大纲" aria-hidden="true">大纲</span>
-        <div ref="{{ outlineMarkersRef }}" class="outline-markers"></div>
-        <div class="outline-popover" role="tooltip">
-          <div ref="{{ outlinePreviewTitleRef }}" class="outline-preview-title"></div>
-          <div ref="{{ outlinePreviewSummaryRef }}" class="outline-preview-summary"></div>
-        </div>
-      </nav>
       <!-- 阅读脉络 · 路径成文操作条（仅脉络视图可见） -->
       <div ref="{{ readingPathBarRef }}" class="reading-path-bar" role="toolbar" aria-label="按阅读路径成文" data-i18n-aria-label="按阅读路径成文">
         <button ref="{{ readingPathModeRef }}" class="tbtn tool-pill reading-path-mode" onClick="{{ toggleReadingPathMode }}"
@@ -333,7 +329,7 @@
     <aside ref="{{ commentsRef }}" class="comments-panel">
       <div ref="{{ commentsResizeRef }}" class="comments-resize-handle" title="拖动调整侧栏宽度" data-i18n-title="拖动调整侧栏宽度" aria-hidden="true"></div>
       <div class="panel-header">
-        <div class="assistance-tabs" role="tablist" aria-label="辅助面板" data-i18n-aria-label="辅助面板"><button role="tab" aria-selected="true" onClick="{{ showCommentsTab }}" aria-label="批注" data-i18n-aria-label="批注"><span data-i18n="批注">批注</span><span class="assistance-count">0</span></button><button class="ai-entry" role="tab" aria-selected="false" onClick="{{ showAITab }}">AI</button></div>
+        <div class="assistance-tabs" role="tablist" aria-label="辅助面板" data-i18n-aria-label="辅助面板"><button role="tab" aria-selected="true" onClick="{{ showCommentsTab }}" aria-label="批注" data-i18n-aria-label="批注"><span data-i18n="批注">批注</span><span class="assistance-count">0</span></button><button role="tab" aria-selected="false" onClick="{{ showOutlineTab }}" aria-label="大纲" data-i18n-aria-label="大纲"><span data-i18n="大纲">大纲</span></button><button class="ai-entry" role="tab" aria-selected="false" onClick="{{ showAITab }}">AI</button></div>
         <button class="panel-close" onClick="{{ closePanel }}" title="收起" data-i18n-title="收起" aria-label="收起批注面板" data-i18n-aria-label="收起批注面板">&times;</button>
       </div>
       <div class="panel-actions">
@@ -343,11 +339,21 @@
       <div ref="{{ commentListRef }}" class="comment-list"></div>
     </aside>
 
+    <!-- OUTLINE PANEL -->
+    <aside ref="{{ outlineSidebarRef }}" class="outline-panel">
+      <div ref="{{ outlineResizeRef }}" class="outline-resize-handle" title="拖动调整侧栏宽度" data-i18n-title="拖动调整侧栏宽度" aria-hidden="true"></div>
+      <div class="panel-header">
+        <div class="assistance-tabs" role="tablist" aria-label="辅助面板" data-i18n-aria-label="辅助面板"><button role="tab" aria-selected="false" onClick="{{ showCommentsTab }}" aria-label="批注" data-i18n-aria-label="批注"><span data-i18n="批注">批注</span><span class="assistance-count">0</span></button><button role="tab" aria-selected="true" onClick="{{ showOutlineTab }}" aria-label="大纲" data-i18n-aria-label="大纲"><span data-i18n="大纲">大纲</span></button><button class="ai-entry" role="tab" aria-selected="false" onClick="{{ showAITab }}">AI</button></div>
+        <button class="panel-close" onClick="{{ closeOutline }}" title="收起" data-i18n-title="收起" aria-label="收起大纲面板" data-i18n-aria-label="收起大纲面板">&times;</button>
+      </div>
+      <nav ref="{{ outlineTreeRef }}" class="outline-tree" aria-label="文章大纲" data-i18n-aria-label="文章大纲"></nav>
+    </aside>
+
     <!-- AI READING ASSISTANT -->
     <aside ref="{{ aiPanelRef }}" class="ai-panel">
       <div ref="{{ aiResizeRef }}" class="ai-resize-handle" title="拖动调整侧栏宽度" data-i18n-title="拖动调整侧栏宽度" aria-hidden="true"></div>
       <div class="panel-header">
-        <div class="assistance-tabs" role="tablist" aria-label="辅助面板" data-i18n-aria-label="辅助面板"><button role="tab" aria-selected="false" onClick="{{ showCommentsTab }}" aria-label="批注" data-i18n-aria-label="批注"><span data-i18n="批注">批注</span><span class="assistance-count">0</span></button><button class="ai-entry" role="tab" aria-selected="true" onClick="{{ showAITab }}">AI</button></div>
+        <div class="assistance-tabs" role="tablist" aria-label="辅助面板" data-i18n-aria-label="辅助面板"><button role="tab" aria-selected="false" onClick="{{ showCommentsTab }}" aria-label="批注" data-i18n-aria-label="批注"><span data-i18n="批注">批注</span><span class="assistance-count">0</span></button><button role="tab" aria-selected="false" onClick="{{ showOutlineTab }}" aria-label="大纲" data-i18n-aria-label="大纲"><span data-i18n="大纲">大纲</span></button><button class="ai-entry" role="tab" aria-selected="true" onClick="{{ showAITab }}">AI</button></div>
         <span class="panel-header-tools">
           <button class="panel-close" onClick="{{ closeAI }}" title="收起" data-i18n-title="收起" aria-label="收起 AI 面板" data-i18n-aria-label="收起 AI 面板">&times;</button>
         </span>
