@@ -735,7 +735,9 @@ textarea.md-source {
   top: 0;
   left: 0;
   display: none; /* JS 以 style.display 开合并定位 */
+  flex-wrap: nowrap;
   align-items: stretch;
+  max-width: calc(100vw - 16px);
   padding: 6px;
   border: 1px solid var(--tool-border);
   border-radius: var(--radius-surface);
@@ -743,6 +745,18 @@ textarea.md-source {
   box-shadow: var(--shadow);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
+  gap: 0;
+}
+.selection-toolbar.is-wrapped {
+  flex-wrap: wrap;
+  row-gap: 5px;
+  max-height: calc(2 * 56px + 17px); /* 最多两行 */
+}
+.seltool-main-tools {
+  display: flex;
+  flex-wrap: inherit;
+  align-items: stretch;
+  gap: 0;
 }
 .seltool {
   display: flex;
