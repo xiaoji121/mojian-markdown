@@ -33,9 +33,9 @@ body.editor-active[data-theme='light'][data-paper='snow'] { --paper-bg: #fffefa;
 .workspace-brand { padding-inline: 22px 16px; }
 .workspace-wordmark { font-size: 23px; font-weight: 600; letter-spacing: .03em; }
 .workspace-file-actions { padding: 4px 20px 18px; gap: 10px; }
-.workspace-file-actions .abtn { padding-inline: 7px; white-space: nowrap; height: 35px; }
-.workspace-file-actions .primary { background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 82%, white), var(--accent)); border-color: transparent; font-weight: 500; }
-.workspace-file-actions .secondary { background: var(--bg-input); }
+.workspace-file-actions .abtn { padding-inline: 12px; white-space: nowrap; min-height: 36px; height: 36px; }
+.workspace-file-actions .primary { background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 82%, white), var(--accent)); border-color: transparent; color: var(--accent-ink); font-weight: 500; }
+.workspace-file-actions .secondary { background: var(--bg-input); border-color: var(--border); color: var(--text-2); }
 .workspace-document-search { margin: 0 20px 22px; padding: 8px 10px; background: var(--bg-input); }
 .document-sidebar-header { height: 26px; padding-inline: 24px; font-size: 11px; color: var(--text-3); }
 .document-count { background: transparent; color: var(--text-3); font-weight: 400; }
@@ -55,11 +55,36 @@ body.editor-active[data-theme='light'][data-paper='snow'] { --paper-bg: #fffefa;
 .workspace-sidebar-footer .ui-icon { width: 17px; height: 17px; stroke-width: 1.5; }
 /* Editing keeps a compact toolbar; reading gives the page its own breathing room. */
 .pane-toolbar { background: var(--bg); border-color: var(--border-soft); }
-.preview-pane > .reading-toolbar { background: var(--paper-bg); border-bottom-color: color-mix(in srgb, var(--paper-border, var(--border-soft)) 65%, transparent); }
+/* A: 原文/预览顶栏跟纸，不跟壳；禁止浅纸上 chrome 深灰条 */
+.source-pane > .pane-toolbar,
+.preview-pane > .reading-toolbar {
+  background: var(--paper-bg);
+  border-bottom-color: color-mix(in srgb, var(--paper-border, var(--border-soft)) 65%, transparent);
+  color: var(--paper-text-3);
+}
+.source-pane > .pane-toolbar .pane-title,
+.preview-pane > .reading-toolbar .pane-title {
+  font-family: var(--sans);
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--paper-text-3);
+  font-size: 11px;
+}
+.source-pane > .pane-toolbar .tbtn,
+.preview-pane > .reading-toolbar .tbtn {
+  color: var(--paper-text-3);
+}
+.source-pane > .pane-toolbar .tbtn:hover,
+.preview-pane > .reading-toolbar .tbtn:hover {
+  color: var(--paper-accent);
+}
+.source-pane > .pane-toolbar .tbtn.history-action:not(:disabled) {
+  color: var(--paper-text-3);
+}
 .pane-title { font-family: var(--sans); letter-spacing: .02em; font-size: 11px; }
 .tbtn { border-radius: 5px; }
-.source-toolbar-leading, .source-toolbar-actions { opacity: .85; }
-.editor-main.preview-mode-active > .preview-pane:not(.preview-pane-fullscreen) > .reading-toolbar { top: 14px; right: max(28px, calc((100% - 736px) / 2)); background: transparent; }
+.source-toolbar-leading, .source-toolbar-actions { opacity: 1; }
+.editor-main.preview-mode-active > .preview-pane:not(.preview-pane-fullscreen) > .reading-toolbar { top: 14px; right: max(28px, calc((100% - 736px) / 2)); background: var(--paper-bg); }
 .reading-toolbar .preview-toolbar-actions { gap: 10px; }
 .editor-main.preview-mode-active > .preview-pane:not(.preview-pane-fullscreen) > .md-preview { padding: 88px max(56px, calc((100% - 736px) / 2)) 80px; }
 .editor-main.preview-mode-active .md-preview h1 { font-size: 2.8em; line-height: 1.2; font-weight: 700; letter-spacing: -.025em; border: 0; padding-bottom: 0; margin-bottom: .35em; }
