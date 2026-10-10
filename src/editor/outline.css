@@ -54,7 +54,8 @@
   position: absolute;
   top: 50%;
   right: 0;
-  width: 12px;
+  /* Visible line stays ≤10px for E2E lightness; hit target height stays ≥8. */
+  width: 10px;
   height: 2.5px;
   border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--paper-text-3) 48%, transparent);

@@ -2,13 +2,17 @@ import { type Locale, detectLocale, isLocale } from './i18n.ts';
 
 /**
  * Pick the editor UI locale.
- * Saved preference wins; otherwise follow landing (path segment, or historic
- * root = document lang / zh-CN); last resort is the browser language.
+ * Saved preference wins; then desktop landing; then an explicit path segment
+ * (`/en/`, `/ja/`, …). Root `/` has no segment: only prefer the prerendered
+ * landing locale when the user actually saw the landing before opening the
+ * editor. A direct `/#editor` deep link (and E2E navigator fixtures) follow
+ * the browser language instead of the static zh-CN document lang.
  */
 export function resolveInitialLocale(input: {
   savedLocale?: unknown;
   pathLocale?: unknown;
-  documentLang?: unknown;
+  landingLocale?: unknown;
+  preferLandingLocale?: boolean;
   browserLanguage?: string;
   desktopLandingLocale?: unknown;
   isDesktop?: boolean;
@@ -16,10 +20,8 @@ export function resolveInitialLocale(input: {
   if (isLocale(input.savedLocale)) return input.savedLocale;
   if (input.isDesktop && isLocale(input.desktopLandingLocale)) return input.desktopLandingLocale;
   if (isLocale(input.pathLocale)) return input.pathLocale;
-  // Root landing has no locale segment and is historically Simplified Chinese.
-  if (!input.isDesktop && (input.pathLocale === null || input.pathLocale === undefined)) {
-    if (isLocale(input.documentLang)) return input.documentLang;
-    return 'zh-CN';
+  if (!input.isDesktop && input.preferLandingLocale && isLocale(input.landingLocale)) {
+    return input.landingLocale;
   }
   return detectLocale(input.browserLanguage || '');
 }

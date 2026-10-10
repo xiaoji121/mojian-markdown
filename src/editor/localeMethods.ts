@@ -13,7 +13,8 @@ export class LocaleMethods {
     setLocale(resolveInitialLocale({
       savedLocale: saved?.locale,
       pathLocale: localeFromPath(window.location.pathname),
-      documentLang: document.documentElement.lang,
+      landingLocale: document.documentElement.dataset.landingLocale,
+      preferLandingLocale: document.documentElement.dataset.preferLandingLocale === '1',
       browserLanguage: navigator.language,
       desktopLandingLocale: document.documentElement.dataset.desktopLandingLocale,
       isDesktop: !!window.mojianDesktop
