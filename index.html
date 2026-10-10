@@ -280,10 +280,11 @@
     <!-- RIGHT: preview -->
     <section ref="{{ previewPaneRef }}" class="preview-pane">
       <div class="pane-toolbar reading-toolbar" role="toolbar" aria-label="阅读工具" data-i18n-aria-label="阅读工具">
-        <span ref="{{ previewTitleRef }}" class="pane-title"><span data-i18n="预览 · 仅阅读">预览 · 仅阅读</span></span>
+        <span ref="{{ previewTitleRef }}" class="pane-title"><span data-i18n="预览">预览</span></span>
         <span class="preview-toolbar-actions">
           <button class="tbtn tool-pill" onClick="{{ togglePreviewSearch }}" aria-label="查找文档" data-i18n-aria-label="查找文档"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg><span data-i18n="查找">查找</span></button>
           <button class="tbtn tool-pill quick-appearance-toggle" onClick="{{ toggleQuickAppearance }}" aria-label="排版" data-i18n-aria-label="排版" aria-expanded="false"><span aria-hidden="true">Aa</span><span data-i18n="排版">排版</span></button>
+          <button class="tbtn tool-pill fullscreen-only-control reading-toolbar-settings" onClick="{{ openWorkspaceSettings }}" aria-label="设置" data-i18n-aria-label="设置"><span data-i18n="设置">设置</span></button>
           <button class="tbtn tool-pill fullscreen-only-control" onClick="{{ toggleComments }}" title="显示批注" data-i18n-title="显示批注" aria-label="显示批注" data-i18n-aria-label="显示批注">
             <span class="fullscreen-comments-label"><span data-i18n="批注">批注</span></span>
             <span ref="{{ previewCommentCountRef }}" class="count-badge">0</span>
@@ -297,7 +298,7 @@
           </button>
         </span>
       </div>
-      <button type="button" class="focus-exit-sticky" onClick="{{ togglePreviewFullscreen }}" hidden aria-label="退出专注" data-i18n-aria-label="退出专注"><span data-i18n="退出专注">退出专注</span> · Esc</button>
+      <button type="button" class="focus-exit-sticky" onClick="{{ togglePreviewFullscreen }}" hidden aria-label="退出专注 · Esc" data-i18n-aria-label="退出专注"><span data-i18n="退出专注">退出专注</span><span aria-hidden="true"> · Esc</span></button>
       <div ref="{{ previewSearchBarRef }}" class="preview-search-bar" role="search" aria-label="搜索预览内容" data-i18n-aria-label="搜索预览内容">
         <input ref="{{ previewSearchInputRef }}" class="search-input preview-search-input" type="text" placeholder="搜索预览…" data-i18n-placeholder="搜索预览…" aria-label="搜索预览" data-i18n-aria-label="搜索预览" spellCheck="false" />
         <span ref="{{ previewSearchCountRef }}" class="search-count preview-search-count" aria-live="polite"></span>

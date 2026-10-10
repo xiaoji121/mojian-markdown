@@ -167,7 +167,7 @@ export class ViewMethods {
     if (!prev) return;
     prev.setAttribute('contenteditable', 'false');
     if (this.previewTitleRef.current) {
-      this.previewTitleRef.current.textContent = t('预览 · 仅阅读');
+      this.previewTitleRef.current.textContent = t('预览');
     }
   }
 

@@ -7,7 +7,8 @@
 /* Reserve a 48px lane for the fixed global More button in every immersive layout.
    Keeping the inset in the shared geometry avoids equal-specificity mobile rules
    replacing the clearance when preview-mode-active and fullscreen are both set. */
-.preview-pane-fullscreen { --reading-tools-edge: 64px; }
+/* 退出独占右上；工具条为退出胶囊留空（约 退出专注 · Esc + 16px） */
+.preview-pane-fullscreen { --reading-tools-edge: 152px; }
 
 .editor-main.preview-mode-active > .preview-pane > .reading-toolbar,
 .editor-main > .preview-pane-fullscreen > .reading-toolbar {
@@ -31,7 +32,7 @@
 }
 
 .editor-main > .preview-pane-fullscreen.immersive-wide > .reading-toolbar {
-  right: max(64px, calc((100% - 1240px) / 2));
+  right: max(var(--reading-tools-edge, 152px), calc((100% - 1240px) / 2));
 }
 .editor-main.preview-mode-active .reading-toolbar > .preview-toolbar-actions > .tbtn,
 .preview-pane-fullscreen .reading-toolbar > .preview-toolbar-actions > .tbtn { color: var(--paper-text-3); }

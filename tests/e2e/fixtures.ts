@@ -41,7 +41,9 @@ export async function openAppearance(page: Page) {
   await expect(page.locator('.md-source')).toHaveAttribute('lang', /.*/);
   const panel = page.locator('.reading-appearance-panel');
   if (!(await panel.isVisible())) {
-    if (await page.locator('.focus-settings-button').isVisible()) {
+    if (await page.locator('.reading-toolbar-settings').isVisible()) {
+      await page.locator('.reading-toolbar-settings').click();
+    } else if (await page.locator('.focus-settings-button').isVisible()) {
       await page.locator('.focus-settings-button').click();
     } else {
       const sidebarClosed = await page.locator('.document-sidebar').evaluate(sidebar =>

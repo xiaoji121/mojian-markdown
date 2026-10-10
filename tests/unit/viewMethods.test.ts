@@ -24,17 +24,17 @@ test('preview stays read-only in split, preview, and immersive layouts', () => {
 
   ViewMethods.prototype._syncPreviewEditable.call(context);
   assert.equal(preview.getAttribute('contenteditable'), 'false');
-  assert.equal(title.textContent, '预览 · 仅阅读');
+  assert.equal(title.textContent, '预览');
 
   context.previewFullscreen = true;
   ViewMethods.prototype._syncPreviewEditable.call(context);
   assert.equal(preview.getAttribute('contenteditable'), 'false');
-  assert.equal(title.textContent, '预览 · 仅阅读');
+  assert.equal(title.textContent, '预览');
 
   context.previewFullscreen = false;
   ViewMethods.prototype._syncPreviewEditable.call(context);
   assert.equal(preview.getAttribute('contenteditable'), 'false');
-  assert.equal(title.textContent, '预览 · 仅阅读');
+  assert.equal(title.textContent, '预览');
 });
 
 test('preview remains read-only when override content is shown', () => {

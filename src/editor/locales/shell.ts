@@ -85,7 +85,7 @@ export const shellMessages: Record<string, [string, string, string]> = {
   "全部": ["全部", "All", "すべて"],
   "# 在这里写 Markdown…": ["# 在這裡寫 Markdown…", "# Write Markdown here…", "# ここに Markdown を入力…"],
   "阅读工具": ["閱讀工具", "Reading tools", "閲覧ツール"],
-  "预览 · 仅阅读": ["預覽 · 唯讀", "Preview · read only", "プレビュー · 読み取り専用"],
+  "预览": ["預覽", "Preview", "プレビュー"],
   "排版": ["排版", "Appearance", "書式"],
   "阅读排版设置": ["閱讀排版設定", "Reading appearance settings", "閲覧の表示設定"],
   "界面主题": ["介面佈景主題", "Interface theme", "画面テーマ"],
