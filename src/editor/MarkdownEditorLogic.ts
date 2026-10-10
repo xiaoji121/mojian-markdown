@@ -12,6 +12,7 @@ import { AIReadinessMethods } from './aiReadinessMethods';
 import { AIReadingTreeMethods } from './aiReadingTreeMethods';
 import { BridgeMethods } from './bridgeMethods';
 import { CommentMethods } from './commentMethods';
+import { SelectionToolbarMethods } from './selectionToolbarMethods';
 import { ConnectorMethods } from './connectorMethods';
 import { DiagramMethods } from './diagramMethods';
 import { EditingFileLayoutMethods } from './editingFileLayoutMethods';
@@ -522,6 +523,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     SearchReplaceMethods,
     PreviewSearchMethods,
     CommentMethods,
+    SelectionToolbarMethods,
     DiagramMethods,
     LongImageMethods,
     AIMethods,

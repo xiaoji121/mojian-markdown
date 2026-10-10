@@ -70,6 +70,8 @@ export class WorkspaceNavigationMethods {
     doc?.querySelectorAll?.('.selection-toolbar .ai-entry, .selection-toolbar .translate-entry')?.forEach((el) => {
       el.hidden = !this.agentBridgeEnabled;
     });
+    const selBar = this.selBarRef?.current;
+    if (selBar && selBar.style.display !== 'none') this._layoutSelectionToolbar?.();
     doc?.querySelectorAll?.('.assistance-tabs .ai-entry')?.forEach((el) => {
       el.hidden = !this.agentBridgeEnabled;
     });

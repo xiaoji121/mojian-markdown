@@ -521,8 +521,7 @@
     .footer-stats { gap: 0 !important; }
     .selection-toolbar {
       max-width: calc(100vw - 16px);
-      overflow-x: auto;
-      overscroll-behavior-x: contain;
+      /* 窄屏用折行 + overflow「更多」，不用横向滚动 */
     }
     .selection-toolbar .seltool { min-width: 48px !important; padding-inline: 7px !important; }
     .preview-pane-fullscreen .md-preview { padding: 66px 20px calc(40px + env(safe-area-inset-bottom)) !important; }

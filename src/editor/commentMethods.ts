@@ -30,6 +30,17 @@ export class CommentMethods {
       const b = this.selBarRef.current;
       if (b && !b.contains(e.target) && !prev.contains(e.target)) b.style.display = 'none';
     });
+    if (!this._selToolbarResizeBound && typeof window !== 'undefined') {
+      window.addEventListener('resize', () => {
+        const b = this.selBarRef?.current;
+        if (b && b.style.display !== 'none') {
+          this._layoutSelectionToolbar?.();
+          // re-anchor after width change
+          this._onPreviewSelect?.();
+        }
+      });
+      this._selToolbarResizeBound = true;
+    }
     this._initCommentsResize();
   }
 
@@ -107,6 +118,7 @@ export class CommentMethods {
     this._pending = { quote: quote, occ: occ, start: startOff, end: startOff >= 0 ? startOff + quote.length : -1, html: fragment.innerHTML, commentIds: [...commentIds] };
     const rect = range.getBoundingClientRect();
     bar.style.display = 'flex';
+    this._layoutSelectionToolbar?.();
     const w = bar.offsetWidth, h = bar.offsetHeight;
     let left = rect.left + rect.width / 2 - w / 2;
     left = Math.max(8, Math.min(window.innerWidth - w - 8, left));

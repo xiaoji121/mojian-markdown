@@ -159,6 +159,8 @@ body.editor-active[data-theme='light'][data-paper='snow'] { --paper-bg: #fffefa;
   display: flex;
   align-items: stretch;
 }
+.seltool-overflow[hidden] { display: none !important; }
+.seltool-tools-divider[hidden] { display: none !important; }
 .seltool-overflow-menu {
   position: absolute;
   top: calc(100% + 6px);
