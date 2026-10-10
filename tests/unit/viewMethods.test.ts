@@ -274,3 +274,32 @@ test('网页版或未关联本地文件时不改写图片', () => {
 
   assert.equal(img.src, './a.png');
 });
+
+
+test('focus mode keeps sticky exit and allows toolbar to scroll away', () => {
+  const toolbar = { offsetTop: 0, offsetHeight: 36, style: { transform: '' }, classList: { remove() {}, toggle(name, on) { this._scrolled = !!on; }, _scrolled: false } };
+  const sticky = { hidden: true };
+  const prev = { scrollTop: 80 };
+  const pane = {
+    querySelector(sel) {
+      if (sel === '.reading-toolbar') return toolbar;
+      if (sel === '.focus-exit-sticky') return sticky;
+      return null;
+    }
+  };
+  const editor = Object.assign(Object.create(ViewMethods.prototype), {
+    previewPaneRef: { current: pane },
+    previewRef: { current: prev },
+    previewFullscreen: true,
+    viewMode: 'preview'
+  });
+  editor._syncReadingToolbarScroll();
+  assert.equal(sticky.hidden, false);
+  assert.equal(toolbar.style.transform, 'translateY(-80px)');
+  assert.equal(toolbar.classList._scrolled, true);
+  editor.previewFullscreen = false;
+  editor.viewMode = 'split';
+  prev.scrollTop = 0;
+  editor._syncReadingToolbarScroll();
+  assert.equal(sticky.hidden, true);
+});

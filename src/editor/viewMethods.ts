@@ -190,8 +190,8 @@ export class ViewMethods {
     btn.setAttribute('aria-pressed', this.immersiveWide ? 'true' : 'false');
   }
 
-  // 正文仍是独立滚动容器；阅读模式工具条随滚动移出。
-  // 专注模式：退出控件 sticky 常驻，不随工具条滚出视口（F1）。
+  // 正文仍是独立滚动容器；阅读/专注工具条可随滚动移出。
+  // 专注模式：仅右上 sticky「退出专注」常驻；工具条内不再重复退出（可滚走）。
   _syncReadingToolbarScroll() {
     const pane = this.previewPaneRef?.current, prev = this.previewRef?.current;
     if (!pane || !prev) return;
@@ -200,13 +200,7 @@ export class ViewMethods {
     if (!toolbar) return;
     const focus = !!this.previewFullscreen;
     const reading = focus || this.viewMode === 'preview';
-    if (focus) {
-      toolbar.style.transform = '';
-      toolbar.classList.remove('is-scrolled-away');
-      if (sticky) sticky.hidden = false;
-      return;
-    }
-    if (sticky) sticky.hidden = true;
+    if (sticky) sticky.hidden = !focus;
     const offset = reading ? prev.scrollTop : 0;
     const gone = offset >= toolbar.offsetTop + toolbar.offsetHeight;
     toolbar.style.transform = offset ? `translateY(${-offset}px)` : '';
