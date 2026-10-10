@@ -24,7 +24,7 @@ Related: [TEST installers](./TEST_INSTALLERS.md) (unsigned TEST only),
 - `desktop/entitlements.mac.plist` — production Electron JIT entitlements.
 - `desktop/electron-builder.test.cjs` — unchanged isolated **TEST** identity
   (`identity: '-'`, no notarize, Windows `signAndEditExecutable: false`).
-- `.github/workflows/signed-release.yml` — **workflow_dispatch only**; checks
+- `docs/examples/signed-release.yml` — staged workflow (**workflow_dispatch only**); copy to `.github/workflows/` when a credential has `workflow` scope; checks
   secrets then builds. Never runs on PR/push. Does not publish a GitHub Release.
 - Landing page copy marks **TEST / unsigned** and points here.
 - Scripts: `npm run build:desktop` (default yml), `npm run build:desktop:release`

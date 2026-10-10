@@ -34,8 +34,8 @@ test('release config forces signing/notarize and stays separate from TEST identi
   assert.equal(testCfg.win.signAndEditExecutable, false);
 });
 
-test('signed-release workflow is manual-only and uses env placeholders, not committed secrets', () => {
-  const workflow = read('.github/workflows/signed-release.yml');
+test('signed-release workflow example is manual-only and uses env placeholders, not committed secrets', () => {
+  const workflow = read('docs/examples/signed-release.yml');
   assert.match(workflow, /workflow_dispatch/);
   assert.doesNotMatch(workflow, /^\s*pull_request:/m);
   assert.doesNotMatch(workflow, /^\s*push:/m);
