@@ -36,7 +36,7 @@
 .workspace-brand .document-sidebar-close { width: 28px; height: 28px; border-radius: var(--radius-control); font-size: var(--fs-2xl); }
 .workspace-brand .document-sidebar-close:hover { color: var(--accent); background: var(--accent-soft); }
 .workspace-file-actions { display: flex; gap: 8px; padding: 8px 16px 16px; }
-.workspace-file-actions .abtn { flex: 1; padding: 0 10px; height: 36px; }
+.workspace-file-actions .abtn { flex: 1; padding: 0 12px; min-height: 36px; height: 36px; }
 .workspace-document-search { display: flex; align-items: center; gap: 8px; margin: 0 16px 16px; padding: 9px 10px; border: 1px solid var(--border-soft); border-radius: var(--radius-control); color: var(--text-3); background: var(--bg-input); }
 .workspace-document-search input { width: 100%; min-width: 0; border: 0; outline: 0; font: var(--fs-sm)/1.4 var(--sans); color: var(--text); background: transparent; }
 .workspace-document-search:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }

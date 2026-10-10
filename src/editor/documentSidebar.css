@@ -280,6 +280,8 @@
     flex: none;
     width: 100%;
     min-width: 0;
+    min-height: 36px;
+    height: 36px;
     justify-content: center;
     overflow: hidden;
     text-overflow: ellipsis;

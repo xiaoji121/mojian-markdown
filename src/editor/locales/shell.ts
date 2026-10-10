@@ -40,7 +40,7 @@ export const shellMessages: Record<string, [string, string, string]> = {
   "最近阅读文档": ["最近閱讀的文件", "Recently read documents", "最近読んだ文書"],
   "拖动调整目录宽度": ["拖曳調整目錄寬度", "Drag to resize document sidebar", "ドラッグして文書一覧の幅を調整"],
   "关闭最近阅读": ["關閉最近閱讀", "Close recent reading", "最近の文書を閉じる"],
-  "Markdown 原文": ["Markdown 原文", "Markdown source", "Markdown 原文"],
+  "原文": ["原文", "Source", "原文"],
   "编辑历史": ["編輯歷程", "Edit history", "編集履歴"],
   "撤销（⌘Z）": ["復原（⌘Z）", "Undo (⌘Z)", "元に戻す（⌘Z）"],
   "撤销（Ctrl+Z）": ["復原（Ctrl+Z）", "Undo (Ctrl+Z)", "元に戻す（Ctrl+Z）"],
