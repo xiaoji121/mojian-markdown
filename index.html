@@ -111,6 +111,10 @@
           <button class="header-menu-item" role="menuitem" onClick="{{ menuFileSaveAs }}"><span data-i18n="另存为…">另存为…</span><span class="menu-shortcut" data-mod-shortcut="Shift+S" aria-hidden="true">⌘⇧S</span></button>
           <div class="header-menu-separator" role="separator"></div>
           <button class="header-menu-item longimg-entry" role="menuitem" onClick="{{ menuLongImage }}"><span data-i18n="导出长图">导出长图</span></button>
+          <div class="header-menu-separator" role="separator"></div>
+          <button class="header-menu-item" role="menuitem" onClick="{{ downloadSourceMarkdown }}"><span data-i18n="下载纯源文.md">下载纯源文.md</span><small class="menu-item-hint" data-i18n="仅正文，不含批注">仅正文，不含批注</small></button>
+          <button class="header-menu-item" role="menuitem" onClick="{{ downloadAnnotationsMarkdown }}"><span data-i18n="下载批注 Markdown">下载批注 Markdown</span><small class="menu-item-hint" data-i18n="引用块+想法+时间 · 不改源文">引用块+想法+时间 · 不改源文</small></button>
+          <button class="header-menu-item" role="menuitem" onClick="{{ downloadFullBackup }}"><span data-i18n="下载全文+批注备份包">下载全文+批注备份包</span><small class="menu-item-hint" data-i18n="zip：源文 + 批注资产">zip：源文 + 批注资产</small></button>
           <button class="header-menu-item" role="menuitem" onClick="{{ exportWithComments }}"><span data-i18n="复制全文+批注">复制全文+批注</span></button>
           <div class="header-menu-separator publish-menu-item" role="separator"></div>
           <button class="header-menu-item publish-menu-item" data-target="feishu" role="menuitem" onClick="{{ menuPublishFeishu }}" disabled><span data-i18n="上传到飞书文档">上传到飞书文档</span><small class="menu-item-hint" data-i18n="上传完成后自动打开">上传完成后自动打开</small></button>

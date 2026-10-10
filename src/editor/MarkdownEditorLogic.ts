@@ -30,6 +30,7 @@ import { SearchReplaceMethods } from './searchReplaceMethods';
 import { WorkspaceSettingsMethods } from './workspaceSettingsMethods';
 import { WorkspaceNavigationMethods } from './workspaceNavigationMethods';
 import { WorkspaceMenuMethods } from './workspaceMenuMethods';
+import { ExportBackupMethods } from './exportBackupMethods';
 import { ViewMethods } from './viewMethods';
 
 export function createMarkdownEditorComponent(DCLogic, React) {
@@ -260,6 +261,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       : window.mojianDesktop ? t('编辑后自动保存桌面草稿') : t('编辑后自动保存草稿到此浏览器'));
     this._initReadingAppearance();
     this._initWorkspaceNavigation();
+    this._initUnloadGuard();
     this._applyProps();
     this._initFileNameEditing();
 
@@ -338,6 +340,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
 
   componentWillUnmount() {
     this._disposeWorkspaceNavigation();
+    this._disposeUnloadGuard();
     this.toggleExportMenu(false);
     this._disposeLocale();
     if (this._desktopCloseCleanup) this._desktopCloseCleanup();
@@ -491,6 +494,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     Component,
     ViewMethods,
     WorkspaceMenuMethods,
+    ExportBackupMethods,
     WorkspaceNavigationMethods,
     WorkspaceSettingsMethods,
     BridgeMethods,

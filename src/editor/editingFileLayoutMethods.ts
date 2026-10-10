@@ -1,5 +1,7 @@
 // @ts-nocheck
 import { t } from './i18n.ts';
+import { isPristineSample } from './sample.ts';
+import { shouldConfirmLeave } from './annotationExport.ts';
 import { createDesktopFileHandle } from './desktopFileHandle.ts';
 import { SITE_URL } from '../landing/site.ts';
 
@@ -646,11 +648,18 @@ export class EditingFileLayoutMethods {
   // ===== 顶栏「文件」下拉菜单 =====
 
   onNew() {
-    if (this.dirty) {
-      const hasFile = !!(this.fileHandle || this.localFilePath);
+    const hasFile = !!(this.fileHandle || this.localFilePath);
+    const content = this.sourceRef.current?.value || '';
+    if (shouldConfirmLeave({
+      hasFile,
+      dirty: !!this.dirty,
+      content,
+      commentCount: Array.isArray(this.comments) ? this.comments.length : 0,
+      pristineSample: isPristineSample(content, this.fileName || '')
+    })) {
       const message = t(hasFile
         ? '当前修改尚未写回文件，确定新建空白文档？'
-        : '当前只有浏览器草稿，新建将清空此稿（可先导出保存）。确定新建？');
+        : '当前只有浏览器草稿，新建将清空此稿（可先下载备份）。确定新建？');
       if (!window.confirm(message)) return;
     }
     if (this.viewMode === 'preview') this.setViewMode('editor');
