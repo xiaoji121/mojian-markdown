@@ -90,6 +90,7 @@ export class WorkspaceNavigationMethods {
           : '草稿仅存此浏览器，清除缓存会丢失；请用导出下载全文+批注备份'
       );
     }
+    this._syncNdNewButton?.();
   }
 
   _renderLocalWorkspaceDocument(list) {

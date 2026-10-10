@@ -194,5 +194,11 @@ export const featureMessages: Record<string, [string, string, string]> = {
   "{count} 张 · {width} × {height} px · {size}": ["{count} 張 · {width} × {height} px · {size}","{count} images · {width} × {height} px · {size}","{count} 枚 · {width} × {height} px · {size}"],
   "✓ 已保存手机分页图片 · {count} 张 · {name}": ["✓ 已儲存手機分頁圖片 · {count} 張 · {name}","✓ Mobile pages saved · {count} images · {name}","✓ モバイル向け画像を保存しました · {count} 枚 · {name}"],
   "在右侧预览中选中任意文字，用浮出的工具条划线或写想法，都会收集到这里。": ["在右側預覽中選取任意文字，用浮出的工具列劃線或寫想法，都會收集到這裡。","Select text in the preview, then highlight it or add a thought from the floating toolbar. Your annotations will appear here.","プレビューでテキストを選択し、表示されるツールバーでハイライトやアイデアを追加すると、ここに集められます。"],
-  "正在查看阅读脉络 · {name}": ["正在檢視閱讀脈絡 · {name}","Viewing reading map · {name}","閲覧マップを表示中 · {name}"]
+  "正在查看阅读脉络 · {name}": ["正在檢視閱讀脈絡 · {name}","Viewing reading map · {name}","閲覧マップを表示中 · {name}"],
+  "在预览里选中一句，点马克笔或「写想法」，会出现在这里。": ["在預覽裡選取一句，點螢光筆或「寫想法」，會出現在這裡。","Select a sentence in the preview, then Marker or Add note — it shows up here.","プレビューで一文を選び、マーカーまたは「考えを書く」と、ここに出ます。"],
+  "批注不会写回源文。": ["註解不會寫回原文。","Annotations never write back into the source.","注釈は原文に書き戻しません。"],
+  "去预览试试": ["去預覽試試","Try the preview","プレビューで試す"],
+  "✓ 已划线": ["✓ 已劃線","✓ Highlighted","✓ ハイライトしました"],
+  "✓ 想法已记下": ["✓ 想法已記下","✓ Thought saved","✓ メモを残しました"],
+  "✓ 批注已带走 · 备份包在下载文件夹": ["✓ 註解已帶走 · 備份包在下載資料夾","✓ Annotations packed · backup is in your Downloads","✓ 注釈を持ち出せました · バックアップはダウンロードフォルダにあります"]
 };

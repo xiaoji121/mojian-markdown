@@ -248,7 +248,11 @@ export class CommentMethods {
     this._persist();
     this._renderPreview();
     this._renderComments();
-    if (focusNote) { this._openPanel(true); this._focusComment(c.id, true); }
+    // N-D: after highlight/idea, open panel so the card is visible (do not force-open on idle S0).
+    if (this.commentsRef?.current) {
+      this._openPanel(true);
+      this._focusComment(c.id, !!focusNote);
+    }
     return c;
   }
 
@@ -261,13 +265,29 @@ export class CommentMethods {
   }
 
 
-  markMarker() { if (this._createAnnotation('marker', false)) this._setStatus(t("✓ 已用马克笔划线 · 共 {count} 条", { count: this.comments.length })); }
+  markMarker() {
+    if (!this._createAnnotation('marker', false)) return;
+    this._setStatus(t("✓ 已划线"));
+    this._noteNdAnnotated?.();
+  }
 
-  markWavy() { if (this._createAnnotation('wavy', false)) this._setStatus(t("✓ 已添加波浪线 · 共 {count} 条", { count: this.comments.length })); }
+  markWavy() {
+    if (!this._createAnnotation('wavy', false)) return;
+    this._setStatus(t("✓ 已划线"));
+    this._noteNdAnnotated?.();
+  }
 
-  markStraight() { if (this._createAnnotation('straight', false)) this._setStatus(t("✓ 已添加直线 · 共 {count} 条", { count: this.comments.length })); }
+  markStraight() {
+    if (!this._createAnnotation('straight', false)) return;
+    this._setStatus(t("✓ 已划线"));
+    this._noteNdAnnotated?.();
+  }
 
-  writeIdea() { if (this._createAnnotation('idea', true)) this._setStatus(t("写下你对这段的想法…")); }
+  writeIdea() {
+    if (!this._createAnnotation('idea', true)) return;
+    this._setStatus(t("✓ 想法已记下"));
+    this._noteNdAnnotated?.();
+  }
 
 
   async _deleteComment(id) {
@@ -338,7 +358,7 @@ export class CommentMethods {
   }
 
   _openPanel(show) {
-    const aside = this.commentsRef.current;
+    const aside = this.commentsRef?.current;
     if (!aside) return;
     this.panelOpen = (show === undefined || show === null) ? !this.panelOpen : show;
     aside.style.display = this.panelOpen ? 'flex' : 'none';
@@ -409,14 +429,19 @@ export class CommentMethods {
     if (this.previewCommentCountRef.current) this.previewCommentCountRef.current.textContent = this.comments.length;
     if (!list) return;
     list.innerHTML = '';
+    this._syncCommentPanelActions?.();
     if (!this.comments.length) {
-      const e = document.createElement('div');
-      e.style.cssText = 'padding:26px 12px; color:var(--text-4); font-size:var(--fs-sm); line-height:1.9; text-align:center; font-family:var(--sans);';
-      e.textContent = t("在右侧预览中选中任意文字，用浮出的工具条划线或写想法，都会收集到这里。");
-      list.appendChild(e);
+      if (typeof this._renderNdCommentsEmpty === 'function') this._renderNdCommentsEmpty(list);
+      else {
+        const e = document.createElement('div');
+        e.className = 'comments-empty-state';
+        e.textContent = t("在预览里选中一句，点马克笔或「写想法」，会出现在这里。");
+        list.appendChild(e);
+      }
       return;
     }
     this.comments.forEach((c, i) => list.appendChild(this._commentCard(c, i)));
+    this._syncCommentPanelActions?.();
     requestAnimationFrame(() => this._resizeCommentTextareas());
   }
 

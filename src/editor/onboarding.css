@@ -1,0 +1,51 @@
+/* ===== N-D 首登：批注空态 + 首段一次高亮 ===== */
+.comments-empty-state {
+  padding: 28px 14px 20px;
+  text-align: center;
+  font-family: var(--sans);
+}
+.comments-empty-main {
+  margin: 0;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: 1.75;
+}
+.comments-empty-sub {
+  margin: 8px 0 0;
+  color: var(--text-4);
+  font-size: var(--fs-xs);
+  line-height: 1.6;
+}
+.comments-empty-cta {
+  margin-top: 14px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--text-3);
+  font: var(--fs-xs)/1.4 var(--sans);
+  cursor: pointer;
+}
+.comments-empty-cta:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.md-preview .nd-first-highlight {
+  border-radius: 4px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+  animation: nd-first-pulse 1.6s ease-in-out 2;
+}
+@keyframes nd-first-pulse {
+  0%, 100% { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+  50% { background: color-mix(in srgb, var(--accent) 20%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .md-preview .nd-first-highlight {
+    animation: none;
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+}
+
