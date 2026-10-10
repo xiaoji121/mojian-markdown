@@ -32,6 +32,7 @@ import { WorkspaceNavigationMethods } from './workspaceNavigationMethods';
 import { WorkspaceMenuMethods } from './workspaceMenuMethods';
 import { ExportBackupMethods } from './exportBackupMethods';
 import { ViewMethods } from './viewMethods';
+import { OutlineMethods } from './outlineMethods';
 
 export function createMarkdownEditorComponent(DCLogic, React) {
   const Component = class Component extends DCLogic {
@@ -41,10 +42,9 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.previewRef = React.createRef();
     this.previewTitleRef = React.createRef();
     this.previewPaneRef = React.createRef();
-    this.outlinePanelRef = React.createRef();
-    this.outlineMarkersRef = React.createRef();
-    this.outlinePreviewTitleRef = React.createRef();
-    this.outlinePreviewSummaryRef = React.createRef();
+    this.outlineSidebarRef = React.createRef();
+    this.outlineTreeRef = React.createRef();
+    this.outlineResizeRef = React.createRef();
     this.undoButtonRef = React.createRef();
     this.redoButtonRef = React.createRef();
     this.fullscreenIconRef = React.createRef();
@@ -155,6 +155,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this.longImageAutoCrop = false;
     this._themeTouched = false;
     this.panelOpen = false;
+    this.outlinePanelOpen = false;
     this.previewFullscreen = false;
     this.viewMode = 'split';
     this._pending = null;
@@ -312,6 +313,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._initPreviewSearch();
     this._initComments();
     this._renderComments();
+    this._initOutlinePanel();
     if (this.agentBridgeEnabled) {
       this._loadPinnedIds();
       this._initAI();
@@ -363,10 +365,9 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       previewRef: this.previewRef,
       previewTitleRef: this.previewTitleRef,
       previewPaneRef: this.previewPaneRef,
-      outlinePanelRef: this.outlinePanelRef,
-      outlineMarkersRef: this.outlineMarkersRef,
-      outlinePreviewTitleRef: this.outlinePreviewTitleRef,
-      outlinePreviewSummaryRef: this.outlinePreviewSummaryRef,
+      outlineSidebarRef: this.outlineSidebarRef,
+      outlineTreeRef: this.outlineTreeRef,
+      outlineResizeRef: this.outlineResizeRef,
       undoButtonRef: this.undoButtonRef,
       redoButtonRef: this.redoButtonRef,
       fullscreenIconRef: this.fullscreenIconRef,
@@ -454,6 +455,9 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       previewSearchNext: () => this.previewSearchNext(),
       toggleComments: () => this._openPanel(),
       closePanel: () => this._openPanel(false),
+      toggleOutline: () => this._openOutlinePanel(),
+      closeOutline: () => this._openOutlinePanel(false),
+      showOutlineTab: () => this._openOutlinePanel(true),
       toggleAI: () => this._openAIPanel(),
       closeAI: () => this._openAIPanel(false),
       toggleAIHistory: () => this.toggleAIHistory(),
@@ -493,6 +497,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
   applyPrototypeMethods(
     Component,
     ViewMethods,
+    OutlineMethods,
     WorkspaceMenuMethods,
     ExportBackupMethods,
     WorkspaceNavigationMethods,

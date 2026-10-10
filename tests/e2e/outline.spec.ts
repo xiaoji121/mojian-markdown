@@ -5,7 +5,14 @@ test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
 });
 
-test('段落导航位于预览右侧中间，默认轻量且不挤压正文', async ({ page }) => {
+async function openOutline(page) {
+  await page.getByRole('button', { name: '大纲', exact: true }).first().click();
+  const panel = page.locator('.outline-panel');
+  await expect(panel).toBeVisible();
+  return panel;
+}
+
+test('打开大纲侧栏可见全文标题树，右缘刻度默认隐藏', async ({ page }) => {
   await setSource(page, [
     '# 产品复盘',
     '',
@@ -24,113 +31,76 @@ test('段落导航位于预览右侧中间，默认轻量且不挤压正文', as
     '收尾内容。'
   ].join('\n'));
 
-  const rail = page.getByRole('navigation', { name: '文章大纲' });
-  const pane = page.locator('.preview-pane');
-  const preview = page.locator('.md-preview');
-  await expect(rail).toBeVisible();
-  await expect(rail.locator('.outline-marker')).toHaveCount(4);
-  await expect(page.getByRole('button', { name: '查看文章大纲' })).toHaveCount(0);
+  await expect(page.locator('.outline-rail')).toHaveCount(0);
+  const panel = await openOutline(page);
+  const items = panel.locator('.outline-tree-item');
+  await expect(items).toHaveCount(4);
+  await expect(items.nth(0)).toHaveText('产品复盘');
+  await expect(items.nth(1)).toHaveText('做对了什么');
+  await expect(items.nth(2)).toHaveText('用户反馈');
+  await expect(items.nth(3)).toHaveText('下一步计划');
 
-  const [railBox, paneBox, before] = await Promise.all([
-    rail.boundingBox(),
-    pane.boundingBox(),
-    preview.boundingBox()
-  ]);
-  expect(railBox!.x).toBeGreaterThan(paneBox!.x + paneBox!.width / 2);
-  expect(Math.abs((railBox!.y + railBox!.height / 2) - (paneBox!.y + paneBox!.height / 2)))
-    .toBeLessThan(30);
+  const levels = await items.evaluateAll((nodes) =>
+    nodes.map((node) => Number((node as HTMLElement).dataset.outlineLevel)));
+  expect(levels).toEqual([1, 2, 3, 2]);
 
-  const markerMetrics = await rail.locator('.outline-marker').evaluateAll((items) => items.map((item) => {
-    const line = getComputedStyle(item, '::before');
-    return {
-      hitHeight: item.getBoundingClientRect().height,
-      lineWidth: parseFloat(line.width),
-      lineHeight: parseFloat(line.height)
-    };
-  }));
-  expect(markerMetrics.every(({ lineWidth }) => lineWidth <= 10)).toBe(true);
-  expect(markerMetrics.every(({ lineHeight }) => lineHeight <= 2.5)).toBe(true);
-  expect(markerMetrics.every(({ hitHeight }) => hitHeight >= 8)).toBe(true);
-  expect(new Set(markerMetrics.map(({ lineWidth }) => Math.round(lineWidth))).size).toBe(1);
-
-  await rail.locator('.outline-marker[data-outline-title="用户反馈"]').hover();
-  await expect(page.locator('.outline-popover')).toBeVisible();
-  expect(await preview.boundingBox()).toEqual(before);
+  const indents = await items.evaluateAll((nodes) =>
+    nodes.map((node) => parseFloat(getComputedStyle(node).paddingInlineStart)));
+  expect(indents[1]).toBeGreaterThan(indents[0]);
+  expect(indents[2]).toBeGreaterThan(indents[1]);
+  expect(indents[3]).toBe(indents[1]);
 });
 
-test('悬停刻度形成由近到远的长度梯度，并与摘要卡片保持间距', async ({ page }) => {
-  await setSource(page, [
-    '# 第一段', '', '一。',
-    '## 第二段', '', '二。',
-    '## 第三段', '', '三。',
-    '## 用户反馈', '', '反馈内容与改进建议。',
-    '## 第五段', '', '五。',
-    '## 第六段', '', '六。',
-    '## 第七段', '', '七。'
-  ].join('\n'));
+test('点击大纲项跳转到对应标题，且不改写源文', async ({ page }) => {
+  const markdown = [
+    '# 开始',
+    '',
+    ...Array.from({ length: 18 }, (_, index) => `第 ${index + 1} 段正文，用来撑开阅读距离。`),
+    '',
+    '## 中段',
+    '',
+    ...Array.from({ length: 18 }, (_, index) => `中段第 ${index + 1} 段。`),
+    '',
+    '## 结尾',
+    '',
+    ...Array.from({ length: 8 }, (_, index) => `结尾第 ${index + 1} 段。`)
+  ].join('\n\n');
+  await setSource(page, markdown);
+  const before = await page.locator('.md-source').inputValue();
 
-  const rail = page.getByRole('navigation', { name: '文章大纲' });
-  const target = rail.locator('.outline-marker[data-outline-title="用户反馈"]');
-  const idleWidth = await target.evaluate((element) => parseFloat(getComputedStyle(element, '::before').width));
-  await target.hover();
-
-  const popover = page.locator('.outline-popover');
-  await expect(popover).toBeVisible();
-  await expect(popover.locator('.outline-preview-title')).toHaveText('用户反馈');
-  await expect(popover.locator('.outline-preview-summary')).toContainText('反馈内容与改进建议');
-  await expect(popover).not.toContainText('下一步计划');
-  await expect.poll(() => target.evaluate((element) => parseFloat(getComputedStyle(element, '::before').width)))
-    .toBeGreaterThan(idleWidth + 18);
-  const widths = await rail.locator('.outline-marker').evaluateAll((items) => items.map((item) =>
-    parseFloat(getComputedStyle(item, '::before').width)));
-  expect(widths[3]).toBeGreaterThan(widths[2]);
-  expect(widths[2]).toBeGreaterThan(widths[1]);
-  expect(widths[1]).toBeGreaterThan(widths[0]);
-  expect(widths[3]).toBeGreaterThan(widths[4]);
-  expect(widths[4]).toBeGreaterThan(widths[5]);
-  expect(widths[5]).toBeGreaterThan(widths[6]);
-
-  const gap = await target.evaluate((element) => {
-    const marker = element.getBoundingClientRect();
-    const lineWidth = parseFloat(getComputedStyle(element, '::before').width);
-    const card = document.querySelector('.outline-popover')!.getBoundingClientRect();
-    return marker.right - lineWidth - card.right;
-  });
-  expect(gap).toBeGreaterThanOrEqual(8);
-});
-
-test('每条刻度使用连续的整行命中区域，在线条之间移动时摘要不闪断', async ({ page }) => {
-  await setSource(page, '# 第一段\n\n一。\n\n## 第二段\n\n二。\n\n## 第三段\n\n三。');
-  const markers = page.locator('.outline-marker');
-  const boxes = await markers.evaluateAll((items) => items.map((item) => {
-    const rect = item.getBoundingClientRect();
-    return { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right };
-  }));
-
-  expect(boxes[1].top - boxes[0].bottom).toBeLessThanOrEqual(0.5);
-  expect(boxes[2].top - boxes[1].bottom).toBeLessThanOrEqual(0.5);
-  await page.mouse.move((boxes[0].left + boxes[0].right) / 2, boxes[0].bottom);
-  await expect(page.locator('.outline-popover')).toBeVisible();
-  await page.mouse.move((boxes[1].left + boxes[1].right) / 2, (boxes[1].top + boxes[1].bottom) / 2);
-  await expect(page.locator('.outline-popover')).toBeVisible();
-  await expect(page.locator('.outline-preview-title')).toHaveText('第二段');
-});
-
-test('点击刻度跳转，并将当前段落及前后各一格显示为较深灰色', async ({ page }) => {
-  const longText = Array.from({ length: 18 }, (_, index) => `第 ${index + 1} 段正文，用来撑开阅读距离。`).join('\n\n');
-  await setSource(page, `# 开始\n\n${longText}\n\n## 中段\n\n${longText}\n\n## 结尾\n\n${longText}`);
-
-  const rail = page.getByRole('navigation', { name: '文章大纲' });
-  await rail.locator('.outline-marker[data-outline-title="中段"]').click();
-
-  await expect(page.locator('.outline-marker[data-outline-title="中段"]')).toHaveClass(/is-active/);
-  await expect(rail.locator('.outline-marker.is-nearby')).toHaveCount(3);
+  const panel = await openOutline(page);
+  await panel.locator('.outline-tree-item[data-outline-title="中段"]').click();
+  await expect(panel.locator('.outline-tree-item[data-outline-title="中段"]')).toHaveClass(/is-active/);
   await expect.poll(() => page.locator('.md-preview').evaluate((element) => element.scrollTop))
     .toBeGreaterThan(0);
+  await expect(page.locator('.md-source')).toHaveValue(before);
 });
 
-test('没有标题时不显示大纲刻度', async ({ page }) => {
+test('没有标题时大纲侧栏显示空状态', async ({ page }) => {
   await setSource(page, '这里只有正文，没有 Markdown 标题。');
+  const panel = await openOutline(page);
+  await expect(panel.locator('.outline-tree-empty')).toBeVisible();
+  await expect(panel.locator('.outline-tree-empty')).toContainText('暂无标题');
+  await expect(panel.locator('.outline-tree-item')).toHaveCount(0);
+});
 
-  await expect(page.getByRole('navigation', { name: '文章大纲' })).toBeHidden();
+test('沉浸阅读下仍可打开大纲并跳转', async ({ page }) => {
+  await setSource(page, [
+    '# 开篇',
+    '',
+    ...Array.from({ length: 20 }, (_, i) => `段落 ${i + 1}。`),
+    '',
+    '## 目标节',
+    '',
+    '目标正文。'
+  ].join('\n\n'));
+
+  await page.getByRole('button', { name: '沉浸式阅读' }).click();
+  await expect(page.locator('.editor-main')).toHaveClass(/preview-fullscreen-active/);
+  await page.locator('.fullscreen-only-control[aria-label="大纲"]').click();
+  const panel = page.locator('.outline-panel');
+  await expect(panel).toBeVisible();
+  await panel.locator('.outline-tree-item[data-outline-title="目标节"]').click();
+  await expect(panel.locator('.outline-tree-item[data-outline-title="目标节"]')).toHaveClass(/is-active/);
+  await expect.poll(() => page.locator('.md-preview').evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
 });

@@ -603,8 +603,9 @@ textarea.md-source {
 /* 横向永不滚动：宽内容（表格/代码/图）各自内部滚动，正文靠 overflow-wrap 断行 */
 .md-preview { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 30px 40px; }
 
-/* ===== 侧面板（批注 / AI）公共骨架 ===== */
+/* ===== 侧面板（批注 / 大纲 / AI）公共骨架 ===== */
 .comments-panel,
+.outline-panel,
 .ai-panel {
   flex: none;
   display: none; /* JS 以 style.display 开合 */
@@ -613,7 +614,8 @@ textarea.md-source {
   border-left: 1px solid var(--border);
   background: var(--bg-3);
 }
-.comments-panel { width: 360px; }
+.comments-panel,
+.outline-panel { width: 360px; }
 .ai-panel { width: 480px; }
 .panel-header {
   flex: none;
