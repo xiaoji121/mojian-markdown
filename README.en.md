@@ -26,6 +26,8 @@ Build mode controls feature availability (`--mode bridge` or the `VITE_ENABLE_AG
 
 ## Quick start
 
+Development and CI require **Node.js ≥22.12** (aligned with Electron 43; GitHub Actions pins **Node 24**). Use `nvm use` (see `.nvmrc` at the repo root) or install Node yourself.
+
 ```bash
 npm install
 npm run dev

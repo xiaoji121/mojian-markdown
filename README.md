@@ -26,6 +26,8 @@
 
 ## 快速开始
 
+开发与 CI 需要 **Node.js ≥22.12**（与 Electron 43 对齐；GitHub Actions 固定 **Node 24**）。可用 `nvm use`（见仓库根目录 `.nvmrc`）或自行安装。
+
 ```bash
 npm install
 npm run dev

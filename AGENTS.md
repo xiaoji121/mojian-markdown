@@ -20,6 +20,7 @@ These rules apply to coding agents working in this repository.
 
 ## Verification
 
+- Require **Node.js ≥22.12** (`engines` in `package.json`; CI pins Node 24 via `.nvmrc`).
 - Run `npm run check` before handing work back.
 - For changes to user-visible behavior, also run `npm run test:e2e` (or `npm run check:full`). First run needs `npx playwright install chromium`.
 - For UI changes, start the Vite dev server and verify the page loads locally.
