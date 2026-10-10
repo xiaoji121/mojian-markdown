@@ -150,3 +150,29 @@ test('划线成功反馈用短 toast（N4）', () => {
     else delete (globalThis as { window?: unknown }).window;
   }
 });
+
+
+test('想法 toast 等有正文后再播（N5）', async () => {
+  const { CommentMethods } = await import('../../src/editor/commentMethods.ts');
+  const statuses: string[] = [];
+  const editor = Object.assign(new CommentMethods(), {
+    comments: [],
+    _createAnnotation() {
+      const c = { id: 'c1', type: 'idea', note: '', quote: 'q' };
+      this.comments.push(c);
+      return true;
+    },
+    _setStatus(msg: string) { statuses.push(msg); },
+    _noteNdAnnotated() {},
+    _persist() {},
+    _refreshBadges() {}
+  });
+  editor.writeIdea();
+  assert.equal(statuses.length, 0);
+  assert.equal(editor._pendingIdeaToastId, 'c1');
+  editor._maybeToastIdeaNote({ id: 'c1', type: 'idea', note: '  ' });
+  assert.equal(statuses.length, 0);
+  editor._maybeToastIdeaNote({ id: 'c1', type: 'idea', note: '这是想法' });
+  assert.ok(statuses.some((s) => s.includes('想法已记下')));
+  assert.equal(editor._pendingIdeaToastId, null);
+});
