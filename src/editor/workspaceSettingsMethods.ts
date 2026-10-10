@@ -56,6 +56,10 @@ export class WorkspaceSettingsMethods {
     panel.querySelectorAll('[data-settings-page]').forEach(section => {
       section.hidden = section.dataset.settingsPage !== page;
     });
+    if (page === 'integrations') {
+      this._syncIntegrationsSettings?.();
+      this._refreshConnectorCapabilities?.();
+    }
   }
 
   toggleReadingAppearance(force, returnFocus = false) {

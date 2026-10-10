@@ -435,7 +435,10 @@ export class EditingFileLayoutMethods {
         this._setDirty(false);
         this._autosave();
         this._setStatus(t("已打开 · {name}", { name: file.name }));
-      } catch (e) {}
+      } catch (e) {
+        if (e && e.name === 'AbortError') return;
+        this._setStatus(t('打开失败 · {error}', { error: (e && e.message) || e || t('未知错误') }));
+      }
     } else {
       const inp = document.createElement('input');
       inp.type = 'file';
@@ -623,7 +626,10 @@ export class EditingFileLayoutMethods {
         if (this.fileHandle !== handle) return;
         this._setDirty(src.value !== content); this._autosave();
         this._setStatus(t("✓ 已保存到 {name}", { name: handle.name }));
-      } catch (e) {}
+      } catch (e) {
+        if (e && e.name === 'AbortError') return;
+        this._setStatus(t('另存为失败：{error}', { error: (e && e.message) || e || t('未知错误') }));
+      }
       return;
     }
     const blob = new Blob([content], { type: 'text/markdown' });
@@ -640,7 +646,13 @@ export class EditingFileLayoutMethods {
   // ===== 顶栏「文件」下拉菜单 =====
 
   onNew() {
-    if (this.dirty && !window.confirm(t("当前内容尚未保存，确定新建空白文档？"))) return;
+    if (this.dirty) {
+      const hasFile = !!(this.fileHandle || this.localFilePath);
+      const message = t(hasFile
+        ? '当前修改尚未写回文件，确定新建空白文档？'
+        : '当前只有浏览器草稿，新建将清空此稿（可先导出保存）。确定新建？');
+      if (!window.confirm(message)) return;
+    }
     if (this.viewMode === 'preview') this.setViewMode('editor');
     this.sourceRef.current.value = '';
     this._resetEditingHistory();

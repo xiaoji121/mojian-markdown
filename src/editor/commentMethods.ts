@@ -33,11 +33,48 @@ export class CommentMethods {
   }
 
 
+  // Text offset must match _wrapRange's TreeWalker indexing. Range#toString()
+  // can insert newlines between blocks and skew the start, expanding highlights.
   _offsetOf(root, node, off) {
     try {
-      const r = document.createRange();
-      r.setStart(root, 0); r.setEnd(node, off);
-      return r.toString().length;
+      if (!root || !node) return -1;
+      let textNode = node;
+      let textOff = off;
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        // Element + child index → absolute text offset via preceding text length.
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+        let pos = 0, n;
+        while ((n = walker.nextNode())) {
+          if (!node.contains(n)) {
+            if (node.compareDocumentPosition(n) & Node.DOCUMENT_POSITION_FOLLOWING) break;
+            pos += n.nodeValue.length;
+            continue;
+          }
+          // Inside target element: count only text that belongs to children before `off`.
+          let index = 0, child = node.firstChild, consumed = false;
+          while (child && index < off) {
+            if (child === n || (child.nodeType === Node.ELEMENT_NODE && child.contains(n))) {
+              pos += n.nodeValue.length;
+              consumed = true;
+              break;
+            }
+            child = child.nextSibling;
+            index++;
+          }
+          if (consumed) continue;
+          if (index >= off) break;
+          pos += n.nodeValue.length;
+        }
+        return pos;
+      }
+      if (node.nodeType !== Node.TEXT_NODE) return -1;
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+      let pos = 0, n;
+      while ((n = walker.nextNode())) {
+        if (n === textNode) return pos + Math.max(0, Math.min(textOff, n.nodeValue.length));
+        pos += n.nodeValue.length;
+      }
+      return -1;
     } catch (e) { return -1; }
   }
 
@@ -66,7 +103,7 @@ export class CommentMethods {
     prev.querySelectorAll('[data-comment-id]').forEach((mark) => {
       try { if (range.intersectsNode(mark)) commentIds.add(mark.getAttribute('data-comment-id')); } catch (e) {}
     });
-    this._pending = { quote: quote, occ: occ, start: startOff, html: fragment.innerHTML, commentIds: [...commentIds] };
+    this._pending = { quote: quote, occ: occ, start: startOff, end: startOff >= 0 ? startOff + quote.length : -1, html: fragment.innerHTML, commentIds: [...commentIds] };
     const rect = range.getBoundingClientRect();
     bar.style.display = 'flex';
     const w = bar.offsetWidth, h = bar.offsetHeight;
@@ -89,20 +126,32 @@ export class CommentMethods {
 
   _quoteRange(full, c) {
     if (!full || !c || !c.quote) return null;
+    const quote = c.quote;
+    const len = quote.length;
     if (typeof c.start === 'number' && c.start >= 0) {
-      if (full.slice(c.start, c.start + c.quote.length) === c.quote) {
-        return { start: c.start, end: c.start + c.quote.length };
+      if (full.slice(c.start, c.start + len) === quote) {
+        return { start: c.start, end: c.start + len };
+      }
+      // Tolerate small Range vs textContent skew without expanding the mark.
+      for (const delta of [0, -1, 1, -2, 2, -3, 3, -4, 4]) {
+        const at = c.start + delta;
+        if (at >= 0 && full.slice(at, at + len) === quote) {
+          return { start: at, end: at + len };
+        }
       }
     }
-    const exact = this._nthIndex(full, c.quote, c.occ || 0);
-    if (exact >= 0) return { start: exact, end: exact + c.quote.length };
+    const exact = this._nthIndex(full, quote, c.occ || 0);
+    if (exact >= 0) return { start: exact, end: exact + len };
 
-    const pieces = c.quote.trim().split(/\s+/).filter(Boolean);
+    const pieces = quote.trim().split(/\s+/).filter(Boolean);
     if (!pieces.length) return null;
     const escaped = pieces.map((piece) => piece.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
     try {
       const match = new RegExp(escaped.join('\\s+')).exec(full);
-      if (match) return { start: match.index, end: match.index + match[0].length };
+      // Reject loose matches that grow far beyond the original quote.
+      if (match && match[0].length <= Math.max(len + 8, Math.ceil(len * 1.25))) {
+        return { start: match.index, end: match.index + match[0].length };
+      }
     } catch (e) {}
     return null;
   }

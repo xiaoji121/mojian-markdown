@@ -13,9 +13,19 @@ const TARGETS = {
 export class ConnectorMethods {
   async _refreshConnectorCapabilities() {
     const unavailable = {
-      feishu: { available: false, reason: t('无法检测 lark-cli，请确认本地 Agent Bridge 已启动') },
-      dingtalk: { available: false, reason: t('无法检测 dws，请确认本地 Agent Bridge 已启动') }
+      feishu: { available: false, reason: t('需要本地服务才能上传到飞书') },
+      dingtalk: { available: false, reason: t('需要本地服务才能上传到钉钉') }
     };
+    if (!this.agentBridgeEnabled) {
+      this._applyConnectorCapabilities(unavailable);
+      return;
+    }
+    const root = typeof document !== 'undefined'
+      ? document.getElementById('settings-integrations')
+      : null;
+    root?.querySelectorAll('[data-integration-status]').forEach((node) => {
+      node.textContent = t('正在检测连接器状态…');
+    });
     try {
       const response = await fetch(bridgeUrl('/api/connectors'));
       if (!response.ok) throw new Error('connector check failed');
@@ -27,19 +37,55 @@ export class ConnectorMethods {
 
 
   _applyConnectorCapabilities(capabilities) {
+    this._connectorCapabilities = capabilities || {};
     const fileMenu = this.fileMenuRef && this.fileMenuRef.current;
     const menu = fileMenu?.closest?.('.app-shell')?.querySelector('.export-menu') || fileMenu;
-    if (!menu || !menu.querySelectorAll) return;
-    menu.querySelectorAll('.publish-menu-item[data-target]').forEach((button) => {
-      const target = button.dataset.target;
-      const state = capabilities && capabilities[target];
+    if (menu?.querySelectorAll) {
+      menu.querySelectorAll('.publish-menu-item[data-target]').forEach((button) => {
+        const target = button.dataset.target;
+        const state = capabilities && capabilities[target];
+        const available = !!state?.available;
+        button.disabled = !available;
+        button.title = available
+          ? t('上传到{label}', { label: t(TARGETS[target]?.label || '在线文档') })
+          : (state?.reason || t('本地工具不可用'));
+        button.classList.toggle('is-unavailable', !available);
+      });
+    }
+    this._syncIntegrationsSettings?.();
+  }
+
+  _syncIntegrationsSettings() {
+    const root = typeof document !== 'undefined'
+      ? document.getElementById('settings-integrations')
+      : null;
+    if (!root) return;
+    const note = root.querySelector('[data-integrations-note]');
+    if (note) {
+      note.textContent = t('在文档顶部的「导出」中上传到飞书或钉钉，使用本机已登录的连接器。');
+    }
+    const caps = this._connectorCapabilities || {};
+    for (const target of ['feishu', 'dingtalk']) {
+      const row = root.querySelector(`[data-integration-target="${target}"]`);
+      if (!row) continue;
+      const label = t(TARGETS[target]?.label || target);
+      const name = row.querySelector('[data-integration-name]');
+      const status = row.querySelector('[data-integration-status]');
+      if (name) name.textContent = label;
+      const state = caps[target];
       const available = !!state?.available;
-      button.disabled = !available;
-      button.title = available
-        ? t('上传到{label}', { label: t(TARGETS[target]?.label || '在线文档') })
-        : (state?.reason || t('本地工具不可用'));
-      button.classList.toggle('is-unavailable', !available);
-    });
+      row.classList.toggle('is-unavailable', !available);
+      row.classList.toggle('is-available', available);
+      if (!status) continue;
+      if (!this.agentBridgeEnabled) {
+        status.textContent = t('当前不可用 · 需要桌面版或本地 Agent Bridge');
+      } else if (available) {
+        status.textContent = t('可用 · 可从「导出」菜单上传');
+      } else {
+        status.textContent = state?.reason
+          || t('当前不可用 · 本地服务未连接或未登录连接器');
+      }
+    }
   }
 
 
