@@ -5,6 +5,8 @@
     position: relative;
     width: 236px;
     flex: 0 0 236px;
+    container-type: inline-size;
+    container-name: doc-sidebar;
     display: flex;
     flex-direction: column;
     min-width: 0;
@@ -265,3 +267,21 @@
     .document-sidebar.is-collapsed { display: none; }
   }
   .recent-documents-empty .abtn { margin-top: 16px; }
+
+
+/* 侧栏最窄：新建/导入上下堆叠，禁止横排裁字 */
+@container doc-sidebar (max-width: 250px) {
+  .workspace-file-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .workspace-file-actions .abtn {
+    flex: none;
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
