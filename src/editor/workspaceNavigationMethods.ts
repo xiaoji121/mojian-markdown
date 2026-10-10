@@ -65,6 +65,13 @@ export class WorkspaceNavigationMethods {
       aiWeak.setAttribute('data-optional-label', t('可选'));
       aiWeak.title = t('可选') + ' · ' + t('AI 与文档历史需要桌面版或本地 Agent Bridge。');
     }
+    // 静态：选区「问 AI」/翻译不挂可见 DOM（hidden，非仅 CSS）；Bridge 在线再显示
+    document.querySelectorAll('.selection-toolbar .ai-entry, .selection-toolbar .translate-entry').forEach((el) => {
+      el.hidden = !this.agentBridgeEnabled;
+    });
+    document.querySelectorAll('.assistance-tabs .ai-entry').forEach((el) => {
+      el.hidden = !this.agentBridgeEnabled;
+    });
     const status = shell?.querySelector('.workspace-save-label');
     if (status) {
       const hasFile = !!(this.fileHandle || this.localFilePath);

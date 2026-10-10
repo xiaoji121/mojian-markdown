@@ -70,3 +70,46 @@ test('static Ctrl+S routing prefers backup when no writable file', () => {
     globalThis.window = prev;
   }
 });
+
+
+test('static selection AI entries use hidden attribute (not only CSS)', async () => {
+  const { WorkspaceNavigationMethods } = await import('../../src/editor/workspaceNavigationMethods.ts');
+  const aiBtn = { hidden: false };
+  const translateBtn = { hidden: false };
+  const tabAi = { hidden: false };
+  const prev = globalThis.document;
+  // @ts-ignore
+  globalThis.document = {
+    querySelectorAll(sel: string) {
+      if (sel.includes('selection-toolbar')) return [aiBtn, translateBtn];
+      if (sel.includes('assistance-tabs')) return [tabAi];
+      return [];
+    }
+  };
+  try {
+    const editor = Object.assign(new WorkspaceNavigationMethods(), {
+      agentBridgeEnabled: false,
+      panelOpen: false,
+      aiPanelOpen: false,
+      outlinePanelOpen: false,
+      comments: [],
+      splitRef: { current: null },
+      fileHandle: null,
+      localFilePath: null,
+      dirty: false,
+      _localFileConflict: false
+    });
+    editor._syncWorkspaceChrome();
+    assert.equal(aiBtn.hidden, true);
+    assert.equal(translateBtn.hidden, true);
+    assert.equal(tabAi.hidden, true);
+    editor.agentBridgeEnabled = true;
+    editor._syncWorkspaceChrome();
+    assert.equal(aiBtn.hidden, false);
+    assert.equal(translateBtn.hidden, false);
+    assert.equal(tabAi.hidden, false);
+  } finally {
+    // @ts-ignore
+    globalThis.document = prev;
+  }
+});
