@@ -23,7 +23,7 @@ test('新用户得到与只读预览一致的说明和明确的草稿保存位�
   await openEditor(page);
   await expect(page.locator('.md-source')).not.toHaveValue(/实时双向同步|直接在右侧/);
   await setSource(page, '# 我的文章\n\n保存位置应该清楚。');
-  await expect(page.locator('.app-footer')).toContainText('草稿已保存到此浏览器');
+  await expect(page.locator('.app-footer')).toContainText('草稿已自动保存在此浏览器');
 });
 
 test('窄屏和沉浸阅读都能直接使用排版面板', async ({ page }) => {

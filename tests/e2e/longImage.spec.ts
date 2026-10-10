@@ -94,7 +94,7 @@ test('划词工具条可把选中内容单独生成图片', async ({ page }) => 
   await expect(poster).toContainText('列表第二项');
   await expect(poster.locator('.longimg-prose > ul > li')).toHaveCount(2);
   await expect(poster).not.toContainText('引用块也要出现在长图里');
-  await expect(poster.locator('.longimg-title')).toHaveText('未命名');
+  await expect(poster.locator('.longimg-title')).toHaveText('欢迎');
 });
 
 test('选中段落生成图片时，批注以思考卡片跟在对应内容下方', async ({ page }) => {

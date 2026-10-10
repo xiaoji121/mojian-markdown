@@ -77,8 +77,17 @@ export async function openAppearance(page: Page) {
   await expect(page.locator('.md-source')).toHaveAttribute('lang', /.*/);
   const panel = page.locator('.reading-appearance-panel');
   if (!(await panel.isVisible())) {
-    if (await page.locator('.reading-toolbar-settings').isVisible()) {
-      await page.locator('.reading-toolbar-settings').click();
+    const toolbar = page.locator('.reading-toolbar');
+    const toolbarSettings = page.locator('.reading-toolbar-settings');
+    // 下滑收起后 pointer-events:none；上滑一点露出工具条即可开设置，尽量保持在文中。
+    if (await toolbarSettings.count() && await toolbar.evaluate((el) => el.classList.contains('is-scrolled-away'))) {
+      await page.locator('.md-preview').evaluate((el) => {
+        el.scrollTop = Math.max(0, el.scrollTop - 48);
+      });
+      await expect(toolbar).not.toHaveClass(/is-scrolled-away/);
+    }
+    if (await toolbarSettings.isVisible() && !(await toolbar.evaluate((el) => el.classList.contains('is-scrolled-away')))) {
+      await toolbarSettings.click();
     } else if (await page.locator('.focus-settings-button').isVisible()) {
       await page.locator('.focus-settings-button').click();
     } else {

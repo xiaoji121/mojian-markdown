@@ -161,6 +161,11 @@ button.is-copied {
   justify-content: space-between;
   gap: 18px;
 }
+/* display:flex 会盖过 UA [hidden]；写盘/发布项靠 hidden 控制显隐 */
+.export-menu .header-menu-item[hidden],
+.export-menu .header-menu-separator[hidden] {
+  display: none !important;
+}
 .export-menu .publish-menu-item {
   align-items: flex-start;
   flex-direction: column;
