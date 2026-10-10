@@ -21,10 +21,21 @@ export class WorkspaceNavigationMethods {
       const tab = event.target.closest?.('.assistance-tabs [role="tab"]');
       if (!tab || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
       event.preventDefault();
-      const ai = event.key === 'End' || (event.key !== 'Home' && this.panelOpen);
-      if (ai && this.agentBridgeEnabled) this._openAIPanel(true);
+      const order = ['comments', 'outline', ...(this.agentBridgeEnabled ? ['ai'] : [])];
+      let index = this.aiPanelOpen ? order.indexOf('ai')
+        : this.outlinePanelOpen ? order.indexOf('outline')
+        : 0;
+      if (event.key === 'Home') index = 0;
+      else if (event.key === 'End') index = order.length - 1;
+      else if (event.key === 'ArrowRight') index = Math.min(order.length - 1, index + 1);
+      else index = Math.max(0, index - 1);
+      const next = order[index];
+      if (next === 'ai') this._openAIPanel(true);
+      else if (next === 'outline') this._openOutlinePanel(true);
       else this._openPanel(true);
-      const panel = this.aiPanelOpen ? this.aiPanelRef.current : this.commentsRef.current;
+      const panel = this.aiPanelOpen ? this.aiPanelRef.current
+        : this.outlinePanelOpen ? this.outlineSidebarRef?.current
+        : this.commentsRef.current;
       panel?.querySelector('[aria-selected="true"]')?.focus();
     };
     document.addEventListener('keydown', this._workspaceTabKey);
@@ -37,13 +48,14 @@ export class WorkspaceNavigationMethods {
         this._renderRecentDocuments();
       },
       showCommentsTab: () => this._openPanel(true),
+      showOutlineTab: () => this._openOutlinePanel(true),
       showAITab: () => this._openAIPanel(true)
     };
   }
 
   _syncWorkspaceChrome() {
     const shell = this.splitRef?.current?.closest?.('.app-shell');
-    shell?.classList.toggle('has-assistance', !!(this.panelOpen || this.aiPanelOpen));
+    shell?.classList.toggle('has-assistance', !!(this.panelOpen || this.aiPanelOpen || this.outlinePanelOpen));
     shell?.querySelectorAll('.assistance-count').forEach(node => { node.textContent = String(this.comments.length); });
     const status = shell?.querySelector('.workspace-save-label');
     if (status) {
@@ -58,7 +70,7 @@ export class WorkspaceNavigationMethods {
       status.title = this.saveStatusRef.current?.textContent || t(
         hasFile
           ? (this.dirty ? '已改动，尚未写回打开的文件' : '已与打开的文件同步')
-          : '草稿已自动保存在此浏览器；导出或另存为可落到文件'
+          : '草稿仅存此浏览器，清除缓存会丢失；请用导出下载全文+批注备份'
       );
     }
   }
@@ -130,7 +142,9 @@ export class WorkspaceNavigationMethods {
 
   _syncWorkspacePanelWidth() {
     const split = this.splitRef?.current;
-    const panel = this.aiPanelOpen ? this.aiPanelRef?.current : this.panelOpen ? this.commentsRef?.current : null;
+    const panel = this.aiPanelOpen ? this.aiPanelRef?.current
+      : this.outlinePanelOpen ? this.outlineSidebarRef?.current
+      : this.panelOpen ? this.commentsRef?.current : null;
     const width = panel?.getBoundingClientRect().width || 0;
     split?.style.setProperty('--active-side-panel-width', width + 'px');
     split?.closest('.app-shell')?.style.setProperty('--workspace-assistance-width', width + 'px');
@@ -142,13 +156,15 @@ export class WorkspaceNavigationMethods {
       node.inert = entering;
     });
     if (entering) {
-      this._workspaceFocusPanels = { comments: this.panelOpen, ai: this.aiPanelOpen };
+      this._workspaceFocusPanels = { comments: this.panelOpen, outline: this.outlinePanelOpen, ai: this.aiPanelOpen };
       if (this.panelOpen) this._openPanel(false);
+      if (this.outlinePanelOpen) this._openOutlinePanel(false);
       if (this.aiPanelOpen) this._openAIPanel(false);
     } else {
       const previous = this._workspaceFocusPanels;
       this._workspaceFocusPanels = null;
       if (previous?.ai) this._openAIPanel(true);
+      else if (previous?.outline) this._openOutlinePanel(true);
       else if (previous?.comments) this._openPanel(true);
     }
   }

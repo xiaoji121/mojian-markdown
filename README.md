@@ -26,6 +26,8 @@
 
 ## 快速开始
 
+开发与 CI 需要 **Node.js ≥22.12**（与 Electron 43 对齐；GitHub Actions 固定 **Node 24**）。可用 `nvm use`（见仓库根目录 `.nvmrc`）或自行安装。
+
 ```bash
 npm install
 npm run dev
@@ -45,6 +47,8 @@ npm run desktop        # 构建前端并启动桌面应用
 npm run build:desktop  # 打包安装包（输出到 release/）
 npm run test:desktop   # 桌面端冒烟测试（需先 npm run build:bridge）
 ```
+
+> 当前公开安装包路径仍是 **TEST / 未正式签名**。签名与公证工程骨架见 [`docs/SIGNING.md`](./docs/SIGNING.md)；证书与账号费用在你这边。默认 `npm run build:desktop` 不要求证书；正式签名请用 `npm run build:desktop:release`（需环境变量）。
 
 桌面端解决的是网页版做不到的部分：
 

@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ViewMethods } from '../../src/editor/viewMethods.ts';
+import { OutlineMethods } from '../../src/editor/outlineMethods.ts';
 import { createClassList, createRef, createStubElement } from '../helpers/dom.ts';
 
 function createContext() {
@@ -168,7 +169,7 @@ test('大纲摘要只提取当前标题后的前两段，并在下一个标题�
   const heading = { nextElementSibling: first };
 
   assert.equal(
-    ViewMethods.prototype._outlineSummary.call({}, heading),
+    OutlineMethods.prototype._outlineSummary.call({}, heading),
     '第一段 摘要 · 甲 · 乙'
   );
 });
@@ -177,7 +178,7 @@ test('空段落的大纲摘要使用明确的占位说明', () => {
   const heading = { nextElementSibling: { tagName: 'H2', textContent: '下一节' } };
 
   assert.equal(
-    ViewMethods.prototype._outlineSummary.call({}, heading),
+    OutlineMethods.prototype._outlineSummary.call({}, heading),
     '这一段暂时没有正文内容。'
   );
 });

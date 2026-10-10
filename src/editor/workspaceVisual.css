@@ -68,7 +68,7 @@ body.editor-active[data-theme='light'][data-paper='snow'] { --paper-bg: #fffefa;
 .editor-main.preview-mode-active .md-preview p { margin-bottom: 1.5em; }
 .editor-main.preview-mode-active .md-preview > hr + p { color: var(--paper-text-3); }
 /* One reference card, unboxed assistant prose, and a compact single-surface composer. */
-.app-shell > :is(.comments-panel, .ai-panel) > .panel-header { padding-inline: 20px; }
+.app-shell > :is(.comments-panel, .outline-panel, .ai-panel) > .panel-header { padding-inline: 20px; }
 .assistance-tabs { flex: 1; gap: 24px; }
 .assistance-tabs [role='tab'] { padding-inline: 10px; font-size: 13px; font-weight: 400; white-space: nowrap; }
 .assistance-tabs [aria-selected='true'] { border-bottom-width: 2px; }

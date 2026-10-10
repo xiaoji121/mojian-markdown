@@ -200,6 +200,10 @@ export class AIMethods {
       this.panelOpen = false;
       if (this.commentsRef.current) this.commentsRef.current.style.display = 'none';
     }
+    if (this.aiPanelOpen && this.outlinePanelOpen) {
+      this.outlinePanelOpen = false;
+      if (this.outlineSidebarRef?.current) this.outlineSidebarRef.current.style.display = 'none';
+    }
     this._syncFullscreenLayout();
     if (this.aiPanelOpen) {
       this._refreshAIReadiness?.();

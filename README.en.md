@@ -26,6 +26,8 @@ Build mode controls feature availability (`--mode bridge` or the `VITE_ENABLE_AG
 
 ## Quick start
 
+Development and CI require **Node.js ≥22.12** (aligned with Electron 43; GitHub Actions pins **Node 24**). Use `nvm use` (see `.nvmrc` at the repo root) or install Node yourself.
+
 ```bash
 npm install
 npm run dev
@@ -53,6 +55,8 @@ The desktop app adds capabilities beyond the browser version:
 - **System integration:** double-click an `.md` file in Finder or use “Open With” to open it in the editor. Standard packaged builds include file associations.
 
 The repository also has an isolated **TEST installer** pipeline for Windows x64 and macOS arm64/x64. These are test artifacts, not a production release. They have no file associations and are not Developer ID signed or notarized; macOS test bundles use a local ad-hoc signature. See [TEST installers](./docs/TEST_INSTALLERS.md) for packaging, smoke-test coverage, and remaining validation limits.
+
+Formal signing and notarization are **not** enabled yet. Engineering prepared the pipeline skeleton; Apple/Windows certificates remain on the account holder side. See [SIGNING.md](./docs/SIGNING.md).
 
 If the Electron binary download fails during initial installation, for example in a proxy environment, retry with the mirror:
 

@@ -1,6 +1,7 @@
 // @ts-nocheck
-import { t } from './i18n.ts';
+import { t, getLocale } from './i18n.ts';
 import { bridgeUrl } from './bridgeClient.ts';
+import { formatAnnotationsMarkdown } from './annotationExport.ts';
 
 export class CommentMethods {
   _typeLabel(type) {
@@ -348,6 +349,10 @@ export class CommentMethods {
       this.aiPanelOpen = false;
       if (this.aiPanelRef.current) this.aiPanelRef.current.style.display = 'none';
     }
+    if (this.panelOpen && this.outlinePanelOpen) {
+      this.outlinePanelOpen = false;
+      if (this.outlineSidebarRef?.current) this.outlineSidebarRef.current.style.display = 'none';
+    }
     if (this.panelOpen) requestAnimationFrame(() => this._resizeCommentTextareas());
     this._syncFullscreenLayout();
   }
@@ -358,7 +363,7 @@ export class CommentMethods {
     if (!split) return;
     this._syncWorkspaceChrome?.();
     split.classList.toggle('preview-fullscreen-active', this.previewFullscreen);
-    split.classList.toggle('fullscreen-comments-open', this.previewFullscreen && (this.panelOpen || this.aiPanelOpen));
+    split.classList.toggle('fullscreen-comments-open', this.previewFullscreen && (this.panelOpen || this.aiPanelOpen || this.outlinePanelOpen));
     this._syncWorkspacePanelWidth?.();
   }
 
@@ -633,29 +638,25 @@ export class CommentMethods {
 
 
   _allCommentsText() {
-    const head = '《' + this.fileName + '》批注汇总（共 ' + this.comments.length + ' 条）\n';
-    return head + '\n' + this.comments.map((c, i) => this._commentText(c, i)).join('\n\n');
+    return formatAnnotationsMarkdown(
+      this.fileName || '未命名.md',
+      this.comments || [],
+      (type) => this._typeLabel(type),
+      getLocale()
+    );
   }
 
 
   _fullWithComments() {
     const src = this.sourceRef.current ? this.sourceRef.current.value : '';
-    let out = '# 原文：' + this.fileName + '\n\n' + src;
-    if (this.comments.length) {
-      out += '\n\n---\n\n## 我的批注（共 ' + this.comments.length + ' 条）\n\n';
-      out += this.comments.map((c, i) => {
-        let line = '**【' + (i + 1) + ' · ' + this._typeLabel(c.type) + '】** 针对原文：「' + c.quote + '」';
-        if (c.type === 'ai') {
-          line += '\n\n**问题：** ' + (c.question || c.note || '');
-          if (c.answer) line += '\n\n**回答：**\n\n' + c.answer;
-        } else {
-          if (c.note && c.note.trim()) line += '\n\n> ' + c.note;
-          if (c.reply && c.reply.trim()) line += '\n\n**找到的回答：**\n\n' + c.reply;
-        }
-        return line;
-      }).join('\n\n');
-    }
-    return out;
+    const annotations = formatAnnotationsMarkdown(
+      this.fileName || '未命名.md',
+      this.comments || [],
+      (type) => this._typeLabel(type),
+      getLocale()
+    );
+    // Source body stays pristine in files; clipboard may append annotations after a separator.
+    return src + (this.comments.length ? "\n\n---\n\n" + annotations : '');
   }
 
 
