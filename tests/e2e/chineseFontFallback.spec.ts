@@ -1,5 +1,5 @@
 import { chooseLanguage } from './localeHelpers';
-import { test, expect, openEditor, setSource, openAppearance } from './fixtures';
+import { test, expect, openEditor, setSource, openAppearance, ensureSourceVisible } from './fixtures';
 import type { Locator } from '@playwright/test';
 
 const family = (locator: Locator) =>
@@ -53,6 +53,7 @@ test('fresh Chinese startup and saved Source Serif retain local CJK fallback acr
   await expect(page.locator('body')).toHaveAttribute('data-reading-font', 'source-serif-4');
   expect(await family(page.locator('.md-preview'))).toMatch(/Source Serif 4.*Mojian Local JinKai 04/);
   await page.reload();
+  await ensureSourceVisible(page);
   await expect(page.locator('body')).toHaveAttribute('data-reading-font', 'source-serif-4');
   expect(await family(page.locator('.md-preview'))).toMatch(/Source Serif 4.*Mojian Local JinKai 04/);
   await page.evaluate(() => document.fonts.ready);
@@ -61,6 +62,7 @@ test('fresh Chinese startup and saved Source Serif retain local CJK fallback acr
 
 test('Japanese sample uses Japanese fallback, while an explicit local choice is respected', async ({ page }) => {
   await page.goto('/ja/#editor');
+  await ensureSourceVisible(page);
   await expect(page.locator('.md-preview')).toHaveAttribute('lang', 'ja');
   expect(await family(page.locator('.md-preview'))).toContain('Yu Mincho');
   expect(await family(page.locator('.md-preview'))).not.toContain('JinKai');

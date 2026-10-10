@@ -1,4 +1,5 @@
 import { _electron as electron, expect, test } from '@playwright/test';
+import { ensureSourceVisible } from '../e2e/fixtures';
 import { mkdtemp, mkdir, readFile, rm, writeFile, access } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -46,10 +47,11 @@ export function registerAIReadinessScenario(label: string, executablePath?: stri
       page.on('request', request => { if (/\/api\/(chat|translate|settings\/test)$/.test(new URL(request.url()).pathname)) providerRequests++; });
       console.info('[readiness fixture] open linked document');
       const source = page.locator('.md-source');
+      await ensureSourceVisible(page, 15_000);
       await expect(source).toHaveValue(/First run/);
       // Content appears before file attachment and workspace adoption finish.
       // Wait for the completed open before testing edits and automatic writes.
-      await expect(page.locator('.save-status')).toContainText('已打开 · 没有 AI 也能编辑.md');
+      await expect(page.locator('.save-status-toast')).toContainText('已打开 · 没有 AI 也能编辑.md');
       console.info('[readiness fixture] open AI panel');
       await page.getByRole('button', { name: 'AI 助手', exact: true }).click();
       await page.locator('.ai-readiness').getByRole('button', { name: '配置 AI', exact: true }).click();

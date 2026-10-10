@@ -43,7 +43,7 @@ test('顶栏仅保留导出菜单，保存与另存为可见，点击外部关�
 
   // 新建和打开仅在侧栏保留入口
   await expect(page.locator('.document-sidebar').getByRole('button', { name: '新建文档' })).toBeVisible();
-  await expect(page.locator('.document-sidebar').getByRole('button', { name: '打开文件' })).toBeVisible();
+  await expect(page.locator('.document-sidebar').getByRole('button', { name: '导入 Markdown' })).toBeVisible();
 
   // 菜单完整落在视口内，不被右缘裁切
   const menuBox = await fileMenu.boundingBox();
@@ -76,7 +76,7 @@ test('另存为把内容写入新文件并切换关联', async ({ page }) => {
   await page.locator('.export-menu').getByRole('menuitem', { name: /另存为/ }).click();
 
   await expect(page.locator('.file-name')).toHaveText('另存目标.md');
-  await expect(page.locator('.save-status')).toHaveText(/已保存到 另存目标\.md/);
+  await expect(page.locator('.save-status-toast')).toHaveText(/已保存到 另存目标\.md/);
   await page.waitForFunction(() =>
     ((window as unknown as Record<string, { content: string }>).__fakeSaveTarget).content.includes('副本内容')
   );

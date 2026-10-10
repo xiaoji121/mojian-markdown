@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ChildProcess } from 'node:child_process';
-import { openAppearance } from '../e2e/fixtures';
+import { openAppearance, ensureSourceVisible } from '../e2e/fixtures';
 import { freezeRendererClock } from './freezeRendererClock.ts';
 import { importedFontScenario } from './importedFontScenario';
 
@@ -38,7 +38,7 @@ async function createSession(executablePath?: string) {
       child = current.process();
       if (executablePath) expect(await current.evaluate(({ app }) => app.isPackaged)).toBe(true);
       const page = await current.firstWindow();
-      await expect(page.locator('.md-source')).toBeVisible({ timeout: 15_000 });
+      await ensureSourceVisible(page, 15_000);
       return { app: current, page };
     },
     async dispose() {
@@ -212,7 +212,7 @@ export function registerRestartScenarios(label: string, executablePath?: string)
       await expect.poll(() => app.evaluate(() => (globalThis as any).closeWarnings.length)).toBe(1);
       expect(page.isClosed()).toBe(false);
       await expect(page.locator('.md-source')).toHaveValue(content);
-      await expect(page.locator('.save-status')).toContainText(/失败|未保存/);
+      await expect(page.locator('.save-status-toast')).toContainText(/失败|未保存/);
       const warning = await app.evaluate(() => (globalThis as any).closeWarnings[0]);
       expect(warning.buttons).toContain('留在编辑器');
       expect(warning.defaultId).toBe(0);

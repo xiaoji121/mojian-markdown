@@ -13,20 +13,56 @@ export const test = base.extend({
 
 export { expect };
 
+/**
+ * N-D 首登会强制预览态，源码区 `.md-source` 被 CSS 隐藏。
+ * 测试若需读/写源码，在打开编辑器后调用本函数切回分屏（或编辑）并等待可见。
+ */
+export async function ensureSourceVisible(page: Page, timeout = 15_000) {
+  const source = page.locator('.md-source');
+  await expect(source).toBeAttached({ timeout });
+  await expect(page.locator('.view-mode-switcher')).toBeVisible({ timeout });
+
+  // N-D 首登会在 init 后异步切到预览；等源码可见或「阅读」已按下，再决定是否切回分屏。
+  await expect.poll(async () => {
+    if (await source.isVisible()) return 'source';
+    const pressed = await page.locator('.view-mode-option[data-mode="preview"]').getAttribute('aria-pressed');
+    return pressed === 'true' ? 'preview' : '';
+  }, { timeout }).not.toBe('');
+
+  if (!(await source.isVisible())) {
+    const split = page.locator('.view-mode-option[data-mode="split"]');
+    if (await split.isVisible()) await split.click();
+    else await page.locator('.view-mode-option[data-mode="editor"]').click();
+  }
+  await expect(source).toBeVisible({ timeout });
+}
+
+/** 临时 toast 槽（_setStatus）；勿用裸 `.save-status`（会与 persist 双槽撞 strict mode）。 */
+export function statusToast(page: Page) {
+  return page.locator('.save-status-toast');
+}
+
+/** 常驻状态槽（写回时间等）。 */
+export function statusPersist(page: Page) {
+  return page.locator('.save-status-persist');
+}
+
 // 直达编辑器并等待首屏初始化完成（预览渲染出示例文档即视为就绪）。
 export async function openEditor(page: Page) {
   await page.goto('/#editor');
-  await expect(page.locator('.md-source')).toBeVisible();
   await expect(page.locator('.md-preview h1').first()).toBeVisible();
+  await ensureSourceVisible(page);
 }
 
 // 替换 Markdown 原文。fill 会触发 input 事件，走与真实输入相同的渲染/存档路径。
 export async function setSource(page: Page, markdown: string) {
+  await ensureSourceVisible(page);
   await page.locator('.md-source').fill(markdown);
 }
 
 // 选中原文中某段文字，供工具栏格式化命令使用。
 export async function selectInSource(page: Page, text: string) {
+  await ensureSourceVisible(page);
   await page.locator('.md-source').evaluate((el, target) => {
     const source = el as HTMLTextAreaElement;
     const start = source.value.indexOf(target);

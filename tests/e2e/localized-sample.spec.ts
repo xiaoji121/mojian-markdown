@@ -1,5 +1,5 @@
 import { chooseLanguage } from './localeHelpers';
-import { test, expect, setSource } from './fixtures';
+import { test, expect, setSource, ensureSourceVisible } from './fixtures';
 
 const samples = [
   { locale: 'zh-CN', title: '欢迎使用墨笺', name: '欢迎.md' },
@@ -14,6 +14,7 @@ for (const sample of samples) {
       Object.defineProperty(navigator, 'platform', { value: 'Win32' });
     }, sample.locale);
     await page.goto('/#editor');
+    await ensureSourceVisible(page);
     await expect(page.locator('.md-preview h1').first()).toHaveText(sample.title);
     await expect(page.locator('.md-source')).toHaveAttribute('lang', sample.locale);
     await expect(page.locator('.md-preview')).toHaveAttribute('lang', sample.locale);
@@ -26,6 +27,7 @@ for (const sample of samples) {
     const state = await page.evaluate(() => JSON.parse(localStorage.getItem('md-editor-warm-v1') || '{}'));
     expect(state.fileName).toBe(sample.name);
     await page.reload();
+    await ensureSourceVisible(page);
     await expect(page.locator('.md-source')).toHaveValue(initial);
     await setSource(page, initial + '\nUser note');
     await chooseLanguage(page, sample.locale);
@@ -39,7 +41,7 @@ for (const content of ['', '# Saved document\nKeep <strong>my text</strong>']) {
       localStorage.setItem('md-editor-warm-v1', JSON.stringify({ content, locale: 'ja', fileName: 'mine.md' }));
     }, content);
     await page.goto('/#editor');
-    await expect(page.locator('.md-source')).toBeVisible();
+    await ensureSourceVisible(page);
     await expect(page.locator('.md-source')).toHaveValue(content);
     await chooseLanguage(page, 'en');
     await expect(page.locator('.md-source')).toHaveValue(content);
@@ -52,6 +54,7 @@ test('fresh macOS sample uses Command hints and renders escaped code literally',
     Object.defineProperty(navigator, 'platform', { value: 'MacIntel' });
   });
   await page.goto('/#editor');
+  await ensureSourceVisible(page);
   await expect(page.locator('.md-source')).toHaveValue(/⌘S/);
   await expect(page.locator('.md-preview pre code')).toContainText('${name}');
   await expect(page.locator('.md-preview')).toHaveAttribute('contenteditable', 'false');
@@ -60,12 +63,13 @@ test('fresh macOS sample uses Command hints and renders escaped code literally',
 test('Back and Forward never reload a sample over edited content', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => { location.hash = 'editor'; });
-  await expect(page.locator('.md-source')).toBeVisible();
+  await ensureSourceVisible(page);
   await setSource(page, '# My reading notes\nKeep these notes.');
   await chooseLanguage(page, 'ja');
   await page.goBack();
   await page.goForward();
   await expect(page.locator('.md-source')).toHaveValue('# My reading notes\nKeep these notes.');
   await page.reload();
+  await ensureSourceVisible(page);
   await expect(page.locator('.md-source')).toHaveValue('# My reading notes\nKeep these notes.');
 });

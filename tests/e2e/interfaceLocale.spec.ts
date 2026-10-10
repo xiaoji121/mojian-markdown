@@ -1,5 +1,5 @@
 import { chooseLanguage, openLanguageSettings } from './localeHelpers';
-import { test, expect, openEditor, setSource, openAppearance } from './fixtures';
+import { test, expect, openEditor, setSource, openAppearance, ensureSourceVisible } from './fixtures';
 
 const labels = {
   'zh-CN': { more: '更多操作', edit: '编辑', read: '阅读', setting: '阅读排版' },
@@ -25,6 +25,7 @@ for (const [locale, text] of Object.entries(labels)) {
     await expect(page.locator('.export-menu-toggle')).toHaveAttribute('aria-expanded', 'false');
     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('md-editor-warm-v1') || '{}').content)).toBe(content);
     await page.reload();
+    await ensureSourceVisible(page);
     await expect(page.locator('html')).toHaveAttribute('data-editor-locale', locale);
     await expect(page.locator('.md-source')).toHaveValue(content);
     await expect(page.locator('.md-preview [data-i18n]')).toHaveText('USER CONTENT');

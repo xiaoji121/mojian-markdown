@@ -1,4 +1,4 @@
-import { test, expect, openEditor, openAppearance, setSource } from './fixtures';
+import { test, expect, openEditor, openAppearance, setSource, ensureSourceVisible } from './fixtures';
 
 test('editor loads only bundled licensed reading fonts without remote font services', async ({ page }) => {
   const remoteFontRequests: string[] = [];
@@ -14,7 +14,7 @@ test('editor loads only bundled licensed reading fonts without remote font servi
   // beforeEach opened the editor before the request listener existed; reload so
   // this test observes the complete first-paint resource sequence.
   await page.reload();
-  await expect(page.locator('.md-source')).toBeVisible();
+  await ensureSourceVisible(page);
   await expect(page.locator('.md-preview h1').first()).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
 

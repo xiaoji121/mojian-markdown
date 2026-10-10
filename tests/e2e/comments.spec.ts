@@ -1,4 +1,4 @@
-import { test, expect, openEditor, setSource } from './fixtures';
+import { test, expect, openEditor, setSource, ensureSourceVisible } from './fixtures';
 import type { Page } from '@playwright/test';
 
 // 在预览里用真实鼠标手势划选一段文字，浮出划词工具条。
@@ -37,14 +37,14 @@ test('批注卡片的复制与删除按钮可用，复制在按钮上原地反�
   await page.getByRole('button', { name: '复制', exact: true }).click();
   // 点击的按钮原地闪现「✓ 已复制」，之后恢复原文案
   await expect(page.locator('.comments-panel button.is-copied')).toHaveText(/✓ 已复制/);
-  await expect(page.locator('.save-status')).toHaveText(/已复制该批注/);
+  await expect(page.locator('.save-status-toast')).toHaveText(/已复制该批注/);
   await expect(page.locator('.comments-panel button.is-copied')).toHaveCount(0, { timeout: 3000 });
   await expect(page.getByRole('button', { name: '复制', exact: true })).toBeVisible();
 
   page.on('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: '删除', exact: true }).click();
   await expect(page.locator('.comments-panel .comment-quote')).toHaveCount(0);
-  await expect(page.locator('.save-status')).toHaveText(/已删除批注/);
+  await expect(page.locator('.save-status-toast')).toHaveText(/已删除批注/);
 });
 
 test('删除批注需要二次确认，取消则保留', async ({ page }) => {
@@ -73,7 +73,7 @@ test('想法批注可贴入自己找到的回答，刷新后仍保留', async ({
   await replyInput.fill('## 三个方案\n\n**关键：** 逐年拨款。\n\n| 方案 | 结果 |\n| --- | --- |\n| 每年拨款 | 更稳健 |');
 
   await page.reload();
-  await expect(page.locator('.md-source')).toBeVisible();
+  await ensureSourceVisible(page);
   await page.getByRole('button', { name: '批注', exact: true }).click();
   const answer = page.locator('.comment-reply-markdown');
   await expect(answer.getByRole('heading', { name: '三个方案' })).toBeVisible();
@@ -95,11 +95,11 @@ test('复制全部批注与复制全文+批注在按钮上原地反馈', async (
 
   await page.getByRole('button', { name: '复制全部批注' }).click();
   await expect(page.locator('.comments-panel button.is-copied')).toHaveText(/✓ 已复制/);
-  await expect(page.locator('.save-status')).toHaveText(/已复制全部批注/);
+  await expect(page.locator('.save-status-toast')).toHaveText(/已复制全部批注/);
   await expect(page.getByRole('button', { name: '复制全部批注' })).toBeVisible({ timeout: 3000 });
 
   await page.getByRole('button', { name: '复制全文+批注' }).click();
   await expect(page.locator('.comments-panel button.is-copied')).toHaveText(/✓ 已复制/);
-  await expect(page.locator('.save-status')).toHaveText(/已复制全文/);
+  await expect(page.locator('.save-status-toast')).toHaveText(/已复制全文/);
   await expect(page.getByRole('button', { name: '复制全文+批注' })).toBeVisible({ timeout: 3000 });
 });

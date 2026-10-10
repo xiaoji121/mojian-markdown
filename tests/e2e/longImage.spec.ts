@@ -338,7 +338,7 @@ test('手机分页把长文保存为多张一屏尺寸图片', async ({ page }) 
     page.waitForEvent('download', { timeout: 60_000 }),
     page.locator('.longimg-save').click()
   ]);
-  await expect(page.locator('.save-status')).toContainText('已保存手机分页图片', { timeout: 60_000 });
+  await expect(page.locator('.save-status-toast')).toContainText('已保存手机分页图片', { timeout: 60_000 });
 
   expect(download.suggestedFilename()).toMatch(/-手机分页\.zip$/);
   const path = await download.path();

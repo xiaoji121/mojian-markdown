@@ -1,4 +1,5 @@
 import { _electron as electron, expect, test, type ElectronApplication, type Page, type TestInfo } from '@playwright/test';
+import { ensureSourceVisible } from '../e2e/fixtures';
 import { appendFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -80,7 +81,7 @@ async function launchInstalled(executablePath: string, fixture: Fixture, onLaunc
   expect(details.userData).toBe(fixture.userData);
   expect(details.version).toMatch(/^1\.0\.0-test\.[0-9A-Za-z-]+\.[12]$/);
   const page = await app.firstWindow();
-  await expect(page.locator('.md-source')).toBeVisible({ timeout: 30_000 });
+  await ensureSourceVisible(page, 30_000);
   const faviconLoaded = await page.locator('link[rel="icon"]').evaluate(async (link: HTMLLinkElement) => {
     const image = new Image();
     image.src = link.href;

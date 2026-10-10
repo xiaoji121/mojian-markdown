@@ -1,4 +1,5 @@
 import { _electron as electron, expect, test } from '@playwright/test';
+import { ensureSourceVisible } from '../e2e/fixtures';
 import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -42,7 +43,7 @@ test('桌面端启动并与本地文件双向同步', async () => {
   });
   try {
     const page = await app.firstWindow();
-    await expect(page.locator('.md-source')).toBeVisible({ timeout: 15_000 });
+    await ensureSourceVisible(page, 15_000);
 
     // preload 注入的桌面 API 存在，且内嵌 bridge 与前端同源。
     expect(await page.evaluate(() => !!(window as any).mojianDesktop)).toBe(true);
@@ -114,7 +115,7 @@ test('桌面端启动并与本地文件双向同步', async () => {
     await fileName.fill('已存在');
     await fileName.press('Enter');
     await expect(fileName).toHaveText('重命名后的笔记.md');
-    await expect(page.locator('.save-status')).toContainText('同名文件已存在');
+    await expect(page.locator('.save-status-toast')).toContainText('同名文件已存在');
     expect(await readFile(occupiedPath, 'utf8')).toBe('# 不能被覆盖\n');
     await expect(readFile(renamedPath, 'utf8')).resolves.toContain('仍然会写回新文件');
 
@@ -148,7 +149,7 @@ test('首页与文章链接交给系统浏览器打开，应用窗口不动', as
   });
   try {
     const page = await app.firstWindow();
-    await expect(page.locator('.md-source')).toBeVisible({ timeout: 15_000 });
+    await ensureSourceVisible(page, 15_000);
 
     // 主进程里替换 shell.openExternal，记录被转发的 URL。
     await app.evaluate(({ shell }) => {
@@ -180,7 +181,7 @@ test('首页与文章链接交给系统浏览器打开，应用窗口不动', as
 
     // 窗口数量不变，编辑器仍在原地。
     expect(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1);
-    await expect(page.locator('.md-source')).toBeVisible();
+    await ensureSourceVisible(page);
   } finally {
     await app.close();
   }
@@ -289,7 +290,7 @@ test('桌面端批注面板的复制与删除按钮可用', async () => {
 
     await page.getByRole('button', { name: '复制', exact: true }).click();
     await expect.poll(() => app.evaluate(({ clipboard }) => clipboard.readText())).toContain('hello world');
-    await expect(page.locator('.save-status')).toHaveText(/已复制该批注/);
+    await expect(page.locator('.save-status-toast')).toHaveText(/已复制该批注/);
 
     page.on('dialog', (dialog) => dialog.accept());
     await page.getByRole('button', { name: '删除', exact: true }).click();
