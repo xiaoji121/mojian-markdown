@@ -331,8 +331,7 @@ export class EditingFileLayoutMethods {
     if (!desktop) return;
     // 网页版专属 UI（关联文件夹入口、宽屏下的 ⋯ 菜单）由 CSS 按此标记隐藏。
     document.body.classList.add('is-desktop-app');
-    const homeLink = document.querySelector?.('.settings-home-link');
-    if (homeLink) {
+    for (const homeLink of document.querySelectorAll?.('.settings-home-link') || []) {
       homeLink.href = SITE_URL;
       homeLink.target = '_blank';
       homeLink.rel = 'noopener noreferrer';
