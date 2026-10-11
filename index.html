@@ -467,13 +467,13 @@
   <!-- P0 四钮固定主条；复制等按宽度提升；overflow 空则藏「更多」。规格：选区工具条主条与折行 -->
   <div ref="{{ selBarRef }}" class="selection-toolbar" onMouseDown="{{ noop }}">
     <button class="seltool" data-sel-annotate="marker" onClick="{{ markMarker }}" title="马克笔高亮" data-i18n-title="马克笔高亮">
-      <span class="seltool-icon"><span class="seltool-glyph glyph-mark">A</span></span><span data-i18n="马克笔">马克笔
+      <span class="seltool-icon"><span class="seltool-glyph glyph-mark">A</span><svg class="mobile-only mobile-annotation-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14v8H5z"/></svg></span><span data-i18n="马克笔">马克笔
     </span></button>
     <button class="seltool" data-sel-annotate="wavy" onClick="{{ markWavy }}" title="波浪线" data-i18n-title="波浪线">
-      <span class="seltool-icon"><span class="seltool-glyph glyph-wavy">A</span></span><span data-i18n="波浪线">波浪线
+      <span class="seltool-icon"><span class="seltool-glyph glyph-wavy">A</span><svg class="mobile-only mobile-annotation-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 14 3-4 3 4 3-4 3 4 3-4 3 4"/></svg></span><span data-i18n="波浪线">波浪线
     </span></button>
     <button class="seltool" data-sel-annotate="straight" onClick="{{ markStraight }}" title="直线" data-i18n-title="直线">
-      <span class="seltool-icon"><span class="seltool-glyph glyph-line">A</span></span><span data-i18n="直线">直线
+      <span class="seltool-icon"><span class="seltool-glyph glyph-line">A</span><svg class="mobile-only mobile-annotation-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 14h18"/></svg></span><span data-i18n="直线">直线
     </span></button>
     <button class="seltool" data-sel-annotate="idea" onClick="{{ writeIdea }}" title="写想法（加批注）" data-i18n-title="写想法（加批注）">
       <span class="seltool-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M12 7v6M9 10h6" strokeWidth="1.6"></path></svg></span><span data-i18n="写想法">写想法
@@ -482,7 +482,7 @@
     <span class="seltool-main-tools"></span>
     <span class="seltool-overflow" hidden>
       <button class="seltool seltool-more" onClick="{{ toggleSelOverflow }}" title="更多" data-i18n-title="更多" aria-haspopup="menu" aria-expanded="false" aria-label="更多" data-i18n-aria-label="更多">
-        <span class="seltool-icon"><span class="seltool-glyph">⋯</span></span><span data-i18n="更多">更多
+        <span class="seltool-icon"><span class="seltool-glyph">⋯</span><svg class="mobile-only mobile-annotation-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></span><span data-i18n="更多">更多
       </span></button>
       <div class="seltool-overflow-menu" role="menu" hidden>
         <button class="seltool" data-seltool="copy" role="menuitem" onClick="{{ copySel }}" title="复制选中文字" data-i18n-title="复制选中文字">

@@ -165,6 +165,7 @@ export class WorkspaceMenuMethods {
   }
 
   toggleSelOverflow(event) {
+    if (this._isMobileAnnotation?.()) { event?.preventDefault?.(); event?.stopPropagation?.(); this._maSelectionMore(); return; }
     event?.preventDefault?.();
     event?.stopPropagation?.();
     const wrap = this.selBarRef?.current?.querySelector?.('.seltool-overflow');

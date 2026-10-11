@@ -99,6 +99,12 @@ export class SelectionToolbarMethods {
       else el.hidden = false;
     }
 
+    if (this._isMobileAnnotation?.()) {
+      bar.style.maxWidth = `${window.innerWidth - 16}px`; bar.classList.remove('is-wrapped');
+      if (toolsDivider) toolsDivider.hidden = true;
+      if (overflowWrap) overflowWrap.hidden = false; if (moreBtn) moreBtn.hidden = false;
+      this._closeSelOverflowMenu(); return;
+    }
     const maxW = this._selectionToolbarAvailableWidth();
     bar.style.maxWidth = `${maxW}px`;
 

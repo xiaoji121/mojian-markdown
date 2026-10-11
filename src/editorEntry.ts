@@ -35,3 +35,5 @@ window.createMarkdownEditorComponent = createMarkdownEditorComponent;
 // The bundled DC runtime is generated JavaScript without declaration files.
 // @ts-expect-error generated runtime module
 await import('./dc-runtime.js');
+
+import './editor/mobileAnnotations.css';
