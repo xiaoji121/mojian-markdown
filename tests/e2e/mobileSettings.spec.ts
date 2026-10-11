@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures';
+import { test, expect, openMobileSetting } from './fixtures';
 
 test('fresh mobile reading has no quick appearance backdrop blocking navigation', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -26,17 +26,16 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
     expect(bounds.y).toBeGreaterThan(0);
     expect(bounds.y + bounds.height).toBeCloseTo(viewport.height, 0);
     await expect(panel.locator('.appearance-width')).toBeHidden();
-    for (const selector of ['.appearance-close', '.reading-font-select', '.font-inc', '.paper-dot']) {
-      const sizes = await panel.locator(selector).evaluateAll(elements => elements.map(element => element.getBoundingClientRect().height));
-      expect(sizes.length).toBeGreaterThan(0);
-      expect(sizes.every(height => height >= 44)).toBe(true);
-    }
+    await openMobileSetting(page, 'font');
+    expect((await panel.locator('.reading-font-select').boundingBox())!.height).toBeGreaterThanOrEqual(44);
     await panel.locator('.reading-font-select').selectOption('system-serif');
+    await openMobileSetting(page, 'paper');
+    for (const button of await panel.locator('.font-inc,.paper-dot').all()) expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
     await panel.locator('.font-inc').click();
     await expect(page.locator('.md-preview')).toHaveCSS('font-size', '17px');
     await panel.locator('.paper-dot[data-paper="green"]').click();
     await expect(page.locator('body')).toHaveAttribute('data-paper', 'green');
-    await panel.locator('[data-settings-tab="general"]').click();
+    await openMobileSetting(page, 'language');
     for (const locale of ['zh-TW', 'en', 'ja', 'zh-CN']) {
       const option = panel.locator(`[data-locale="${locale}"]`);
       expect((await option.boundingBox())!.height).toBeGreaterThanOrEqual(44);

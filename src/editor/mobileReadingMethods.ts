@@ -77,6 +77,7 @@ export class MobileReadingMethods {
     document.addEventListener('keydown', this._mobileMenuKey, true);
     this._mobileNavigationClick = event => this._completeMobileNavigation(event);
     document.addEventListener('click', this._mobileNavigationClick);
+    this._initMobileSettings?.();
   }
 
   toggleMobileReadingMenu(force, restoreFocus = false) {

@@ -83,7 +83,7 @@ export async function openAppearance(page: Page) {
     if (await mobileMenu.count()) {
       await mobileMenu.click();
       await page.locator('[data-mobile-action="settings"]').click();
-      await panel.locator('[data-settings-tab="reading"]').click();
+      await panel.locator('[data-mobile-setting="font"]').click();
       await expect(panel).toBeVisible();
       return;
     }
@@ -108,7 +108,8 @@ export async function openAppearance(page: Page) {
       await page.locator('.workspace-settings-button').click();
     }
   }
-  await panel.locator('[data-settings-tab="reading"]').click();
+  if (await panel.locator('.mobile-settings-heading').isVisible()) await openMobileSetting(page, 'font');
+  else await panel.locator('[data-settings-tab="reading"]').click();
   await expect(panel).toBeVisible();
 }
 
@@ -135,4 +136,11 @@ export async function openFontManagement(page: Page) {
   if (!(await details.evaluate(element => (element as HTMLDetailsElement).open))) {
     await details.locator('summary').click();
   }
+}
+
+export async function openMobileSetting(page: Page, setting: string) {
+  if (!(await page.locator('.workspace-settings .mobile-settings-heading').isVisible())) return;
+  const back = page.locator('.mobile-settings-back');
+  if (await back.isVisible()) await back.click();
+  await page.locator(`[data-mobile-setting="${setting}"]`).click();
 }

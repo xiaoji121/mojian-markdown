@@ -1,5 +1,5 @@
 import { chooseLanguage } from './localeHelpers';
-import { test, expect, setSource, openAppearance, ensureSourceVisible } from './fixtures';
+import { test, expect, setSource, openAppearance, ensureSourceVisible, openMobileSetting } from './fixtures';
 const sampleHeadings: Record<string, string> = {
   'zh-CN': '欢迎使用墨笺', 'zh-TW': '歡迎使用墨箋',
   en: 'Welcome to Mojian', ja: '墨笺へようこそ',
@@ -33,8 +33,10 @@ for (const [locale, title, open] of [['zh-CN', '墨笺 Markdown', '打开编辑�
     await expect(page.locator('.md-preview')).toHaveAttribute('lang', locale);
     await setSource(page, '# Keep my draft\n\nUntouched across navigation.');
     await openAppearance(page);
-    await page.locator('[data-settings-tab=general]').click();
-    await page.locator('.settings-home-link').click();
+    if (await page.locator('.mobile-settings-heading').isVisible()) await openMobileSetting(page, 'language');
+    else await page.locator('[data-settings-tab=general]').click();
+    if (await page.locator('.mobile-settings-back').isVisible()) await page.locator('.mobile-settings-back').click();
+    await page.locator('.settings-home-link:visible').click();
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
     await expect(page.locator('#landing-page')).toBeVisible();
     await page.goBack();
@@ -77,8 +79,10 @@ test('explicit saved editor language wins over a different landing route', async
   await expect(page.locator('.md-source')).toHaveValue('# Saved draft');
   await expect(page.locator('html')).toHaveAttribute('lang','ja');
   await openAppearance(page);
-    await page.locator('[data-settings-tab=general]').click();
-  await page.locator('.settings-home-link').click();
+    if (await page.locator('.mobile-settings-heading').isVisible()) await openMobileSetting(page, 'language');
+    else await page.locator('[data-settings-tab=general]').click();
+  if (await page.locator('.mobile-settings-back').isVisible()) await page.locator('.mobile-settings-back').click();
+    await page.locator('.settings-home-link:visible').click();
   await expect(page.locator('html')).toHaveAttribute('lang','zh-TW');
 });
 test('desktop landing language navigation stays on the trusted root document', async ({ page }) => {
@@ -106,8 +110,10 @@ test('changing landing locale preserves a draft with its save debounce still pen
   await page.clock.pauseAt(new Date());
   await setSource(page, '# Immediate edit before choosing a language');
   await openAppearance(page);
-    await page.locator('[data-settings-tab=general]').click();
-  await page.locator('.settings-home-link').click();
+    if (await page.locator('.mobile-settings-heading').isVisible()) await openMobileSetting(page, 'language');
+    else await page.locator('[data-settings-tab=general]').click();
+  if (await page.locator('.mobile-settings-back').isVisible()) await page.locator('.mobile-settings-back').click();
+    await page.locator('.settings-home-link:visible').click();
   await page.locator('.landing-language-toggle').click();
   await page.locator('.landing-languages a[lang="ja"]').click();
   await expect(page).toHaveURL(/\/ja\/$/);

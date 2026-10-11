@@ -38,6 +38,7 @@ import { MobileAnnotationMethods } from './mobileAnnotationMethods';
 import { MobileImageMethods } from './mobileImageMethods';
 import { MobileFileMethods } from './mobileFileMethods';
 import { MobileEditingMethods } from './mobileEditingMethods';
+import { MobileSettingsMethods } from './mobileSettingsMethods';
 import { MobileReadingMethods } from './mobileReadingMethods';
 import { OnboardingMethods } from './onboardingMethods';
 
@@ -527,6 +528,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     WorkspaceNavigationMethods,
     WorkspaceSettingsMethods,
     MobileReadingMethods,
+    MobileSettingsMethods,
     MobileFileMethods,
     MobileEditingMethods,
     MobileAnnotationMethods,

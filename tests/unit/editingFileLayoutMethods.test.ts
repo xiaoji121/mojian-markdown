@@ -378,18 +378,21 @@ test('桌面端 _initDesktop 给 body 打上 is-desktop-app 标记（CSS 据此�
     }
   };
   const classes = new Set<string>();
-  const homeLink = { href: '#', target: '', rel: '' };
+  const homeLinks = [{ href: '#', target: '', rel: '' }, { href: '#', target: '', rel: '' }];
   (globalThis as { document?: unknown }).document = {
     body: { classList: { add: (name: string) => classes.add(name) } },
-    querySelector: (selector: string) => selector === '.settings-home-link' ? homeLink : null
+    querySelector: (selector: string) => selector === '.settings-home-link' ? homeLinks[0] : null,
+    querySelectorAll: (selector: string) => selector === '.settings-home-link' ? homeLinks : []
   };
   try {
     const editor = new EditingFileLayoutMethods() as EditingFileLayoutMethods & Record<string, any>;
     editor._initDesktop();
     assert.ok(classes.has('is-desktop-app'));
-    assert.equal(homeLink.href, 'https://yuxizhai.com/md-editor/');
-    assert.equal(homeLink.target, '_blank');
-    assert.equal(homeLink.rel, 'noopener noreferrer');
+    for (const homeLink of homeLinks) {
+      assert.equal(homeLink.href, 'https://yuxizhai.com/md-editor/');
+      assert.equal(homeLink.target, '_blank');
+      assert.equal(homeLink.rel, 'noopener noreferrer');
+    }
   } finally {
     delete (globalThis as { window?: unknown }).window;
     delete (globalThis as { document?: unknown }).document;

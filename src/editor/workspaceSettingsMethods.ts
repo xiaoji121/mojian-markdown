@@ -55,6 +55,7 @@ export class WorkspaceSettingsMethods {
     this.toggleExportMenu(false);
     this.toggleQuickAppearance(false);
     this._selectSettingsPage(page);
+    this._showMobileSettings?.(page === 'general' ? 'language' : 'home');
     this.toggleReadingAppearance(true);
   }
 
@@ -86,9 +87,11 @@ export class WorkspaceSettingsMethods {
     panel.hidden = !next;
     if (this._settingsBackdrop) this._settingsBackdrop.hidden = !next;
     if (next) {
+      this._guardMobileSettings?.();
       this._renderUserReadingFonts?.();
       panel.focus({ preventScroll: true });
     } else {
+      this._restoreMobileSettings?.();
       if (returnFocus) this._settingsReturnFocus?.focus?.({ preventScroll: true });
       this._settingsReturnFocus = null;
       this.languageOpen = false;
@@ -118,6 +121,7 @@ export class WorkspaceSettingsMethods {
   }
 
   _syncQuickAppearance() {
+    this._syncMobileSettings?.();
     const panel = this._quickAppearance;
     if (!panel) return;
     panel.querySelector('.quick-font-value').textContent = this.fontSize + 'px';
