@@ -411,6 +411,10 @@ export class EditingFileLayoutMethods {
 
 
   async onOpen() {
+    if (this._isMobileAnnotation?.() && !window.mojianDesktop) { this._mfImport(); return; }
+    if (this._isMobileAnnotation?.() && window.mojianDesktop && !this._mfApprovedOpen) {
+      this._mfProtect('import', async () => {this._mfApprovedOpen=true;try{await this.onOpen();}finally{this._mfApprovedOpen=false;}});return;
+    }
     if (window.mojianDesktop) {
       const picked = await window.mojianDesktop.openMarkdownFile();
       if (picked) await this._openDesktopFile(picked);
@@ -661,9 +665,10 @@ export class EditingFileLayoutMethods {
   // ===== 顶栏「文件」下拉菜单 =====
 
   onNew() {
+    if (this._isMobileAnnotation?.() && !this._mfApprovedNew) { this._mfNew(); return; }
     const hasFile = !!(this.fileHandle || this.localFilePath);
     const content = this.sourceRef.current?.value || '';
-    if (shouldConfirmLeave({
+    if (!this._mfApprovedNew && shouldConfirmLeave({
       hasFile,
       dirty: !!this.dirty,
       content,

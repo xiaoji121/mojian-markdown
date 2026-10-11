@@ -54,6 +54,7 @@ export class SearchReplaceMethods {
     if (this.viewMode === 'preview' && typeof this.setViewMode === 'function') {
       this.setViewMode('split');
     }
+    if (this._isMobileAnnotation?.()) { this.setViewMode('editor'); this._setSearchReplaceExpanded(true); }
     this.searchOpen = true;
     bar.classList.add('is-open');
     if (focusReplace) this._setSearchReplaceExpanded(true);
@@ -273,6 +274,7 @@ export class SearchReplaceMethods {
     const bar = this.searchBarRef.current;
     if (bar) bar.classList.toggle('search-no-match', Boolean(input.value) && !total);
     this._renderSourceHighlights();
+    this._meSearchPreview?.();
   }
 
   // 正则模式下替换文本支持 $1 分组引用：对命中的片段重跑一次非全局正则展开。

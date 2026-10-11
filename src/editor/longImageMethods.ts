@@ -44,7 +44,6 @@ const POSTER_PAPER_VARIABLES = [
   '--paper-code-type', '--read', '--paper-font-body', '--paper-font-heading',
   '--paper-line-height', '--paper-letter-spacing'
 ];
-
 let posterFontCssPromise = null;
 let posterFontRevision = -1;
 export class LongImageMethods {
@@ -52,7 +51,6 @@ export class LongImageMethods {
     this._longImageSelection = null;
     this._showLongImage();
   }
-
   openSelectionImage() {
     const pending = this._pending;
     if (!pending || !pending.quote) return;
@@ -66,13 +64,11 @@ export class LongImageMethods {
     if (this.selBarRef.current) this.selBarRef.current.style.display = 'none';
     this._showLongImage();
   }
-
   _escapedSelectionText(text) {
     const holder = document.createElement('div');
     holder.textContent = text;
     return '<p>' + holder.innerHTML.replace(/\n/g, '<br>') + '</p>';
   }
-
   _showLongImage() {
     const overlay = this._buildLongImageModal();
     overlay.style.display = 'flex';
@@ -83,20 +79,20 @@ export class LongImageMethods {
     if (title) { title.dataset.i18n = mobileExcerpt ? '摘录图片预览' : '保存长图'; title.textContent = t(title.dataset.i18n); }
     if (hint) { hint.dataset.i18n = mobileExcerpt ? '只导出所选文字与文章标题' : '排版与纸色跟随预览；图片字号可单独调节，手机分页会避开图片、表格、代码块和标题。'; hint.textContent = t(hint.dataset.i18n); }
     if (save) { save.dataset.i18n = mobileExcerpt ? '下载图片' : '下载长图'; save.textContent = t(save.dataset.i18n); }
+    this._miShow?.();
     this._refreshLongImagePoster();
   }
-
   closeLongImage() {
+    if (this._longImageBusy) return;
     if (this._longImageEl) this._longImageEl.style.display = 'none';
+    this._miClose?.();
   }
-
   setLongImageWidth(id) {
     if (this.longImageWidth === id) return;
     this.longImageWidth = id;
     this._persist();
     this._refreshLongImagePoster();
   }
-
   adjustLongImageFont(delta) {
     const key = this.longImageWidth === 'phone'
       ? 'longImagePhoneFontSize'
@@ -107,7 +103,6 @@ export class LongImageMethods {
     this._persist(false);
     this._refreshLongImagePoster();
   }
-
   _currentLongImageFontSize() {
     const value = this.longImageWidth === 'phone'
       ? this.longImagePhoneFontSize
@@ -124,9 +119,7 @@ export class LongImageMethods {
     if (this.longImageAutoCrop && this.longImageWidth !== 'phone') this.longImageWidth = 'phone';
     this._refreshLongImagePoster();
   }
-
   // ===== 弹窗骨架 =====
-
   _buildLongImageModal() {
     if (this._longImageEl) return this._longImageEl;
     const overlay = document.createElement('div');
@@ -156,7 +149,6 @@ export class LongImageMethods {
     this._longImageBoxEl = box;
     return overlay;
   }
-
   _buildLongImageHead() {
     const head = document.createElement('div');
     head.className = 'longimg-modal-head';
@@ -196,7 +188,6 @@ export class LongImageMethods {
     this._longImageMarksEl = marks;
     return head;
   }
-
   _buildLongImageFoot() {
     const foot = document.createElement('div');
     foot.className = 'longimg-modal-foot';
@@ -229,7 +220,6 @@ export class LongImageMethods {
     this._longImageSaveEl = save;
     return foot;
   }
-
   _buildLongImageFontControls() {
     const controls = document.createElement('div');
     controls.className = 'longimg-font-controls';
@@ -253,7 +243,6 @@ export class LongImageMethods {
     this._longImageFontIncEl = increase;
     return controls;
   }
-
   _longImageWidthOption(preset) {
     const option = document.createElement('button');
     option.type = 'button';
@@ -264,7 +253,6 @@ export class LongImageMethods {
     option.addEventListener('click', () => this.setLongImageWidth(preset.id));
     return option;
   }
-
   _syncLongImageControls() {
     const active = this.longImageWidth || DEFAULT_LONG_IMAGE_PRESET;
     if (this._longImageWidthsEl) {
@@ -292,10 +280,9 @@ export class LongImageMethods {
       this._longImageSaveEl.disabled = !!(this._longImageBusy || this._longImagePreparing);
       if (!this._longImageBusy) this._longImageSaveEl.textContent = this._longImageSelection && this._isMobileAnnotation?.() ? t('下载图片') : paged ? t("下载多图") : t("下载长图");
     }
+    this._miControls?.();
   }
-
   // ===== 海报节点 =====
-
   async _refreshLongImagePoster() {
     const stage = this._longImageStageEl;
     if (!stage) return;
@@ -327,6 +314,7 @@ export class LongImageMethods {
       this._longImagePagePlan = null;
       this._layoutLongImageStage();
     }
+    this._miFitPreview?.();
     this._longImagePreparing = false;
     this._syncLongImageControls();
   }
@@ -365,6 +353,7 @@ export class LongImageMethods {
       stack.appendChild(page);
     });
     stage.replaceChildren(stack);
+    this._miPageControls?.();
     const ratio = STAGE_WIDTH / width;
     stage.style.transform = 'scale(' + ratio + ')';
     stage.style.width = width + 'px';
@@ -372,7 +361,6 @@ export class LongImageMethods {
     this._longImageBoxEl.style.height = Math.round(stack.offsetHeight * ratio) + 'px';
     this._updateLongImageMeta(width, poster.offsetHeight);
   }
-
   _layoutLongImageStage() {
     const stage = this._longImageStageEl;
     const box = this._longImageBoxEl;
@@ -388,7 +376,6 @@ export class LongImageMethods {
     box.style.height = Math.round(height * ratio) + 'px';
     this._updateLongImageMeta(width, height);
   }
-
   _updateLongImageMeta(width, height, bytes) {
     if (!this._longImageMetaEl) return;
     if (this.longImageAutoCrop && this.longImageWidth === 'phone' && this._longImagePoster) {
@@ -409,7 +396,6 @@ export class LongImageMethods {
     if (bytes) parts.push(formatByteSize(bytes));
     this._longImageMetaEl.textContent = parts.join(' · ');
   }
-
   _buildPosterNode(width) {
     const preview = this.previewRef.current;
     const poster = document.createElement('div');
@@ -435,7 +421,6 @@ export class LongImageMethods {
     poster.append(this._buildPosterHead(title, content), content, this._buildPosterFoot());
     return poster;
   }
-
   // Range.cloneContents() 跨多个列表项时会得到一组孤立的 <li>；补回列表容器，
   // 让选区图片继续保留圆点、缩进等原始 Markdown 结构。
   _normalizeSelectionContent(content) {
@@ -446,7 +431,6 @@ export class LongImageMethods {
     listItems.forEach((item) => list.appendChild(item));
     content.appendChild(list);
   }
-
   // 把预览区最终生效的纸色直接写到海报节点。这样序列化到隔离的 SVG 后，
   // 不再依赖 body 上的 data-paper 级联，弹窗预览与下载 PNG 始终同色。
   _snapshotPosterPaper(poster, preview) {
@@ -456,7 +440,6 @@ export class LongImageMethods {
       if (value) poster.style.setProperty(name, value);
     });
   }
-
   // 正文首个 h1 升格为海报标题，避免长图顶部出现两个标题。
   _takePosterTitle(content) {
     const first = content.firstElementChild;
@@ -469,14 +452,12 @@ export class LongImageMethods {
     }
     return String(this.fileName || '').replace(/\.md$/i, '') || t("未命名");
   }
-
   _stripPosterMarks(content) {
     content.querySelectorAll('[data-comment-badge]').forEach((badge) => badge.remove());
     content.querySelectorAll('[data-comment-id]').forEach((span) => {
       span.replaceWith(...span.childNodes);
     });
   }
-
   _buildPosterHead(title, content) {
     const head = document.createElement('div');
     head.className = 'longimg-head';
@@ -494,7 +475,6 @@ export class LongImageMethods {
     head.append(brand, heading, rule, meta);
     return head;
   }
-
   _posterMetaText(content) {
     const parts = [t("{count} 字", { count: this._posterWordCount(content).toLocaleString(getLocale()) })];
     if (this.longImageMarks && !(this._longImageSelection && this._isMobileAnnotation?.())) {
@@ -506,14 +486,12 @@ export class LongImageMethods {
     parts.push(longImageDate());
     return parts.join(' · ');
   }
-
   // 只数正文：mermaid 渲染出的 SVG 里塞着整段 <style>，textContent 会把 CSS 也算成字。
   _posterWordCount(content) {
     const clone = content.cloneNode(true);
     clone.querySelectorAll('svg, style, script').forEach((node) => node.remove());
     return (clone.textContent || '').replace(/\s/g, '').length;
   }
-
   _buildPosterFoot() {
     const foot = document.createElement('div');
     foot.className = 'longimg-foot';
@@ -524,9 +502,7 @@ export class LongImageMethods {
     foot.append(left, right);
     return foot;
   }
-
   // ===== 样式与资源内联 =====
-
   // 页面里的海报预览与 SVG 栅格共用这一份样式：先把当前主题/纸色的 CSS 变量
   // 落定成字面值，再抄一份预览排版规则（.md-preview → .longimg-prose）。
   _ensurePosterStyle() {
@@ -545,7 +521,6 @@ export class LongImageMethods {
     this._posterCssText = variables + '\n' + extractPosterCss(sheets);
     this._posterStyleEl.textContent = this._posterCssText;
   }
-
   _posterFontCss() {
     if (!posterFontCssPromise || posterFontRevision !== readingFontRevision()) {
       posterFontRevision = readingFontRevision();
@@ -553,7 +528,6 @@ export class LongImageMethods {
     }
     return posterFontCssPromise;
   }
-
   async _buildPosterFontCss() {
     const faces = [];
     for (const sheet of Array.from(document.styleSheets)) {
@@ -568,7 +542,6 @@ export class LongImageMethods {
     const inlined = await Promise.all(faces.map((face) => this._inlineFontFace(face.css, face.base)));
     return inlined.filter(Boolean).join('\n');
   }
-
   // 字体文件取不回来时整条 @font-face 丢掉，让 font-family 回退链接管系统楷体，
   // 而不是留一条指向取不到的 URL、在 SVG 里渲染成默认无衬线。
   async _inlineFontFace(cssText, baseUrl = document.baseURI) {
@@ -577,7 +550,6 @@ export class LongImageMethods {
     const dataUrl = await this._fetchAsDataUrl(new URL(match[2], baseUrl).href);
     return dataUrl ? cssText.replace(match[0], 'url(' + dataUrl + ')') : '';
   }
-
   async _fetchAsDataUrl(url) {
     try {
       const response = await fetch(url, { credentials: 'same-origin' });
@@ -593,7 +565,6 @@ export class LongImageMethods {
       return '';
     }
   }
-
   // 取不回来的图（跨源、断链）换成一块占位：宁可写明缺图，也不留一段错位空白。
   async _inlinePosterImages(root) {
     const images = Array.from(root.querySelectorAll('img'));
@@ -613,17 +584,16 @@ export class LongImageMethods {
       img.replaceWith(missing);
     }));
   }
-
   // ===== 光栅化与下载 =====
-
   async downloadLongImage() {
     if (this._longImageBusy || this._longImagePreparing || !this._longImagePoster) return;
+    this._miError = '';
     this._longImageBusy = true;
     this._syncLongImageControls();
     try {
       if (this.longImageAutoCrop && this.longImageWidth === 'phone' && !(this._longImageSelection && this._isMobileAnnotation?.())) {
         await this._downloadPagedLongImages();
-        this.closeLongImage();
+        this._longImageBusy = false; this.closeLongImage();
         return;
       }
       const result = await this._rasterizePoster(this._longImagePoster, (done, total) => {
@@ -638,11 +608,12 @@ export class LongImageMethods {
       this._saveLongImageBlob(blob, name);
       this._updateLongImageMeta(result.width, result.height, blob.size);
       this._setStatus(t("✓ 已保存长图 {name} · {size}", { name, size: formatByteSize(blob.size) }));
-      this.closeLongImage();
+      this._longImageBusy = false; this.closeLongImage();
     } catch (error) {
       const message = (error && error.message) || t("长图生成失败");
       if (this._longImageMetaEl) this._longImageMetaEl.textContent = message;
       this._setStatus(message);
+      this._miProgress?.(this._miGenerated || 0, this._miTotal || 1, message);
     } finally {
       this._longImageBusy = false;
       this._syncLongImageControls();
@@ -660,12 +631,14 @@ export class LongImageMethods {
     const markup = new XMLSerializer().serializeToString(clone);
     const base = longImageFileName(this._posterTitle, longImageDate()).replace(/\.png$/i, '');
     const files = [];
+    this._miProgress?.(0, pages.length);
     for (let index = 0; index < pages.length; index += 1) {
       this._longImageSaveEl.textContent = t("正在生成 {index}/{total}…", { index: index + 1, total: pages.length });
       const image = await this._loadPosterTile(pages[index], { width, scale, css, markup });
       const canvas = this._pagedImageCanvas(width, scale, image, index + 1, pages.length);
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
       if (!blob) throw new Error(t("分页图片导出失败"));
+      this._miProgress?.(index + 1, pages.length);
       files.push({
         name: base + '-' + String(index + 1).padStart(2, '0') + '.png',
         data: blob
@@ -690,7 +663,6 @@ export class LongImageMethods {
     drawLongImagePageNumber(context, width, PHONE_PAGE_HEIGHT, scale, pageNumber + ' / ' + pageCount, this._posterPaperColor(), textColor);
     return canvas;
   }
-
   _posterProtectedRanges(poster) {
     const posterRect = poster.getBoundingClientRect();
     const ratio = posterRect.width / (poster.offsetWidth || posterRect.width || 1);
@@ -724,15 +696,14 @@ export class LongImageMethods {
       };
     });
   }
-
   _saveLongImageBlob(blob, name) {
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = name;
     link.click();
+    this._miDownload?.(name);
     URL.revokeObjectURL(link.href);
   }
-
   async _rasterizePoster(poster, onProgress) {
     if (document.fonts?.ready) await document.fonts.ready;
     const width = poster.offsetWidth;
@@ -758,13 +729,11 @@ export class LongImageMethods {
     }
     return { canvas, width, height, scale };
   }
-
   _posterPaperColor() {
     const preview = this.previewRef && this.previewRef.current;
     const computed = getComputedStyle(preview || document.body);
     return (computed.backgroundColor || computed.getPropertyValue('--paper-bg') || '').trim() || '#ffffff';
   }
-
   // 一片切片 = 一张按设备像素定尺、viewBox 回到 CSS px 的 SVG：
   // viewBox 缩放让 foreignObject 里的文字直接以输出分辨率光栅化，不是放大位图。
   // 必须走 data: URL —— Chrome 把 blob: 来源的 SVG 视为跨源，画上去的画布会被污染，

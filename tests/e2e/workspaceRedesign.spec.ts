@@ -160,6 +160,7 @@ test('专注临时收起辅助区，退出后恢复所选标签与问题', async
 test('窄屏侧栏可打开和关闭，设置和正文不产生横向溢出', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openEditor(page);
+  await page.locator('[data-mobile-edit-done]').click();
   await expect(page.getByRole('button', { name: '最近阅读', exact: true })).toHaveAttribute('aria-expanded', 'false');
   await page.getByRole('button', { name: '最近阅读', exact: true }).click();
   await expect(page.getByRole('button', { name: '最近阅读', exact: true })).toHaveAttribute('aria-expanded', 'true');

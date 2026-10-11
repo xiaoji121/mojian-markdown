@@ -37,3 +37,5 @@ window.createMarkdownEditorComponent = createMarkdownEditorComponent;
 await import('./dc-runtime.js');
 
 import './editor/mobileAnnotations.css';
+
+import './editor/mobileEditing.css';
