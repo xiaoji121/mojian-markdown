@@ -62,7 +62,6 @@ test('mobile export handoff stays open and returns focus to visible menu trigger
   const menu = page.locator('.mobile-export-actions');
   await expect(menu).toBeVisible();
   await expect(menu.locator('button').first()).toBeFocused();
-  await menu.locator('summary').click();
   for (const name of ['完整备份', 'Markdown 文件', '下载批注 Markdown', '长图', '复制全文+批注']) {
     await expect(menu.getByRole('button', { name, exact: false })).toBeVisible();
   }

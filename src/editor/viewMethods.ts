@@ -33,6 +33,7 @@ export class ViewMethods {
 
   setViewMode(mode) {
     if (!['editor', 'split', 'preview'].includes(mode)) return;
+    if(mode!=='preview'&&this.viewMode==='preview'&&this._isMobileAnnotation?.()&&this._mfDraftBlocked?.())return;
     if (mode === 'editor' && this.appearanceOpen) this.toggleReadingAppearance(false);
     this.viewMode = mode;
     if (mode !== 'preview' && this.previewOverrideMarkdown) {
@@ -463,6 +464,7 @@ export class ViewMethods {
     }
     node.textContent = text;
     this._syncWorkspaceChrome?.();
+    this._mfSaveStatus?.();
   }
 
   /** 临时 toast 槽：≤5s，不得替换常驻槽。 */

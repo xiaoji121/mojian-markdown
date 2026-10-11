@@ -713,6 +713,7 @@ export class BridgeMethods {
       } : {})
     });
     if (syncBridge && this.agentBridgeEnabled) this._scheduleBridgeSync();
+    this._mfSaveStatus?.();
     return saved;
   }
 

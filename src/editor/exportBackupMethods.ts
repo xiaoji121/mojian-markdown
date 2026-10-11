@@ -56,6 +56,7 @@ export class ExportBackupMethods {
     a.href = URL.createObjectURL(blob);
     a.download = fileName;
     a.click();
+    if(this._isMobileAnnotation?.())this._mfLastDownloadedName=fileName;
     URL.revokeObjectURL(a.href);
   }
 

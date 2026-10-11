@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures';
 import { chooseLanguage } from './localeHelpers';
 
-test('mobile export has three primary formats with secondary variants and separate saves', async ({ page }) => {
+test('mobile export has all five formats and separate saves', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/#editor');
   await expect(page.locator('.md-preview h1').first()).toBeVisible();
@@ -15,14 +15,13 @@ test('mobile export has three primary formats with secondary variants and separa
   await expect(exports.locator('.mobile-export-primary button')).toHaveCount(3);
   for (const name of ['Markdown 文件', '长图', '完整备份']) await expect(exports.getByRole('button', { name, exact: false })).toBeVisible();
   const variants = exports.locator('details');
-  for (const button of await variants.locator('button').all()) await expect(button).toBeHidden();
-  await variants.locator('summary').click();
+  await expect(variants.locator('summary')).toBeHidden();
   await expect(variants.locator('button')).toHaveCount(2);
   for (const button of await variants.locator('button').all()) await expect(button).toBeVisible();
   await exports.getByRole('button', { name: '返回', exact: true }).click();
   await expect(page.locator('[data-mobile-action="export"]')).toBeFocused();
   await page.locator('[data-mobile-action="export"]').click();
-  await expect(variants).not.toHaveAttribute('open', '');
+  await expect(variants).toHaveAttribute('open', '');
   await page.keyboard.press('Escape');
   await expect(opener).toBeFocused();
   expect(await page.locator('.md-preview').evaluate(element => element.scrollTop)).toBe(scroll);

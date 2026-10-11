@@ -22,9 +22,9 @@ export class MobileReadingMethods {
       mobileReadingTools: () => this._showMobileExport(false),
       mobileOutline: run(() => this._openOutlinePanel(true)),
       mobileComments: run(() => this._openPanel(true)),
-      mobileBackup: run(() => { void this.downloadFullBackup(); }),
-      mobileSourceDownload: run(() => this.downloadSourceMarkdown()),
-      mobileAnnotationsDownload: run(() => this.downloadAnnotationsMarkdown()),
+      mobileBackup: run(() => { void this._mfExport('backup'); }),
+      mobileSourceDownload: run(() => this._mfExport('source')),
+      mobileAnnotationsDownload: run(() => this._mfExport('annotations')),
       mobileLongImage: run(() => this.openLongImage()),
       mobileCopyFull: run(() => this.copyFull()),
       mobileSave: run(() => this._menuSaveOrBackup()),
@@ -36,6 +36,7 @@ export class MobileReadingMethods {
 
   _initMobileReading() {
     this._initMobileAnnotations?.();
+    this._initMobileEditing?.();
     this._mobileMenu = document.querySelector('.mobile-reading-menu');
     this._mobileBackdrop = document.querySelector('.mobile-reading-backdrop');
     this._mobileMedia = window.matchMedia('(max-width: 760px)');
@@ -113,7 +114,7 @@ export class MobileReadingMethods {
     this._mobileMenu.scrollTop = 0;
     if (show) {
       const secondary = exports.querySelector('details');
-      if (secondary) secondary.open = false;
+      if (secondary) secondary.open = true;
       this._syncMobileExportCapabilities();
       void this._refreshConnectorCapabilities?.().then(() => this._syncMobileExportCapabilities());
     }

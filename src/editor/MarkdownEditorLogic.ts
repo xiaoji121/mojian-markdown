@@ -35,6 +35,9 @@ import { ExportBackupMethods } from './exportBackupMethods';
 import { ViewMethods } from './viewMethods';
 import { OutlineMethods } from './outlineMethods';
 import { MobileAnnotationMethods } from './mobileAnnotationMethods';
+import { MobileImageMethods } from './mobileImageMethods';
+import { MobileFileMethods } from './mobileFileMethods';
+import { MobileEditingMethods } from './mobileEditingMethods';
 import { MobileReadingMethods } from './mobileReadingMethods';
 import { OnboardingMethods } from './onboardingMethods';
 
@@ -355,6 +358,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
 
   componentWillUnmount() {
     this._disposeWorkspaceNavigation();
+    this._disposeMobileEditing();
+    this._disposeMobileImages();
     this._disposeMobileReading();
     this._disposeMobileAnnotations();
     this._disposeUnloadGuard();
@@ -522,6 +527,8 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     WorkspaceNavigationMethods,
     WorkspaceSettingsMethods,
     MobileReadingMethods,
+    MobileFileMethods,
+    MobileEditingMethods,
     MobileAnnotationMethods,
     BridgeMethods,
     ReadingMapMethods,
@@ -533,6 +540,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     SelectionToolbarMethods,
     DiagramMethods,
     LongImageMethods,
+    MobileImageMethods,
     AIMethods,
     AIReadinessMethods,
     AIReadingTreeMethods,
