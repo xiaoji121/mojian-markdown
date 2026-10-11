@@ -1,0 +1,163 @@
+/* Mobile-only settings sheets. Desktop geometry and preference semantics stay
+   owned by workspaceSettings.css / workspaceSettingsMethods.ts. */
+.mobile-quick-appearance-backdrop { display: none; }
+@media (max-width: 760px) {
+  .mobile-quick-appearance-backdrop:not([hidden]) {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 179;
+    background: rgb(24 22 18 / 32%);
+    touch-action: none;
+  }
+  .workspace-settings-backdrop {
+    align-items: end;
+    justify-items: stretch;
+    padding: 0;
+    background: rgb(24 22 18 / 32%);
+  }
+
+  .workspace-settings.preferences-panel {
+    inset: auto;
+    width: 100%;
+    max-width: none;
+    height: min(740px, calc(100dvh - max(24px, env(safe-area-inset-top))));
+    border: 0;
+    border-radius: 24px 24px 0 0;
+    padding: 12px 0 0;
+    background: var(--bg);
+    font-size: 16px;
+  }
+
+  /* A small visual handle communicates the sheet shape without claiming a
+     drag gesture; dismissal remains the real Close control or the backdrop. */
+  .workspace-settings.preferences-panel::before,
+  .quick-appearance-panel::before {
+    content: '';
+    flex: none;
+    display: block;
+    align-self: center;
+    width: 38px;
+    height: 4px;
+    margin: 0 auto 8px;
+    border-radius: 4px;
+    background: var(--border);
+  }
+
+  .workspace-settings > .appearance-panel-header {
+    min-height: 60px;
+    padding: 4px 20px 12px;
+  }
+
+  .workspace-settings .appearance-heading,
+  .quick-appearance-panel .appearance-panel-header > strong {
+    color: var(--text);
+    font: 500 24px/1.4 var(--serif, var(--sans));
+  }
+
+  .workspace-settings .workspace-settings-layout {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .workspace-settings-nav {
+    flex: none;
+    flex-direction: row;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 8px 16px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border-soft);
+    overscroll-behavior-inline: contain;
+  }
+
+  .workspace-settings-nav button {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .workspace-settings-content {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 20px 20px max(24px, env(safe-area-inset-bottom));
+    scroll-padding-block: 16px;
+    overflow-wrap: anywhere;
+  }
+
+  .workspace-settings-content [role='tabpanel'] { gap: 20px; }
+  .workspace-settings .appearance-row { flex-wrap: wrap; min-height: 44px; gap: 12px; }
+  .workspace-settings .appearance-width { display: none; }
+  .workspace-settings .appearance-note { font-size: 14px; line-height: 1.7; }
+  .workspace-settings .reading-font-note { max-width: none; }
+  .workspace-settings .reading-font-select { min-height: 48px; font-size: 16px; }
+  .workspace-settings .reading-font-field { gap: 10px; }
+  .workspace-settings .reading-font-management { font-size: 14px; }
+  .workspace-settings .reading-font-management summary {
+    box-sizing: border-box;
+    min-height: 44px;
+    padding-block: 12px;
+  }
+  .workspace-settings .reading-font-link { display: inline-block; min-height: 44px; align-content: center; }
+  .workspace-settings .interface-language-options { grid-template-columns: 1fr; gap: 10px; }
+  .workspace-settings .interface-language-option { min-height: 52px; padding: 12px 36px 12px 16px; text-align: left; }
+  .workspace-settings .interface-language-option[aria-checked='true']::after { right: 16px; }
+  .workspace-settings .settings-home-link { align-self: stretch; justify-content: center; }
+
+  .workspace-settings .tbtn,
+  .workspace-settings .abtn,
+  .quick-appearance-panel .tbtn,
+  .quick-appearance-panel .abtn {
+    box-sizing: border-box;
+    min-width: 44px;
+    min-height: 44px;
+    height: auto;
+    padding: 10px 12px;
+    font-size: 15px;
+  }
+
+  .workspace-settings .paper-picker,
+  .quick-appearance-panel .paper-picker { flex-wrap: wrap; gap: 12px; padding: 3px; }
+  .workspace-settings .paper-dot,
+  .quick-appearance-panel .quick-paper-dot {
+    flex: none;
+    display: block;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+  }
+
+  .quick-appearance-panel.preferences-panel {
+    /* Desktop anchoring writes inline top/left; mobile anchoring is purely CSS. */
+    inset: auto 0 0 !important;
+    width: 100%;
+    max-width: none;
+    max-height: calc(100dvh - max(24px, env(safe-area-inset-top)));
+    padding: 12px 24px max(24px, env(safe-area-inset-bottom));
+    gap: 24px;
+    border: 0;
+    border-radius: 24px 24px 0 0;
+    background: var(--bg);
+    box-shadow: 0 -8px 40px rgb(0 0 0 / 12%);
+    font-size: 16px;
+    overflow-wrap: anywhere;
+  }
+
+  .quick-appearance-panel .appearance-row { flex-wrap: wrap; gap: 14px; }
+  .quick-appearance-panel .appearance-row:has(.paper-picker) { flex-direction: column; align-items: stretch; }
+  .quick-appearance-panel .paper-picker { justify-content: space-between; }
+  .quick-appearance-panel .appearance-panel-header { gap: 12px; }
+  .quick-appearance-panel .appearance-font-controls { margin-left: auto; }
+  .quick-appearance-panel > .abtn { flex: none; width: 100%; }
+
+  /* Immersive mode's desktop popover rule must not move either mobile sheet. */
+  .app-shell:has(.preview-pane-fullscreen) .workspace-settings.preferences-panel {
+    top: auto;
+    max-height: none;
+  }
+}

@@ -34,6 +34,7 @@ import { WorkspaceMenuMethods } from './workspaceMenuMethods';
 import { ExportBackupMethods } from './exportBackupMethods';
 import { ViewMethods } from './viewMethods';
 import { OutlineMethods } from './outlineMethods';
+import { MobileReadingMethods } from './mobileReadingMethods';
 import { OnboardingMethods } from './onboardingMethods';
 
 export function createMarkdownEditorComponent(DCLogic, React) {
@@ -200,7 +201,6 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     const src = this.sourceRef.current;
     const prev = this.previewRef.current;
     if (!src || !prev) return;
-
     if (window.marked.setOptions) window.marked.setOptions({ gfm: true, breaks: true });
     document.body.classList.toggle('agent-bridge-enabled', this.agentBridgeEnabled);
     // 未持久化过主题时跟随系统外观
@@ -265,6 +265,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     this._syncPersistentStatus?.();
     this._initReadingAppearance();
     this._initWorkspaceNavigation();
+    this._initMobileReading();
     this._initUnloadGuard();
     this._applyProps();
     this._initFileNameEditing();
@@ -353,6 +354,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
 
   componentWillUnmount() {
     this._disposeWorkspaceNavigation();
+    this._disposeMobileReading();
     this._disposeUnloadGuard();
     this.toggleExportMenu(false);
     this._disposeLocale();
@@ -449,6 +451,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       ...this._workspaceMenuRenderVals(),
       ...this._workspaceNavigationRenderVals(),
       ...this._workspaceSettingsRenderVals(),
+      ...this._mobileReadingRenderVals(),
       openLastPublication: () => this.openLastPublication(),
       openLongImage: () => this.openLongImage(), openSelectionImage: () => this.openSelectionImage(),
       toggleSearch: () => this.toggleSearch(),
@@ -516,6 +519,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     ExportBackupMethods,
     WorkspaceNavigationMethods,
     WorkspaceSettingsMethods,
+    MobileReadingMethods,
     BridgeMethods,
     ReadingMapMethods,
     PathComposeMethods,

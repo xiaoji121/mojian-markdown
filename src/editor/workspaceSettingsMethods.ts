@@ -17,14 +17,21 @@ export class WorkspaceSettingsMethods {
   _initReadingAppearance() {
     this._settingsBackdrop = document.querySelector('.workspace-settings-backdrop');
     this._quickAppearance = document.querySelector('.quick-appearance-panel');
+    this._quickAppearanceBackdrop = document.querySelector('.mobile-quick-appearance-backdrop');
     this._quickAppearanceButton = document.querySelector('.quick-appearance-toggle');
     this.appearancePanelRef.current.hidden = true;
     this._settingsBackdrop.hidden = true;
     this._quickAppearance.hidden = true;
+    if (this._quickAppearanceBackdrop) this._quickAppearanceBackdrop.hidden = true;
     this._appearanceOutsideH = event => {
       if (event.target === this._settingsBackdrop) {
         event.preventDefault();
         this.toggleReadingAppearance(false, true);
+      }
+      if (event.target === this._quickAppearanceBackdrop) {
+        event.preventDefault();
+        this.toggleQuickAppearance(false, true);
+        return;
       }
       if (this.quickAppearanceOpen && !this._quickAppearance?.contains(event.target)
         && !this._quickAppearanceButton?.contains(event.target)) this.toggleQuickAppearance(false);
@@ -34,9 +41,16 @@ export class WorkspaceSettingsMethods {
     this._syncQuickAppearance();
   }
 
+  _appearanceReturnTarget() {
+    if (this._mobileMedia?.matches && this._mobileMenu?.contains(document.activeElement)) {
+      return this._mobileMenuReturnFocus || document.activeElement;
+    }
+    return document.activeElement;
+  }
+
   openWorkspaceSettings(page = 'reading') {
-    this._settingsReturnFocus = document.activeElement;
-    if (this.quickAppearanceOpen) this._settingsReturnFocus = this._quickAppearanceButton;
+    this._settingsReturnFocus = this._appearanceReturnTarget();
+    if (this.quickAppearanceOpen) this._settingsReturnFocus = this._quickAppearanceReturnFocus || this._quickAppearanceButton;
     this.toggleFileMenu(false);
     this.toggleExportMenu(false);
     this.toggleQuickAppearance(false);
@@ -47,6 +61,7 @@ export class WorkspaceSettingsMethods {
   _selectSettingsPage(page) {
     const panel = this.appearancePanelRef.current;
     if (!panel) return;
+    if (this._mobileMedia?.matches && ['ai', 'integrations'].includes(page)) page = 'reading';
     this._settingsPage = page;
     panel.querySelectorAll('[data-settings-tab]').forEach(tab => {
       const active = tab.dataset.settingsTab === page;
@@ -85,8 +100,13 @@ export class WorkspaceSettingsMethods {
     if (!panel) return;
     this.quickAppearanceOpen = typeof force === 'boolean' ? force : !this.quickAppearanceOpen;
     panel.hidden = !this.quickAppearanceOpen;
+    if (this._quickAppearanceBackdrop) this._quickAppearanceBackdrop.hidden = !this.quickAppearanceOpen;
+    if (this.quickAppearanceOpen && this._mobileMedia?.matches) panel.setAttribute('aria-modal', 'true');
+    else panel.removeAttribute('aria-modal');
     this._quickAppearanceButton?.setAttribute('aria-expanded', String(this.quickAppearanceOpen));
     if (this.quickAppearanceOpen) {
+      this._quickAppearanceReturnFocus = this._mobileMedia?.matches
+        ? this._appearanceReturnTarget() : this._quickAppearanceButton;
       this.toggleFileMenu(false);
       this.toggleExportMenu(false);
       this._syncQuickAppearance();
@@ -94,7 +114,7 @@ export class WorkspaceSettingsMethods {
       panel.style.top = Math.max(8, Math.min(bounds.bottom + 8, window.innerHeight - panel.offsetHeight - 12)) + 'px';
       panel.style.left = Math.max(12, Math.min(bounds.right - panel.offsetWidth, window.innerWidth - panel.offsetWidth - 12)) + 'px';
       panel.focus({ preventScroll: true });
-    } else if (returnFocus) this._quickAppearanceButton?.focus({ preventScroll: true });
+    } else if (returnFocus) (this._quickAppearanceReturnFocus || this._quickAppearanceButton)?.focus({ preventScroll: true });
   }
 
   _syncQuickAppearance() {
@@ -133,9 +153,10 @@ export class WorkspaceSettingsMethods {
       else this.toggleReadingAppearance(false, true);
       return true;
     }
-    if (!this.appearanceOpen) return false;
-    const panel = this.appearancePanelRef.current;
-    const tabs = [...panel.querySelectorAll('[data-settings-tab]')];
+    if (!this.appearanceOpen && !(this.quickAppearanceOpen && this._mobileMedia?.matches)) return false;
+    const panel = this.appearanceOpen ? this.appearancePanelRef.current : this._quickAppearance;
+    const tabs = [...panel.querySelectorAll('[data-settings-tab]')]
+      .filter(tab => !this._mobileMedia?.matches || !['ai', 'integrations'].includes(tab.dataset.settingsTab));
     const index = tabs.indexOf(document.activeElement);
     if (index >= 0 && ['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) {
       event.preventDefault();

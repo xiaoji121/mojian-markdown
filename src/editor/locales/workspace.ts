@@ -1,4 +1,12 @@
 export const workspaceMessages: Record<string, [string, string, string]> = {
+  'Markdown 文件': ['Markdown 檔案', 'Markdown file', 'Markdown ファイル'],
+  '仅原文，不含批注': ['僅原文，不含批註', 'Source only, without annotations', '注釈を含まない原文のみ'],
+  '长图': ['長圖', 'Long image', '縦長画像'],
+  '适合分享阅读': ['適合分享閱讀', 'For sharing and reading', '共有して読むための画像'],
+  '完整备份': ['完整備份', 'Full backup', '完全バックアップ'],
+  '全文与批注（ZIP）': ['全文與批註（ZIP）', 'Document and annotations (ZIP)', '全文と注釈（ZIP）'],
+  '其他方式': ['其他方式', 'Other options', 'その他の方法'],
+  '保存到文件': ['儲存至檔案', 'Save to file', 'ファイルに保存'],
   '新建': ['新增', 'New', '新規'],
   '打开': ['開啟', 'Open', '開く'],
   '导出': ['匯出', 'Export', '書き出し'],

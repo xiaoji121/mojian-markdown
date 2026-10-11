@@ -122,7 +122,7 @@ test('closing a pending Gemini test cannot repopulate or mark a reopened form su
 });
 
 test('settings stays within a short viewport and its actions wrap without horizontal clipping', async ({ page }) => {
-  await page.setViewportSize({ width: 420, height: 520 });
+  await page.setViewportSize({ width: 900, height: 520 });
   await installSettingsFixture(page);
   await openSettings(page);
   const dialog = page.getByRole('dialog', { name: 'AI 设置' });
