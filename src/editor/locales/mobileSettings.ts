@@ -1,0 +1,16 @@
+export const mobileSettingsMessages: Record<string,[string,string,string]> = {
+ '全局设置':['全域設定','Global settings','全体設定'],
+ '设置即时生效 · 完成仅关闭面板':['設定即時生效 · 完成僅關閉面板','Changes apply immediately · Done closes this panel','設定はすぐに反映 · 完了でパネルを閉じます'],
+ '正文字体':['正文字型','Reading font','本文フォント'],
+ '字号与纸张':['字級與紙張','Text size and paper','文字サイズと用紙'],
+ '阅读宽度随屏幕适配':['閱讀寬度隨螢幕調整','Reading width adapts to your screen','画面に合わせた読み幅'],
+ '界面':['介面','Interface','表示'],
+ '桌面连接与功能说明':['桌面連線與功能說明','Desktop connection and capabilities','デスクトップ接続と機能'],
+ '阅读、编辑、批注和导出可继续使用。':['閱讀、編輯、註解和匯出可繼續使用。','Reading, editing, annotations and export remain available.','閲覧、編集、注釈、エクスポートを利用できます。'],
+ '手机界面不提供 AI、翻译和集成设置。':['手機介面不提供 AI、翻譯及整合設定。','The mobile interface does not offer AI, translation or integration settings.','モバイル画面には AI、翻訳、連携の設定はありません。'],
+ '字体导入与移除仅在桌面版提供。':['字型匯入及移除僅在桌面版提供。','Font import and removal are available in the desktop app.','フォントの取り込みと削除はデスクトップ版で利用できます。'],
+ '当前环境支持保存到文件；请在导出菜单中使用。':['目前環境支援儲存至檔案；請在匯出選單中使用。','This environment supports saving to files; use the export menu.','この環境ではファイル保存が可能です。エクスポートメニューを使用してください。'],
+ '当前为浏览器草稿；导入不会写回手机原文件，请下载备份。':['目前為瀏覽器草稿；匯入不會寫回手機原檔案，請下載備份。','This is a browser draft. Import does not write back to the original phone file; download a backup.','ブラウザーの下書きです。携帯の元ファイルには書き戻しません。バックアップをダウンロードしてください。'],
+ '返回设置':['返回設定','Back to settings','設定に戻る'],
+ 'Source Serif 4 内置拉丁字体；中文与日文使用设备可用字体后备。':['Source Serif 4 內建拉丁字型；中文與日文使用裝置可用字型後備。','Source Serif 4 includes Latin glyphs; Chinese and Japanese use available device fallback fonts.','Source Serif 4 はラテン文字を内蔵。中国語と日本語は端末のフォントで補完します。'],
+};

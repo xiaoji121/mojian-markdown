@@ -1,4 +1,4 @@
-import { test, expect, openEditor, setSource, openAppearance, enterFocus } from './fixtures';
+import { test, expect, openEditor, setSource, openAppearance, enterFocus, openMobileSetting } from './fixtures';
 
 for (const immersive of [false, true]) {
   test(`global settings stay reachable mid-article without changing scroll or content (immersive=${immersive})`, async ({ page }, testInfo) => {
@@ -53,7 +53,8 @@ test('global settings work in source-only mode and fit short narrow screens', as
   expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(390);
   expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(520);
   await page.locator('.reading-font-select').selectOption('system-serif');
-  await page.getByRole('button', { name: '放大字号', exact: true }).click();
+  await openMobileSetting(page, 'paper');
+    await page.getByRole('button', { name: '放大字号', exact: true }).click();
   await expect(page.locator('.md-preview')).toHaveCSS('font-size', '17px');
   await page.screenshot({ path: testInfo.outputPath('global-settings-short-screen.png') });
   await page.locator('.reading-appearance-panel .appearance-close').click();
@@ -112,6 +113,7 @@ for (const viewport of [{ width: 390, height: 320 }, { width: 640, height: 400 }
     await openAppearance(page);
     const panel = page.locator('.reading-appearance-panel');
     await page.locator('.reading-font-select').selectOption('system-serif');
+    await openMobileSetting(page, 'paper');
     await page.getByRole('button', { name: '放大字号', exact: true }).click();
     await expect(page.locator('.md-preview')).toHaveCSS('font-size', '17px');
     await panel.evaluate(element => { element.scrollTop = 0; });

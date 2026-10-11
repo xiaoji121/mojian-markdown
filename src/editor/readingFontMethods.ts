@@ -26,6 +26,7 @@ export class ReadingFontMethods {
     const preview = document.querySelector('.reading-font-preview');
     if (preview) preview.setAttribute('data-reading-font', this.readingFont);
     this._renderUserReadingFonts?.();
+    this._syncMobileSettings?.();
   }
 
   _syncReadingScript() {

@@ -8,9 +8,9 @@ test('mobile hides AI and integrations while desktop restores their entries', as
   expect(await page.locator('.seltool.ai-entry').evaluate(element => getComputedStyle(element).display)).toBe('none');
   await page.keyboard.press('Control+,');
   for (const tab of ['ai', 'integrations']) await expect(page.locator(`[data-settings-tab="${tab}"]`)).toBeHidden();
-  await page.locator('[data-settings-tab="reading"]').focus();
-  await page.keyboard.press('ArrowDown');
-  await expect(page.locator('[data-settings-tab="general"]')).toBeFocused();
+  await expect(page.locator('.workspace-settings-nav')).toBeHidden();
+  await page.locator('[data-mobile-setting="language"]').click();
+  await expect(page.locator('.interface-language-option[aria-checked="true"]')).toBeFocused();
   await page.keyboard.press('Escape');
   await page.locator('.mobile-reading-nav button').first().click();
   await expect(page.locator('.outline-panel .ai-entry')).toBeHidden();

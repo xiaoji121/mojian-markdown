@@ -161,3 +161,38 @@
     max-height: none;
   }
 }
+
+@media (max-width: 760px) {
+  .workspace-settings .workspace-settings-nav,
+  .workspace-settings .appearance-heading { display: none; }
+  .workspace-settings .mobile-settings-heading { flex: 1; font: 500 24px/1.4 var(--read); }
+  .workspace-settings .appearance-panel-header { flex-wrap: wrap; gap: 8px; border-bottom: 0; }
+  .workspace-settings .mobile-settings-back { flex-basis: 100%; justify-content: flex-start; background: transparent; border: 0; padding: 0; color: var(--accent); font: 14px/1.5 var(--sans); min-height: 44px; }
+  .workspace-settings[data-mobile-settings='home'] .mobile-settings-back { display: none; }
+  .mobile-settings-home, .mobile-settings-info { flex-direction: column; }
+  .workspace-settings:not([data-mobile-settings='home']) .mobile-settings-home,
+  .workspace-settings:not([data-mobile-settings='info']) .mobile-settings-info { display: none; }
+  .mobile-settings-group { margin: 24px 0 6px; color: var(--text-3); font: 14px/1.5 var(--sans); }
+  .mobile-settings-home > p:first-child { margin: 0; }
+  .mobile-settings-home > button { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 14px 0; border: 0; border-bottom: 1px solid var(--border-soft); background: transparent; color: var(--text); font: 16px/1.5 var(--sans); text-align: left; }
+  .mobile-settings-row-value { margin-left: auto; color: var(--text-3); font-size: 14px; text-align: right; overflow-wrap: anywhere; }
+  .mobile-settings-home > button > span:last-child { color: var(--text-3); }
+  .mobile-settings-home .settings-home-link { margin-top: 18px; justify-content: flex-start; color: var(--accent); border: 0; padding-inline: 0; }
+  .workspace-settings .mobile-settings-done { flex: none; align-items: center; justify-content: center; min-height: 48px; margin: 12px 20px max(20px, env(safe-area-inset-bottom)); border: 0; border-radius: 12px; background: var(--accent); color: var(--bg); font: 600 16px/1.5 var(--sans); }
+  .workspace-settings [data-mobile-preference] { display: none; }
+  .workspace-settings[data-mobile-settings='font'] [data-mobile-preference='font'],
+  .workspace-settings[data-mobile-settings='paper'] [data-mobile-preference='paper'],
+  .workspace-settings[data-mobile-settings='theme'] [data-mobile-preference='theme'] { display: flex; }
+  .workspace-settings[data-mobile-settings='font'] .reading-font-management { flex-direction: column; }
+  .workspace-settings[data-mobile-settings='font'] .reading-font-management-content { display: flex; }
+  .workspace-settings .reading-font-management summary,
+  .workspace-settings .reading-font-actions,
+  .workspace-settings .reading-font-management-content > .appearance-note:not(.reading-font-note):not(.reading-font-project-note) { display: none; }
+  .workspace-settings[data-mobile-settings='language'] #settings-general > .desktop-path-menu-item,
+  .workspace-settings[data-mobile-settings='language'] #settings-general > .settings-home-link { display: none; }
+  .mobile-settings-info { gap: 20px; }
+  .mobile-settings-info > p { margin: 0; line-height: 1.7; }
+  .workspace-settings button:focus-visible, .workspace-settings a:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+}
+
+@media (max-width: 760px) { .workspace-settings .mobile-settings-font-note { flex-direction: column; gap: 12px; } }

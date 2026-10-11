@@ -1,9 +1,10 @@
-import { test, expect, openEditor, openAppearance, setSource, enterFocus } from './fixtures';
+import { test, expect, openEditor, openAppearance, setSource, enterFocus, openMobileSetting } from './fixtures';
 
 test('排版面板集中调整纸色和字号，支持 Esc 和点击外部关闭', async ({ page }) => {
   await openEditor(page);
   await expect(page.getByRole('button', { name: '纸色：米黄', exact: true })).toBeHidden();
   await openAppearance(page);
+  await openMobileSetting(page, 'paper');
   await page.getByRole('button', { name: '纸色：米黄', exact: true }).click();
   await page.getByRole('button', { name: '放大字号', exact: true }).click();
   await expect(page.locator('.md-preview')).toHaveCSS('font-size', '17px');
@@ -32,6 +33,7 @@ test('窄屏和沉浸阅读都能直接使用排版面板', async ({ page }) => 
   await page.locator('[data-mode="preview"]').click();
   await enterFocus(page);
   await openAppearance(page);
+  await openMobileSetting(page, 'paper');
   await page.getByRole('button', { name: '纸色：米黄', exact: true }).click();
   await expect(page.locator('body')).toHaveAttribute('data-paper', 'cream');
   const bounds = await page.locator('.reading-appearance-panel').boundingBox();

@@ -1,11 +1,12 @@
 import type { Page } from '@playwright/test';
-import { expect, openAppearance } from './fixtures';
+import { expect, openAppearance, openMobileSetting } from './fixtures';
 
 export async function openLanguageSettings(page: Page) {
   const panel = page.locator('.interface-language-panel');
   if (await panel.isVisible()) return;
   await openAppearance(page);
-  await page.locator('[data-settings-tab=general]').click();
+  if (await page.locator('.mobile-settings-heading').isVisible()) await openMobileSetting(page, 'language');
+  else await page.locator('[data-settings-tab=general]').click();
   await expect(panel).toBeVisible();
 }
 
