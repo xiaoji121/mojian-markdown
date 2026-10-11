@@ -20,6 +20,8 @@ export { expect };
 export async function ensureSourceVisible(page: Page, timeout = 15_000) {
   const source = page.locator('.md-source');
   await expect(source).toBeAttached({ timeout });
+  const mobileEdit = page.locator('.mobile-reading-nav button').last();
+  if (await mobileEdit.isVisible()) await mobileEdit.click();
   await expect(page.locator('.view-mode-switcher')).toBeVisible({ timeout });
 
   // N-D 首登会在 init 后异步切到预览；等源码可见或「阅读」已按下，再决定是否切回分屏。
@@ -77,6 +79,14 @@ export async function openAppearance(page: Page) {
   await expect(page.locator('.md-source')).toHaveAttribute('lang', /.*/);
   const panel = page.locator('.reading-appearance-panel');
   if (!(await panel.isVisible())) {
+    const mobileMenu = page.locator('.mobile-menu-toggle:visible').last();
+    if (await mobileMenu.count()) {
+      await mobileMenu.click();
+      await page.locator('[data-mobile-action="settings"]').click();
+      await panel.locator('[data-settings-tab="reading"]').click();
+      await expect(panel).toBeVisible();
+      return;
+    }
     const toolbar = page.locator('.reading-toolbar');
     const toolbarSettings = page.locator('.reading-toolbar-settings');
     // 下滑收起后 pointer-events:none；上滑一点露出工具条即可开设置，尽量保持在文中。
@@ -100,6 +110,15 @@ export async function openAppearance(page: Page) {
   }
   await panel.locator('[data-settings-tab="reading"]').click();
   await expect(panel).toBeVisible();
+}
+
+export async function enterFocus(page: Page) {
+  const mobileMenu = page.locator('.mobile-menu-toggle:visible').last();
+  if (await mobileMenu.count()) {
+    await mobileMenu.click();
+    await page.locator('[data-mobile-action="focus"]').click();
+  } else await page.getByRole('button', { name: '沉浸式阅读', exact: true }).click();
+  await expect(page.locator('.preview-pane')).toHaveClass(/preview-pane-fullscreen/);
 }
 
 export async function openAISettings(page: Page) {

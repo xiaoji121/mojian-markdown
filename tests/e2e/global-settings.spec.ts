@@ -1,4 +1,4 @@
-import { test, expect, openEditor, setSource, openAppearance } from './fixtures';
+import { test, expect, openEditor, setSource, openAppearance, enterFocus } from './fixtures';
 
 for (const immersive of [false, true]) {
   test(`global settings stay reachable mid-article without changing scroll or content (immersive=${immersive})`, async ({ page }, testInfo) => {
@@ -33,7 +33,7 @@ for (const immersive of [false, true]) {
     await expect(panel).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(panel).toBeHidden();
-    await expect(page.locator('.workspace-settings-button:visible, .reading-toolbar-settings:visible, .focus-settings-button:visible')).toBeFocused();
+    await expect(page.locator('.workspace-settings-button:visible, .reading-toolbar-settings:visible, .focus-settings-button:visible, .mobile-menu-toggle:visible')).toBeFocused();
     // Esc 后若工具条仍收起，焦点可能落在可见设置钮；滚动可能因露出过工具条略小于 900
     await expect.poll(() => preview.evaluate(element => element.scrollTop)).toBeGreaterThan(800);
     await expect(page.locator('.preview-pane')).toHaveClass(immersive ? /preview-pane-fullscreen/ : /^preview-pane$/);
@@ -58,7 +58,7 @@ test('global settings work in source-only mode and fit short narrow screens', as
   await page.screenshot({ path: testInfo.outputPath('global-settings-short-screen.png') });
   await page.locator('.reading-appearance-panel .appearance-close').click();
   await expect(panel).toBeHidden();
-  await expect(page.locator('.workspace-settings-button:visible, .reading-toolbar-settings:visible, .focus-settings-button:visible')).toBeFocused();
+  await expect(page.locator('.workspace-settings-button:visible, .reading-toolbar-settings:visible, .focus-settings-button:visible, .mobile-menu-toggle:visible')).toBeFocused();
 });
 
 for (const width of [390, 1440]) {
@@ -77,9 +77,9 @@ for (const width of [390, 1440]) {
       }
       await page.locator('[data-mode="preview"]').click();
       const immersive = page.getByRole('button', { name: '沉浸式阅读', exact: true });
-      await immersive.click();
+      await enterFocus(page);
       await expect(page.locator('.focus-settings-button')).toBeHidden();
-      const settings = page.locator('.reading-toolbar-settings');
+      const settings = page.locator(width === 390 ? '.mobile-focus-menu' : '.reading-toolbar-settings');
       const exit = page.locator('.focus-exit-sticky');
       await expect(exit).toBeVisible();
       await expect(settings).toBeVisible();
@@ -92,7 +92,7 @@ for (const width of [390, 1440]) {
       if (width === 390) {
         await expect(exit.locator('.focus-exit-esc-hint')).toBeHidden();
         expect(exitBox.height).toBeGreaterThanOrEqual(44);
-        expect(exitBox.y + exitBox.height).toBeLessThanOrEqual(settingsBox.y - 8);
+        expect(settingsBox.x + settingsBox.width).toBeLessThanOrEqual(exitBox.x - 8);
         await expect(page.locator('.view-mode-switcher')).toBeHidden();
       } else {
         expect(settingsBox.x + settingsBox.width).toBeLessThanOrEqual(exitBox.x - 8);

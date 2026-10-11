@@ -1,4 +1,4 @@
-import { test, expect, openEditor, openAppearance, setSource } from './fixtures';
+import { test, expect, openEditor, openAppearance, setSource, enterFocus } from './fixtures';
 
 test('排版面板集中调整纸色和字号，支持 Esc 和点击外部关闭', async ({ page }) => {
   await openEditor(page);
@@ -30,7 +30,7 @@ test('窄屏和沉浸阅读都能直接使用排版面板', async ({ page }) => 
   await page.setViewportSize({ width: 390, height: 844 });
   await openEditor(page);
   await page.locator('[data-mode="preview"]').click();
-  await page.getByRole('button', { name: '沉浸式阅读', exact: true }).click();
+  await enterFocus(page);
   await openAppearance(page);
   await page.getByRole('button', { name: '纸色：米黄', exact: true }).click();
   await expect(page.locator('body')).toHaveAttribute('data-paper', 'cream');
