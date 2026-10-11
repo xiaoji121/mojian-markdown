@@ -88,7 +88,9 @@ for (const width of [390, 1440]) {
       await page.screenshot({ path: testInfo.outputPath(`immersive-controls-${width}-wide-${wide}.png`) });
       // 桌面：退出独占右上、与设置同行不重叠；窄屏：退出在上、工具条在下
       expect(exitBox.width).toBeGreaterThan(60);
-      expect(exitBox.x + exitBox.width).toBeLessThanOrEqual(width - 15);
+      // 窄屏 PR #49 用 --reading-tools-edge / right: 12px；桌面仍 ≥16px（断言用 width-15）
+      const minRightInset = width <= 720 ? 12 : 15;
+      expect(exitBox.x + exitBox.width).toBeLessThanOrEqual(width - minRightInset);
       if (width === 390) {
         await expect(exit.locator('.focus-exit-esc-hint')).toBeHidden();
         expect(exitBox.height).toBeGreaterThanOrEqual(44);
