@@ -94,6 +94,7 @@ export class CommentMethods {
   _onPreviewSelect() {
     const prev = this.previewRef.current, bar = this.selBarRef.current;
     if (!prev || !bar) return;
+    if (this._maRoot && !this._maRoot.hidden) { bar.style.display = 'none'; return; }
     // 阅读脉络图是导航总览，不支持在其上划词批注/提问。
     if (this.previewOverrideMarkdown && !this.activeAnswerRequestId) {
       bar.style.display = 'none';
@@ -125,6 +126,7 @@ export class CommentMethods {
     let top = rect.top - h - 10;
     if (top < 8) top = rect.bottom + 10;
     bar.style.left = left + 'px';
+    if (this._isMobileAnnotation?.()) top = Math.max(8, Math.min(window.innerHeight - h - 64, top));
     bar.style.top = top + 'px';
   }
 
@@ -249,6 +251,7 @@ export class CommentMethods {
 
 
   _createAnnotation(type, focusNote) {
+    if (focusNote && this._isMobileAnnotation?.()) return this._maNewIdea();
     const p = this._pending;
     if (!p || !p.quote) return null;
     const c = { id: 'c' + Date.now() + Math.floor(Math.random() * 999), quote: p.quote, occ: p.occ || 0, start: p.start, type: type, note: '', ts: Date.now() };
@@ -261,7 +264,7 @@ export class CommentMethods {
     this._renderPreview();
     this._renderComments();
     // N-D: after highlight/idea, open panel so the card is visible (do not force-open on idle S0).
-    if (this.commentsRef?.current) {
+    if (this.commentsRef?.current && !this._isMobileAnnotation?.()) {
       this._openPanel(true);
       this._focusComment(c.id, !!focusNote);
     }
@@ -312,10 +315,10 @@ export class CommentMethods {
   }
 
 
-  async _deleteComment(id) {
+  async _deleteComment(id, confirmed = false) {
     const comment = this.comments.find((c) => c.id === id);
     if (!comment) return;
-    if (typeof window !== 'undefined' && window.confirm
+    if (!confirmed && typeof window !== 'undefined' && window.confirm
       && !window.confirm(t("删除这条「{type}」批注？此操作不可恢复。", { type: this._typeLabel(comment.type) }))) return;
     this.comments = this.comments.filter((c) => c.id !== id);
     this._persist();
@@ -380,6 +383,11 @@ export class CommentMethods {
   }
 
   _openPanel(show) {
+    if (this._isMobileAnnotation?.()) {
+      if (show === false || (show == null && !this._maRoot.hidden)) this._maRequestClose();
+      else this._maList();
+      return;
+    }
     const aside = this.commentsRef?.current;
     if (!aside) return;
     this.panelOpen = (show === undefined || show === null) ? !this.panelOpen : show;
@@ -428,6 +436,9 @@ export class CommentMethods {
 
 
   async _focusComment(id, focusInput) {
+    if (this._isMobileAnnotation?.()) {
+      const c = this.comments.find(c => c.id === id); if (c) this._maStartEdit(c); return;
+    }
     this._openPanel(true);
     const comment = this.comments.find((c) => c.id === id);
     if (comment && !this._commentVisibleInPreview(comment)) await this._openCommentView(comment);

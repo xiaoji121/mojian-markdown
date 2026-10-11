@@ -85,8 +85,8 @@ test('focus mode retains mobile outline, annotations and export access', async (
   await expect(page.locator('.outline-panel')).toBeHidden();
   await page.locator('.mobile-focus-menu').click();
   await page.locator('[data-mobile-action="comments"]').click();
-  await expect(page.locator('.comments-panel')).toBeVisible();
-  await page.locator('.comments-panel .panel-close').click();
+  await expect(page.locator('.mobile-annotation-sheet')).toBeVisible();
+  await page.locator('[data-mobile-close]').click();
   await page.locator('.mobile-focus-menu').click();
   await page.locator('[data-mobile-action="export"]').click();
   await expect(page.locator('.mobile-export-actions')).toBeVisible();

@@ -1,0 +1,6 @@
+import {test,expect,setSource} from './fixtures';
+test('complete Save target stays inside the visible detail sheet at reduced heights',async({page})=>{
+ await page.setViewportSize({width:360,height:480});await page.goto('/#editor');await expect(page.locator('.md-preview h1')).toBeVisible();await setSource(page,'# 标题\n\n短句用于批注。');await page.locator('[data-mode="preview"]').click();
+ await page.locator('.md-preview p').evaluate(el=>{const r=document.createRange();r.selectNodeContents(el);const s=window.getSelection();s.removeAllRanges();s.addRange(r);el.dispatchEvent(new MouseEvent('mouseup',{bubbles:true}));});await expect(page.locator('.selection-toolbar')).toBeVisible();await page.locator('[data-sel-annotate="idea"]').click();await page.locator('[data-mobile-note]').fill('想法');await page.locator('[data-mobile-save]').click();await page.locator('[data-mobile-edit]').click();await page.locator('[data-mobile-reply]').fill('回答'.repeat(200));
+ await page.locator('[data-mobile-save]').scrollIntoViewIfNeeded();const r=await page.locator('[data-mobile-save]').boundingBox();expect(r.height).toBeGreaterThanOrEqual(44);expect(r.y+r.height).toBeLessThanOrEqual(480);expect(r.y).toBeGreaterThanOrEqual(0);
+});

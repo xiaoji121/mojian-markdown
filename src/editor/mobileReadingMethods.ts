@@ -35,6 +35,7 @@ export class MobileReadingMethods {
   }
 
   _initMobileReading() {
+    this._initMobileAnnotations?.();
     this._mobileMenu = document.querySelector('.mobile-reading-menu');
     this._mobileBackdrop = document.querySelector('.mobile-reading-backdrop');
     this._mobileMedia = window.matchMedia('(max-width: 760px)');

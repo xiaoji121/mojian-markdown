@@ -34,6 +34,7 @@ import { WorkspaceMenuMethods } from './workspaceMenuMethods';
 import { ExportBackupMethods } from './exportBackupMethods';
 import { ViewMethods } from './viewMethods';
 import { OutlineMethods } from './outlineMethods';
+import { MobileAnnotationMethods } from './mobileAnnotationMethods';
 import { MobileReadingMethods } from './mobileReadingMethods';
 import { OnboardingMethods } from './onboardingMethods';
 
@@ -355,6 +356,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
   componentWillUnmount() {
     this._disposeWorkspaceNavigation();
     this._disposeMobileReading();
+    this._disposeMobileAnnotations();
     this._disposeUnloadGuard();
     this.toggleExportMenu(false);
     this._disposeLocale();
@@ -520,6 +522,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     WorkspaceNavigationMethods,
     WorkspaceSettingsMethods,
     MobileReadingMethods,
+    MobileAnnotationMethods,
     BridgeMethods,
     ReadingMapMethods,
     PathComposeMethods,

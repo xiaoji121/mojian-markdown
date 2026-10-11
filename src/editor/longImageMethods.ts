@@ -76,6 +76,13 @@ export class LongImageMethods {
   _showLongImage() {
     const overlay = this._buildLongImageModal();
     overlay.style.display = 'flex';
+    const mobileExcerpt = !!this._longImageSelection && !!this._isMobileAnnotation?.();
+    overlay.classList.toggle('is-mobile-excerpt', mobileExcerpt);
+    const title = overlay.querySelector('.longimg-modal-title'), hint = overlay.querySelector('.longimg-modal-hint');
+    const save = overlay.querySelector('.longimg-save');
+    if (title) { title.dataset.i18n = mobileExcerpt ? '摘录图片预览' : '保存长图'; title.textContent = t(title.dataset.i18n); }
+    if (hint) { hint.dataset.i18n = mobileExcerpt ? '只导出所选文字与文章标题' : '排版与纸色跟随预览；图片字号可单独调节，手机分页会避开图片、表格、代码块和标题。'; hint.textContent = t(hint.dataset.i18n); }
+    if (save) { save.dataset.i18n = mobileExcerpt ? '下载图片' : '下载长图'; save.textContent = t(save.dataset.i18n); }
     this._refreshLongImagePoster();
   }
 
@@ -283,7 +290,7 @@ export class LongImageMethods {
     }
     if (this._longImageSaveEl) {
       this._longImageSaveEl.disabled = !!(this._longImageBusy || this._longImagePreparing);
-      if (!this._longImageBusy) this._longImageSaveEl.textContent = paged ? t("下载多图") : t("下载长图");
+      if (!this._longImageBusy) this._longImageSaveEl.textContent = this._longImageSelection && this._isMobileAnnotation?.() ? t('下载图片') : paged ? t("下载多图") : t("下载长图");
     }
   }
 
@@ -295,9 +302,10 @@ export class LongImageMethods {
     this._longImagePreparing = true;
     this._syncLongImageControls();
     this._ensurePosterStyle();
-    const width = longImageWidth(this.longImageWidth || DEFAULT_LONG_IMAGE_PRESET);
+    const mobileExcerpt = this._longImageSelection && this._isMobileAnnotation?.();
+    const width = mobileExcerpt ? 540 : longImageWidth(this.longImageWidth || DEFAULT_LONG_IMAGE_PRESET);
     const poster = this._buildPosterNode(width);
-    poster.classList.toggle('is-paged', !!this.longImageAutoCrop && this.longImageWidth === 'phone');
+    poster.classList.toggle('is-paged', !mobileExcerpt && !!this.longImageAutoCrop && this.longImageWidth === 'phone');
     stage.replaceChildren(poster);
     stage.style.width = width + 'px';
     this._longImagePoster = poster;
@@ -407,7 +415,9 @@ export class LongImageMethods {
     const poster = document.createElement('div');
     poster.className = 'longimg-poster' + (this.longImageWidth === 'phone' ? ' is-phone' : '');
     poster.style.width = width + 'px';
-    poster.style.fontSize = this._currentLongImageFontSize() + 'px';
+    const mobileExcerpt = this._longImageSelection && this._isMobileAnnotation?.();
+    poster.classList.toggle('is-mobile-selection', !!mobileExcerpt);
+    poster.style.fontSize = (mobileExcerpt ? 36 : this._currentLongImageFontSize()) + 'px';
     this._snapshotPosterPaper(poster, preview);
     const content = document.createElement('div');
     content.className = 'longimg-prose';
@@ -415,7 +425,7 @@ export class LongImageMethods {
       ? this._longImageSelection.html
       : (preview ? preview.innerHTML : '');
     if (this._longImageSelection) this._normalizeSelectionContent(content);
-    if (this.longImageMarks) {
+    if (this.longImageMarks && !(this._longImageSelection && this._isMobileAnnotation?.())) {
       appendLongImageAnnotations(content, this.comments, this._longImageSelection?.commentIds);
     }
     else this._stripPosterMarks(content);
@@ -487,7 +497,7 @@ export class LongImageMethods {
 
   _posterMetaText(content) {
     const parts = [t("{count} 字", { count: this._posterWordCount(content).toLocaleString(getLocale()) })];
-    if (this.longImageMarks) {
+    if (this.longImageMarks && !(this._longImageSelection && this._isMobileAnnotation?.())) {
       const ids = new Set();
       content.querySelectorAll('[data-comment-id]')
         .forEach((span) => ids.add(span.getAttribute('data-comment-id')));
@@ -611,7 +621,7 @@ export class LongImageMethods {
     this._longImageBusy = true;
     this._syncLongImageControls();
     try {
-      if (this.longImageAutoCrop && this.longImageWidth === 'phone') {
+      if (this.longImageAutoCrop && this.longImageWidth === 'phone' && !(this._longImageSelection && this._isMobileAnnotation?.())) {
         await this._downloadPagedLongImages();
         this.closeLongImage();
         return;
