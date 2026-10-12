@@ -496,6 +496,7 @@ export class BridgeMethods {
   async openRecentDocument(documentId, { restoring = false } = {}) {
     if (!this.sourceRef.current) return;
     const generation = this._documentOpenGeneration = (this._documentOpenGeneration || 0) + 1;
+    const pcSnapshot = this._pcDocumentSnapshot?.();
     const initial = { content: this.sourceRef.current.value, name: this.fileName,
       revision: this._documentEditRevision || 0, bridgeId: this.bridgeDocumentId };
     const stale = () => generation !== this._documentOpenGeneration || (restoring && (
@@ -503,13 +504,15 @@ export class BridgeMethods {
       || this.fileName !== initial.name || this.bridgeDocumentId !== initial.bridgeId
       || (this._documentEditRevision || 0) !== initial.revision));
     try {
+      this._pcFlushPendingDraft?.();
       await this._flushBridgeSync();
-      if (stale()) return;
+      if (stale() || this._pcCanLeaveDocument?.() === false || this._pcDocumentChanged?.(pcSnapshot)) return;
       const response = await fetch(bridgeUrl('/api/documents/') + encodeURIComponent(documentId));
       if (!response.ok) throw new Error(t("文档读取失败"));
       const data = await response.json();
       const doc = data.document;
-      if (stale()) return;
+      if (stale() || this._pcDocumentChanged?.(pcSnapshot)) return;
+      this._pcCacheDocumentSession?.();
       this.bridgeDocumentId = doc.documentId;
       this.activeDocumentId = doc.documentId;
       this.activeAnswerRequestId = null;
@@ -523,6 +526,7 @@ export class BridgeMethods {
       this._showConversationMessages(doc.documentId, doc.messages || [], null, false);
       this._renderComments();
       this._renderPreview();
+      this._pcRestoreDocumentSession?.();
       this._setDirty(false);
       this._persist();
       this._renderRecentDocuments();
@@ -691,6 +695,7 @@ export class BridgeMethods {
     });
     if (syncBridge && this.agentBridgeEnabled) this._scheduleBridgeSync();
     this._mfSaveStatus?.();
+    this._pcDraftFeedback?.(saved);
     return saved;
   }
 
@@ -698,6 +703,7 @@ export class BridgeMethods {
   _scheduleBridgeSync() {
     if (!this.sourceRef.current || !this.fileName || this.fileName === '未命名.md') return;
     if (!this.bridgeDocumentId && !this.fileHandle && isPristineSample(this.sourceRef.current.value, this.fileName)) return;
+    this._pcBridgeFeedback?.('pending');
     clearTimeout(this._bridgeSyncT);
     this._bridgeSyncT = setTimeout(() => {
       this._bridgeSyncT = null;
@@ -728,6 +734,8 @@ export class BridgeMethods {
 
   async _writeDocumentToBridge() {
     const document = this._documentPayload();
+    const pcSnapshot = this._pcDocumentSnapshot?.();
+    this._pcBridgeFeedback?.('pending', document);
     try {
       const response = await fetch(bridgeUrl('/api/documents'), {
         method: 'POST',
@@ -737,13 +745,14 @@ export class BridgeMethods {
           annotations: this.comments.filter((comment) => comment.type !== 'ai')
         })
       });
-      if (!response.ok) return;
+      if (!response.ok) { this._pcBridgeFeedback?.('failed', document); return; }
       const data = await response.json();
       if (this.fileName !== document.fileName || (this.localFilePath || undefined) !== document.localPath) return;
       this.bridgeDocumentId = data.documentId;
       this.activeDocumentId = data.documentId;
+      this._pcBridgeFeedback?.('saved', document, pcSnapshot);
       this._refreshRecentDocuments();
-    } catch {}
+    } catch { this._pcBridgeFeedback?.('failed', document); }
   }
 
 

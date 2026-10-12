@@ -153,6 +153,7 @@ export class WorkspaceSettingsMethods {
   }
 
   _handleWorkspaceSettingsKey(event) {
+    if (this._handleDesktopEditingKey?.(event)) return true;
     if (this._handleDesktopSettingsKey?.(event)) return true;
     // The existing credentials dialog owns its own focus and Escape handling.
     if (this._aiSettingsEl?.style.display === 'flex') return false;
@@ -195,6 +196,7 @@ export class WorkspaceSettingsMethods {
 
   _disposeReadingAppearance() {
     this._disposeDesktopSettings?.();
+    this._disposeDesktopEditing?.();
     document.removeEventListener('pointerdown', this._appearanceOutsideH);
   }
 }

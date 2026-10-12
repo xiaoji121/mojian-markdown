@@ -42,6 +42,7 @@ export class CommentMethods {
       this._selToolbarResizeBound = true;
     }
     this._initCommentsResize();
+    this._initDesktopComments?.();
   }
 
 
@@ -318,6 +319,7 @@ export class CommentMethods {
   async _deleteComment(id, confirmed = false) {
     const comment = this.comments.find((c) => c.id === id);
     if (!comment) return;
+    if (!confirmed && this._pcDesktop?.()) { if (!await this._pcConfirmDelete(comment)) return; confirmed = true; }
     if (!confirmed && typeof window !== 'undefined' && window.confirm
       && !window.confirm(t("删除这条「{type}」批注？此操作不可恢复。", { type: this._typeLabel(comment.type) }))) return;
     this.comments = this.comments.filter((c) => c.id !== id);
@@ -440,17 +442,19 @@ export class CommentMethods {
       const c = this.comments.find(c => c.id === id); if (c) this._maStartEdit(c); return;
     }
     this._openPanel(true);
+    this._pcRevealComment?.(id);
     const comment = this.comments.find((c) => c.id === id);
     if (comment && !this._commentVisibleInPreview(comment)) await this._openCommentView(comment);
     const prev = this.previewRef.current;
     const span = prev && prev.querySelector('[data-comment-id="' + id + '"]');
     if (span) { this._scrollPreviewTo(span); this._flashEl(span); }
+    else if (this._pcDesktop?.()) this._setStatus(t("未找到原文位置；批注内容仍保留。"));
     const list = this.commentListRef.current;
     const card = list && list.querySelector('[data-card-id="' + id + '"]');
     if (card) {
       list.scrollTo({ top: Math.max(0, card.offsetTop - 12), behavior: 'smooth' });
       this._flashEl(card);
-      if (focusInput) { const ta = card.querySelector('textarea'); if (ta) setTimeout(() => ta.focus(), 80); }
+      if (focusInput) { const ta = card.querySelector('textarea'); if (ta) this._pcFocusCommentInput ? this._pcFocusCommentInput(ta,80) : setTimeout(() => ta.focus(),80); }
     }
   }
 
@@ -461,6 +465,7 @@ export class CommentMethods {
     if (this.commentCountRef.current) this.commentCountRef.current.textContent = this.comments.length;
     if (this.previewCommentCountRef.current) this.previewCommentCountRef.current.textContent = this.comments.length;
     if (!list) return;
+    const pcFocus = this._pcCaptureCommentFocus?.();
     list.innerHTML = '';
     this._syncCommentPanelActions?.();
     if (!this.comments.length) {
@@ -471,9 +476,12 @@ export class CommentMethods {
         e.textContent = t("在预览里选中一句，点马克笔或「写想法」，会出现在这里。");
         list.appendChild(e);
       }
+      this._pcSyncCommentView?.();
       return;
     }
     this.comments.forEach((c, i) => list.appendChild(this._commentCard(c, i)));
+    this._pcSyncCommentView?.();
+    this._pcRestoreCommentFocus?.(pcFocus);
     this._syncCommentPanelActions?.();
     requestAnimationFrame(() => this._resizeCommentTextareas());
   }
@@ -569,6 +577,7 @@ export class CommentMethods {
       card.appendChild(ta);
       if (this._replyBoxVisible(c)) this._appendReplyBlock(card, c);
     }
+    this._pcEnhanceComment?.(card, c);
     return card;
   }
 
@@ -588,7 +597,7 @@ export class CommentMethods {
     const list = this.commentListRef.current;
     const card = list && list.querySelector('[data-card-id="' + id + '"]');
     const ta = card && card.querySelector('.comment-reply-input');
-    if (ta) setTimeout(() => ta.focus(), 50);
+    if (ta) this._pcFocusCommentInput ? this._pcFocusCommentInput(ta,50) : setTimeout(() => ta.focus(),50);
   }
 
 
@@ -634,6 +643,7 @@ export class CommentMethods {
       done.textContent = t("完成");
       done.setAttribute('aria-label', t("完成编辑找到的回答"));
       done.addEventListener('click', () => {
+        this._pcCommentEditor = null;
         this._openReplyIds.delete(c.id);
         this._renderComments();
       });

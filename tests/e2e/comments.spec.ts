@@ -41,8 +41,8 @@ test('批注卡片的复制与删除按钮可用，复制在按钮上原地反�
   await expect(page.locator('.comments-panel button.is-copied')).toHaveCount(0, { timeout: 3000 });
   await expect(page.getByRole('button', { name: '复制', exact: true })).toBeVisible();
 
-  page.on('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: '删除', exact: true }).click();
+  await page.getByRole('dialog', {name:'删除这条批注？'}).getByRole('button',{name:'删除批注',exact:true}).click();
   await expect(page.locator('.comments-panel .comment-quote')).toHaveCount(0);
   await expect(page.locator('.save-status-toast')).toHaveText(/已删除批注/);
 });
@@ -50,8 +50,12 @@ test('批注卡片的复制与删除按钮可用，复制在按钮上原地反�
 test('删除批注需要二次确认，取消则保留', async ({ page }) => {
   await createIdeaComment(page);
 
-  // Playwright 默认 dismiss 对话框：等价于用户点了「取消」
   await page.getByRole('button', { name: '删除', exact: true }).click();
+  const dialog = page.getByRole('dialog',{name:'删除这条批注？'});
+  await expect(dialog.getByRole('button',{name:'取消',exact:true})).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'删除',exact:true})).toBeFocused();
   await expect(page.locator('.comments-panel .comment-quote')).toHaveCount(1);
 });
 

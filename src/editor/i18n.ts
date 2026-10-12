@@ -1,6 +1,7 @@
 import { mobileSettingsMessages } from './locales/mobileSettings.ts';
 import { mobileEditingMessages } from './locales/mobileEditing.ts';
 import { mobileAnnotationMessages } from './locales/mobileAnnotations.ts';
+import { desktopEditingMessages } from './locales/desktopEditing.ts';
 import { desktopAppearanceMessages } from './locales/desktopAppearance.ts';
 import { workspaceMessages } from './locales/workspace.ts';
 import { aiMessages } from './locales/ai.ts';
@@ -10,7 +11,7 @@ import { viewMessages } from './locales/view.ts';
 
 export type Locale = 'zh-CN' | 'zh-TW' | 'en' | 'ja';
 export const LOCALES: readonly Locale[] = ['zh-CN', 'zh-TW', 'en', 'ja'];
-export const messages: Record<string, [string, string, string]> = { ...desktopAppearanceMessages, ...mobileSettingsMessages, ...mobileEditingMessages, ...mobileAnnotationMessages, ...shellMessages, ...viewMessages, ...featureMessages, ...aiMessages, ...workspaceMessages };
+export const messages: Record<string, [string, string, string]> = { ...desktopEditingMessages, ...desktopAppearanceMessages, ...mobileSettingsMessages, ...mobileEditingMessages, ...mobileAnnotationMessages, ...shellMessages, ...viewMessages, ...featureMessages, ...aiMessages, ...workspaceMessages };
 // Tests and non-browser consumers retain the historic source-language default.
 // The editor explicitly initializes from durable preferences / browser language.
 let locale: Locale = 'zh-CN';
