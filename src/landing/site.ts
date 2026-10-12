@@ -1,2 +1,4 @@
-// Public homepage shared by landing metadata and desktop external navigation.
-export const SITE_URL = 'https://yuxizhai.com/md-editor/';
+// Build-time override; legacy web and desktop builds retain their public homepage.
+declare const __MOJIAN_SITE_URL__: string | undefined;
+export const SITE_URL = typeof __MOJIAN_SITE_URL__ === 'string'
+  ? __MOJIAN_SITE_URL__ : 'https://yuxizhai.com/md-editor/';

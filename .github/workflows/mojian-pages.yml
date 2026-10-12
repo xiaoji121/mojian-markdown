@@ -1,0 +1,113 @@
+name: Deploy mojian.uk
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mojian-pages-${{ github.event_name == 'pull_request' && github.ref || 'production' }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Use the repository's stable npm setup
+        run: |
+          npm install -g npm@11.12.1
+          npm config set registry https://registry.npmmirror.com
+          npm config set replace-registry-host always
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Check default build and legacy landing URLs
+        run: |
+          npm run check
+          node scripts/check-landing-build.mjs
+      - name: Build custom-domain site
+        env:
+          MOJIAN_SITE_ORIGIN: https://mojian.uk
+          MOJIAN_SITE_BASE: /
+        run: |
+          npm run build
+          node scripts/check-landing-build.mjs
+      - name: Install browser and fonts
+        run: npx playwright install --with-deps chromium
+      - name: Verify built four-language site
+        env:
+          MOJIAN_SITE_ORIGIN: https://mojian.uk
+          MOJIAN_SITE_BASE: /
+        run: npx playwright test --config playwright.landing.config.ts
+      - name: Record deployed source and sitemap
+        run: |
+          node --input-type=module <<'JS'
+          import { writeFileSync, appendFileSync } from 'node:fs';
+          writeFileSync('dist/deployment.json', JSON.stringify({ source: process.env.GITHUB_SHA, site: 'https://mojian.uk/' }));
+          appendFileSync('dist/robots.txt', '\nSitemap: https://mojian.uk/sitemap.xml\n');
+          JS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mojian-site
+          path: dist
+          retention-days: 7
+
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: publication
+      - uses: actions/download-artifact@v4
+        with:
+          name: mojian-site
+          path: site
+      - name: Update the existing Pages publication branch
+        run: |
+          rsync -a --delete --exclude='.git/' site/ publication/
+          touch publication/.nojekyll
+          printf '%s\n' 'mojian.uk' > publication/CNAME
+          git -C publication config user.name 'github-actions[bot]'
+          git -C publication config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C publication add -A
+          if ! git -C publication diff --cached --quiet; then
+            git -C publication commit -m "Deploy mojian.uk from $GITHUB_SHA"
+            git -C publication push origin HEAD:gh-pages
+          fi
+      - name: Request and verify the Pages build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          publication_sha=$(git -C publication rev-parse HEAD)
+          gh api --method POST "repos/$GITHUB_REPOSITORY/pages/builds"
+          for attempt in $(seq 1 40); do
+            build_json=$(gh api "repos/$GITHUB_REPOSITORY/pages/builds/latest")
+            build_sha=$(jq -r '.commit' <<< "$build_json")
+            build_status=$(jq -r '.status' <<< "$build_json")
+            if [ "$build_sha" = "$publication_sha" ] && [ "$build_status" = 'built' ]; then
+              printf 'Published source `%s` via Pages commit `%s`.\n' "$GITHUB_SHA" "$publication_sha" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            if [ "$build_sha" = "$publication_sha" ] && [ "$build_status" = 'errored' ]; then
+              jq '.error' <<< "$build_json"
+              exit 1
+            fi
+            sleep 15
+          done
+          echo 'Pages did not confirm the expected publication within 10 minutes.'
+          exit 1

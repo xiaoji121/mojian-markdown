@@ -11,7 +11,7 @@ for (const [locale, title, open] of [['zh-CN', '墨笺 Markdown', '打开编辑�
     await page.goto(`${baseURL}/${locale}/`);
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
     await expect(page.locator('#landing-page h1')).toBeVisible();
-    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `https://yuxizhai.com/md-editor/${locale}/`);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `${new URL(process.env.MOJIAN_SITE_BASE ?? '/md-editor/', process.env.MOJIAN_SITE_ORIGIN || 'https://yuxizhai.com').href}${locale}/`);
     await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', await page.title());
     await expect(page.locator('.landing-languages a')).toHaveCount(4);
     await page.screenshot({ path: testInfo.outputPath(`landing-${locale}-nojs.png`), fullPage: true });
