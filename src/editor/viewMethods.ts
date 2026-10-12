@@ -252,6 +252,8 @@ export class ViewMethods {
     this._highlightCodeBlocks(prev);
     this._hydrateLocalImages(prev);
     this._applyHighlights();
+    this._pcSyncCommentView?.();
+    this._renderSourceHighlights?.();
     // 预览重渲染使旧 Range 失效，搜索打开时按新 DOM 重建高亮（不抢滚动）
     if (this.previewSearchOpen && this._updatePreviewSearchMatches) {
       this._updatePreviewSearchMatches({ keepIndex: true, silent: true });
@@ -506,6 +508,7 @@ export class ViewMethods {
     const prev = this.previewRef.current, src = this.sourceRef.current;
     if (prev) prev.style.fontSize = px + 'px';
     if (src) src.style.fontSize = px + 'px';
+    this._renderSourceHighlights?.();
     if (this.fontSizeRef.current) this.fontSizeRef.current.textContent = px + 'px';
     if (this.fullscreenFontSizeRef?.current) this.fullscreenFontSizeRef.current.textContent = px + 'px';
   }

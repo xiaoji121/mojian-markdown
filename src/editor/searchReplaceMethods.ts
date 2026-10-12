@@ -5,6 +5,7 @@ import { t } from './i18n.ts';
 // 替换走与工具栏格式化相同的撤销历史链路（_recordEditingHistory 强制新条目）。
 export class SearchReplaceMethods {
   _initSearchBar() {
+    this._initDesktopEditing?.();
     const input = this.searchInputRef.current;
     const replace = this.replaceInputRef.current;
     const src = this.sourceRef.current;
@@ -75,7 +76,7 @@ export class SearchReplaceMethods {
     this._searchIndex = -1;
     this._renderSourceHighlights();
     const src = this.sourceRef.current;
-    if (src) src.focus();
+    if (src) src.focus(this._pcDesktop?.() ? {preventScroll:true} : undefined);
   }
 
   _syncSearchOptionButton(ref, active) {
@@ -234,7 +235,7 @@ export class SearchReplaceMethods {
     const mark = layer && layer.querySelector && layer.querySelector('mark.is-current');
     if (mark && typeof mark.offsetTop === 'number' && src.clientHeight) {
       const view = src.clientHeight;
-      const top = mark.offsetTop;
+      const top = mark.offsetTop + (mark.closest?.('.pc-source-line')?.offsetTop || 0);
       if (top < src.scrollTop + 40 || top > src.scrollTop + view - 60) {
         src.scrollTop = Math.max(0, top - view / 2);
       }
@@ -275,6 +276,7 @@ export class SearchReplaceMethods {
     if (bar) bar.classList.toggle('search-no-match', Boolean(input.value) && !total);
     this._renderSourceHighlights();
     this._meSearchPreview?.();
+    this._syncDesktopSearch?.();
   }
 
   // 正则模式下替换文本支持 $1 分组引用：对命中的片段重跑一次非全局正则展开。
@@ -350,6 +352,7 @@ export class SearchReplaceMethods {
 
 
   _renderSourceHighlights() {
+    if (this._pcRenderSource?.()) return;
     const layer = this.sourceHighlightRef && this.sourceHighlightRef.current;
     const src = this.sourceRef.current;
     const input = this.searchInputRef.current;

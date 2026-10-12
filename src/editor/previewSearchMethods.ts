@@ -27,6 +27,7 @@ export class PreviewSearchMethods {
     const bar = this.previewSearchBarRef.current;
     const input = this.previewSearchInputRef.current;
     if (!bar || !input) return;
+    if (!this.previewSearchOpen && this._pcDesktop?.()) this._pcPreviewSearchOpener = document.activeElement;
     this.previewSearchOpen = true;
     bar.classList.add('is-open');
     this._updatePreviewSearchMatches();
@@ -42,6 +43,7 @@ export class PreviewSearchMethods {
     this._previewSearchRanges = [];
     this._previewSearchIndex = -1;
     this._clearPreviewSearchHighlights();
+    this._pcPreviewSearchReturn?.();
   }
 
 
