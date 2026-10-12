@@ -51,7 +51,7 @@
   window.addEventListener('hashchange', syncPageMode);
   window.addEventListener('DOMContentLoaded', syncPageMode);
 </script>
-  <script type="module" crossorigin src="./assets/index-Dn7_7OsI.js"></script>
+  <script type="module" crossorigin src="./assets/index-BHtQP1b-.js"></script>
   <link rel="modulepreload" crossorigin href="./assets/preload-helper-kNaey6uv.js">
   <link rel="modulepreload" crossorigin href="./assets/site-UQo2cvbv.js">
   <link rel="stylesheet" crossorigin href="./assets/index-DVFYo4Gi.css">
@@ -144,7 +144,7 @@ npm run desktop</pre><p><a href="https://github.com/xiaoji121/mojian-markdown/bl
       <button class="abtn" onClick="{{ toggleComments }}" aria-label="批注" data-i18n-aria-label="批注"><span class="action-label"><span data-i18n="批注">批注</span></span> <span ref="{{ commentCountRef }}" class="count-badge">0</span></button>
       <button class="abtn" onClick="{{ toggleOutline }}" aria-label="大纲" data-i18n-aria-label="大纲"><span class="action-label"><span data-i18n="大纲">大纲</span></span></button>
       <button class="abtn ai-entry ai-entry-weak" onClick="{{ toggleAI }}" aria-label="AI 助手" data-i18n-aria-label="AI 助手" title="打开 AI 阅读助手" data-i18n-title="打开 AI 阅读助手"><span class="action-label"><span data-i18n="AI 助手">AI 助手</span></span><span class="accent-star">✦</span></button>
-      <button class="abtn pc-only pc-header-settings" onClick="{{ openWorkspaceSettings }}" aria-label="设置" data-i18n-aria-label="设置" title="设置" data-i18n-title="设置"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button>
+      <button class="abtn pc-only pc-header-settings" onClick="{{ togglePCSettingsMenu }}" aria-haspopup="menu" aria-expanded="false" aria-controls="pc-global-menu" aria-label="全局设置" data-i18n-aria-label="全局设置" title="全局设置" data-i18n-title="全局设置"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button>
       <span class="export-menu-wrap"><button ref="{{ fileMenuButtonRef }}" class="abtn secondary export-menu-toggle" onClick="{{ toggleExportMenu }}" aria-label="导出" data-i18n-aria-label="导出" aria-haspopup="menu" aria-expanded="false"><span data-i18n="导出">导出</span><svg class="menu-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></button>
         <div ref="{{ fileMenuRef }}" class="header-menu export-menu" role="menu" aria-label="导出" data-i18n-aria-label="导出">
           <button class="header-menu-item export-primary" role="menuitem" onClick="{{ downloadFullBackup }}"><span data-i18n="下载全文+批注备份包">下载全文+批注备份包</span><small class="menu-item-hint" data-i18n="zip：源文 + 批注资产">zip：源文 + 批注资产</small></button>
@@ -206,9 +206,18 @@ npm run desktop</pre><p><a href="https://github.com/xiaoji121/mojian-markdown/bl
     <button onClick="{{ showEditorMode }}"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16 12-12 4 4L8 20H4Z"/></svg><span data-i18n="编辑">编辑</span></button>
   </nav>
 
+  <div id="pc-global-menu" class="pc-global-menu pc-only" role="menu" aria-label="全局设置" data-i18n-aria-label="全局设置" hidden>
+    <p data-i18n="全局设置">全局设置</p>
+    <button role="menuitem" data-pc-preference="font" data-i18n="字体与阅读">字体与阅读</button>
+    <button role="menuitem" data-pc-preference="paper" data-i18n="主题与纸张">主题与纸张</button>
+    <button role="menuitem" data-pc-preference="language" data-i18n="界面语言">界面语言</button>
+    <hr />
+    <button role="menuitem" data-pc-preference="ai" data-i18n="AI 阅读助手">AI 阅读助手</button>
+    <button role="menuitem" data-pc-preference="integrations" data-i18n="集成">集成</button>
+  </div>
   <div class="workspace-settings-backdrop" hidden>
   <section ref="{{ appearancePanelRef }}" id="reading-appearance-panel" class="preferences-panel reading-appearance-panel workspace-settings" role="dialog" aria-modal="true" aria-label="设置" data-i18n-aria-label="设置" tabindex="-1" hidden>
-    <div class="appearance-panel-header"><h2 class="appearance-heading" data-i18n="设置">设置</h2><button type="button" class="tbtn appearance-close" onClick="{{ closeReadingAppearance }}" aria-label="关闭" data-i18n-aria-label="关闭"><span class="desktop-original-glyph" aria-hidden="true">&times;</span><svg class="ui-icon mobile-icon mobile-only" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+    <div class="appearance-panel-header"><h2 class="appearance-heading" data-i18n="设置">设置</h2><h2 class="pc-settings-title pc-only">全局设置</h2><button type="button" class="tbtn appearance-close" onClick="{{ closeReadingAppearance }}" aria-label="关闭" data-i18n-aria-label="关闭"><span class="desktop-original-glyph" aria-hidden="true">&times;</span><svg class="ui-icon mobile-icon mobile-only" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
     <div class="workspace-settings-layout">
       <nav class="workspace-settings-nav" role="tablist" aria-label="设置分类" data-i18n-aria-label="设置分类" aria-orientation="vertical">
         <button role="tab" id="settings-tab-general" aria-controls="settings-general" data-settings-tab="general" onClick="{{ settingsGeneral }}" data-i18n="常规">常规</button>
@@ -243,6 +252,7 @@ npm run desktop</pre><p><a href="https://github.com/xiaoji121/mojian-markdown/bl
       <option value="imported-font" data-i18n="已导入字体">已导入字体</option>
       <option value="local-jinkai" data-i18n="本机仓耳今楷 04">本机仓耳今楷 04</option>
     </select></label>
+    <p class="pc-only pc-font-status appearance-note" role="status"></p>
     <span class="reading-font-preview">Read · 阅读 · 閱讀 · 読む</span>
     <details class="reading-font-management">
       <summary data-i18n="字体管理">字体管理</summary>
@@ -259,7 +269,9 @@ npm run desktop</pre><p><a href="https://github.com/xiaoji121/mojian-markdown/bl
       <span ref="{{ fontSizeRef }}" class="font-size-value">16px</span>
       <button class="tbtn font-btn font-inc" onClick="{{ fontInc }}" aria-label="放大字号" data-i18n-aria-label="放大字号"><span class="desktop-original-glyph" aria-hidden="true">A+</span><svg class="ui-icon mobile-icon mobile-only" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 19 6-14 6 14M5 14h8M17 12h5M19.5 9.5v5"/></svg></button>
     </span></span>
-    <span class="appearance-row"><span><span data-i18n="纸色">纸色</span></span><span ref="{{ paperPickerRef }}" class="paper-picker" role="group" aria-label="选择纸色" data-i18n-aria-label="选择纸色"></span></span>
+    <span class="appearance-row appearance-paper-row"><span><span data-i18n="纸色">纸色</span></span><span ref="{{ paperPickerRef }}" class="paper-picker" role="group" aria-label="选择纸色" data-i18n-aria-label="选择纸色"></span></span>
+    <label class="pc-only pc-paper-soften"><span><input class="pc-soften-input" type="checkbox" onChange="{{ toggleDarkPaperSoftening }}" /><span data-i18n="深色主题下柔化纸张">深色主题下柔化纸张</span></span><small data-i18n="仅影响桌面阅读；手机与导出仍使用原纸色。">仅影响桌面阅读；手机与导出仍使用原纸色。</small></label>
+    <p class="pc-only pc-paper-description"></p>
     <span class="appearance-row appearance-width"><span><span data-i18n="沉浸阅读宽度">沉浸阅读宽度</span></span><button ref="{{ immersiveWideRef }}" class="tbtn tool-pill immersive-wide-toggle" onClick="{{ toggleImmersiveWide }}" title="切换为宽屏阅读" data-i18n-title="切换为宽屏阅读" aria-pressed="false"><span data-i18n="宽屏">宽屏</span></button></span>
     <span class="appearance-note"><span data-i18n="排版偏好会自动记住">排版偏好会自动记住</span></span>
 </section>
@@ -286,6 +298,7 @@ npm run desktop</pre><p><a href="https://github.com/xiaoji121/mojian-markdown/bl
         </section>
       </div>
     </div>
+    <div class="pc-only pc-settings-footer"><button class="tbtn" onClick="{{ settingsAll }}" data-i18n="全部设置">全部设置</button><button class="abtn primary" onClick="{{ closeReadingAppearance }}" data-i18n="关闭">关闭</button></div>
   </section></div>
   <div class="mobile-quick-appearance-backdrop" onClick="{{ closeQuickAppearance }}" aria-hidden="true" hidden></div>
   <section class="preferences-panel quick-appearance-panel" role="dialog" aria-label="快捷排版" data-i18n-aria-label="快捷排版" tabindex="-1" hidden>
