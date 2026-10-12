@@ -79,7 +79,16 @@ jobs:
           path: site
       - name: Update the existing Pages publication branch
         run: |
-          rsync -a --delete --exclude='.git/' site/ publication/
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const marker = JSON.parse(readFileSync('site/deployment.json', 'utf8'));
+          assert.equal(marker.source, process.env.GITHUB_SHA, 'Artifact source must match this workflow commit');
+          JS
+          # Checkout and artifact extraction can produce equal-size files in the
+          # same timestamp second; compare bytes rather than rsync's quick check.
+          rsync -a --checksum --delete --exclude='.git/' site/ publication/
+          diff -r -q -x .git -x CNAME -x .nojekyll site/ publication/
           touch publication/.nojekyll
           printf '%s\n' 'mojian.uk' > publication/CNAME
           git -C publication config user.name 'github-actions[bot]'
@@ -87,8 +96,9 @@ jobs:
           git -C publication add -A
           if ! git -C publication diff --cached --quiet; then
             git -C publication commit -m "Deploy mojian.uk from $GITHUB_SHA"
-            git -C publication push origin HEAD:gh-pages
           fi
+          git -C publication show HEAD:deployment.json | cmp - site/deployment.json
+          git -C publication push origin HEAD:gh-pages
       - name: Request and verify the Pages build
         env:
           GH_TOKEN: ${{ github.token }}
