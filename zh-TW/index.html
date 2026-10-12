@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-landing-locale="zh-TW" data-landing-title="墨笺 Markdown｜寫下文字，讀出想法，留下註記">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#1a1b1d">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<!-- landing-meta:start -->
+<title>墨笺 Markdown｜寫下文字，讀出想法，留下註記</title>
+<meta name="description" content="免安裝，在瀏覽器中編輯 Markdown、即時預覽並標記重點。墨笺提供本機快取與匯出，也可透過本機版連接檔案和選用 AI 助理。">
+<link rel="canonical" href="https://mojian.uk/zh-TW/">
+<link rel="alternate" hreflang="zh-CN" href="https://mojian.uk/zh-CN/">
+<link rel="alternate" hreflang="zh-TW" href="https://mojian.uk/zh-TW/">
+<link rel="alternate" hreflang="en" href="https://mojian.uk/en/">
+<link rel="alternate" hreflang="ja" href="https://mojian.uk/ja/">
+<link rel="alternate" hreflang="x-default" href="https://mojian.uk/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="zh_TW">
+<meta property="og:locale:alternate" content="zh_CN">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta property="og:site_name" content="墨笺 Markdown">
+<meta property="og:title" content="墨笺 Markdown｜寫下文字，讀出想法，留下註記">
+<meta property="og:description" content="免安裝，在瀏覽器中編輯 Markdown、即時預覽並標記重點。墨笺提供本機快取與匯出，也可透過本機版連接檔案和選用 AI 助理。">
+<meta property="og:url" content="https://mojian.uk/zh-TW/">
+<meta property="og:image" content="https://mojian.uk/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="墨笺 Markdown">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="墨笺 Markdown｜寫下文字，讀出想法，留下註記">
+<meta name="twitter:description" content="免安裝，在瀏覽器中編輯 Markdown、即時預覽並標記重點。墨笺提供本機快取與匯出，也可透過本機版連接檔案和選用 AI 助理。">
+<meta name="twitter:image" content="https://mojian.uk/og-image.png">
+<meta name="twitter:image:alt" content="墨笺 Markdown">
+<!-- landing-meta:end -->
+<script>
+  function syncPageMode() {
+    var editing = window.location.hash === '#editor';
+    var wasEditing = document.body.classList.contains('editor-active');
+    document.body.classList.toggle('editor-active', editing);
+    document.title = editing
+      ? ((document.documentElement.dataset.editorLocale || document.documentElement.dataset.landingLocale) === 'en' ? 'Mojian Markdown' : '墨笺 Markdown')
+      : document.documentElement.dataset.landingTitle;
+    document.documentElement.lang = editing
+      ? (document.documentElement.dataset.editorLocale || document.documentElement.dataset.landingLocale)
+      : document.documentElement.dataset.landingLocale;
+    // 只在进出编辑器时回到顶部；落地页内部锚点（#editions/#desktop）交给浏览器定位。
+    if (editing !== wasEditing) window.scrollTo(0, 0);
+  }
+  window.addEventListener('hashchange', syncPageMode);
+  window.addEventListener('DOMContentLoaded', syncPageMode);
+</script>
+  <script type="module" crossorigin src="../assets/index-B21I7N8l.js"></script>
+  <link rel="modulepreload" crossorigin href="../assets/preload-helper-kNaey6uv.js">
+  <link rel="modulepreload" crossorigin href="../assets/site-UQo2cvbv.js">
+  <link rel="stylesheet" crossorigin href="../assets/index-DVFYo4Gi.css">
+</head>
+<body>
+<script>
+  syncPageMode();
+  // 首帧前应用持久化的主题与纸色，避免"先暗后亮"闪变（编辑器 JS 就绪后会接管）
+  (function () {
+    try {
+      var saved = JSON.parse(localStorage.getItem('md-editor-warm-v1') || 'null');
+      var light = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+      var theme = (saved && saved.theme) || (light ? 'light' : 'dark');
+      document.body.setAttribute('data-theme', theme);
+      var paper = (saved && (theme === 'light' ? saved.paperLight : saved.paperDark))
+        || (theme === 'light' ? 'parchment' : 'ink');
+      document.body.setAttribute('data-paper', paper);
+    } catch (e) {}
+  })();
+</script>
+<main id="landing-page" lang="zh-TW">
+  <nav class="landing-nav" aria-label="墨笺 Markdown"><a class="landing-brand" href="#"><span class="landing-brand-mark">墨</span><span class="landing-brand-name">墨笺 Markdown</span></a><div class="landing-nav-actions"><details class="landing-language-menu"><summary class="landing-language-toggle" aria-label="語言: 繁體中文"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a18 18 0 0 1 0 18 18 18 0 0 1 0-18Z"/></svg><span lang="zh-TW">繁體中文</span><svg class="landing-language-chevron" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="m4 6 4 4 4-4"/></svg></summary><nav class="landing-languages" aria-label="語言"><a href="../zh-CN/" lang="zh-CN" hreflang="zh-CN">简体中文</a><a href="../zh-TW/" lang="zh-TW" hreflang="zh-TW" aria-current="page">繁體中文</a><a href="../en/" lang="en" hreflang="en">English</a><a href="../ja/" lang="ja" hreflang="ja">日本語</a></nav></details><a class="landing-button landing-open" href="#editor">開啟編輯器</a></div></nav>
+  <section class="landing-hero"><div class="hero-product" aria-hidden="true"><div class="hero-source"><span class="pane-label">Markdown</span><pre># 為一個好想法留點空間
+
+慢一點讀，寫下問題。讓一段文字，成為下一次思考的起點。</pre></div><div class="hero-preview"><span class="pane-label">閱讀與註記示意</span><h2>為一個好想法留點空間</h2><p><mark>慢一點讀，寫下問題。讓一段文字，成為下一次思考的起點。</mark></p><div class="comment-pop"><span>這個想法，值得再讀一次。</span></div></div></div>
+  <div class="landing-copy"><span class="landing-eyebrow">寫作 · 閱讀 · 註記</span><h1>墨笺 Markdown</h1><p class="landing-lead">寫下文字，留下思考。</p><div class="landing-actions"><a class="landing-button primary" href="#editor">在瀏覽器中試用</a><a class="landing-button ghost" href="https://github.com/xiaoji121/mojian-markdown" target="_blank" rel="noopener noreferrer">查看原始碼 ↗</a></div><p class="landing-demo-note">不必安裝，即可編輯、閱讀與註記。內容快取於目前的瀏覽器，請匯出備份。</p></div></section>
+  <section id="workflow" class="landing-section"><div class="landing-wrap"><div class="landing-section-head"><h2>從一段文字，到自己的理解</h2></div><div class="workflow-grid"><article class="workflow-item"><span>01</span><h3>邊寫邊讀</h3><p>在原始碼區編輯 Markdown，在唯讀預覽中查看排版。按兩下即可在原文與預覽之間定位。</p></article><article class="workflow-item"><span>02</span><h3>留下思考</h3><p>選取文字，標記重點、畫線或寫下註記，把值得重讀的想法留在段落旁。</p></article><article class="workflow-item"><span>03</span><h3>帶走你的文字</h3><p>匯入與匯出 Markdown，或將預覽儲存為長圖。瀏覽器快取可能遭到清除，請另存重要內容。</p></article></div></div></section>
+  <section id="editions" class="landing-section"><div class="landing-wrap"><div class="landing-section-head"><h2>從瀏覽器開始，依需要使用本機版</h2></div><div class="edition-grid"><article class="edition-card"><h3>瀏覽器體驗版</h3><p>開啟即用，支援編輯、唯讀預覽、註記、本機快取與匯入匯出。</p><a class="landing-button primary" href="#editor">在瀏覽器中試用</a></article><article class="edition-card full"><h3>本機版與桌面版</h3><p>本機 Agent Bridge 提供最近閱讀與本機檔案雙向同步。可從原始碼執行，桌面版另提供原生檔案對話框。</p><a class="landing-button" href="https://github.com/xiaoji121/mojian-markdown#readme">安裝與使用文件 ↗</a><p><a href="#desktop">查看桌面版測試說明 ↓</a></p></article></div></div></section>
+  <section id="desktop" class="landing-section"><div class="landing-wrap"><div class="landing-section-head"><h2>桌面版目前提供測試安裝程式</h2><p class="landing-desktop-badge" role="status">TEST · 未正式簽署</p></div><div class="edition-grid"><article class="edition-card"><h3>桌面版目前提供測試安裝程式</h3><p>macOS 與 Windows 安裝程式僅供測試，並非正式簽署發行版，也不可視為可對外發佈的正式版。未簽署套件在 macOS 可能被 Gatekeeper 攔截，在 Windows 可能出現 SmartScreen「未知發行者」警告——此為預期行為。CI 冒煙測試不等於實體裝置安裝驗收。</p><p class="landing-signing-note">工程側簽名／公證流水線骨架已就緒；正式 Developer ID、公證與 Windows 憑證仍在帳號持有人一側。憑證到位並完成真機驗證前，請勿把下載入口當作正式發佈。</p><pre class="edition-code">npm install
+npm run desktop</pre><p><a href="https://github.com/xiaoji121/mojian-markdown/blob/main/docs/TEST_INSTALLERS.md">查看桌面版測試說明 ↗</a></p><p><a href="https://github.com/xiaoji121/mojian-markdown/blob/main/docs/SIGNING.md">簽名與憑證待辦說明 ↗</a></p></article><article class="edition-card"><h3>依需要設定 AI 助理</h3><p>需在本機安裝並登入 Claude Code 或 Codex CLI，或設定 Gemini API 金鑰。服務供應商可能收費；安裝桌面版後仍需完成 AI 設定。</p><a href="https://github.com/xiaoji121/mojian-markdown#readme">安裝與使用文件 ↗</a></article></div></div></section>
+  <footer class="landing-wrap landing-footer"><span>© 2026 Dongming Ji</span><span>為閱讀、學習與自己的思考留一頁。</span><a class="landing-footer-link" href="https://github.com/xiaoji121/mojian-markdown/blob/main/LICENSING.md">原始碼公開 · PolyForm Noncommercial 1.0.0 ↗</a></footer></main>
+
+<template id="__bundler_thumbnail" data-bg-color="#14110d">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#14110d"/>
+    <rect x="250" y="250" width="320" height="300" rx="10" fill="#1c1814" stroke="#322a22" strokeWidth="3"/>
+    <rect x="630" y="250" width="320" height="300" rx="10" fill="#1c1814" stroke="#322a22" strokeWidth="3"/>
+    <text x="300" y="345" font-family="monospace" font-size="34" fill="#f0a838" font-weight="700">#</text>
+    <rect x="345" y="325" width="170" height="14" rx="7" fill="#5a5142"/>
+    <rect x="290" y="375" width="225" height="11" rx="5.5" fill="#3a3328"/>
+    <rect x="290" y="405" width="200" height="11" rx="5.5" fill="#3a3328"/>
+    <rect x="290" y="450" width="170" height="11" rx="5.5" fill="#3a3328"/>
+    <rect x="680" y="320" width="150" height="22" rx="6" fill="#f4ebd9"/>
+    <rect x="680" y="375" width="225" height="11" rx="5.5" fill="#8a7d68"/>
+    <rect x="680" y="405" width="210" height="11" rx="5.5" fill="#8a7d68"/>
+    <rect x="680" y="450" width="120" height="11" rx="5.5" fill="#f0a838"/>
+    <circle cx="600" cy="160" r="13" fill="#f0a838"/>
+    <text x="600" y="640" font-family="Georgia,serif" font-size="44" fill="#f4ebd9" text-anchor="middle" font-style="italic">Markdown</text>
+  </svg>
+</template>
+<x-dc>
+<helmet>
+</helmet>
+
+<div class="app-shell">
+
+    <aside ref="{{ documentSidebarRef }}" class="document-sidebar" aria-label="最近阅读文档" data-i18n-aria-label="最近阅读文档">
+      <div ref="{{ documentSidebarResizeRef }}" class="document-sidebar-resize" title="拖动调整目录宽度" data-i18n-title="拖动调整目录宽度" aria-hidden="true"></div>
+      <div class="workspace-brand"><span class="workspace-brand-lockup"><img class="workspace-brand-icon" src="../favicon.svg" alt="" aria-hidden="true" /><span class="workspace-wordmark">墨笺</span></span><button class="document-sidebar-close" onClick="{{ closeDocumentSidebar }}" aria-label="关闭最近阅读" data-i18n-aria-label="关闭最近阅读"><span class="desktop-original-glyph" aria-hidden="true">‹</span><svg class="ui-icon mobile-icon mobile-only" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+      <div class="workspace-file-actions"><button class="abtn primary" onClick="{{ onNew }}" aria-label="新建文档" data-i18n-aria-label="新建文档"><span class="desktop-original-glyph" aria-hidden="true">＋</span><svg class="ui-icon mobile-icon mobile-only" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span data-i18n="新建">新建</span></button><button class="abtn secondary open-doc-btn" onClick="{{ onOpen }}" aria-label="打开文件" data-i18n-aria-label="打开文件"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5h6l2 2h10v13H3Z"/></svg><span class="open-doc-label" data-i18n="打开">打开</span></button></div>
+      <label class="workspace-document-search"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg><input type="search" aria-label="搜索文档" data-i18n-aria-label="搜索文档" placeholder="搜索文档" data-i18n-placeholder="搜索文档" onInput="{{ filterDocuments }}" /></label>
+      <div class="document-sidebar-header">
+        <span class="document-sidebar-title"><span data-i18n="最近阅读">最近阅读</span></span>
+        <span class="document-sidebar-tools">
+          <span ref="{{ documentCountRef }}" class="document-count">0</span>
+        </span>
+      </div>
+      <div ref="{{ documentListRef }}" class="recent-document-list"></div>
+      <div class="workspace-sidebar-footer"><button class="abtn workspace-settings-button" onClick="{{ openWorkspaceSettings }}" aria-label="设置" data-i18n-aria-label="设置"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-1 3-3 1-2 4 2 3v4l4 2 3-1 4 1 3-3-1-4 2-3-2-4-4-1-1-2Z"/><circle cx="11" cy="12" r="3"/></svg><span data-i18n="设置">设置</span></button></div>
+    </aside>
+  <button class="abtn focus-settings-button" onClick="{{ openWorkspaceSettings }}" aria-label="设置" data-i18n-aria-label="设置">⚙</button>
+  <!-- ===== HEADER ===== -->
+  <header class="app-header">
+    <div class="header-brand">
+      <button class="abtn document-toggle" onClick="{{ toggleDocumentSidebar }}" aria-label="最近阅读" data-i18n-aria-label="最近阅读" title="最近阅读" data-i18n-title="最近阅读" aria-expanded="false"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M9 4v16"></path></svg></button>
+      <span class="file-meta">
+        <span ref="{{ dirtyDotRef }}" class="dirty-dot"></span>
+        <span ref="{{ fileNameRef }}" class="file-name" aria-label="文档名称，双击重命名" data-i18n-aria-label="文档名称，双击重命名">未命名.md</span>
+      </span>
+      <span class="workspace-save-label" data-i18n="仅浏览器草稿">仅浏览器草稿</span>
+    </div>
+    <div class="header-actions">
+      <button class="abtn mobile-only mobile-menu-toggle" onClick="{{ toggleMobileReadingMenu }}" aria-label="更多" data-i18n-aria-label="更多" aria-haspopup="dialog" aria-expanded="false"><svg class="ui-icon mobile-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button>
+      <span ref="{{ viewModeSwitcherRef }}" class="view-mode-switcher" role="group" aria-label="编辑器视图" data-i18n-aria-label="编辑器视图">
+        <button class="view-mode-option" data-mode="editor" onClick="{{ showEditorMode }}" aria-pressed="false" title="仅显示 Markdown 原文" data-i18n-title="仅显示 Markdown 原文"><span data-i18n="编辑">编辑</span></button>
+        <button class="view-mode-option split-mode-option" data-mode="split" onClick="{{ showSplitMode }}" aria-pressed="true" title="同时显示原文和预览" data-i18n-title="同时显示原文和预览"><span data-i18n="分屏">分屏</span></button>
+        <button class="view-mode-option" data-mode="preview" onClick="{{ showPreviewMode }}" aria-pressed="false" title="阅读与批注文章" data-i18n-title="阅读与批注文章"><span data-i18n="阅读">阅读</span></button>
+      </span>
+      <button class="abtn" onClick="{{ toggleComments }}" aria-label="批注" data-i18n-aria-label="批注"><span class="action-label"><span data-i18n="批注">批注</span></span> <span ref="{{ commentCountRef }}" class="count-badge">0</span></button>
+      <button class="abtn" onClick="{{ toggleOutline }}" aria-label="大纲" data-i18n-aria-label="大纲"><span class="action-label"><span data-i18n="大纲">大纲</span></span></button>
+      <button class="abtn ai-entry ai-entry-weak" onClick="{{ toggleAI }}" aria-label="AI 助手" data-i18n-aria-label="AI 助手" title="打开 AI 阅读助手" data-i18n-title="打开 AI 阅读助手"><span class="action-label"><span data-i18n="AI 助手">AI 助手</span></span><span class="accent-star">✦</span></button>
+      <span class="export-menu-wrap"><button ref="{{ fileMenuButtonRef }}" class="abtn secondary export-menu-toggle" onClick="{{ toggleExportMenu }}" aria-label="导出" data-i18n-aria-label="导出" aria-haspopup="menu" aria-expanded="false"><span data-i18n="导出">导出</span><svg class="menu-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></button>
+        <div ref="{{ fileMenuRef }}" class="header-menu export-menu" role="menu" aria-label="导出" data-i18n-aria-label="导出">
+          <button class="header-menu-item export-primary" role="menuitem" onClick="{{ downloadFullBackup }}"><span data-i18n="下载全文+批注备份包">下载全文+批注备份包</span><small class="menu-item-hint" data-i18n="zip：源文 + 批注资产">zip：源文 + 批注资产</small></button>
+          <button class="header-menu-item" role="menuitem" onClick="{{ downloadSourceMarkdown }}"><span data-i18n="下载纯源文.md">下载纯源文.md</span><small class="menu-item-hint" data-i18n="仅正文，不含批注">仅正文，不含批注</small></button>
+          <button class="header-menu-item" role="menuitem" onClick="{{ downloadAnnotationsMarkdown }}"><span data-i18n="下载批注 Markdown">下载批注 Markdown</span><small class="menu-item-hint" data-i18n="引用块+想法+时间 · 不改源文">引用块+想法+时间 · 不改源文</small></button>
+          <button class="header-menu-item longimg-entry" role="menuitem" onClick="{{ menuLongImage }}"><span data-i18n="导出长图">导出长图</span></button>
+          <button class="header-menu-item" role="menuitem" onClick="{{ exportWithComments }}"><span data-i18n="复制全文+批注">复制全文+批注</span></button>
+          <div class="header-menu-separator write-disk-menu-item" role="separator" data-menu-group="write" hidden></div>
+          <button class="header-menu-item write-disk-menu-item" role="menuitem" onClick="{{ menuFileSave }}" hidden><span data-i18n="保存">保存</span><span class="menu-shortcut" data-mod-shortcut="S" aria-hidden="true">⌘S</span></button>
+          <button class="header-menu-item write-disk-menu-item" role="menuitem" onClick="{{ menuFileSaveAs }}" hidden><span data-i18n="另存为…">另存为…</span><span class="menu-shortcut" data-mod-shortcut="Shift+S" aria-hidden="true">⌘⇧S</span></button>
+          <div class="header-menu-separator publish-menu-item" role="separator"></div>
+          <button class="header-menu-item publish-menu-item" data-target="feishu" role="menuitem" onClick="{{ menuPublishFeishu }}" disabled><span data-i18n="上传到飞书文档">上传到飞书文档</span><small class="menu-item-hint" data-i18n="上传完成后自动打开">上传完成后自动打开</small></button>
+          <button class="header-menu-item publish-menu-item" data-target="dingtalk" role="menuitem" onClick="{{ menuPublishDingtalk }}" disabled><span data-i18n="上传到钉钉云盘">上传到钉钉云盘</span><small class="menu-item-hint" data-i18n="保留 .md 文件，不转在线文档">保留 .md 文件，不转在线文档</small></button>
+          <button class="header-menu-item desktop-need-link" role="menuitem" onClick="{{ menuDesktopNeed }}" hidden><span data-i18n="桌面版可上传到飞书/钉钉">桌面版可上传到飞书/钉钉</span></button>
+        </div>
+      </span>
+    </div>
+  </header>
+
+
+
+  <button class="mobile-only mobile-reading-backdrop" onClick="{{ closeMobileReadingMenu }}" aria-label="关闭" data-i18n-aria-label="关闭" tabindex="-1" hidden></button>
+  <section class="mobile-only mobile-reading-menu" role="dialog" aria-modal="true" aria-label="阅读工具" data-i18n-aria-label="阅读工具" hidden>
+    <div class="mobile-sheet-heading"><h2 data-i18n="阅读工具">阅读工具</h2><button onClick="{{ closeMobileReadingMenu }}" aria-label="关闭" data-i18n-aria-label="关闭"><span class="desktop-original-glyph" aria-hidden="true">×</span><svg class="ui-icon mobile-icon mobile-only" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+    <div class="mobile-reading-actions">
+    <button data-mobile-action="find" onClick="{{ mobileFind }}"><span data-i18n="查找文档">查找文档</span><svg class="ui-icon mobile-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg></button>
+    <button data-mobile-action="appearance" onClick="{{ mobileAppearance }}"><span data-i18n="快捷排版">快捷排版</span><svg class="ui-icon mobile-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 19 6-14 6 14M6 14h8M17 10h5m-2.5 0v9"/></svg></button>
+    <button data-mobile-action="focus" onClick="{{ mobileFocus }}" aria-pressed="false"><span data-i18n="专注">专注</span><svg class="ui-icon mobile-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4H4v5m11-5h5v5M4 15v5h5m11-5v5h-5"/></svg></button>
+    <button data-mobile-action="outline" onClick="{{ mobileOutline }}"><span data-i18n="大纲">大纲</span><svg class="ui-icon mobile-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg></button>
+    <button data-mobile-action="comments" onClick="{{ mobileComments }}"><span data-i18n="批注">批注</span><svg class="ui-icon mobile-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H9l-5 4V5a1 1 0 0 1 1-1Z"/></svg></button>
+    <button data-mobile-action="export" onClick="{{ mobileExport }}"><span data-i18n="导出">导出</span><svg class="ui-icon mobile-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v12m-4-4 4 4 4-4M4 16v4h16v-4"/></svg></button>
+    <button data-mobile-action="settings" onClick="{{ mobileSettings }}"><span data-i18n="设置">设置</span><svg class="ui-icon mobile-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="9" cy="18" r="2"/></svg></button>
+    </div>
+    <div class="mobile-export-actions" hidden>
+      <div class="mobile-export-primary">
+      <button  onClick="{{ mobileSourceDownload }}"><span class="mobile-export-label"><span data-i18n="Markdown 文件">Markdown 文件</span><small data-i18n="仅原文，不含批注">仅原文，不含批注</small></span><svg class="ui-icon mobile-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h9l5 5v13H5Z M14 3v5h5M8 12h8M8 16h6"/></svg></button>
+      <button  onClick="{{ mobileLongImage }}"><span class="mobile-export-label"><span data-i18n="长图">长图</span><small data-i18n="适合分享阅读">适合分享阅读</small></span><svg class="ui-icon mobile-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="9" cy="8" r="1.5"/><path d="m5 18 5-5 3 3 3-4 4 5"/></svg></button>
+      <button  onClick="{{ mobileBackup }}"><span class="mobile-export-label"><span data-i18n="完整备份">完整备份</span><small data-i18n="全文与批注（ZIP）">全文与批注（ZIP）</small></span><svg class="ui-icon mobile-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v13H4ZM3 3h18v5H3ZM10 12h4"/></svg></button>
+      </div>
+      <details class="mobile-export-secondary">
+        <summary><span data-i18n="其他方式">其他方式</span><svg class="ui-icon mobile-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+      <button  onClick="{{ mobileAnnotationsDownload }}"><span data-i18n="下载批注 Markdown">下载批注 Markdown</span><svg class="ui-icon mobile-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v13H9l-5 4ZM8 8h8M8 12h6"/></svg></button>
+      <button  onClick="{{ mobileCopyFull }}"><span data-i18n="复制全文+批注">复制全文+批注</span><svg class="ui-icon mobile-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button>
+      </details>
+      <div class="mobile-export-save" hidden>
+        <h3 data-i18n="保存到文件">保存到文件</h3>
+      <button data-mobile-write hidden onClick="{{ mobileSave }}"><span data-i18n="保存">保存</span><svg class="ui-icon mobile-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h13l3 3v15H4ZM8 3v6h8V3M8 21v-8h8v8"/></svg></button>
+      <button data-mobile-write hidden onClick="{{ mobileSaveAs }}"><span data-i18n="另存为…">另存为…</span><svg class="ui-icon mobile-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h13l3 3v7M4 3v18h7M8 3v6h8V3m-3 15 6-6 3 3-6 6h-3Z"/></svg></button>
+      </div>
+      <button data-mobile-publish="feishu" onClick="{{ mobilePublishFeishu }}" data-i18n="上传到飞书文档" hidden>上传到飞书文档</button>
+      <button data-mobile-publish="dingtalk" onClick="{{ mobilePublishDingtalk }}" data-i18n="上传到钉钉云盘" hidden>上传到钉钉云盘</button>
+      <button  onClick="{{ mobileReadingTools }}"><span data-i18n="返回">返回</span><svg class="ui-icon mobile-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 5-7 7 7 7M3 12h17"/></svg></button>
+    </div>
+  </section>
+
+  <nav class="mobile-only mobile-reading-nav" aria-label="阅读工具" data-i18n-aria-label="阅读工具">
+    <button onClick="{{ toggleOutline }}"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span data-i18n="大纲">大纲</span></button>
+    <button onClick="{{ toggleComments }}"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v12H9l-5 4Z"/></svg><span data-i18n="批注">批注</span><span class="assistance-count">0</span></button>
+    <button onClick="{{ showEditorMode }}"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16 12-12 4 4L8 20H4Z"/></svg><span data-i18n="编辑">编辑</span></button>
+  </nav>
+
+  <div class="workspace-settings-backdrop" hidden>
+  <section ref="{{ appearancePanelRef }}" id="reading-appearance-panel" class="preferences-panel reading-appearance-panel workspace-settings" role="dialog" aria-modal="true" aria-label="设置" data-i18n-aria-label="设置" tabindex="-1" hidden>
+    <div class="appearance-panel-header"><h2 class="appearance-heading" data-i18n="设置">设置</h2><button type="button" class="tbtn appearance-close" onClick="{{ closeReadingAppearance }}" aria-label="关闭" data-i18n-aria-label="关闭"><span class="desktop-original-glyph" aria-hidden="true">&times;</span><svg class="ui-icon mobile-icon mobile-only" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+    <div class="workspace-settings-layout">
+      <nav class="workspace-settings-nav" role="tablist" aria-label="设置分类" data-i18n-aria-label="设置分类" aria-orientation="vertical">
+        <button role="tab" id="settings-tab-general" aria-controls="settings-general" data-settings-tab="general" onClick="{{ settingsGeneral }}" data-i18n="常规">常规</button>
+        <button role="tab" id="settings-tab-reading" aria-controls="settings-reading" data-settings-tab="reading" onClick="{{ settingsReading }}" data-i18n="外观与阅读">外观与阅读</button>
+        <button role="tab" id="settings-tab-ai" aria-controls="settings-ai" data-settings-tab="ai" onClick="{{ settingsAI }}">AI</button>
+        <button role="tab" id="settings-tab-integrations" aria-controls="settings-integrations" data-settings-tab="integrations" onClick="{{ settingsIntegrations }}" data-i18n="集成">集成</button>
+      </nav>
+      <div class="workspace-settings-content">
+        <section id="settings-general" role="tabpanel" aria-labelledby="settings-tab-general" data-settings-page="general" hidden>
+          <h3 data-i18n="界面语言">界面语言</h3>
+          <div id="interface-language-panel" class="interface-language-panel">    <div class="interface-language-settings" role="radiogroup" aria-label="界面语言" data-i18n-aria-label="界面语言">
+      <div class="interface-language-options">
+        <button type="button" class="interface-language-option" role="radio" aria-checked="false" data-locale="zh-CN" lang="zh-CN" aria-label="简体中文">简体中文</button>
+        <button type="button" class="interface-language-option" role="radio" aria-checked="false" data-locale="zh-TW" lang="zh-TW" aria-label="繁體中文">繁體中文</button>
+        <button type="button" class="interface-language-option" role="radio" aria-checked="false" data-locale="en" lang="en" aria-label="English">English</button>
+        <button type="button" class="interface-language-option" role="radio" aria-checked="false" data-locale="ja" lang="ja" aria-label="日本語">日本語</button>
+      </div>
+    </div>
+</div>
+          <p class="appearance-note" data-i18n="界面语言不会改变文档内容">界面语言不会改变文档内容</p>
+          <button class="abtn secondary desktop-path-menu-item" onClick="{{ menuOpenAbsolutePath }}" data-i18n="输入绝对路径打开…">输入绝对路径打开…</button>
+          <a class="abtn settings-home-link" href="#" onClick="{{ menuReturnHome }}" data-i18n="返回首页">返回首页</a>
+        </section>
+        <section id="settings-reading" role="tabpanel" aria-labelledby="settings-tab-reading" data-settings-page="reading">
+          <span class="appearance-row appearance-interface-theme"><span><span data-i18n="界面主题">界面主题</span></span><button class="tbtn appearance-theme" onClick="{{ toggleTheme }}" title="切换亮色或暗黑主题" data-i18n-title="切换亮色或暗黑主题" aria-label="切换亮色或暗黑主题" data-i18n-aria-label="切换亮色或暗黑主题"><span ref="{{ themeIconRef }}"></span><span ref="{{ themeLabelRef }}"><span data-i18n="亮色">亮色</span></span></button></span>
+    <span class="appearance-section-heading appearance-reading-heading" data-i18n="阅读排版">阅读排版</span>
+    <label class="reading-font-field"><span data-i18n="阅读字体">阅读字体</span><select class="reading-font-select" aria-label="阅读字体" data-i18n-aria-label="阅读字体">
+      <option value="system-default" data-i18n="系统默认">系统默认</option>
+      <option value="system-serif" data-i18n="系统衬线">系统衬线</option>
+      <option value="source-serif-4">Source Serif 4</option>
+      <option value="project-jinkai" data-i18n="项目字体（font:fetch）">项目字体（font:fetch）</option>
+      <option value="imported-font" data-i18n="已导入字体">已导入字体</option>
+      <option value="local-jinkai" data-i18n="本机仓耳今楷 04">本机仓耳今楷 04</option>
+    </select></label>
+    <span class="reading-font-preview">Read · 阅读 · 閱讀 · 読む</span>
+    <details class="reading-font-management">
+      <summary data-i18n="字体管理">字体管理</summary>
+      <div class="reading-font-management-content">
+        <span class="reading-font-actions"><button type="button" class="tbtn reading-font-import" data-i18n="导入字体…">导入字体…</button><button type="button" class="tbtn reading-font-remove" data-i18n="移除导入副本">移除导入副本</button></span>
+        <span class="appearance-note" data-i18n="请选择你有权使用的字体文件。仅保存在此应用，不会上传或安装到系统。">请选择你有权使用的字体文件。仅保存在此应用，不会上传或安装到系统。</span>
+        <span class="appearance-note reading-font-import-status" role="status"></span>
+        <span class="appearance-note reading-font-project-note" hidden><span class="reading-font-project-status" role="status"></span></span>
+        <span class="appearance-note reading-font-note"><strong data-i18n="本机仓耳今楷 04">本机仓耳今楷 04</strong><span class="reading-font-status" role="status"></span><span data-i18n="前往仓耳官网查看许可并自行安装，安装后重启应用。">前往仓耳官网查看许可并自行安装，安装后重启应用。</span> <a class="reading-font-link" target="_blank" rel="noopener noreferrer" data-i18n="字体官网">字体官网</a></span>
+      </div>
+    </details>
+    <span class="appearance-row"><span><span data-i18n="字号">字号</span></span><span class="appearance-font-controls">
+      <button class="tbtn font-btn font-dec" onClick="{{ fontDec }}" aria-label="缩小字号" data-i18n-aria-label="缩小字号"><span class="desktop-original-glyph" aria-hidden="true">A−</span><svg class="ui-icon mobile-icon mobile-only" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 19 6-14 6 14M5 14h8M17 12h5"/></svg></button>
+      <span ref="{{ fontSizeRef }}" class="font-size-value">16px</span>
+      <button class="tbtn font-btn font-inc" onClick="{{ fontInc }}" aria-label="放大字号" data-i18n-aria-label="放大字号"><span class="desktop-original-glyph" aria-hidden="true">A+</span><svg class="ui-icon mobile-icon mobile-only" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 19 6-14 6 14M5 14h8M17 12h5M19.5 9.5v5"/></svg></button>
+    </span></span>
+    <span class="appearance-row"><span><span data-i18n="纸色">纸色</span></span><span ref="{{ paperPickerRef }}" class="paper-picker" role="group" aria-label="选择纸色" data-i18n-aria-label="选择纸色"></span></span>
+    <span class="appearance-row appearance-width"><span><span data-i18n="沉浸阅读宽度">沉浸阅读宽度</span></span><button ref="{{ immersiveWideRef }}" class="tbtn tool-pill immersive-wide-toggle" onClick="{{ toggleImmersiveWide }}" title="切换为宽屏阅读" data-i18n-title="切换为宽屏阅读" aria-pressed="false"><span data-i18n="宽屏">宽屏</span></button></span>
+    <span class="appearance-note"><span data-i18n="排版偏好会自动记住">排版偏好会自动记住</span></span>
+</section>
+        <section id="settings-ai" role="tabpanel" aria-labelledby="settings-tab-ai" data-settings-page="ai" hidden>
+          <h3 data-i18n="AI 阅读助手">AI 阅读助手</h3>
+          <p class="appearance-note" data-i18n="阅读、编辑与批注无需配置 AI。">阅读、编辑与批注无需配置 AI。</p>
+          <button class="abtn secondary settings-entry" onClick="{{ openAISettings }}" data-i18n="AI 渠道与 API Key">AI 渠道与 API Key</button>
+          <p class="appearance-note workspace-service-note" data-i18n="AI 与文档历史需要桌面版或本地 Agent Bridge。">AI 与文档历史需要桌面版或本地 Agent Bridge。</p>
+        </section>
+        <section id="settings-integrations" role="tabpanel" aria-labelledby="settings-tab-integrations" data-settings-page="integrations" hidden>
+          <h3 data-i18n="集成">集成</h3>
+          <p class="appearance-note" data-integrations-note data-i18n="在文档顶部的「导出」中上传到飞书或钉钉，使用本机已登录的连接器。">在文档顶部的「导出」中上传到飞书或钉钉，使用本机已登录的连接器。</p>
+          <ul class="integration-status-list" aria-live="polite">
+            <li class="integration-status-row is-unavailable" data-integration-target="feishu">
+              <strong data-integration-name>飞书文档</strong>
+              <span class="appearance-note" data-integration-status data-i18n="当前不可用 · 需要桌面版或本地 Agent Bridge">当前不可用 · 需要桌面版或本地 Agent Bridge</span>
+            </li>
+            <li class="integration-status-row is-unavailable" data-integration-target="dingtalk">
+              <strong data-integration-name>钉钉云盘</strong>
+              <span class="appearance-note" data-integration-status data-i18n="当前不可用 · 需要桌面版或本地 Agent Bridge">当前不可用 · 需要桌面版或本地 Agent Bridge</span>
+            </li>
+          </ul>
+          <button class="abtn secondary folder-menu-item" onClick="{{ menuFolder }}" title="选择文件夹，让文档显示本地路径" data-i18n-title="选择文件夹，让文档显示本地路径" data-i18n="关联本地文件夹">关联本地文件夹</button>
+        </section>
+      </div>
+    </div>
+  </section></div>
+  <div class="mobile-quick-appearance-backdrop" onClick="{{ closeQuickAppearance }}" aria-hidden="true" hidden></div>
+  <section class="preferences-panel quick-appearance-panel" role="dialog" aria-label="快捷排版" data-i18n-aria-label="快捷排版" tabindex="-1" hidden>
+    <div class="appearance-panel-header"><strong data-i18n="阅读排版">阅读排版</strong><button class="tbtn" onClick="{{ closeQuickAppearance }}" aria-label="关闭" data-i18n-aria-label="关闭"><span class="desktop-original-glyph" aria-hidden="true">×</span><svg class="ui-icon mobile-icon mobile-only" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+    <div class="appearance-row"><span data-i18n="字号">字号</span><span class="appearance-font-controls"><button class="tbtn" onClick="{{ fontDec }}" aria-label="缩小字号" data-i18n-aria-label="缩小字号"><span class="desktop-original-glyph" aria-hidden="true">A−</span><svg class="ui-icon mobile-icon mobile-only" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 19 6-14 6 14M5 14h8M17 12h5"/></svg></button><span class="quick-font-value">16px</span><button class="tbtn" onClick="{{ fontInc }}" aria-label="放大字号" data-i18n-aria-label="放大字号"><span class="desktop-original-glyph" aria-hidden="true">A+</span><svg class="ui-icon mobile-icon mobile-only" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 19 6-14 6 14M5 14h8M17 12h5M19.5 9.5v5"/></svg></button></span></div>
+    <div class="appearance-row"><span data-i18n="纸色">纸色</span><span class="quick-paper-picker paper-picker"></span></div>
+    <button class="abtn" onClick="{{ openWorkspaceSettings }}" data-i18n="完整设置">完整设置</button>
+  </section>
+
+
+  <!-- ===== SPLIT BODY ===== -->
+  <main ref="{{ splitRef }}" class="editor-main">
+
+    <!-- LEFT: source -->
+    <section class="source-pane">
+      <div class="pane-toolbar">
+        <div class="source-toolbar-leading">
+          <span class="pane-title"><span data-i18n="原文">原文</span></span>
+          <div class="history-toolbar-actions" role="group" aria-label="编辑历史" data-i18n-aria-label="编辑历史">
+          <button ref="{{ undoButtonRef }}" class="tbtn fmt history-action" onClick="{{ undoEdit }}" title="撤销（Ctrl+Z）" data-i18n-title="撤销（Ctrl+Z）" data-mod-title="undo" aria-label="撤销" data-i18n-aria-label="撤销" disabled><svg class="history-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"></path><path d="M4 9h10.5a5.5 5.5 0 1 1 0 11H11"></path></svg></button>
+          <button ref="{{ redoButtonRef }}" class="tbtn fmt history-action" onClick="{{ redoEdit }}" title="重做（Ctrl+Y）" data-i18n-title="重做（Ctrl+Y）" data-mod-title="redo" aria-label="重做" data-i18n-aria-label="重做" disabled><svg class="history-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"></path><path d="M20 9H9.5a5.5 5.5 0 1 0 0 11H13"></path></svg></button>
+          </div>
+          <button class="tbtn fmt history-action search-toggle" onClick="{{ toggleSearch }}" title="搜索替换（Ctrl+F）" data-i18n-title="搜索替换（Ctrl+F）" data-mod-title="find" aria-label="搜索替换" data-i18n-aria-label="搜索替换"><svg class="history-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg></button>
+        </div>
+        <div class="source-toolbar-actions" role="group" aria-label="Markdown 格式" data-i18n-aria-label="Markdown 格式">
+          <button class="tbtn fmt fmt-h" onClick="{{ fmtH }}" title="标题" data-i18n-title="标题">H</button>
+          <button class="tbtn fmt fmt-b" onClick="{{ fmtB }}" title="加粗" data-i18n-title="加粗">B</button>
+          <button class="tbtn fmt fmt-i" onClick="{{ fmtI }}" title="斜体" data-i18n-title="斜体">i</button>
+          <button class="tbtn fmt fmt-lg" onClick="{{ fmtQuote }}" title="引用" data-i18n-title="引用">&rdquo;</button>
+          <button class="tbtn fmt fmt-lg" onClick="{{ fmtList }}" title="列表" data-i18n-title="列表">•</button>
+          <button class="tbtn fmt fmt-code" onClick="{{ fmtCode }}" title="代码" data-i18n-title="代码">&lt;&gt;</button>
+          <button class="tbtn fmt" onClick="{{ fmtLink }}" title="链接" data-i18n-title="链接" aria-label="插入链接" data-i18n-aria-label="插入链接"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 13 4-4m-6 7-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0m2 1 1-1a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0" transform="translate(1 0)"></path></svg></button>
+        </div>
+      </div>
+      <div ref="{{ searchBarRef }}" class="search-bar" role="search" aria-label="搜索与替换" data-i18n-aria-label="搜索与替换">
+        <button ref="{{ searchExpandRef }}" class="search-expand-toggle" onClick="{{ toggleSearchReplaceRow }}" title="切换替换（Ctrl+H）" data-i18n-title="切换替换（Ctrl+H）" data-mod-title="toggle-replace" aria-label="展开或收起替换" data-i18n-aria-label="展开或收起替换" aria-expanded="false"><span class="search-expand-icon">›</span></button>
+        <div class="search-bar-rows">
+          <div class="search-row">
+            <span class="search-input-wrap">
+              <input ref="{{ searchInputRef }}" class="search-input" type="text" placeholder="搜索原文…" data-i18n-placeholder="搜索原文…" aria-label="搜索文本" data-i18n-aria-label="搜索文本" spellCheck="false" />
+              <span class="search-input-tools">
+                <button ref="{{ searchCaseRef }}" class="search-opt" onClick="{{ toggleSearchCase }}" title="区分大小写" data-i18n-title="区分大小写" aria-label="区分大小写" data-i18n-aria-label="区分大小写" aria-pressed="false">Aa</button>
+                <button ref="{{ searchWordRef }}" class="search-opt search-opt-word" onClick="{{ toggleSearchWord }}" title="全字匹配" data-i18n-title="全字匹配" aria-label="全字匹配" data-i18n-aria-label="全字匹配" aria-pressed="false">ab</button>
+                <button ref="{{ searchRegexRef }}" class="search-opt" onClick="{{ toggleSearchRegex }}" title="使用正则表达式" data-i18n-title="使用正则表达式" aria-label="使用正则表达式" data-i18n-aria-label="使用正则表达式" aria-pressed="false">.*</button>
+              </span>
+            </span>
+            <span ref="{{ searchCountRef }}" class="search-count" aria-live="polite"></span>
+            <button class="tbtn search-tool" onClick="{{ searchPrev }}" title="上一处（Shift+Enter）" data-i18n-title="上一处（Shift+Enter）" aria-label="上一处" data-i18n-aria-label="上一处"><span class="desktop-original-glyph" aria-hidden="true">↑</span><svg class="ui-icon mobile-icon mobile-only" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 12 6-6 6 6M12 6v14"/></svg></button>
+            <button class="tbtn search-tool" onClick="{{ searchNext }}" title="下一处（Enter）" data-i18n-title="下一处（Enter）" aria-label="下一处" data-i18n-aria-label="下一处"><span class="desktop-original-glyph" aria-hidden="true">↓</span><svg class="ui-icon mobile-icon mobile-only" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 12 6 6 6-6M12 4v14"/></svg></button>
+            <button class="tbtn search-tool search-close" onClick="{{ closeSearch }}" title="关闭（Esc）" data-i18n-title="关闭（Esc）" aria-label="关闭搜索" data-i18n-aria-label="关闭搜索"><span class="desktop-original-glyph" aria-hidden="true">&times;</span><svg class="ui-icon mobile-icon mobile-only" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+          </div>
+          <div class="search-row search-row-replace">
+            <span class="search-input-wrap">
+              <input ref="{{ replaceInputRef }}" class="search-input replace-input" type="text" placeholder="替换…" data-i18n-placeholder="替换…" aria-label="替换文本" data-i18n-aria-label="替换文本" spellCheck="false" />
+            </span>
+            <button class="tbtn search-tool search-replace-btn" onClick="{{ replaceCurrent }}" title="替换当前匹配" data-i18n-title="替换当前匹配" aria-label="替换当前匹配" data-i18n-aria-label="替换当前匹配"><span data-i18n="替换">替换</span></button>
+            <button class="tbtn search-tool search-replace-btn" onClick="{{ replaceAll }}" title="替换全部匹配" data-i18n-title="替换全部匹配" aria-label="替换全部匹配" data-i18n-aria-label="替换全部匹配"><span data-i18n="全部">全部</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="source-editor-area">
+        <div ref="{{ sourceHighlightRef }}" class="source-highlight-layer" aria-hidden="true"></div>
+        <textarea ref="{{ sourceRef }}" class="md-source" spellCheck="false" placeholder="# 在这里写 Markdown…" data-i18n-placeholder="# 在这里写 Markdown…"></textarea>
+      </div>
+    </section>
+
+    <!-- DIVIDER -->
+    <div ref="{{ dividerRef }}" class="editor-divider">
+      <div class="editor-divider-hit"></div>
+    </div>
+
+    <!-- RIGHT: preview -->
+    <section ref="{{ previewPaneRef }}" class="preview-pane">
+      <div class="pane-toolbar reading-toolbar" role="toolbar" aria-label="阅读工具" data-i18n-aria-label="阅读工具">
+        <span ref="{{ previewTitleRef }}" class="pane-title"><span data-i18n="预览">预览</span></span>
+        <span class="preview-toolbar-actions">
+          <button class="tbtn tool-pill" onClick="{{ togglePreviewSearch }}" aria-label="查找文档" data-i18n-aria-label="查找文档"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg><span data-i18n="查找">查找</span></button>
+          <button class="tbtn tool-pill quick-appearance-toggle" onClick="{{ toggleQuickAppearance }}" aria-label="排版" data-i18n-aria-label="排版" aria-expanded="false"><span aria-hidden="true">Aa</span><span data-i18n="排版">排版</span></button>
+          <button class="tbtn tool-pill fullscreen-only-control reading-toolbar-settings" onClick="{{ openWorkspaceSettings }}" aria-label="设置" data-i18n-aria-label="设置"><span data-i18n="设置">设置</span></button>
+          <button class="tbtn tool-pill fullscreen-only-control" onClick="{{ toggleComments }}" title="显示批注" data-i18n-title="显示批注" aria-label="显示批注" data-i18n-aria-label="显示批注">
+            <span class="fullscreen-comments-label"><span data-i18n="批注">批注</span></span>
+            <span ref="{{ previewCommentCountRef }}" class="count-badge">0</span>
+          </button>
+          <button class="tbtn tool-pill fullscreen-only-control" onClick="{{ toggleOutline }}" title="显示大纲" data-i18n-title="显示大纲" aria-label="大纲" data-i18n-aria-label="大纲">
+            <span data-i18n="大纲">大纲</span>
+          </button>
+          <button class="tbtn tool-pill focus-toggle-btn" onClick="{{ togglePreviewFullscreen }}" title="沉浸式阅读（Esc 退出）" data-i18n-title="沉浸式阅读（Esc 退出）" aria-label="沉浸式阅读" data-i18n-aria-label="沉浸式阅读">
+            <svg ref="{{ fullscreenIconRef }}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"></path></svg>
+            <span ref="{{ fullscreenLabelRef }}" class="fullscreen-button-label"><span data-i18n="专注">专注</span></span>
+          </button>
+        </span>
+      </div>
+      <button class="mobile-only mobile-menu-toggle mobile-focus-menu" onClick="{{ toggleMobileReadingMenu }}" aria-label="更多" data-i18n-aria-label="更多" aria-haspopup="dialog" aria-expanded="false"><svg class="ui-icon mobile-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button>
+      <button type="button" class="focus-exit-sticky" onClick="{{ togglePreviewFullscreen }}" hidden aria-label="退出专注" data-i18n-aria-label="退出专注"><span data-i18n="退出专注">退出专注</span><span class="focus-exit-esc-hint" aria-hidden="true"> · Esc</span></button>
+      <div ref="{{ previewSearchBarRef }}" class="preview-search-bar" role="search" aria-label="搜索预览内容" data-i18n-aria-label="搜索预览内容">
+        <input ref="{{ previewSearchInputRef }}" class="search-input preview-search-input" type="text" placeholder="搜索预览…" data-i18n-placeholder="搜索预览…" aria-label="搜索预览" data-i18n-aria-label="搜索预览" spellCheck="false" />
+        <span ref="{{ previewSearchCountRef }}" class="search-count preview-search-count" aria-live="polite"></span>
+        <button class="tbtn search-tool" onClick="{{ previewSearchPrev }}" title="上一处（Shift+Enter）" data-i18n-title="上一处（Shift+Enter）" aria-label="上一处" data-i18n-aria-label="上一处"><span class="desktop-original-glyph" aria-hidden="true">↑</span><svg class="ui-icon mobile-icon mobile-only" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 12 6-6 6 6M12 6v14"/></svg></button>
+        <button class="tbtn search-tool" onClick="{{ previewSearchNext }}" title="下一处（Enter）" data-i18n-title="下一处（Enter）" aria-label="下一处" data-i18n-aria-label="下一处"><span class="desktop-original-glyph" aria-hidden="true">↓</span><svg class="ui-icon mobile-icon mobile-only" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 12 6 6 6-6M12 4v14"/></svg></button>
+        <button class="tbtn search-tool search-close" onClick="{{ closePreviewSearch }}" title="关闭（Esc）" data-i18n-title="关闭（Esc）" aria-label="关闭预览搜索" data-i18n-aria-label="关闭预览搜索"><span class="desktop-original-glyph" aria-hidden="true">&times;</span><svg class="ui-icon mobile-icon mobile-only" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+      </div>
+      <div ref="{{ previewRef }}" class="md-preview" contentEditable="false" spellCheck="false"></div>
+      <!-- 阅读脉络 · 路径成文操作条（仅脉络视图可见） -->
+      <div ref="{{ readingPathBarRef }}" class="reading-path-bar" role="toolbar" aria-label="按阅读路径成文" data-i18n-aria-label="按阅读路径成文">
+        <button ref="{{ readingPathModeRef }}" class="tbtn tool-pill reading-path-mode" onClick="{{ toggleReadingPathMode }}"
+          title="开启后点击图中节点选中它与它的上级链路" data-i18n-title="开启后点击图中节点选中它与它的上级链路" aria-pressed="false"><span data-i18n="选择路径">选择路径</span></button>
+        <span ref="{{ readingPathCountRef }}" class="reading-path-count"><span data-i18n="开启选择后点选节点，AI 按路径成文">开启选择后点选节点，AI 按路径成文</span></span>
+        <input ref="{{ readingPathInstructionRef }}" class="reading-path-instruction" type="text"
+          placeholder="补充要求（可选）" data-i18n-placeholder="补充要求（可选）" title="生成时的个性化要求，如：用第一人称写" data-i18n-title="生成时的个性化要求，如：用第一人称写" aria-label="生成的补充要求" data-i18n-aria-label="生成的补充要求" spellCheck="false" />
+        <!-- 初始不写 disabled：DC 运行时会把它固化成 React props，onClick 将永久失效；
+             禁用态由 _syncReadingPathBar 按选中数量在 DOM 上结算 -->
+        <span class="reading-path-action-group">
+          <button class="abtn primary reading-path-action" data-compose-action="article" onClick="{{ composePathArticle }}"
+            title="把选中路径上的问答与批注整理成一篇长文" data-i18n-title="把选中路径上的问答与批注整理成一篇长文"><span data-i18n="整理成长文">整理成长文</span></button>
+          <button class="reading-path-help" onClick="{{ helpPathArticle }}" title="什么是「整理成长文」" data-i18n-title="什么是「整理成长文」" aria-label="什么是整理成长文" data-i18n-aria-label="什么是整理成长文">?</button>
+        </span>
+        <span class="reading-path-action-group">
+          <button class="abtn secondary reading-path-action" data-compose-action="remix" onClick="{{ composePathRemix }}"
+            title="以选中路径的思考为素材写一篇新文章" data-i18n-title="以选中路径的思考为素材写一篇新文章"><span data-i18n="写一篇二创">写一篇二创</span></button>
+          <button class="reading-path-help" onClick="{{ helpPathRemix }}" title="什么是「写一篇二创」" data-i18n-title="什么是「写一篇二创」" aria-label="什么是写一篇二创" data-i18n-aria-label="什么是写一篇二创">?</button>
+        </span>
+        <button class="tbtn reading-path-clear" onClick="{{ clearReadingPathSelection }}" title="清空已选节点" data-i18n-title="清空已选节点" aria-label="清空已选节点" data-i18n-aria-label="清空已选节点"><span data-i18n="清空">清空</span></button>
+      </div>
+    </section>
+
+  </main>
+    <!-- COMMENTS PANEL -->
+    <aside ref="{{ commentsRef }}" class="comments-panel">
+      <div ref="{{ commentsResizeRef }}" class="comments-resize-handle" title="拖动调整侧栏宽度" data-i18n-title="拖动调整侧栏宽度" aria-hidden="true"></div>
+      <div class="panel-header">
+        <div class="assistance-tabs" role="tablist" aria-label="辅助面板" data-i18n-aria-label="辅助面板"><button role="tab" aria-selected="true" onClick="{{ showCommentsTab }}" aria-label="批注" data-i18n-aria-label="批注"><span data-i18n="批注">批注</span><span class="assistance-count">0</span></button><button role="tab" aria-selected="false" onClick="{{ showOutlineTab }}" aria-label="大纲" data-i18n-aria-label="大纲"><span data-i18n="大纲">大纲</span></button><button class="ai-entry" role="tab" aria-selected="false" onClick="{{ showAITab }}">AI</button></div>
+        <button class="panel-close" onClick="{{ closePanel }}" title="收起" data-i18n-title="收起" aria-label="收起批注面板" data-i18n-aria-label="收起批注面板"><span class="desktop-original-glyph" aria-hidden="true">&times;</span><svg class="ui-icon mobile-icon mobile-only" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+      </div>
+      <div class="panel-actions">
+        <button class="abtn secondary" onClick="{{ copyAll }}"><span data-i18n="复制全部批注">复制全部批注</span></button>
+        <button class="abtn primary" onClick="{{ copyFull }}"><span data-i18n="复制全文+批注">复制全文+批注</span></button>
+      </div>
+      <div ref="{{ commentListRef }}" class="comment-list"></div>
+    </aside>
+
+    <!-- OUTLINE PANEL -->
+    <aside ref="{{ outlineSidebarRef }}" class="outline-panel">
+      <div ref="{{ outlineResizeRef }}" class="outline-resize-handle" title="拖动调整侧栏宽度" data-i18n-title="拖动调整侧栏宽度" aria-hidden="true"></div>
+      <div class="panel-header">
+        <div class="assistance-tabs" role="tablist" aria-label="辅助面板" data-i18n-aria-label="辅助面板"><button role="tab" aria-selected="false" onClick="{{ showCommentsTab }}" aria-label="批注" data-i18n-aria-label="批注"><span data-i18n="批注">批注</span><span class="assistance-count">0</span></button><button role="tab" aria-selected="true" onClick="{{ showOutlineTab }}" aria-label="大纲" data-i18n-aria-label="大纲"><span data-i18n="大纲">大纲</span></button><button class="ai-entry" role="tab" aria-selected="false" onClick="{{ showAITab }}">AI</button></div>
+        <button class="panel-close" onClick="{{ closeOutline }}" title="收起" data-i18n-title="收起" aria-label="收起大纲面板" data-i18n-aria-label="收起大纲面板"><span class="desktop-original-glyph" aria-hidden="true">&times;</span><svg class="ui-icon mobile-icon mobile-only" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+      </div>
+      <nav ref="{{ outlineTreeRef }}" class="outline-tree" aria-label="文章大纲" data-i18n-aria-label="文章大纲"></nav>
+    </aside>
+
+    <!-- AI READING ASSISTANT -->
+    <aside ref="{{ aiPanelRef }}" class="ai-panel">
+      <div ref="{{ aiResizeRef }}" class="ai-resize-handle" title="拖动调整侧栏宽度" data-i18n-title="拖动调整侧栏宽度" aria-hidden="true"></div>
+      <div class="panel-header">
+        <div class="assistance-tabs" role="tablist" aria-label="辅助面板" data-i18n-aria-label="辅助面板"><button role="tab" aria-selected="false" onClick="{{ showCommentsTab }}" aria-label="批注" data-i18n-aria-label="批注"><span data-i18n="批注">批注</span><span class="assistance-count">0</span></button><button role="tab" aria-selected="false" onClick="{{ showOutlineTab }}" aria-label="大纲" data-i18n-aria-label="大纲"><span data-i18n="大纲">大纲</span></button><button class="ai-entry" role="tab" aria-selected="true" onClick="{{ showAITab }}">AI</button></div>
+        <span class="panel-header-tools">
+          <button class="panel-close" onClick="{{ closeAI }}" title="收起" data-i18n-title="收起" aria-label="收起 AI 面板" data-i18n-aria-label="收起 AI 面板"><span class="desktop-original-glyph" aria-hidden="true">&times;</span><svg class="ui-icon mobile-icon mobile-only" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+        </span>
+      </div>
+      <div class="workspace-ai-tools">
+        <!-- 渠道与 API Key 归入设置；当前渠道可在此快捷访问。 -->
+          <button ref="{{ aiEngineChipRef }}" class="ai-engine-chip" onClick="{{ openAISettings }}"
+            title="当前 AI 渠道 · 点击到设置中更换" data-i18n-title="当前 AI 渠道 · 点击到设置中更换" aria-label="当前 AI 渠道，点击打开设置" data-i18n-aria-label="当前 AI 渠道，点击打开设置">Codex</button>
+          <button class="ai-history-toggle" onClick="{{ toggleAIHistory }}" title="本地对话历史" data-i18n-title="本地对话历史"><span data-i18n="历史">历史</span></button>
+</div>
+      <div ref="{{ aiHistoryRef }}" class="ai-history-panel">
+        <div class="ai-history-header">
+          <strong class="ai-history-title"><span data-i18n="本地问答历史">本地问答历史</span></strong>
+          <button class="ai-history-back" onClick="{{ toggleAIHistory }}"><span data-i18n="返回">返回</span></button>
+        </div>
+        <div ref="{{ aiHistoryListRef }}" class="ai-history-list"></div>
+      </div>
+      <div class="ai-context">
+        <div ref="{{ aiStatusRef }}" class="ai-status" data-state="checking"><span data-i18n="正在连接本地 Agent…">正在连接本地 Agent…</span></div>
+        <div class="ai-overline"><span data-i18n="当前引用">当前引用</span></div>
+        <div ref="{{ aiQuoteRef }}" class="ai-quote is-empty"><span data-i18n="请先在预览中选中文字，再点击「问 AI」。">请先在预览中选中文字，再点击「问 AI」。</span></div>
+        <div class="ai-quick-row">
+          <button class="ai-quick" onClick="{{ askExplain }}"><span data-i18n="解释这段">解释这段</span></button>
+          <button class="ai-quick" onClick="{{ askContext }}"><span data-i18n="联系上下文">联系上下文</span></button>
+          <button class="ai-quick" onClick="{{ askChallenge }}"><span data-i18n="质疑假设">质疑假设</span></button>
+        </div>
+      </div>
+      <div ref="{{ aiReadinessRef }}" class="ai-readiness"></div>
+      <div ref="{{ aiMessagesRef }}" class="ai-messages" aria-live="polite"></div>
+      <div class="ai-composer">
+        <textarea ref="{{ aiInputRef }}" class="ai-input" rows="3" placeholder="提问或描述要完成的事情…（Enter 发送，Shift+Enter 换行）" data-i18n-placeholder="提问或描述要完成的事情…（Enter 发送，Shift+Enter 换行）"></textarea>
+        <div class="ai-composer-row">
+          <span class="ai-composer-note"><span data-i18n="默认只读 · 修改文件时逐次确认">默认只读 · 修改文件时逐次确认</span></span>
+          <button ref="{{ aiSendRef }}" class="ai-send" onClick="{{ sendAIQuestion }}"><span data-i18n="发送">发送</span></button>
+        </div>
+      </div>
+    </aside>
+
+
+  <div ref="{{ publishToastRef }}" class="publish-toast" data-state="loading" role="status" aria-live="assertive" aria-atomic="true">
+    <span class="publish-toast-icon" aria-hidden="true"></span>
+    <span class="publish-toast-copy">
+      <strong class="publish-toast-title"><span data-i18n="正在上传">正在上传</span></strong>
+      <small class="publish-toast-detail"><span data-i18n="正在创建在线文档，请稍候…">正在创建在线文档，请稍候…</span></small>
+    </span>
+    <button class="publish-toast-action" onClick="{{ openLastPublication }}" hidden><span data-i18n="再次打开">再次打开</span></button>
+  </div>
+
+  <!-- ===== STATUS BAR ===== -->
+  <footer class="app-footer">
+    <span class="footer-status-slots">
+      <span ref="{{ persistStatusRef }}" class="save-status save-status-persist" role="status"><span data-i18n="草稿已自动保存在此浏览器">草稿已自动保存在此浏览器</span></span>
+      <span ref="{{ saveStatusRef }}" class="save-status save-status-toast" role="status" aria-live="polite"></span>
+    </span>
+    <span ref="{{ footerPathRef }}" class="footer-path" title="" role="button" tabindex="0" onClick="{{ copyFooterPath }}"></span>
+    <span class="footer-stats">
+      <span ref="{{ countRef }}" class="word-count"><span data-i18n="0 字 · 0 行">0 字 · 0 行</span></span>
+    </span>
+  </footer>
+
+  <!-- ===== SELECTION TOOLBAR ===== -->
+  <!-- P0 四钮固定主条；复制等按宽度提升；overflow 空则藏「更多」。规格：选区工具条主条与折行 -->
+  <div ref="{{ selBarRef }}" class="selection-toolbar" onMouseDown="{{ noop }}">
+    <button class="seltool" data-sel-annotate="marker" onClick="{{ markMarker }}" title="马克笔高亮" data-i18n-title="马克笔高亮">
+      <span class="seltool-icon"><span class="seltool-glyph glyph-mark">A</span><svg class="mobile-only mobile-annotation-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14v8H5z"/></svg></span><span data-i18n="马克笔">马克笔
+    </span></button>
+    <button class="seltool" data-sel-annotate="wavy" onClick="{{ markWavy }}" title="波浪线" data-i18n-title="波浪线">
+      <span class="seltool-icon"><span class="seltool-glyph glyph-wavy">A</span><svg class="mobile-only mobile-annotation-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 14 3-4 3 4 3-4 3 4 3-4 3 4"/></svg></span><span data-i18n="波浪线">波浪线
+    </span></button>
+    <button class="seltool" data-sel-annotate="straight" onClick="{{ markStraight }}" title="直线" data-i18n-title="直线">
+      <span class="seltool-icon"><span class="seltool-glyph glyph-line">A</span><svg class="mobile-only mobile-annotation-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 14h18"/></svg></span><span data-i18n="直线">直线
+    </span></button>
+    <button class="seltool" data-sel-annotate="idea" onClick="{{ writeIdea }}" title="写想法（加批注）" data-i18n-title="写想法（加批注）">
+      <span class="seltool-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M12 7v6M9 10h6" strokeWidth="1.6"></path></svg></span><span data-i18n="写想法">写想法
+    </span></button>
+    <span class="seltool-divider seltool-tools-divider" hidden></span>
+    <span class="seltool-main-tools"></span>
+    <span class="seltool-overflow" hidden>
+      <button class="seltool seltool-more" onClick="{{ toggleSelOverflow }}" title="更多" data-i18n-title="更多" aria-haspopup="menu" aria-expanded="false" aria-label="更多" data-i18n-aria-label="更多">
+        <span class="seltool-icon"><span class="seltool-glyph">⋯</span><svg class="mobile-only mobile-annotation-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></span><span data-i18n="更多">更多
+      </span></button>
+      <div class="seltool-overflow-menu" role="menu" hidden>
+        <button class="seltool" data-seltool="copy" role="menuitem" onClick="{{ copySel }}" title="复制选中文字" data-i18n-title="复制选中文字">
+          <span class="seltool-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h8"></path></svg></span><span data-i18n="复制">复制
+        </span></button>
+        <button class="seltool translate-entry" data-seltool="translate" role="menuitem" onClick="{{ translateSel }}" title="翻译选中文字（需在 AI 设置里配置 Gemini Key）" data-i18n-title="翻译选中文字（需在 AI 设置里配置 Gemini Key）">
+          <span class="seltool-icon"><span class="seltool-glyph"><span data-i18n="译">译</span></span></span><span data-i18n="翻译">翻译
+        </span></button>
+        <button class="seltool ai-entry" data-seltool="askAI" role="menuitem" onClick="{{ aiAsk }}" title="复制为 AI 提问" data-i18n-title="复制为 AI 提问">
+          <span class="seltool-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg></span><span data-i18n="问 AI">问 AI
+        </span></button>
+        <button class="seltool selection-image-entry" data-seltool="image" role="menuitem" onClick="{{ openSelectionImage }}" title="把选中内容生成图片" data-i18n-title="把选中内容生成图片">
+          <span class="seltool-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="8.5" cy="9" r="1.5"></circle><path d="m5 17 4-4 3 3 2.5-2.5L19 18"></path></svg></span><span data-i18n="生成图片">生成图片
+        </span></button>
+      </div>
+    </span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;dark&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;tsType&quot;:&quot;'dark'|'light'&quot;},&quot;wrapSource&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const Component = window.createMarkdownEditorComponent(DCLogic, React);
+</script>
+</body>
+</html>

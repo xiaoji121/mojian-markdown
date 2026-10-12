@@ -1,0 +1,1 @@
+var e=[`zh-CN`,`zh-TW`,`en`,`ja`];function t(t){let n=t.replace(/\/index\.html$/,`/`).replace(/\/$/,``).split(`/`).pop();return e.find(e=>e===n)??null}var n=`https://mojian.uk/`;export{e as n,t as r,n as t};

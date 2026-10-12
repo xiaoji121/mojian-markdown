@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>墨笺 Markdown · 产品海报 V2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+*{box-sizing:border-box}html,body{margin:0}body{background:#171614;padding:48px;display:flex;flex-direction:column;align-items:center;gap:48px;font-family:"Noto Sans SC",sans-serif}.poster{width:1080px;height:1440px;position:relative;overflow:hidden;color:#f7f0df}.poster img{display:block}.poster .noise{position:absolute;inset:0;opacity:.13;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.78' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.45'/%3E%3C/svg%3E");mix-blend-mode:soft-light;pointer-events:none}.eyebrow{font:500 20px "IBM Plex Mono";letter-spacing:.18em;color:#d79322;text-transform:uppercase}.title{font:500 82px/1.1 "Noto Serif SC";letter-spacing:.02em;margin:24px 0 18px}.sub{font-size:27px;line-height:1.55;color:#c8bfae}.brand{font:500 22px "IBM Plex Mono";letter-spacing:.12em}.frame{overflow:hidden;background:#eee9de;box-shadow:0 32px 90px rgba(0,0,0,.42)}.frame img{width:100%;height:100%;object-fit:contain}.poster-immersive{background:radial-gradient(circle at 72% 25%,#48331c 0,#16130f 42%,#080807 100%);padding:82px}.poster-immersive .hero{position:absolute;left:82px;right:82px;top:410px;height:610px;transform:rotate(-1deg);border:1px solid #8d6b35}.poster-immersive .sheet-back{position:absolute;left:145px;right:20px;top:480px;height:610px;transform:rotate(4deg);opacity:.72;border:1px solid #75906e}.poster-immersive .copy{position:relative;z-index:4}.poster-immersive .foot{position:absolute;left:82px;right:82px;bottom:82px;border-top:1px solid #786544;padding-top:28px;display:flex;justify-content:space-between;color:#c8bfae}.poster-annotation{background:#f1ede4;color:#171511;padding:72px}.poster-annotation .title{color:#171511}.poster-annotation .sub{color:#655d52}.poster-annotation .main-shot{position:absolute;left:72px;right:72px;top:430px;height:650px;border:1px solid #c9c0b1;box-shadow:none}.poster-annotation .zoom{position:absolute;right:72px;bottom:92px;width:470px;height:330px;background:#fff;border:12px solid #f1ede4;box-shadow:0 22px 50px rgba(34,27,16,.18)}.poster-annotation .zoom img{width:100%;height:100%;object-fit:cover;object-position:right top}.poster-annotation .note{position:absolute;left:72px;bottom:112px;width:390px;font:500 32px/1.45 "Noto Serif SC";border-left:6px solid #c47b00;padding-left:24px}.poster-ai{background:linear-gradient(145deg,#10110f 0,#1b201a 52%,#08110c 100%);padding:78px}.poster-ai .title{font-size:76px}.poster-ai .main-shot{position:absolute;left:78px;top:420px;width:610px;height:690px;border:1px solid #5b6d59}.poster-ai .detail{position:absolute;right:58px;top:530px;width:360px;height:650px;border:1px solid #8b713e;background:#eee}.poster-ai .detail img{width:100%;height:100%;object-fit:cover;object-position:right top}.poster-ai .footline{position:absolute;left:78px;right:78px;bottom:76px;display:flex;justify-content:space-between;align-items:end;border-top:1px solid #566052;padding-top:26px}.poster-ai .footline strong{font:500 30px/1.4 "Noto Serif SC";max-width:650px}.accent{color:#d79322}
+</style>
+</head>
+<body>
+<section class="poster poster-immersive" id="poster-immersive">
+  <div class="sheet-back frame"><img src="assets/immersive-green.jpg" alt="豆沙绿沉浸阅读"></div>
+  <div class="hero frame"><img src="assets/immersive-parchment.jpg" alt="羊皮纸沉浸阅读"></div>
+  <div class="copy"><div class="eyebrow">Immersive Reading</div><h1 class="title">把屏幕，换成一张<br><span class="accent">安静的纸</span>。</h1><p class="sub">五种纸色 · 标准 / 宽屏 · 沉浸阅读</p></div>
+  <div class="foot"><span class="brand">墨笺 MARKDOWN</span><span>为认真阅读而做</span></div><div class="noise"></div>
+</section>
+<section class="poster poster-annotation" id="poster-annotation">
+  <div class="eyebrow">Select · Mark · Think</div><h1 class="title">读到这里，<br>留下你的判断。</h1><p class="sub">划词之后，批注、想法与 AI 都在原文旁边发生。</p>
+  <div class="main-shot frame"><img src="assets/selection-toolbar.jpg" alt="划词工具条"></div>
+  <div class="zoom"><img src="assets/annotation-panel.jpg" alt="批注归档放大"></div>
+  <div class="note">马克笔、波浪线、直线、写想法、问 AI。<br><span class="accent">批注集中归档。</span></div>
+</section>
+<section class="poster poster-ai" id="poster-ai">
+  <div class="eyebrow">AI Reading Assistant</div><h1 class="title">不是另开一个聊天框。<br>是在<span class="accent">原文里追问</span>。</h1><p class="sub">选中原文提问 · 联系全文回答 · 自动归档回看</p>
+  <div class="main-shot frame"><img src="assets/ai-thinking.jpg" alt="AI 阅读助手"></div>
+  <div class="detail"><img src="assets/ai-result.jpg" alt="AI 回答结果放大"></div>
+  <div class="footline"><strong>问题、引用、回答，都成为当前文档的一部分。</strong><span class="brand">墨笺 MARKDOWN</span></div><div class="noise"></div>
+</section>
+</body>
+</html>

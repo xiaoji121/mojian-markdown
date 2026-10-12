@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="favicon-title">
+  <title id="favicon-title">墨笺 Markdown</title>
+  <rect width="64" height="64" rx="14" fill="#1a1b1d"/>
+  <path d="M17 12h30l6 22-21 21-21-21 6-22Z" fill="#f0a838"/>
+  <circle cx="32" cy="30" r="4" fill="#1a1b1d"/>
+  <path d="M32 34v21" fill="none" stroke="#1a1b1d" stroke-width="3"/>
+</svg>
