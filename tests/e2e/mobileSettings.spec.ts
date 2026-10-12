@@ -88,7 +88,7 @@ test('mobile quick appearance stays above reading and opens full settings withou
   await expect(page.locator('.md-source')).toHaveValue(source);
 });
 
-test('desktop settings keep the original dialog and compact controls', async ({ page }) => {
+test('desktop full settings retain every category and use labeled paper cards within the viewport', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/#editor');
   await expect(page.locator('.md-preview h1').first()).toBeVisible();
@@ -97,9 +97,12 @@ test('desktop settings keep the original dialog and compact controls', async ({ 
   await expect(panel).toBeVisible();
   const bounds = (await panel.boundingBox())!;
   expect(bounds.width).toBe(820);
-  expect(bounds.height).toBe(640);
+  expect(bounds.height).toBeLessThanOrEqual(836);
+  expect(bounds.y).toBeGreaterThanOrEqual(32);
   expect(bounds.x).toBe(310);
   await expect(panel.locator('.appearance-width')).toBeVisible();
   expect((await panel.locator('.font-inc').boundingBox())!.height).toBe(32);
-  expect((await panel.locator('.paper-dot').first().boundingBox())!.height).toBe(24);
+  expect((await panel.locator('.paper-dot').first().boundingBox())!.height).toBe(82);
+  await expect(panel.locator('.paper-dot .pc-paper-label').first()).toBeVisible();
+  await expect(panel.locator('[data-settings-tab]')).toHaveCount(4);
 });

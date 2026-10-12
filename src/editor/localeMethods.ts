@@ -99,6 +99,7 @@ export class LocaleMethods {
       : this._readingFontStatus === 'unavailable' ? '未检测到可用的本机字体，已使用系统后备字体。'
       : '无法检测本机字体，已保留系统后备字体。';
     node.textContent = t(key);
+    this._syncDesktopFontStatus?.();
   }
 
   _disposeLocale() {

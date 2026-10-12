@@ -54,7 +54,8 @@ export class WorkspaceNavigationMethods {
     if (typeof document === 'undefined') return;
     const mobile = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 760px)').matches;
     const expanded = mobile ? sidebar.classList.contains('is-mobile-open') : open;
-    const guarded = this._mobileSettingsInert?.some(([node]) => node === sidebar);
+    const guarded = this._mobileSettingsInert?.some(([node]) => node === sidebar)
+      || this._pcSettingsInert?.some(([node]) => node === sidebar);
     sidebar.inert = !!this.previewFullscreen || !expanded || !!guarded;
     const toggle = document.querySelector?.('.document-toggle');
     toggle?.setAttribute('aria-expanded', String(expanded));

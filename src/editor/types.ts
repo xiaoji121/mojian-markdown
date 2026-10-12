@@ -29,6 +29,7 @@ export interface PersistedEditorState {
   theme: EditorTheme;
   /** 暗色主题下的纸色；缺省为墨黑 */
   paperDark?: PaperTheme;
+  softenDarkPaper?: boolean;
   /** 亮色主题下的纸色；缺省为羊皮纸 */
   paperLight?: PaperTheme;
   /** @deprecated 旧的单份纸色记忆，读取时迁移到 paperDark/paperLight */

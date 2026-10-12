@@ -1,5 +1,6 @@
 // @ts-nocheck
 // The DC runtime supplies its base class dynamically; keep this factory lightweight.
+import { DesktopAppearanceMethods } from './desktopAppearanceMethods';
 import { UserReadingFontMethods } from './userReadingFontMethods';
 import { ReadingFontMethods } from './readingFontMethods';
 import { LocaleMethods } from './localeMethods';
@@ -213,7 +214,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       || (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
     const saved = loadEditorState();
     this._initLocale(saved);
-    this._initReadingFont(saved);
+    this._initDesktopAppearance(saved);
     this._startedWithSample = !getEditorStorageError() && !(saved && typeof saved.content === 'string');
     const sample = getSample(getLocale(), navigator.platform);
     let initial = sample.markdown;
@@ -527,6 +528,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     ExportBackupMethods,
     WorkspaceNavigationMethods,
     WorkspaceSettingsMethods,
+    DesktopAppearanceMethods,
     MobileReadingMethods,
     MobileSettingsMethods,
     MobileFileMethods,

@@ -47,7 +47,8 @@ test('desktop expanded preference survives mobile drawer use, hidden focus moves
 test('collapsed navigation keeps settings discoverable in source mode and across breakpoint',async({page})=>{
   await page.setViewportSize({width:1100,height:1000});await openEditor(page);await page.locator('[data-mode="editor"]').click();
   await page.locator('.document-sidebar-close').click();const settings=page.locator('.pc-header-settings');await expect(settings).toBeVisible();
-  await settings.click();const dialog=page.getByRole('dialog',{name:'设置',exact:true});await expect(dialog).toBeVisible();
+  await settings.click();await page.locator('[data-pc-preference="font"]').click();
+  const dialog=page.getByRole('dialog',{name:'设置',exact:true});await expect(dialog).toBeVisible();
   await page.setViewportSize({width:390,height:844});await expect(dialog).toBeHidden();await expect(page.locator('.mobile-menu-toggle:visible')).toBeFocused();
   await page.setViewportSize({width:1100,height:1000});await expect(page.locator('.document-sidebar')).toBeHidden();
   await settings.click();await page.keyboard.press('Escape');await expect(settings).toBeFocused();
