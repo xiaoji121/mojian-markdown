@@ -1,4 +1,5 @@
 export const workspaceMessages: Record<string, [string, string, string]> = {
+  '阅读 · 思考 · 留下来': ['閱讀 · 思考 · 留下來', 'Read · Think · Keep', '読む · 考える · 残す'],
   'Markdown 文件': ['Markdown 檔案', 'Markdown file', 'Markdown ファイル'],
   '仅原文，不含批注': ['僅原文，不含批註', 'Source only, without annotations', '注釈を含まない原文のみ'],
   '长图': ['長圖', 'Long image', '縦長画像'],

@@ -1,0 +1,75 @@
+/* Approved PC phase one: scoped foundations, not new preferences or data flows. */
+.pc-only { display: none; }
+@media (min-width: 761px) {
+  body.editor-active[data-theme='light'] {
+    --bg: #faf6ef;
+    --bg-2: #f2ece1;
+    --bg-3: #f6f1e8;
+    --bg-input: #fffdf9;
+    --bg-source: #f6f1e8;
+    --border: #d9c9b5;
+    --border-soft: #e3d8c5;
+    --text: #2b2218;
+    --text-2: #4f4334;
+    --text-3: #7c6c56;
+    --text-4: #8a7d68;
+    --accent: #a65339;
+    --accent-2: #95452e;
+    --accent-soft: #f1e3d8;
+    --accent-ink: #fffdf9;
+  }
+  .app-shell { --workspace-header-height: 56px; }
+  .app-header { height: 56px; gap: 18px; padding-inline: 24px; background: var(--bg-input); }
+  .header-brand, .file-meta { min-width: 0; }
+  .file-meta { flex: 1; }
+  .workspace-save-label { font-size: 10px; margin-left: 0; }
+  .header-actions { gap: 8px; }
+  .view-mode-switcher { padding: 3px; gap: 3px; border-color: var(--border); }
+  .view-mode-option { height: 28px; padding-inline: 12px; border-radius: 4px; }
+  .view-mode-option + .view-mode-option { border-left: 0; }
+  .view-mode-option[aria-pressed='true'] { color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 -1px var(--accent); }
+  .app-shell > .document-sidebar { background: var(--bg-3); }
+  .workspace-brand { padding-inline: 20px 16px; }
+  .workspace-wordmark { font-size: 29px; font-weight: 400; }
+  .pc-workspace-tagline { display: block; margin: 4px 20px 20px; font: 10px/1.6 var(--sans); letter-spacing: 1px; color: var(--text-3); }
+  .workspace-brand .document-sidebar-close { display: inline-flex; justify-content: center; align-items: center; width: 32px; height: 32px; }
+  .workspace-brand .desktop-original-glyph, .workspace-file-actions .desktop-original-glyph { display: none; }
+  .workspace-brand .pc-only, .workspace-file-actions .pc-only { display: block; }
+  .workspace-file-actions { flex-direction: column; align-items: stretch; padding: 0 20px 20px; gap: 8px; }
+  .workspace-file-actions > .abtn { flex: none; width: 100%; min-height: 40px; height: 40px; padding-inline: 14px; justify-content: center; align-items: center; gap: 8px; }
+  .workspace-file-actions > .primary { background: var(--accent); color: var(--accent-ink); }
+  .workspace-file-actions > .abtn svg { width: 18px; height: 18px; flex: none; }
+  .workspace-file-actions > .abtn span:not(.desktop-original-glyph) { line-height: 20px; }
+  .workspace-file-actions > .open-doc-btn svg { transform: translateY(-.5px); }
+  .workspace-document-search { border: 0; border-bottom: 1px solid var(--border); border-radius: 0; background: transparent; margin: 0 20px 22px; padding: 8px 0; }
+  .recent-document-item.is-active { border-left: 2px solid var(--accent); padding-left: 10px; }
+  .workspace-sidebar-footer { padding: 14px 20px; }
+  .app-header .document-toggle { width: auto; min-height: 34px; padding: 0 8px; gap: 7px; border: 1px solid var(--border); background: var(--bg-input); flex: none; }
+  .app-header .document-toggle .pc-sidebar-toggle-label { display: inline; font-size: 11px; }
+  .pc-header-settings { display: inline-flex; width: 34px; height: 34px; padding: 0; justify-content: center; }
+  .app-shell:has(> .document-sidebar:not(.is-collapsed)) .pc-header-settings { display: none; }
+  .has-assistance .header-actions > .pc-header-settings { display: inline-flex; }
+  .has-assistance:has(> .document-sidebar:not(.is-collapsed)) .pc-header-settings { display: none; }
+  .app-shell button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .editor-main.preview-mode-active > .preview-pane:not(.preview-pane-fullscreen) > .reading-toolbar {
+    position: relative; inset: auto; flex: none; width: 100%; max-width: none; height: 54px; padding: 0 32px; border-radius: 0;
+    border-bottom: 1px solid var(--paper-border); background: var(--paper-bg); justify-content: space-between;
+  }
+  .editor-main.preview-mode-active > .preview-pane:not(.preview-pane-fullscreen) .reading-toolbar > .pane-title { display: block; }
+  .editor-main.preview-mode-active > .preview-pane:not(.preview-pane-fullscreen) > .md-preview { padding: 55px max(32px, calc((100% - 690px) / 2)) 64px; }
+  .editor-main.preview-mode-active .md-preview h1 { font-size: 2.35em; line-height: 1.35; font-weight: 400; letter-spacing: .02em; margin-bottom: .5em; }
+  .editor-main.preview-mode-active .md-preview > h1:first-child + p { font-size: .95em; color: var(--paper-text-3); margin-bottom: 1.3em; }
+  .editor-main.preview-mode-active .md-preview h2 { font-size: 1.35em; font-weight: 400; margin: 1.4em 0 .65em; padding-bottom: 0; border: 0; }
+  .editor-main.preview-mode-active .md-preview p { margin-bottom: 1em; }
+  .editor-main.preview-mode-active .md-preview blockquote { padding: 16px 24px; margin: 24px 0; background: var(--paper-bg-soft); border-left: 2px solid var(--paper-accent); font-style: normal; color: var(--paper-text); }
+  .editor-main.preview-mode-active .md-preview blockquote p { margin: 0; }
+  .app-footer { background: var(--bg-input); }
+}
+@media (min-width: 761px) and (max-width: 1100px) {
+  .app-header { padding-inline: 12px; gap: 10px; }
+  .header-actions { gap: 4px; }
+  .view-mode-option { padding-inline: 8px; }
+  .workspace-save-label { display: none; }
+  .app-header .document-toggle { padding-inline: 6px; }
+  .editor-main.preview-mode-active > .preview-pane:not(.preview-pane-fullscreen) > .reading-toolbar { padding-inline: 24px; }
+}

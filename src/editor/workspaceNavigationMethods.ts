@@ -44,6 +44,49 @@ export class WorkspaceNavigationMethods {
     document.addEventListener('keydown', this._workspaceTabKey);
   }
 
+  // Desktop visibility is session-only, as before. The mobile drawer must not
+  // overwrite that choice when the viewport crosses the mobile breakpoint.
+  _syncDocumentSidebar() {
+    const sidebar = this.documentSidebarRef?.current;
+    if (!sidebar) return;
+    const open = this._sidebarExplicitOpen ?? true;
+    sidebar.classList.toggle('is-collapsed', !open);
+    if (typeof document === 'undefined') return;
+    const mobile = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 760px)').matches;
+    const expanded = mobile ? sidebar.classList.contains('is-mobile-open') : open;
+    const guarded = this._mobileSettingsInert?.some(([node]) => node === sidebar);
+    sidebar.inert = !!this.previewFullscreen || !expanded || !!guarded;
+    const toggle = document.querySelector?.('.document-toggle');
+    toggle?.setAttribute('aria-expanded', String(expanded));
+    if (!expanded && !this.previewFullscreen && sidebar.contains?.(document.activeElement)) {
+      toggle?.focus?.({ preventScroll: true });
+    }
+  }
+
+  toggleDocumentSidebar() {
+    const sidebar = this.documentSidebarRef?.current;
+    if (!sidebar) return;
+    const mobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches;
+    if (mobile) sidebar.classList.toggle('is-mobile-open');
+    else {
+      this._sidebarExplicitOpen = sidebar.classList.contains('is-collapsed');
+      sidebar.classList.remove('is-mobile-open');
+    }
+    this._syncDocumentSidebar();
+    if (!mobile && this._sidebarExplicitOpen && !this.previewFullscreen) {
+      sidebar.querySelector?.('.document-sidebar-close')?.focus?.({ preventScroll: true });
+    }
+  }
+
+  closeDocumentSidebar() {
+    const sidebar = this.documentSidebarRef?.current;
+    if (!sidebar) return;
+    const mobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches;
+    if (!mobile) this._sidebarExplicitOpen = false;
+    sidebar.classList.remove('is-mobile-open');
+    this._syncDocumentSidebar();
+  }
+
   _workspaceNavigationRenderVals() {
     return {
       filterDocuments: event => {

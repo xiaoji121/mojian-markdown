@@ -1,14 +1,15 @@
 import { test, expect, openEditor, openAppearance, setSource } from './fixtures';
 
-test('阅读工具属于正文，不再形成第二条通栏', async ({ page }) => {
+test('PC 阅读工具在 54px 纸张工具栏内，正文位于其下方', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openEditor(page);
   await page.locator('[data-mode="preview"]').click();
   const tools = page.locator('.preview-pane > .pane-toolbar');
-  await expect(tools).toHaveCSS('position', 'absolute');
+  await expect(tools).toHaveCSS('position', 'relative');
   const bounds = await tools.boundingBox();
-  expect(bounds!.width).toBeLessThan(500);
-  await expect(tools.locator('.pane-title')).toBeHidden();
+  expect(bounds!.height).toBe(54);
+  expect(bounds!.width).toBe((await page.locator('.preview-pane').boundingBox())!.width);
+  await expect(tools.locator('.pane-title')).toBeVisible();
   await expect(tools.locator('.preview-toolbar-hint')).toHaveCount(0);
   await expect(tools.getByRole('button', { name: '查找文档', exact: true })).toBeVisible();
   await expect(tools.getByRole('button', { name: '排版', exact: true })).toBeVisible();
