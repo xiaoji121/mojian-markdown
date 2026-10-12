@@ -44,7 +44,14 @@ export class ViewMethods {
     if (mode !== 'editor') this._renderPreview();
     this._syncViewMode();
     if (mode !== 'preview') {
-      setTimeout(() => this.sourceRef.current && this.sourceRef.current.focus(), 0);
+      const initiatingFocus = typeof document !== 'undefined' ? document.activeElement : null;
+      setTimeout(() => {
+        // A quick desktop navigation action owns focus once its control is used.
+        const desktop = typeof window !== 'undefined' && window.matchMedia?.('(min-width: 761px)').matches;
+        if (desktop && (document.activeElement !== initiatingFocus
+          || document.activeElement?.closest?.('.document-sidebar, .document-toggle, .pc-header-settings'))) return;
+        this.sourceRef.current?.focus();
+      }, 0);
     }
   }
 

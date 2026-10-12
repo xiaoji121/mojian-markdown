@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { filterWorkspaceDocuments } from './workspaceNavigationMethods.ts';
+import { filterWorkspaceDocuments, WorkspaceNavigationMethods } from './workspaceNavigationMethods.ts';
 import { t, getLocale } from './i18n.ts';
 import { saveEditorState } from './storage.ts';
 import { isPristineSample } from './sample.ts';
@@ -649,34 +649,10 @@ export class BridgeMethods {
   }
 
 
-  _syncDocumentSidebar() {
-    const sidebar = this.documentSidebarRef?.current;
-    if (!sidebar) return;
-    const open = this._sidebarExplicitOpen ?? true;
-    sidebar.classList.toggle('is-collapsed', !open);
-    if (typeof document !== 'undefined') {
-      const mobile = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 760px)').matches;
-      const expanded = mobile ? sidebar.classList.contains('is-mobile-open') : open;
-      document.querySelector?.('.document-toggle')?.setAttribute('aria-expanded', String(expanded));
-    }
-  }
-
-  toggleDocumentSidebar() {
-    const sidebar = this.documentSidebarRef.current;
-    if (!sidebar) return;
-    const mobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches;
-    this._sidebarExplicitOpen = mobile ? !sidebar.classList.contains('is-mobile-open')
-      : sidebar.classList.contains('is-collapsed');
-    sidebar.classList.toggle('is-mobile-open', this._sidebarExplicitOpen);
-    this._syncDocumentSidebar();
-  }
-
-  closeDocumentSidebar() {
-    const sidebar = this.documentSidebarRef.current;
-    this._sidebarExplicitOpen = false;
-    if (sidebar) sidebar.classList.remove('is-mobile-open');
-    this._syncDocumentSidebar();
-  }
+  // Retain the Bridge interface; session navigation is owned by workspace chrome.
+  _syncDocumentSidebar() { WorkspaceNavigationMethods.prototype._syncDocumentSidebar.call(this); }
+  toggleDocumentSidebar() { WorkspaceNavigationMethods.prototype.toggleDocumentSidebar.call(this); }
+  closeDocumentSidebar() { WorkspaceNavigationMethods.prototype.closeDocumentSidebar.call(this); }
 
   // ===== double-click anchoring =====
 

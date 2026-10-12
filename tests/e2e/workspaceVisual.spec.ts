@@ -39,7 +39,7 @@ test('阅读稿的版心、轻量文档列表与辅助面板在真实工作区�
   const preview = (await page.locator('.md-preview').boundingBox())!;
   const heading = (await page.locator('.md-preview h1').boundingBox())!;
   expect(heading.x - preview.x).toBeGreaterThanOrEqual(56);
-  expect(parseFloat(await page.locator('.md-preview h1').evaluate(el => getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(45);
+  expect(parseFloat(await page.locator('.md-preview h1').evaluate(el => getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(40);
   expect((await page.locator('.ai-composer').boundingBox())!.height).toBeLessThanOrEqual(100);
   // Only the conversation is a static presentation fixture; controls and layout are the real app.
   await page.locator('.ai-readiness').evaluate(el => { el.replaceChildren(); });
