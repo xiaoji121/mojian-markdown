@@ -7,7 +7,7 @@ import { desktopLocales, nativeText } from './locale.js';
 const stringFields = ['content', 'fileName', 'bridgeDocumentId', 'longImageWidth', 'localFilePath'];
 const numberFields = ['fontSize', 'longImagePhoneFontSize', 'longImageStandardFontSize', 'savedAt', 'localFileModifiedAt',
   'aiPanelWidth', 'commentsPanelWidth', 'documentSidebarWidth'];
-const booleanFields = ['immersiveWide', 'longImageMarks', 'dirty'];
+const booleanFields = ['softenDarkPaper', 'immersiveWide', 'longImageMarks', 'dirty'];
 const choices = {
   locale: desktopLocales,
   readingFont: ['system-default', 'system-serif', 'source-serif-4', 'local-jinkai', 'project-jinkai', 'imported-font'],

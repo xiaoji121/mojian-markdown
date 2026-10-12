@@ -669,6 +669,7 @@ export class BridgeMethods {
       theme: this.theme,
       paperDark: this.paperDark || undefined,
       paperLight: this.paperLight || undefined,
+      softenDarkPaper: this.softenDarkPaper,
       immersiveWide: this.immersiveWide || undefined,
       longImageWidth: this.longImageWidth || undefined,
       longImagePhoneFontSize: this.longImagePhoneFontSize,

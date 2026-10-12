@@ -97,6 +97,7 @@ export class ViewMethods {
     this._syncQuickAppearance?.();
     const active = this._resolvedPaper();
     try { document.body.setAttribute('data-paper', active); } catch (e) {}
+    this._syncDesktopAppearance?.();
     const picker = this.paperPickerRef.current;
     if (!picker) return;
     picker.querySelectorAll('.paper-dot').forEach((dot) => {
@@ -127,6 +128,11 @@ export class ViewMethods {
       dot.title = t('纸色：{paper}', { paper: p.label });
       dot.setAttribute('aria-label', t('纸色：{paper}', { paper: p.label }));
       dot.style.background = p.swatch;
+      dot.style.setProperty('--pc-swatch', p.swatch);
+      const label = document.createElement('span');
+      label.className = 'pc-only pc-paper-label';
+      label.textContent = p.label;
+      dot.appendChild(label);
       dot.addEventListener('click', () => this.setPaper(p.id));
       picker.appendChild(dot);
     });

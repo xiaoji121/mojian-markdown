@@ -32,6 +32,7 @@ export class UserReadingFontMethods {
       const option = this._readingFontSelect?.querySelector(`option[value="${id}"]`);
       if (option) option.disabled = fonts[kind].status !== 'available';
     }
+    this._syncDesktopFontStatus?.();
     if (this._fontImportButton) this._fontImportButton.disabled = !api || !!this._fontActionBusy;
     if (this._fontRemoveButton) this._fontRemoveButton.disabled = !api || !!this._fontActionBusy || fonts.imported.status === 'unavailable';
   }

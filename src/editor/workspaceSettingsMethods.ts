@@ -5,6 +5,9 @@ export class WorkspaceSettingsMethods {
   _workspaceSettingsRenderVals() {
     return {
       openWorkspaceSettings: () => this.openWorkspaceSettings('reading'),
+      togglePCSettingsMenu: () => this.togglePCSettingsMenu(),
+      toggleDarkPaperSoftening: () => this.toggleDarkPaperSoftening(),
+      settingsAll: () => this._selectSettingsPage('reading'),
       settingsGeneral: () => this._selectSettingsPage('general'),
       settingsReading: () => this._selectSettingsPage('reading'),
       settingsAI: () => this._selectSettingsPage('ai'),
@@ -24,6 +27,7 @@ export class WorkspaceSettingsMethods {
     this._quickAppearance.hidden = true;
     if (this._quickAppearanceBackdrop) this._quickAppearanceBackdrop.hidden = true;
     this._appearanceOutsideH = event => {
+      this._desktopSettingsOutside?.(event);
       if (event.target === this._settingsBackdrop) {
         event.preventDefault();
         this.toggleReadingAppearance(false, true);
@@ -39,6 +43,7 @@ export class WorkspaceSettingsMethods {
     document.addEventListener('pointerdown', this._appearanceOutsideH);
     this._selectSettingsPage('reading');
     this._syncQuickAppearance();
+    this._initDesktopSettings?.();
   }
 
   _appearanceReturnTarget() {
@@ -64,6 +69,8 @@ export class WorkspaceSettingsMethods {
     if (!panel) return;
     if (this._mobileMedia?.matches && ['ai', 'integrations'].includes(page)) page = 'reading';
     this._settingsPage = page;
+    panel.dataset.pcSettings = '';
+    this._syncDesktopAppearance?.();
     panel.querySelectorAll('[data-settings-tab]').forEach(tab => {
       const active = tab.dataset.settingsTab === page;
       tab.setAttribute('aria-selected', String(active));
@@ -88,10 +95,12 @@ export class WorkspaceSettingsMethods {
     if (this._settingsBackdrop) this._settingsBackdrop.hidden = !next;
     if (next) {
       this._guardMobileSettings?.();
+      this._guardDesktopSettings?.();
       this._renderUserReadingFonts?.();
       panel.focus({ preventScroll: true });
     } else {
       this._restoreMobileSettings?.();
+      this._restoreDesktopSettings?.();
       if (returnFocus) this._settingsReturnFocus?.focus?.({ preventScroll: true });
       this._settingsReturnFocus = null;
       this.languageOpen = false;
@@ -144,6 +153,7 @@ export class WorkspaceSettingsMethods {
   }
 
   _handleWorkspaceSettingsKey(event) {
+    if (this._handleDesktopSettingsKey?.(event)) return true;
     // The existing credentials dialog owns its own focus and Escape handling.
     if (this._aiSettingsEl?.style.display === 'flex') return false;
     if ((event.metaKey || event.ctrlKey) && event.key === ',') {
@@ -184,6 +194,7 @@ export class WorkspaceSettingsMethods {
   }
 
   _disposeReadingAppearance() {
+    this._disposeDesktopSettings?.();
     document.removeEventListener('pointerdown', this._appearanceOutsideH);
   }
 }

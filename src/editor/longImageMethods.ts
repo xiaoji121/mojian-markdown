@@ -435,8 +435,11 @@ export class LongImageMethods {
   // 不再依赖 body 上的 data-paper 级联，弹窗预览与下载 PNG 始终同色。
   _snapshotPosterPaper(poster, preview) {
     const computed = getComputedStyle(preview || document.body);
+    const originalPaper = getComputedStyle(document.body);
+    // Desktop softening is a viewing preference; exported paper retains its chosen color.
     POSTER_PAPER_VARIABLES.forEach((name) => {
-      const value = (computed.getPropertyValue(name) || '').trim();
+      const colors = /^--paper-(bg|pre$|code($|-)|border|text|accent|mark|sel)/.test(name);
+      const value = ((colors ? originalPaper : computed).getPropertyValue(name) || '').trim();
       if (value) poster.style.setProperty(name, value);
     });
   }
@@ -732,7 +735,7 @@ export class LongImageMethods {
   _posterPaperColor() {
     const preview = this.previewRef && this.previewRef.current;
     const computed = getComputedStyle(preview || document.body);
-    return (computed.backgroundColor || computed.getPropertyValue('--paper-bg') || '').trim() || '#ffffff';
+    return (getComputedStyle(document.body).getPropertyValue('--paper-bg') || computed.backgroundColor || '').trim() || '#ffffff';
   }
   // 一片切片 = 一张按设备像素定尺、viewBox 回到 CSS px 的 SVG：
   // viewBox 缩放让 foreignObject 里的文字直接以输出分辨率光栅化，不是放大位图。

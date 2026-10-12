@@ -1,0 +1,76 @@
+/* PC phase two. Mobile and poster rendering retain their original paper tokens. */
+@media (min-width: 761px) {
+  body.editor-active[data-theme='dark'] {
+    --bg:#25221e; --bg-2:#292621; --bg-3:#2d2923; --bg-input:#282520;
+    --bg-source:#25221e; --border:#62584a; --border-soft:#494238;
+    --text:#f1eadf; --text-2:#d6cdbc; --text-3:#b4a58e; --text-4:#a5967f;
+    --accent:#e1a78d; --accent-2:#edbaa3; --accent-soft:#503b30; --accent-ink:#2b211b;
+  }
+  body.editor-active[data-theme='light'][data-paper='parchment'] { --bg-3:#f6efdf; --border-soft:#e3d4b8; }
+  body.editor-active[data-theme='light'][data-paper='cream'] { --bg-3:#f4efe0; --border-soft:#ded4b8; }
+  body.editor-active[data-theme='light'][data-paper='green'] { --bg-3:#edf4e5; --border-soft:#ceddc4; }
+  body.editor-active .app-shell .app-header .pc-header-settings { display:inline-flex; order:10; flex:none; }
+  .pc-header-settings:is(:hover,[aria-expanded='true']) { background:var(--accent-soft); color:var(--accent); }
+  .pc-global-menu { display:block; position:fixed; z-index:175; top:62px; right:24px; width:260px; max-height:calc(100dvh - 80px); overflow:auto; padding:8px; border:1px solid var(--border); border-radius:8px; background:var(--bg-input); box-shadow:var(--shadow-lg); color:var(--text-2); font:13px/1.5 var(--sans); }
+  .pc-global-menu[hidden] { display:none; }
+  .pc-global-menu p { margin:8px 12px; color:var(--text-3); font-size:11px; }
+  .pc-global-menu button { display:block; width:100%; min-height:42px; padding:10px 12px; border:0; border-radius:5px; background:transparent; color:inherit; font:inherit; text-align:left; cursor:pointer; }
+  .pc-global-menu button:is(:hover,:focus-visible) { background:var(--accent-soft); color:var(--accent); outline:none; }
+  .pc-global-menu hr { margin:8px 12px; border:0; border-top:1px solid var(--border-soft); }
+  .workspace-settings-backdrop { background:color-mix(in srgb,#30261c 24%,transparent); backdrop-filter:blur(3px); }
+  .workspace-settings.preferences-panel { width:min(820px,100%); height:auto; max-height:calc(100dvh - 64px); background:var(--bg-input); border-radius:12px; }
+  .workspace-settings .appearance-heading { display:none; }
+  .pc-settings-title { display:block; font:600 23px/1.4 var(--sans); margin:0; color:var(--text); }
+  .workspace-settings > .appearance-panel-header { padding:24px 28px 16px; border:0; }
+  .workspace-settings .appearance-close { background:transparent; }
+  .workspace-settings-layout { min-height:0; }
+  .workspace-settings-content { padding:12px 28px 24px; overscroll-behavior:contain; }
+  .workspace-settings-content [role='tabpanel'] { gap:20px; }
+  .workspace-settings .appearance-row { min-height:44px; padding-block:8px; border-bottom:1px solid var(--border-soft); }
+  .workspace-settings .reading-font-select { min-height:46px; padding:10px 14px; background:var(--bg-3); }
+  .workspace-settings .reading-font-preview { padding:16px; background:var(--accent-soft); border-left:3px solid var(--accent); font:17px/1.8 var(--read); }
+  .pc-font-status { display:block; margin-top:-12px!important; overflow-wrap:anywhere; }
+  .pc-font-status[data-state='unavailable'] { color:var(--accent); }
+  .workspace-settings:is([data-pc-settings='font'],[data-pc-settings='paper']) .appearance-reading-heading { display:none; }
+  .workspace-settings .appearance-paper-row { display:block; border:0; }
+  .workspace-settings .appearance-paper-row > span:first-child { display:block; margin-bottom:12px; }
+  .workspace-settings .paper-picker { display:flex; gap:8px; width:100%; }
+  .workspace-settings .paper-dot { position:relative; display:flex; flex:1; flex-direction:column; align-items:center; justify-content:center; gap:9px; min-width:0; width:auto; height:auto; min-height:82px; border:1px solid var(--border); border-radius:6px; padding:10px 4px; background:var(--bg-input)!important; color:var(--text-2); }
+  .workspace-settings .paper-dot::before { content:''; display:block; width:26px; height:26px; border:1px solid var(--border); border-radius:50%; background:var(--pc-swatch); }
+  .workspace-settings .paper-dot[aria-pressed='true'] { border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent); outline:none; }
+  .pc-paper-label { display:block; font:11px/1.5 var(--sans); overflow-wrap:anywhere; }
+  .pc-paper-soften { display:flex; flex-direction:column; gap:8px; font:13px/1.6 var(--sans); }
+  .pc-paper-soften > span { display:flex; align-items:center; gap:10px; }
+  .pc-soften-input { width:16px; height:16px; margin:0; accent-color:var(--accent); }
+  .pc-paper-soften small { color:var(--text-3); font-size:11px; }
+  .pc-paper-description { display:block; margin:0; padding:16px; border-left:3px solid var(--accent); background:var(--accent-soft); color:var(--text-2); font:12px/1.7 var(--sans); }
+  .pc-settings-footer { display:flex; flex:none; justify-content:space-between; align-items:center; gap:16px; margin:0 28px; padding:18px 0 24px; border-top:1px solid var(--border-soft); }
+  .pc-settings-footer .abtn { min-height:38px; padding:8px 16px; background:var(--accent); color:var(--accent-ink); }
+  .pc-settings-footer .tbtn { padding-inline:10px; }
+  .workspace-settings[data-pc-settings='font'], .workspace-settings[data-pc-settings='paper'] { width:min(640px,100%); }
+  .workspace-settings[data-pc-settings='language'] { width:min(520px,100%); }
+  .workspace-settings:is([data-pc-settings='font'],[data-pc-settings='paper'],[data-pc-settings='language']) .workspace-settings-nav { display:none; }
+  .workspace-settings:is([data-pc-settings='font'],[data-pc-settings='paper'],[data-pc-settings='language']) .workspace-settings-layout { display:flex; flex-direction:column; }
+  .workspace-settings[data-pc-settings='font'] :is(.appearance-interface-theme,.appearance-paper-row,.pc-paper-soften,.pc-paper-description) { display:none; }
+  .workspace-settings[data-pc-settings='paper'] #settings-reading > :not(.appearance-interface-theme):not(.appearance-paper-row):not(.pc-paper-soften):not(.pc-paper-description) { display:none; }
+  .workspace-settings[data-pc-settings='language'] :is(.settings-home-link,.desktop-path-menu-item) { display:none; }
+  .workspace-settings[data-pc-settings='language'] .interface-language-options { display:flex; flex-direction:column; gap:0; }
+  .workspace-settings[data-pc-settings='language'] .interface-language-option { text-align:left; min-height:46px; padding-inline:12px; border-width:0 0 1px; border-color:var(--border-soft); border-radius:4px; background:transparent; }
+  .workspace-settings[data-pc-settings='language'] .interface-language-option[aria-checked='true'] { background:var(--accent-soft); color:var(--accent); }
+  .app-shell:has(.preview-pane-fullscreen) .workspace-settings { top:auto; max-height:calc(100dvh - 64px); }
+  /* Override only the live reading pane, never the root tokens used for export. */
+  body[data-theme='dark'][data-soften-paper='true'] .preview-pane {
+    --paper-text:#eee9dc; --paper-text-2:#d9d2c2; --paper-text-3:#b9ae98;
+    --paper-bg-soft:color-mix(in srgb,var(--paper-bg) 88%,#b6a27d);
+    --paper-pre:color-mix(in srgb,var(--paper-bg) 85%,#000);
+    --paper-code:color-mix(in srgb,var(--paper-bg) 85%,#9d9378);
+    --paper-border:#706754; --paper-accent:#e4b094;
+    --paper-mark:rgba(224,172,135,.25); --paper-sel:rgba(224,172,135,.3);
+    --paper-code-string:#b9cba9; --paper-code-number:#e5b890; --paper-code-function:#e1ce9e; --paper-code-type:#aecfda;
+  }
+  body[data-theme='dark'][data-soften-paper='true'][data-paper='snow'] .preview-pane { --paper-bg:#2d2e2c; }
+  body[data-theme='dark'][data-soften-paper='true'][data-paper='parchment'] .preview-pane { --paper-bg:#3b3024; }
+  body[data-theme='dark'][data-soften-paper='true'][data-paper='cream'] .preview-pane { --paper-bg:#343329; }
+  body[data-theme='dark'][data-soften-paper='true'][data-paper='green'] .preview-pane { --paper-bg:#28372f; }
+  body[data-theme='dark'][data-soften-paper='true'][data-paper='ink'] .preview-pane { --paper-bg:#1c1a17; }
+}
