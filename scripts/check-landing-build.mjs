@@ -2,11 +2,12 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 const root = resolve('dist');
+const siteUrl = new URL((process.env.MOJIAN_SITE_BASE ?? '/md-editor/').replace(/\/?$/, '/'), process.env.MOJIAN_SITE_ORIGIN || 'https://yuxizhai.com').href;
 for (const locale of ['zh-CN', 'zh-TW', 'en', 'ja']) {
   const file = resolve(root, locale, 'index.html');
   const html = readFileSync(file, 'utf8');
   assert.ok(html.includes(`<html lang="${locale}"`));
-  assert.ok(html.includes(`rel="canonical" href="https://yuxizhai.com/md-editor/${locale}/"`));
+  assert.ok(html.includes(`rel="canonical" href="${siteUrl}${locale}/"`));
   for (const name of ['og:title','og:description','og:url','og:image','twitter:title','twitter:description','twitter:image']) {
     assert.match(html, new RegExp(`(?:name|property)="${name}" content="[^\"]+"`));
   }
@@ -20,5 +21,5 @@ for (const locale of ['zh-CN', 'zh-TW', 'en', 'ja']) {
   console.log(`${locale}: static HTML metadata, landing content, locale links and bundled assets verified`);
 }
 const rootHtml = readFileSync(resolve(root, 'index.html'), 'utf8');
-assert.ok(rootHtml.includes('rel="canonical" href="https://yuxizhai.com/md-editor/"'));
+assert.ok(rootHtml.includes(`rel="canonical" href="${siteUrl}"`));
 assert.ok(rootHtml.includes('href="./en/"'));

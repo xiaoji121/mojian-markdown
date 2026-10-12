@@ -5,19 +5,19 @@ export { localeFromPath, localeHref } from './route.ts';
 export { SITE_URL } from './site.ts';
 const REPO = 'https://github.com/xiaoji121/mojian-markdown';
 export const escapeHtml = (value: string) => value.replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]!));
-export function renderMetadata(locale: string, path = `/md-editor/${locale}/`): string {
+export function renderMetadata(locale: string, path = `/md-editor/${locale}/`, siteUrl = SITE_URL): string {
   const c = landingCopy[locale];
-  const canonical = path === '/md-editor/' ? SITE_URL : `${SITE_URL}${locale}/`;
+  const canonical = localeFromPath(path) ? `${siteUrl}${locale}/` : siteUrl;
   const meta = (key: string, value: string) => `<meta ${key.startsWith('og:') ? 'property' : 'name'}="${key}" content="${escapeHtml(value)}">`;
   return [`<title>${escapeHtml(c.title)}</title>`, meta('description', c.description),
     `<link rel="canonical" href="${canonical}">`,
-    ...landingLocales.map(lang => `<link rel="alternate" hreflang="${lang}" href="${SITE_URL}${lang}/">`),
-    `<link rel="alternate" hreflang="x-default" href="${SITE_URL}">`,
+    ...landingLocales.map(lang => `<link rel="alternate" hreflang="${lang}" href="${siteUrl}${lang}/">`),
+    `<link rel="alternate" hreflang="x-default" href="${siteUrl}">`,
     meta('og:type','website'), meta('og:locale',locale.replace('-', '_').replace(/^en$/, 'en_US').replace(/^ja$/, 'ja_JP')),
     ...landingLocales.filter(lang => lang !== locale).map(lang => meta('og:locale:alternate', lang.replace('-', '_').replace(/^en$/, 'en_US').replace(/^ja$/, 'ja_JP'))),
     meta('og:site_name',c.brand), meta('og:title',c.title), meta('og:description',c.description), meta('og:url',canonical),
-    meta('og:image',`${SITE_URL}og-image.png`), meta('og:image:width','1200'), meta('og:image:height','630'), meta('og:image:alt',c.brand),
-    meta('twitter:card','summary_large_image'), meta('twitter:title',c.title), meta('twitter:description',c.description), meta('twitter:image',`${SITE_URL}og-image.png`), meta('twitter:image:alt',c.brand)
+    meta('og:image',`${siteUrl}og-image.png`), meta('og:image:width','1200'), meta('og:image:height','630'), meta('og:image:alt',c.brand),
+    meta('twitter:card','summary_large_image'), meta('twitter:title',c.title), meta('twitter:description',c.description), meta('twitter:image',`${siteUrl}og-image.png`), meta('twitter:image:alt',c.brand)
   ].join('\n');
 }
 export function renderLanding(locale: string, path = '/'): string {
