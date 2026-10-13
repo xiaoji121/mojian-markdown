@@ -5,7 +5,8 @@ test('PC 阅读工具在 54px 纸张工具栏内，正文位于其下方', async
   await openEditor(page);
   await page.locator('[data-mode="preview"]').click();
   const tools = page.locator('.preview-pane > .pane-toolbar');
-  await expect(tools).toHaveCSS('position', 'relative');
+  // Overlay the article scroller so scroll-hide cannot leave a fixed empty lane.
+  await expect(tools).toHaveCSS('position', 'absolute');
   const bounds = await tools.boundingBox();
   expect(bounds!.height).toBe(54);
   expect(bounds!.width).toBe((await page.locator('.preview-pane').boundingBox())!.width);

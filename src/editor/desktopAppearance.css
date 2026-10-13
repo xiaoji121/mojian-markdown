@@ -27,6 +27,7 @@
   .workspace-settings-content { padding:12px 28px 24px; overscroll-behavior:contain; }
   .workspace-settings-content [role='tabpanel'] { gap:20px; }
   .workspace-settings .appearance-row { min-height:44px; padding-block:8px; border-bottom:1px solid var(--border-soft); }
+  .workspace-settings .appearance-reading-heading { border-top:0; padding-top:0; }
   .workspace-settings .reading-font-select { min-height:46px; padding:10px 14px; background:var(--bg-3); }
   .workspace-settings .reading-font-preview { padding:16px; background:var(--accent-soft); border-left:3px solid var(--accent); font:17px/1.8 var(--read); }
   .pc-font-status { display:block; margin-top:-12px!important; overflow-wrap:anywhere; }
