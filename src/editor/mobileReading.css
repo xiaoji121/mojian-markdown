@@ -88,7 +88,8 @@
   .app-shell > .outline-panel { position: fixed; top: auto; bottom: 0; left: 0; right: 0; width: 100% !important; max-width: none; height: min(72dvh, 640px); border-radius: 24px 24px 0 0; padding-bottom: env(safe-area-inset-bottom, 0px); box-shadow: 0 -12px 60px rgb(0 0 0 / .2); z-index: 115; }
   .outline-panel .panel-header { min-height: 56px; border-radius: 24px 24px 0 0; }
   .outline-panel .panel-close { min-height: 44px; min-width: 44px; }
-  .outline-tree-item { min-height: 52px; padding-block: 12px; white-space: normal; overflow-wrap: anywhere; }
+  .outline-tree-item { min-height: 52px; padding-block: 12px; }
+  .outline-tree-item-label { white-space: normal; overflow-wrap: anywhere; text-overflow: unset; overflow: visible; }
   .outline-resize-handle { display: none; }
   .preview-search-bar { flex-wrap: wrap; min-height: 100px; padding: 8px 16px; }
   .preview-search-input { flex-basis: calc(100% - 60px); min-width: 0; min-height: 44px; font-size: 16px; }

@@ -125,7 +125,10 @@ export class OutlineMethods {
     button.style.setProperty('--outline-level', String(level));
     button.title = title;
     button.setAttribute('aria-label', t('跳到：{title}', { title }));
-    button.textContent = title;
+    const label = document.createElement('span');
+    label.className = 'outline-tree-item-label';
+    label.textContent = title;
+    button.append(label);
     button.addEventListener('click', () => this._jumpToOutlineHeading(heading));
     return button;
   }

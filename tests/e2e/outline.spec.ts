@@ -84,6 +84,36 @@ test('没有标题时大纲侧栏显示空状态', async ({ page }) => {
   await expect(panel.locator('.outline-tree-item')).toHaveCount(0);
 });
 
+test('窄侧栏大纲标题换行或省略，避免挤压重叠', async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 800 });
+  const longTitle = '英伟达深度报告持有逻辑'.repeat(3);
+  await setSource(page, `# ${longTitle}\n\n## 短标题`);
+  const panel = await openOutline(page);
+  const item = panel.locator('.outline-tree-item').first();
+  const label = item.locator('.outline-tree-item-label');
+  await expect(label).toBeVisible();
+
+  const metrics = await label.evaluate((el) => {
+    const cs = getComputedStyle(el);
+    return {
+      minWidth: cs.minWidth,
+      overflowWrap: cs.overflowWrap,
+      whiteSpace: cs.whiteSpace,
+      clientWidth: el.clientWidth,
+      scrollWidth: el.scrollWidth,
+      lineHeight: parseFloat(cs.lineHeight) || 0,
+      height: el.getBoundingClientRect().height,
+    };
+  });
+
+  expect(metrics.minWidth).toBe('0px');
+  expect(['anywhere', 'break-word']).toContain(metrics.overflowWrap);
+  const singleLineCap = metrics.lineHeight * 1.6;
+  const wrapped = metrics.height > singleLineCap;
+  const ellipsized = metrics.scrollWidth > metrics.clientWidth + 2;
+  expect(wrapped || ellipsized).toBe(true);
+});
+
 test('沉浸阅读下仍可打开大纲并跳转', async ({ page }) => {
   await setSource(page, [
     '# 开篇',

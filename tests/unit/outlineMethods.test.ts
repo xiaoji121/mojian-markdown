@@ -52,7 +52,8 @@ test('大纲侧栏渲染 H1–H6 缩进树', () => {
     assert.equal(tree.children[0].dataset.outlineLevel, '1');
     assert.equal(tree.children[1].dataset.outlineLevel, '2');
     assert.equal(tree.children[2].dataset.outlineLevel, '3');
-    assert.equal(tree.children[0].textContent, '产品复盘');
+    assert.equal(tree.children[0].children.length, 1);
+    assert.equal(tree.children[0].children[0].textContent, '产品复盘');
     assert.equal(tree.children[2].dataset.outlineTitle, '用户反馈');
     assert.match(h1.id, /^outline-/);
   });
