@@ -15,6 +15,17 @@ export class DesktopAppearanceMethods {
   }
 
   _initDesktopSettings() {
+    // Reading tools may wrap with a narrow pane or a longer interface locale.
+    // Reserve their actual height inside the article's scrollable padding.
+    const pane = this.previewPaneRef.current;
+    const toolbar = pane?.querySelector('.reading-toolbar');
+    if (toolbar && typeof ResizeObserver !== 'undefined') {
+      this._pcReadingToolbarObserver = new ResizeObserver(() => {
+        const height = toolbar.getBoundingClientRect().height;
+        if (height > 0) pane.style.setProperty('--pc-reading-toolbar-height', `${height}px`);
+      });
+      this._pcReadingToolbarObserver.observe(toolbar);
+    }
     this._pcSettingsMenu = document.querySelector('.pc-global-menu');
     this._pcSettingsButton = document.querySelector('.pc-header-settings');
     this.togglePCSettingsMenu(false);
@@ -129,6 +140,7 @@ export class DesktopAppearanceMethods {
   }
 
   _disposeDesktopSettings() {
+    this._pcReadingToolbarObserver?.disconnect();
     this._pcSettingsMenu?.removeEventListener('click', this._pcSettingsClick);
     window.removeEventListener('resize', this._pcSettingsResize);
   }

@@ -52,11 +52,13 @@
   .has-assistance:has(> .document-sidebar:not(.is-collapsed)) .pc-header-settings { display: none; }
   .app-shell button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .editor-main.preview-mode-active > .preview-pane:not(.preview-pane-fullscreen) > .reading-toolbar {
-    position: relative; inset: auto; flex: none; width: 100%; max-width: none; height: 54px; padding: 0 32px; border-radius: 0;
+    position: absolute; inset: 0 0 auto; flex: none; width: 100%; max-width: none; height: 54px; padding: 0 32px; border-radius: 0;
     border-bottom: 1px solid var(--paper-border); background: var(--paper-bg); justify-content: space-between;
   }
   .editor-main.preview-mode-active > .preview-pane:not(.preview-pane-fullscreen) .reading-toolbar > .pane-title { display: block; }
-  .editor-main.preview-mode-active > .preview-pane:not(.preview-pane-fullscreen) > .md-preview { padding: 55px max(32px, calc((100% - 690px) / 2)) 64px; }
+  /* The toolbar overlays the scroller. Its initial clearance scrolls with the
+     article, so hiding the tools never leaves a fixed empty strip behind. */
+  .editor-main.preview-mode-active > .preview-pane:not(.preview-pane-fullscreen) > .md-preview { padding: calc(55px + var(--pc-reading-toolbar-height, 54px)) max(32px, calc((100% - 690px) / 2)) 64px; }
   .editor-main.preview-mode-active .md-preview h1 { font-size: 2.35em; line-height: 1.35; font-weight: 400; letter-spacing: .02em; margin-bottom: .5em; }
   .editor-main.preview-mode-active .md-preview > h1:first-child + p { font-size: .95em; color: var(--paper-text-3); margin-bottom: 1.3em; }
   .editor-main.preview-mode-active .md-preview h2 { font-size: 1.35em; font-weight: 400; margin: 1.4em 0 .65em; padding-bottom: 0; border: 0; }
