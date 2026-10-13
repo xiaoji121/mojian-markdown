@@ -79,13 +79,13 @@ export class LongImageMethods {
     if (title) { title.dataset.i18n = mobileExcerpt ? '摘录图片预览' : '保存长图'; title.textContent = t(title.dataset.i18n); }
     if (hint) { hint.dataset.i18n = mobileExcerpt ? '只导出所选文字与文章标题' : '排版与纸色跟随预览；图片字号可单独调节，手机分页会避开图片、表格、代码块和标题。'; hint.textContent = t(hint.dataset.i18n); }
     if (save) { save.dataset.i18n = mobileExcerpt ? '下载图片' : '下载长图'; save.textContent = t(save.dataset.i18n); }
-    this._miShow?.();
+    this._miShow?.(); this._pcLongImageOpen?.();
     this._refreshLongImagePoster();
   }
   closeLongImage() {
     if (this._longImageBusy) return;
     if (this._longImageEl) this._longImageEl.style.display = 'none';
-    this._miClose?.();
+    this._miClose?.(); this._pcImageClose?.();
   }
   setLongImageWidth(id) {
     if (this.longImageWidth === id) return;
@@ -280,7 +280,7 @@ export class LongImageMethods {
       this._longImageSaveEl.disabled = !!(this._longImageBusy || this._longImagePreparing);
       if (!this._longImageBusy) this._longImageSaveEl.textContent = this._longImageSelection && this._isMobileAnnotation?.() ? t('下载图片') : paged ? t("下载多图") : t("下载长图");
     }
-    this._miControls?.();
+    this._miControls?.(); this._pcImageControls?.();
   }
   // ===== 海报节点 =====
   async _refreshLongImagePoster() {
@@ -591,7 +591,7 @@ export class LongImageMethods {
   async downloadLongImage() {
     if (this._longImageBusy || this._longImagePreparing || !this._longImagePoster) return;
     this._miError = '';
-    this._longImageBusy = true;
+    this._longImageBusy = true; this._pcImageProgress?.();
     this._syncLongImageControls();
     try {
       if (this.longImageAutoCrop && this.longImageWidth === 'phone' && !(this._longImageSelection && this._isMobileAnnotation?.())) {
@@ -600,6 +600,7 @@ export class LongImageMethods {
         return;
       }
       const result = await this._rasterizePoster(this._longImagePoster, (done, total) => {
+        this._pcImageProgress?.(done,total);
         if (!this._longImageSaveEl) return;
         this._longImageSaveEl.textContent = total > 1
           ? t("正在生成 {index}/{total}…", { index: done + 1, total })
@@ -615,7 +616,7 @@ export class LongImageMethods {
     } catch (error) {
       const message = (error && error.message) || t("长图生成失败");
       if (this._longImageMetaEl) this._longImageMetaEl.textContent = message;
-      this._setStatus(message);
+      this._setStatus(message); this._pcImageProgress?.(0,0,message);
       this._miProgress?.(this._miGenerated || 0, this._miTotal || 1, message);
     } finally {
       this._longImageBusy = false;
@@ -641,7 +642,7 @@ export class LongImageMethods {
       const canvas = this._pagedImageCanvas(width, scale, image, index + 1, pages.length);
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
       if (!blob) throw new Error(t("分页图片导出失败"));
-      this._miProgress?.(index + 1, pages.length);
+      this._miProgress?.(index + 1, pages.length); this._pcImageProgress?.(index+1,pages.length);
       files.push({
         name: base + '-' + String(index + 1).padStart(2, '0') + '.png',
         data: blob

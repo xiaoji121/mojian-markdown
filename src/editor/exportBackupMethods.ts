@@ -88,6 +88,7 @@ export class ExportBackupMethods {
 
   /** One-click zip: pure source + annotations.md + annotations.json sidecar. */
   async downloadFullBackup() {
+    if (this._pcDesktop?.()) return this._pcDownloadBackup();
     const src = this.sourceRef?.current?.value ?? '';
     const files = buildBackupPackageFiles(
       this.fileName || '未命名.md',

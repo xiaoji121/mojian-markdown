@@ -6,6 +6,7 @@ export class DesktopEditingMethods {
   _pcDesktop() { return typeof window !== 'undefined' && window.matchMedia('(min-width:761px)').matches; }
 
   _initDesktopEditing() {
+    this._initDesktopFiles?.();
     const actions = document.querySelector('.source-toolbar-actions');
     if (!actions || this._pcFormatButton) return;
     const button = document.createElement('button');
@@ -59,6 +60,7 @@ export class DesktopEditingMethods {
   }
 
   _handleDesktopEditingKey(event) {
+    if (this._pcHandleFileOverlayKey?.(event)) return true;
     if (!this._pcDesktop()) return false;
     if (this._pcHandleDialogKey?.(event)) return true;
     if (event.target === this._pcFormatButton && ['ArrowDown','ArrowUp'].includes(event.key)) {

@@ -1,5 +1,8 @@
 // @ts-nocheck
 // The DC runtime supplies its base class dynamically; keep this factory lightweight.
+import { DesktopExportMethods } from './desktopExportMethods';
+import { DesktopFileMethods } from './desktopFileMethods';
+import { DesktopAIMethods } from './desktopAIMethods';
 import { DesktopDocumentSessionMethods } from './desktopDocumentSessionMethods';
 import { DesktopFeedbackMethods } from './desktopFeedbackMethods';
 import { DesktopSourceMethods } from './desktopSourceMethods';
@@ -533,6 +536,9 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     ExportBackupMethods,
     WorkspaceNavigationMethods,
     WorkspaceSettingsMethods,
+    DesktopExportMethods,
+    DesktopFileMethods,
+    DesktopAIMethods,
     DesktopAppearanceMethods,
     DesktopEditingMethods,
     DesktopSourceMethods,

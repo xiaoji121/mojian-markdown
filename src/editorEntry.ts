@@ -42,3 +42,6 @@ await import('./dc-runtime.js');
 import './editor/mobileAnnotations.css';
 
 import './editor/mobileEditing.css';
+
+import './editor/desktopFilesAI.css';
+import './editor/desktopSplit.css';

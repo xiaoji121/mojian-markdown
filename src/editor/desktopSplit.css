@@ -1,0 +1,85 @@
+/* PC live surfaces only. Root paper tokens remain the mobile/export contract. */
+@media (min-width: 761px) {
+  body.editor-active { --pc-divider:#89755f; }
+  body.editor-active[data-theme='dark'][data-soften-paper='true'] { --pc-divider:#a5967f; }
+  body.editor-active[data-theme='light'] {
+    --text-4:#71634f;
+    --pc-search-bg:#ead2af; --pc-search-text:#2b2218;
+    --pc-search-current-bg:#9b4d31; --pc-search-current-text:#fffdf9;
+    --pc-control-border:#89755f;
+  }
+  body.editor-active[data-theme='dark'] {
+    --pc-search-bg:#514230; --pc-search-text:#f1eadf;
+    --pc-search-current-bg:#e1a78d; --pc-search-current-text:#2b2218;
+    --pc-control-border:#a5967f;
+  }
+
+  /* Source controls never inherit reading-paper foregrounds. */
+  .source-pane > .pane-toolbar,
+  .source-pane > .pane-toolbar .pane-title,
+  .source-pane > .pane-toolbar .tbtn,
+  .source-pane > .pane-toolbar .tbtn.history-action:not(:disabled) { color:var(--text-3); }
+  .source-pane > .pane-toolbar .tbtn:hover { color:var(--accent); }
+  .source-pane > .pane-toolbar { border-bottom-color:var(--border); }
+  .pc-source-ready .source-highlight-layer mark.source-mark {
+    color:var(--pc-search-text); background:var(--pc-search-bg);
+  }
+  .pc-source-ready .source-highlight-layer mark.source-mark.is-current {
+    color:var(--pc-search-current-text); background:var(--pc-search-current-bg);
+  }
+  .source-pane textarea::placeholder, .ai-input::placeholder { color:var(--text-3); opacity:1; }
+  .source-pane .search-input::placeholder { color:var(--text-3); opacity:1; }
+  .source-pane .search-input, .ai-input { border-color:var(--pc-control-border); }
+  .source-pane .search-input:focus, .ai-input:focus { border-color:var(--accent); }
+  .md-source::-webkit-scrollbar-thumb { background:var(--text-4); }
+  .preview-pane .md-preview::-webkit-scrollbar-thumb { background:var(--paper-text-3); }
+  .preview-pane-fullscreen .md-preview { scrollbar-color:var(--paper-text-3) transparent; }
+  .editor-divider { background:var(--pc-divider); }
+  .ai-panel, .comments-panel { border-left-color:var(--pc-divider); }
+
+  /* Deeper inks on the original light papers; keep every paper background. */
+  body[data-paper]:not([data-paper='ink']) .preview-pane {
+    --paper-accent:#795016; --paper-code-string:#365c2a;
+    --paper-code-number:#81421b; --paper-code-function:#645019; --paper-code-type:#245773;
+  }
+  body[data-paper='snow'] .preview-pane { --paper-text-3:#59616d; }
+  body:is([data-paper='parchment'],[data-paper='cream']) .preview-pane { --paper-text-3:#5f553f; }
+  body[data-paper='green'] .preview-pane { --paper-text-3:#405a3d; }
+  body[data-theme='dark'][data-soften-paper='true'] .preview-pane {
+    --paper-text-3:#b9ae98; --paper-accent:#e4b094;
+    --paper-code-string:#b9cba9; --paper-code-number:#e5b890;
+    --paper-code-function:#e1ce9e; --paper-code-type:#aecfda;
+  }
+  .preview-pane > .reading-toolbar .tbtn:hover { background:var(--paper-bg-soft); }
+  .preview-pane > .reading-toolbar button:focus-visible { outline-color:var(--paper-accent); }
+
+  /* Wrapping keeps every operation in view and preserves DOM/keyboard order. */
+  .source-pane > .pane-toolbar, .preview-pane:not(.preview-pane-fullscreen) > .reading-toolbar {
+    flex-wrap:wrap; height:auto; min-height:54px; gap:6px; padding-block:8px;
+  }
+  .source-toolbar-actions, .reading-toolbar .preview-toolbar-actions {
+    flex-wrap:wrap; min-width:0; max-width:100%; row-gap:6px;
+  }
+  .source-toolbar-actions > button, .reading-toolbar .preview-toolbar-actions > button { flex:none; white-space:nowrap; }
+  .pc-format-menu { width:min(210px,100%); }
+  .source-pane > .search-bar {
+    position:relative; inset:auto; flex:none; width:auto; margin:8px 12px;
+  }
+  .source-pane { container-type:inline-size; }
+  .source-pane .search-row { flex-wrap:wrap; }
+  .source-pane .search-input-wrap { flex-basis:100%; }
+  .source-pane .search-bar-rows, .source-pane .search-input { min-width:0; }
+  .source-pane .search-input { width:100%; }
+  .editor-main:not(.preview-mode-active) > .preview-pane:not(.preview-pane-fullscreen) > .preview-search-bar {
+    position:relative; inset:auto; flex:none; flex-wrap:wrap; width:auto; min-width:0; margin:8px 12px;
+  }
+  .editor-main:not(.preview-mode-active) .preview-search-input {
+    flex-basis:100%; width:100%; min-width:0; padding-right:8px; border-color:var(--pc-control-border);
+  }
+  .preview-search-input::placeholder { color:var(--text-3); opacity:1; }
+  @container (max-width:360px) {
+    .source-pane .search-input-wrap { flex-wrap:wrap; gap:4px; }
+    .source-pane .search-input { flex-basis:100%; padding-right:8px; }
+    .source-pane .search-input-tools { position:static; transform:none; }
+  }
+}

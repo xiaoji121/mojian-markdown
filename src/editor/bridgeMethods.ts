@@ -471,6 +471,7 @@ export class BridgeMethods {
   // 恢复批注与问答，避免每次打开都生成一份新副本。
   async _adoptBridgeDocument(fileName) {
     if (!this.agentBridgeEnabled || !fileName || fileName === '未命名.md') return null;
+    const pcSnapshot = this._pcDocumentSnapshot?.();
     try {
       const response = await fetch(bridgeUrl('/api/documents'));
       if (!response.ok) return null;
@@ -482,6 +483,7 @@ export class BridgeMethods {
       const detail = await fetch(bridgeUrl('/api/documents/') + encodeURIComponent(preferred.documentId));
       if (!detail.ok) return null;
       const doc = (await detail.json()).document;
+      if (this._pcDocumentChanged?.(pcSnapshot)) return null;
       this.bridgeDocumentId = doc.documentId;
       this.activeDocumentId = doc.documentId;
       this.comments = this._commentsFromBridge(doc.annotations || [], doc.messages || [], doc.documentId);
@@ -494,6 +496,7 @@ export class BridgeMethods {
 
 
   async openRecentDocument(documentId, { restoring = false } = {}) {
+    if (this._pcFileBusy || this._pcCanChangeDocument && !this._pcCanChangeDocument()) return;
     if (!this.sourceRef.current) return;
     const generation = this._documentOpenGeneration = (this._documentOpenGeneration || 0) + 1;
     const pcSnapshot = this._pcDocumentSnapshot?.();

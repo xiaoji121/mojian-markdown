@@ -59,7 +59,9 @@ export function registerAIReadinessScenario(label: string, executablePath?: stri
       await page.getByRole('dialog').getByRole('button', { name: '关闭', exact: true }).click();
       await expect(page.locator('.ai-readiness')).toContainText('未找到');
       await page.locator('.ai-input').fill('Keep this unsent question');
-      await page.locator('.ai-send').dblclick();
+      await expect(page.locator('.ai-send')).toBeDisabled();
+      await page.locator('.ai-input').press('Enter');
+      await page.locator('.ai-input').press('Enter');
       await expect(page.locator('.ai-input')).toHaveValue('Keep this unsent question');
       await page.getByRole('button', { name: '继续编辑，不使用 AI', exact: true }).click();
       await expect(page.locator('.ai-panel')).toBeHidden();
