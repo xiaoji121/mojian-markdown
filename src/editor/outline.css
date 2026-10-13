@@ -6,15 +6,21 @@
   flex-direction: column;
   width: 300px;
   max-width: 360px;
+  min-width: 0;
   min-height: 0;
+  overflow-x: clip;
   border-left: 1px solid var(--border);
   background: var(--bg-3);
   position: relative;
+  container-type: inline-size;
+  container-name: outline-panel;
 }
 
 .outline-tree {
   flex: 1;
+  min-width: 0;
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -30,8 +36,11 @@
 }
 
 .outline-tree-item {
-  display: block;
+  display: flex;
+  align-items: flex-start;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   margin: 0;
   padding: 7px 10px;
   padding-inline-start: calc(10px + (var(--outline-level, 1) - 1) * 14px);
@@ -42,9 +51,24 @@
   font: 450 var(--fs-sm)/1.45 var(--sans);
   text-align: start;
   cursor: pointer;
+  box-sizing: border-box;
+}
+
+.outline-tree-item-label {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@container outline-panel (max-width: 320px) {
+  .outline-tree-item-label {
+    overflow: visible;
+    text-overflow: unset;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
 }
 
 .outline-tree-item:hover {
