@@ -61,7 +61,7 @@ export class AIReadinessMethods {
   _renderAIReadiness() {
     const host = this.aiReadinessRef?.current;
     if (!host) return;
-    const summary = describeAIReadiness(this.aiReadiness, this.aiEngine);
+    const summary = describeAIReadiness(this.aiReadiness, this.aiEngine); this._pcSyncAI?.();
     if (this._aiReadinessText) {
       this._aiReadinessText.textContent = summary.text;
       (this._aiReadinessActions || []).forEach(({ element, label }) => { element.textContent = t(label); });

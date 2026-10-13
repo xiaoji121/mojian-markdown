@@ -59,9 +59,9 @@ test('顶栏仅保留导出菜单，保存与另存为可见，点击外部关�
 test('通过侧栏新建空白文档', async ({ page }) => {
   await openEditor(page);
   await setSource(page, '# 旧内容');
-  page.on('dialog', (dialog) => dialog.accept());
 
   await page.getByRole('button', { name: '新建文档', exact: true }).click();
+  await page.getByRole('dialog', { name: '新建文稿？' }).getByRole('button', { name: '新建文稿', exact: true }).click();
 
   await expect(page.locator('.md-source')).toHaveValue('');
   await expect(page.locator('.export-menu')).not.toHaveClass(/is-open/);

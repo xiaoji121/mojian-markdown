@@ -135,7 +135,6 @@ test('reading preferences are global across new documents and reloads', async ({
   await page.locator('.paper-dot[data-paper="green"]').click();
   await page.locator('.immersive-wide-toggle').click();
   await page.keyboard.press('Escape');
-  page.once('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: '新建文档', exact: true }).click();
   await expect(page.locator('.md-source')).toHaveValue('');
   await setSource(page, '# 第二篇文档\n\n沿用全局排版偏好。');

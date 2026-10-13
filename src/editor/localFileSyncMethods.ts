@@ -164,7 +164,7 @@ export class LocalFileSyncMethods {
         return;
       }
       if (this.dirty) {
-        this._localFileConflict = true;
+        this._localFileConflict = true; this._pcFileProblem?.('conflict');
         this._setStatus(t('本地文件已被其他程序修改 · {shortcut} 保存将覆盖对方改动', { shortcut: saveShortcutPhrase() }));
         return;
       }
@@ -237,7 +237,7 @@ export class LocalFileSyncMethods {
       this._setStatus(t("已同步到本地文件 · {time}", { time: String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') }));
     } catch {
       // 写回失败不打断编辑；保留脏标记，用户仍可手动保存。
-      this._setStatus(t("本地文件同步失败 · 请重试保存或另存为"));
+      this._setStatus(t("本地文件同步失败 · 请重试保存或另存为")); this._pcFileProblem?.('write');
     } finally {
       this._localWriteBusy = false;
     }

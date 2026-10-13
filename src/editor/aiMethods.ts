@@ -117,7 +117,7 @@ export class AIMethods {
 
   _initAI() {
     if (!this.agentBridgeEnabled) return;
-    this._syncAIEngineSwitch();
+    this._syncAIEngineSwitch(); this._initDesktopAI?.();
     const input = this.aiInputRef.current;
     if (input) {
       input.addEventListener('keydown', (e) => {
@@ -202,6 +202,7 @@ export class AIMethods {
     this.aiPanelOpen = (show === undefined || show === null) ? !this.aiPanelOpen : show;
     if (!this.aiPanelOpen) this._aiActionEpoch = (this._aiActionEpoch || 0) + 1;
     aside.style.display = this.aiPanelOpen ? 'flex' : 'none';
+    this._pcAIPanelFocus?.(this.aiPanelOpen);
     if (this.aiPanelOpen) {
       const sharedWidth = this.panelOpen ? this.commentsPanelWidth : this.aiPanelWidth;
       this._applyAIPanelWidth(sharedWidth);
@@ -222,8 +223,8 @@ export class AIMethods {
     }
   }
 
-
   async _loadCurrentDocumentHistory() {
+    const snapshot = this._pcDesktop?.() ? aiRequestContext(this) : null;
     try {
       const response = await fetch(bridgeUrl('/api/history'), {
         method: 'POST',
@@ -232,10 +233,10 @@ export class AIMethods {
       });
       if (!response.ok) return;
       const data = await response.json();
+      if (snapshot && (this.aiBusy || this.aiMessages.length || snapshot !== aiRequestContext(this))) return;
       if (data.messages && data.messages.length) this._showConversationMessages(data.documentId, data.messages, null, true);
     } catch (e) {}
   }
-
 
   async _refreshAIConversations() {
     try {
@@ -247,14 +248,12 @@ export class AIMethods {
     } catch (e) {}
   }
 
-
   toggleAIHistory() {
     this.aiHistoryOpen = !this.aiHistoryOpen;
     const panel = this.aiHistoryRef.current;
     if (panel) panel.style.display = this.aiHistoryOpen ? 'flex' : 'none';
     if (this.aiHistoryOpen) this._refreshAIConversations();
   }
-
 
   _renderAIHistory() {
     const list = this.aiHistoryListRef.current;
@@ -285,12 +284,14 @@ export class AIMethods {
     });
   }
 
-
   async _loadAIConversation(documentId, focusRequestId) {
+    if (this._pcCanChangeDocument && !this._pcCanChangeDocument()) return;
+    const snapshot = this._pcDesktop?.() ? aiRequestContext(this) : null;
     try {
       const response = await fetch(bridgeUrl('/api/conversations/') + encodeURIComponent(documentId));
       if (!response.ok) throw new Error(t('历史读取失败'));
       const data = await response.json();
+      if (snapshot && (this.aiBusy || snapshot !== aiRequestContext(this))) return;
       this._showConversationMessages(documentId, data.messages || [], focusRequestId);
       this.aiHistoryOpen = false;
       if (this.aiHistoryRef.current) this.aiHistoryRef.current.style.display = 'none';
@@ -298,7 +299,6 @@ export class AIMethods {
       this._setAIStatus(error.message || t('历史读取失败'), 'offline');
     }
   }
-
 
   _showConversationMessages(documentId, history, focusRequestId, syncComments) {
     this.aiMessages = [];
@@ -470,7 +470,7 @@ export class AIMethods {
       this._appendAIReadingTreeAction(item, message);
       list.appendChild(item);
     });
-    list.scrollTop = list.scrollHeight;
+    list.scrollTop = list.scrollHeight; this._pcSyncAI?.();
   }
 
 
@@ -622,7 +622,7 @@ export class AIMethods {
     if (input) input.disabled = busy;
     if (button) {
       button.disabled = busy;
-      button.textContent = busy ? t('回答中…') : t('发送');
+      button.textContent = busy ? t('回答中…') : t('发送'); this._pcSyncAI?.();
     }
   }
 
@@ -681,13 +681,13 @@ export class AIMethods {
     const question = input ? input.value.trim() : '';
     if (!question) return false;
     if (this._ensureAIReady) {
-      this._aiPreflightBusy = true;
+      this._aiPreflightBusy = true; this._pcSyncAI?.();
       const engine = this.aiEngine;
       const epoch = this._aiActionEpoch;
       const context = aiRequestContext(this);
       let ready;
       try { ready = await this._ensureAIReady(engine); }
-      finally { this._aiPreflightBusy = false; }
+      finally { this._aiPreflightBusy = false; this._pcSyncAI?.(); }
       if (!ready || epoch !== this._aiActionEpoch || engine !== this.aiEngine
         || input.value.trim() !== question || context !== aiRequestContext(this)) return false;
     }
@@ -790,7 +790,7 @@ export class AIMethods {
     } finally {
       this._setAIBusy(false);
       this._renderAIMessages();
-      if (input) input.focus();
+      if (input && (!this._pcDesktop?.() || this.aiPanelOpen && !this._pcDialog)) input.focus();
     }
     return true;
   }

@@ -383,7 +383,8 @@ export class EditingFileLayoutMethods {
   }
 
 
-  async _openDesktopFile(picked) {
+  async _openDesktopFile(picked, approved = false) {
+    if (this._pcDesktop?.() && !approved) return this._pcAcceptDesktopFile(picked);
     const src = this.sourceRef.current;
     if (!picked || !picked.path || !src) return;
     const text = this._cleanOpenedMarkdown(picked.content);
@@ -410,6 +411,7 @@ export class EditingFileLayoutMethods {
 
 
   async onOpen() {
+    if (this._pcDesktop?.()) return this._pcOpenFile();
     if (this._isMobileAnnotation?.() && !window.mojianDesktop) { this._mfImport(); return; }
     if (this._isMobileAnnotation?.() && window.mojianDesktop && !this._mfApprovedOpen) {
       this._mfProtect('import', async () => {this._mfApprovedOpen=true;try{await this.onOpen();}finally{this._mfApprovedOpen=false;}});return;
@@ -564,7 +566,8 @@ export class EditingFileLayoutMethods {
   }
 
 
-  async onSave() {
+  async onSave(approved = false) {
+    if (this._pcDesktop?.() && !approved) return this._pcRunSave(false);
     const src = this.sourceRef.current;
     if (!src) return;
     const handle = this.fileHandle;
@@ -575,10 +578,10 @@ export class EditingFileLayoutMethods {
         await this.downloadFullBackup?.();
         return;
       }
-      await this.onSaveAs();
+      await this.onSaveAs(true);
       return;
     }
-    if (!handle || !handle.createWritable) { await this.onSaveAs(); return; }
+    if (!handle || !handle.createWritable) { await this.onSaveAs(true); return; }
     const content = src.value;
     const save = async () => {
       try {
@@ -594,7 +597,7 @@ export class EditingFileLayoutMethods {
         const now = new Date();
         this._lastWriteBackLabel = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
         this._syncPersistentStatus?.();
-      } catch (e) { this._setStatus(t("保存失败：{error}", { error: e.message || e })); }
+      } catch (e) { this._setStatus(t("保存失败：{error}", { error: e.message || e })); this._pcWriteFailure?.(); }
     };
     if (this._queueLocalFileWrite) await this._queueLocalFileWrite(save);
     else await save();
@@ -602,13 +605,14 @@ export class EditingFileLayoutMethods {
 
 
   // 另存为：无视已关联的句柄，总是让用户挑一个新目标，保存后切换到新文件继续编辑。
-  async onSaveAs() {
+  async onSaveAs(approved = false) {
+    if (this._pcDesktop?.() && !approved) return this._pcRunSave(true);
     const save = () => this._saveAsSnapshot();
     try {
       // Browser pickers need the original user gesture; native dialogs do not.
       if (window.mojianDesktop && this._queueLocalFileWrite) await this._queueLocalFileWrite(save);
       else await save();
-    } catch (e) { this._setStatus(t("另存为失败：{error}", { error: e.message || e })); }
+    } catch (e) { this._setStatus(t("另存为失败：{error}", { error: e.message || e })); this._pcWriteFailure?.(); }
   }
 
   async _saveAsSnapshot() {
@@ -646,7 +650,7 @@ export class EditingFileLayoutMethods {
         this._setStatus(t("✓ 已保存到 {name}", { name: handle.name }));
       } catch (e) {
         if (e && e.name === 'AbortError') { this._setStatus?.(t('已取消保存')); return; }
-        this._setStatus(t('另存为失败：{error}', { error: (e && e.message) || e || t('未知错误') }));
+        this._setStatus(t('另存为失败：{error}', { error: (e && e.message) || e || t('未知错误') })); this._pcWriteFailure?.();
       }
       return;
     }
@@ -663,11 +667,12 @@ export class EditingFileLayoutMethods {
 
   // ===== 顶栏「文件」下拉菜单 =====
 
-  onNew() {
+  onNew(approved = false) {
+    if (this._pcDesktop?.() && !approved) return this._pcNewFile();
     if (this._isMobileAnnotation?.() && !this._mfApprovedNew) { this._mfNew(); return; }
     const hasFile = !!(this.fileHandle || this.localFilePath);
     const content = this.sourceRef.current?.value || '';
-    if (!this._mfApprovedNew && shouldConfirmLeave({
+    if (!approved && !this._mfApprovedNew && shouldConfirmLeave({
       hasFile,
       dirty: !!this.dirty,
       content,

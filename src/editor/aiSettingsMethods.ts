@@ -422,7 +422,11 @@ export class AISettingsMethods {
         && this.aiProviderSettings.gemini.configured;
       this._setStatus(configured ? t('AI 设置已保存 · Gemini 已配置') : t('AI 设置已保存'));
     } catch (error) {
-      if (epoch === this._aiSettingsEpoch) this._setStatus(error.message || t('设置保存失败'));
+      if (epoch === this._aiSettingsEpoch) {
+        const message = error.message || t('设置保存失败');
+        this._setStatus(message);
+        if (this._pcDesktop?.()) this._setAISettingsNote(message, 'error');
+      }
     } finally { this._setAISettingsBusy(false); }
   }
 
