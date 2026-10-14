@@ -68,26 +68,43 @@ test('编辑器直链 #editor 可直接打开并渲染示例文档', async ({ pa
   await expect(page.locator('.md-preview h1').first()).toHaveText('欢迎使用墨笺');
 });
 
-test('落地页包含桌面端介绍区块', async ({ page }) => {
+test('落地页保留桌面测试版说明，但收起为次要信息', async ({ page }) => {
   await page.goto('/');
 
   const desktop = page.locator('#desktop');
-  await expect(desktop).toBeVisible();
-  await expect(desktop.locator('h2')).toHaveText(/桌面/);
-  // Explicit desktop testing and optional AI requirements.
-  await expect(desktop.locator('.edition-card')).toHaveCount(2);
-  await expect(desktop).toContainText('测试');
-  await expect(desktop).toContainText('未正式签名');
-  await expect(desktop).toContainText('AI 配置');
-  await expect(desktop.locator('a[href*="SIGNING.md"]')).toBeVisible();
+  const summary = desktop.locator('summary');
+  await summary.scrollIntoViewIfNeeded();
+  await expect(summary).toBeVisible();
+  await expect(summary).toContainText('未正式签名');
+  await expect(desktop.locator('a[href*="SIGNING.md"]')).toBeHidden();
+  await summary.click();
+  await expect(desktop).toHaveAttribute('open', '');
+  await expect(desktop).toContainText('Gatekeeper');
   await expect(desktop).toContainText('npm run desktop');
-  // 完整版卡片提供跳转入口，且锚点真的落在桌面端区块（不被 hash 处理拉回顶部）
-  await page.locator('#editions a[href="#desktop"]').click();
-  await expect
-    .poll(async () => {
-      const box = await desktop.locator('h2').boundingBox();
-      const viewport = page.viewportSize()!;
-      return box !== null && box.y >= 0 && box.y < viewport.height;
-    })
-    .toBe(true);
+  await expect(desktop.locator('a[href*="SIGNING.md"]')).toBeVisible();
+  // Optional AI setup stays documented in the FAQ instead of a headline section.
+  await expect(page.locator('#faq')).toContainText('API 密钥');
+});
+
+test('落地页常见问题无需脚本即可展开', async ({ page }) => {
+  await page.goto('/');
+  const items = page.locator('#faq .faq-item');
+  await expect(items).toHaveCount(10);
+  await expect(items.first()).toHaveAttribute('open', '');
+  await items.nth(2).locator('summary').click();
+  await expect(items.nth(2)).toHaveAttribute('open', '');
+  await expect(items.nth(2).locator('.faq-answer')).toBeVisible();
+});
+
+test('落地页产品截图加载成功且不撑破窄屏', async ({ page }) => {
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    for (const img of await page.locator('#landing-page img').all()) {
+      if (!(await img.isVisible())) continue;
+      await img.scrollIntoViewIfNeeded();
+      await expect.poll(() => img.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth > 0)).toBe(true);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  }
 });
