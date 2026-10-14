@@ -5,7 +5,7 @@
    暗色为默认（:root），避免 JS 就绪前的闪白；
    亮色覆盖仅在阅读器/弹窗（:root[data-theme]）或
    编辑器激活时（body.editor-active[data-theme]）生效，
-   着陆页始终保持「墨」暗色。
+   着陆页使用自己的浅色「笺」纸面（src/landing.css 内的 --landing-* 变量）。
    ============================================================ */
 
 /* Prefer an already installed, licensed font. No font binary is downloaded. */
