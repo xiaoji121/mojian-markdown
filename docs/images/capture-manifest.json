@@ -1,10 +1,10 @@
 {
-  "sourceCommit": "7410508e97127d864c1622469ae937728c6535dd",
+  "sourceCommit": "afa0a53ca9ac5239b09b77cb54652fd5e5840be5",
   "viewport": {
     "width": 1440,
     "height": 960
   },
-  "browser": "149.0.7827.55",
+  "browser": "141.0.7390.37",
   "files": [
     "editor-split-view",
     "selection-toolbar",

@@ -4,7 +4,7 @@
 
 A source-available Markdown editor for reading, learning, and annotation: edit directly, preview live, jump between source and preview, highlight and annotate, export long images, cache locally, and import or export documents. Connect the optional local Agent Bridge for AI Q&A and a recent-reading list.
 
-The interface uses the Mojian design system's dark “Ink” theme: warm brown-black tones, a single amber accent, and a Kai-style Chinese reading font.
+The interface uses the Mojian design system: warm paper tones, a single terracotta accent, and a Kai-style Chinese reading font. The landing page and the screenshots below use the light paper theme (parchment by default); the editor also offers a dark “Ink” theme in Settings.
 
 **[Try Mojian Markdown online →](https://yuxizhai.com/md-editor/)**
 
