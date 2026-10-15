@@ -76,7 +76,7 @@ try {
     if (url.pathname === '/api/conversations') return json({ conversations: [] });
     if (url.pathname === '/api/chat') {
       doc.questionCount = 1;
-      const answer = '**演示回答（非实时 AI 输出）**\n\n可以用三个动作，把阅读转化为自己的理解：\n\n1. **提出问题**：先明确想从文章中获得什么。\n2. **连接证据**：对照上下文，说明观点为什么成立。\n3. **用自己的话复述**：写下一个能在明天尝试的小行动。\n\n划线保留线索，批注记录思考；两者一起，才能让重读更有收获。';
+      const answer = '**演示回答（非实时 AI 输出）**\n\n可以用三个动作，把阅读转化为自己的理解：\n\n1. **提出问题**：先明确想从文章中获得什么。\n2. **连接证据**：对照上下文，说明观点为什么成立。\n3. **用自己的话复述**：写下一个能在明天尝试的小行动。';
       const event = (name, data) => `event: ${name}\ndata: ${JSON.stringify(data)}\n\n`;
       return route.fulfill({ contentType: 'text/event-stream', body:
         event('meta', { requestId: 'readme-demo-answer', documentId, mode: 'chat', documentChars: markdown.length }) +
@@ -143,6 +143,16 @@ try {
   await expect(page.locator('.ai-message-assistant')).toContainText('演示回答（非实时 AI 输出）');
   // Send stays disabled while the input is empty; an editable input means the stream finished.
   await expect(page.locator('.ai-input')).toBeEditable();
+  // Show the question with its answer: auto-scroll follows the stream end, which can hide the question.
+  await page.locator('.ai-messages').evaluate((list) => {
+    const question = list.querySelector('.ai-message-user:last-of-type') || [...list.querySelectorAll('.ai-message-user')].pop();
+    const answer = [...list.querySelectorAll('.ai-message-assistant')].pop();
+    if (!question || !answer) return;
+    const top = question.offsetTop - list.offsetTop;
+    const fitAnswer = answer.offsetTop - list.offsetTop + answer.offsetHeight - list.clientHeight + 8;
+    // Prefer the whole answer; never scroll past the question bubble's own padding.
+    list.scrollTop = Math.max(0, Math.min(top + 14, Math.max(top - 12, fitAnswer)));
+  });
   await capture('ai-reading-assistant');
   if (errors.length) throw new Error(errors.join('\n'));
   // Check the README as rendered HTML, with real repository-relative image URLs.
