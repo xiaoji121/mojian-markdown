@@ -47,7 +47,7 @@ const stamp = '2026-10-08T08:30:00.000Z';
 const documentId = 'readme-demo';
 const doc = { documentId, fileName: '阅读与思考.md', title: '阅读与思考', content: markdown,
   updatedAt: stamp, annotationCount: 0, questionCount: 0, answerDocuments: [] };
-const state = { content: markdown, fileName: doc.fileName, fontSize: 18, theme: 'dark',
+const state = { content: markdown, fileName: doc.fileName, fontSize: 18, theme: 'light',
   paperDark: 'ink', paperLight: 'parchment', comments: [], aiEngine: 'codex',
   bridgeDocumentId: documentId, aiPanelWidth: 420 };
 const server = await createServer({ mode: 'bridge', server: { host: '127.0.0.1', port: 4750, strictPort: true } });
@@ -93,6 +93,8 @@ try {
   await page.evaluate(() => document.fonts.ready);
   async function capture(name) {
     await page.mouse.move(1430, 940);
+    // Keyboard focus rings from the previous step are not part of the feature being shown.
+    await page.evaluate(() => (document.activeElement instanceof HTMLElement) && document.activeElement.blur());
     await page.evaluate(() => document.fonts.ready);
     await page.screenshot({ path: `${output}/${name}.jpg`, type: 'jpeg', quality: 92, animations: 'disabled' });
     captured.push(name);
@@ -120,17 +122,18 @@ try {
   if (await note.count()) await note.first().fill('把关键句改写成自己的问题：这篇文章能改变我的哪个习惯？');
   await page.locator('[data-mode="preview"]').click();
   await capture('annotation-panel');
-  await page.getByRole('button', { name: '批注', exact: true }).click();
+  // The open panel hides the header toggle; close it with the panel's own control.
+  await page.getByRole('button', { name: '收起批注面板', exact: true }).click();
   await page.getByRole('button', { name: '沉浸式阅读', exact: true }).click();
   for (const [paper, name] of [['羊皮纸', 'immersive-parchment'], ['豆沙绿', 'immersive-green']]) {
-    await page.getByRole('button', { name: '阅读排版', exact: true }).click();
+    await page.getByRole('button', { name: '排版', exact: true }).click();
     await page.getByRole('button', { name: `纸色：${paper}`, exact: true }).click();
     await page.keyboard.press('Escape');
     await capture(name);
   }
   await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: '阅读排版', exact: true }).click();
-  await page.getByRole('button', { name: '纸色：墨黑', exact: true }).click();
+  await page.getByRole('button', { name: '排版', exact: true }).click();
+  await page.getByRole('button', { name: '纸色：羊皮纸', exact: true }).click();
   await page.keyboard.press('Escape');
   await selectQuote();
   await page.locator('.selection-toolbar .ai-entry').click();
@@ -138,7 +141,8 @@ try {
   await page.locator('.ai-input').fill('怎样把这句话变成可执行的阅读方法？');
   await page.getByRole('button', { name: '发送', exact: true }).click();
   await expect(page.locator('.ai-message-assistant')).toContainText('演示回答（非实时 AI 输出）');
-  await expect(page.getByRole('button', { name: '发送', exact: true })).toBeEnabled();
+  // Send stays disabled while the input is empty; an editable input means the stream finished.
+  await expect(page.locator('.ai-input')).toBeEditable();
   await capture('ai-reading-assistant');
   if (errors.length) throw new Error(errors.join('\n'));
   // Check the README as rendered HTML, with real repository-relative image URLs.
