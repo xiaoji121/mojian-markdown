@@ -50,6 +50,7 @@ import { MobileEditingMethods } from './mobileEditingMethods';
 import { MobileSettingsMethods } from './mobileSettingsMethods';
 import { MobileReadingMethods } from './mobileReadingMethods';
 import { OnboardingMethods } from './onboardingMethods';
+import { WebRecentMethods } from './webRecentDocuments';
 
 export function createMarkdownEditorComponent(DCLogic, React) {
   const Component = class Component extends DCLogic {
@@ -344,7 +345,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
       this._loadPinnedIds();
       this._initAI();
       this._refreshRecentDocuments().then(() => this._maybeOpenLatestRecentDocument());
-    }
+    } else void this._initWebRecent?.();
     this._syncViewMode();
     // 桌面端：接上应用菜单与「双击 .md 打开」事件。
     if (window.mojianDesktop) this._initDesktop();
@@ -551,6 +552,7 @@ export function createMarkdownEditorComponent(DCLogic, React) {
     MobileEditingMethods,
     MobileAnnotationMethods,
     BridgeMethods,
+    WebRecentMethods,
     ReadingMapMethods,
     PathComposeMethods,
     NavigationMethods,
