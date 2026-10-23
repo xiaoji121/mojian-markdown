@@ -77,11 +77,12 @@ export class BridgeMethods {
     this._updateFooterPath();
     this._syncDocumentSidebar();
     list.innerHTML = '';
-    const docs = filterWorkspaceDocuments(this.recentDocuments, this.workspaceDocumentQuery).sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
+    const webDocs = this._webRecentDocs?.() || null;
+    const docs = filterWorkspaceDocuments(webDocs || this.recentDocuments, this.workspaceDocumentQuery).sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
     if (this.documentCountRef.current) this.documentCountRef.current.textContent = String(docs.length);
     // Web / preview builds still show recent-reading chrome. Expose Reconnect so
     // offline Bridge (or a Bridge started later on :4317) is one click away.
-    if (!this.agentBridgeEnabled && this._renderLocalWorkspaceDocument) {
+    if (!webDocs && !this.agentBridgeEnabled && this._renderLocalWorkspaceDocument) {
       const softConnected = this._recentDocumentsOffline === false && docs.length > 0;
       if (!softConnected) {
         this._renderLocalWorkspaceDocument(list);
@@ -105,6 +106,7 @@ export class BridgeMethods {
     }
     if (!docs.length) {
       if (this._renderOfflineOrEmptyRecent) this._renderOfflineOrEmptyRecent(list);
+      if (webDocs) this._appendRecentReconnect?.(list);
       return;
     }
     const pinnedSet = this._pinnedSet();
@@ -128,6 +130,7 @@ export class BridgeMethods {
     if (hidden > 0 || (expanded && rest.length > RECENT_VISIBLE_LIMIT)) {
       list.appendChild(this._recentListMoreButton(hidden, expanded));
     }
+    if (webDocs) { this._appendWebRecentNote?.(list); this._appendRecentReconnect?.(list); }
   }
 
   _recentSectionLabel(text, count) {
@@ -150,10 +153,10 @@ export class BridgeMethods {
     const group = document.createElement('div');
     group.className = 'recent-document-group' + (isPinned ? ' is-pinned' : '');
     const button = document.createElement('button');
-    button.className = 'recent-document-item' +
-      (doc.documentId === this.bridgeDocumentId && !this.activeAnswerRequestId ? ' is-active' : '');
+    const current = doc.isCurrentDraft || doc.documentId === (this._webRecentDocs?.() ? this.activeDocumentId : this.bridgeDocumentId);
+    button.className = 'recent-document-item' + (current && !this.activeAnswerRequestId ? ' is-active' : '');
     button.type = 'button';
-    button.setAttribute('aria-current', doc.documentId === this.bridgeDocumentId ? 'page' : 'false');
+    button.setAttribute('aria-current', current ? 'page' : 'false');
     const icon = document.createElement('span');
     // 统一使用轻量文件图标，固定状态由列表分组表达。
     icon.className = 'recent-document-icon' + (isPinned ? ' is-pinned' : '');
@@ -174,7 +177,7 @@ export class BridgeMethods {
     button.addEventListener('click', () => this.openRecentDocument(doc.documentId));
     group.appendChild(button);
     // 悬停操作区：右侧渐隐遮罩上排列脉络/删除/固定，避免按钮与文件名糊在一起。
-    group.appendChild(this._recentDocumentActions(doc, isPinned));
+    if (!doc.isCurrentDraft) group.appendChild(this._recentDocumentActions(doc, isPinned));
     const answers = Array.isArray(doc.answerDocuments) ? doc.answerDocuments : [];
     if (answers.length) {
       const expandedTrees = this._expandedAnswerDocIds instanceof Set ? this._expandedAnswerDocIds : new Set();
@@ -387,6 +390,7 @@ export class BridgeMethods {
 
 
   async deleteRecentDocument(doc) {
+    if (this._webRecentEnabled?.()) return this._deleteWebRecentDocument(doc);
     if (!doc || !doc.documentId) return;
     const label = doc.fileName || t("该文档");
     if (typeof window !== 'undefined' && window.confirm
@@ -496,6 +500,7 @@ export class BridgeMethods {
 
 
   async openRecentDocument(documentId, { restoring = false } = {}) {
+    if (this._webRecentEnabled?.()) return this._openWebRecentDocument(documentId);
     if (this._pcFileBusy || this._pcCanChangeDocument && !this._pcCanChangeDocument()) return;
     if (!this.sourceRef.current) return;
     const generation = this._documentOpenGeneration = (this._documentOpenGeneration || 0) + 1;
@@ -667,6 +672,7 @@ export class BridgeMethods {
     const src = this.sourceRef.current;
     const savedAt = Date.now();
     this._draftSavedAt = savedAt;
+    this._webRecentTouch?.();
     const saved = saveEditorState({
       locale: getLocale(),
       content: src ? src.value : '',
@@ -684,6 +690,7 @@ export class BridgeMethods {
       longImageMarks: this.longImageMarks === false ? false : undefined,
       comments: this.comments,
       bridgeDocumentId: this.bridgeDocumentId || undefined,
+      webDocumentId: this._webRecentEnabled?.() ? this.activeDocumentId || undefined : undefined,
       aiEngine: this.aiEngine || undefined,
       savedAt,
       ...(typeof window !== 'undefined' && window.mojianDesktop ? {
