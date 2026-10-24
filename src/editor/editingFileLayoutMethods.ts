@@ -428,12 +428,14 @@ export class EditingFileLayoutMethods {
         });
         const file = await handle.getFile();
         const text = this._cleanOpenedMarkdown(await file.text());
+        const adopted = await this._webRecentResolveImport?.(file.name, text) ?? null;
         this.bridgeDocumentId = null;
         this.activeDocumentId = null;
         this._setFileName(file.name);
         this.sourceRef.current.value = text;
         this._resetEditingHistory();
         this.comments = [];
+        this._webRecentApplyImport?.(adopted, text);
         // 接上双向同步（顺手请求写权限），并认领工作区里同名文档的批注与问答。
         await this._attachLocalFile(handle, { requestWrite: true });
         await this._adoptBridgeDocument(file.name);
@@ -458,13 +460,16 @@ export class EditingFileLayoutMethods {
         if (!f) return;
         const r = new FileReader();
         r.onload = async () => {
-          this.sourceRef.current.value = this._cleanOpenedMarkdown(r.result);
+          const text = this._cleanOpenedMarkdown(r.result);
+          const adopted = await this._webRecentResolveImport?.(f.name, text) ?? null;
+          this.sourceRef.current.value = text;
           this._resetEditingHistory();
           this.bridgeDocumentId = null;
           this.activeDocumentId = null;
           this._setFileName(f.name);
           this._detachLocalFile();
           this.comments = [];
+          this._webRecentApplyImport?.(adopted, text);
           await this._adoptBridgeDocument(f.name);
           this._renderComments();
           this._renderPreview();

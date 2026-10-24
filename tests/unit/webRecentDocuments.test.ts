@@ -224,3 +224,107 @@ test('桌面版或连上本地服务时不接管确认流程', async () => {
   assert.equal(editor._webRecentKeepsCurrent(), false);
   assert.equal(await editor._webRecentSaveCurrent(), false);
 });
+
+async function seedRecords(editor: any, records: any[]) {
+  for (const r of records) await editor._webRecentBackend.put(r);
+  await editor._webRecentReload();
+}
+const rec = (id: string, fileName: string, content: string, updatedAt: string, comments: any[] = []) =>
+  ({ documentId: id, fileName, content, comments, updatedAt });
+
+test('导入的文件名在最近阅读里没有：新建记录', async () => {
+  const editor = makeEditor();
+  await editor._initWebRecent();
+  assert.equal(await editor._webRecentResolveImport('新文件.md', '# 新'), null);
+});
+
+test('同名且内容一样：沿用原记录与批注', async () => {
+  const editor = makeEditor();
+  await seedRecords(editor, [rec('web-old', 'Style guide.md', '# 风格', '2026-10-20T00:00:00Z', [{ id: 'c1' }])]);
+  const adopted = await editor._webRecentResolveImport('Style guide.md', '# 风格');
+  assert.equal(adopted.documentId, 'web-old');
+  assert.equal(adopted.content, '# 风格');
+  assert.equal(adopted.comments.length, 1);
+});
+
+const recI = (id: string, fileName: string, content: string, importedContent: string | undefined, comments: any[] = []) =>
+  ({ documentId: id, fileName, content, importedContent, comments, updatedAt: '2026-10-24T00:00:00Z' });
+
+test('浏览器里没改过、文件改了：沿用记录，换成文件内容，批注保留，不询问', async () => {
+  const editor = makeEditor({ _confirm: () => { throw new Error('不应询问'); } });
+  await seedRecords(editor, [recI('web-old', 'a.md', '# 旧', '# 旧', [{ id: 'c1' }])]);
+  const adopted = await editor._webRecentResolveImport('a.md', '# 新');
+  assert.deepEqual([adopted.documentId, adopted.content, adopted.comments.length, adopted.importedContent], ['web-old', '# 新', 1, '# 新']);
+});
+
+test('浏览器里改过、文件没变：保留浏览器修改，不询问', async () => {
+  const editor = makeEditor({ _confirm: () => { throw new Error('不应询问'); } });
+  await seedRecords(editor, [recI('web-old', 'a.md', '# 原文 + 我在浏览器的修改', '# 原文')]);
+  const adopted = await editor._webRecentResolveImport('a.md', '# 原文');
+  assert.equal(adopted.documentId, 'web-old');
+  assert.equal(adopted.content, '# 原文 + 我在浏览器的修改');
+  assert.equal(adopted.importedContent, '# 原文');
+});
+
+test('两边都改了（或旧记录无从判断）：询问用哪一版', async () => {
+  for (const imported of ['# 原文', undefined]) {
+    for (const [answer, expected] of [[true, '# 文件新版'], [false, '# 浏览器改过']] as const) {
+      const asked: string[] = [];
+      const editor = makeEditor({ _confirm: (m: string) => { asked.push(m); return answer; } });
+      await seedRecords(editor, [recI('web-old', 'a.md', '# 浏览器改过', imported)]);
+      const adopted = await editor._webRecentResolveImport('a.md', '# 文件新版');
+      assert.equal(asked.length, 1);
+      assert.equal(adopted.content, expected);
+    }
+  }
+});
+
+test('导入内容随记录保存；新建空白稿不沿用上一篇的导入内容；从列表打开时恢复', async () => {
+  const editor = makeEditor();
+  await editor._initWebRecent();
+  editor._webRecentApplyImport(null, '# 文件');
+  editor.fileName = 'f.md';
+  editor._persist();
+  await editor._webRecentFlush();
+  const imported = editor.activeDocumentId;
+  assert.equal((await editor._webRecentBackend.get(imported)).importedContent, '# 文件');
+
+  editor.activeDocumentId = null;
+  editor.fileName = '空白.md';
+  editor.sourceRef.current.value = '# 新写的';
+  editor._persist();
+  await editor._webRecentFlush();
+  assert.equal((await editor._webRecentBackend.get(editor.activeDocumentId)).importedContent, undefined);
+
+  await editor._openWebRecentDocument(imported);
+  assert.equal(editor._webRecentImported, '# 文件');
+});
+
+test('多条同名时优先内容完全一致的那条，否则取最近的', async () => {
+  const editor = makeEditor();
+  await seedRecords(editor, [
+    rec('web-1', 'a.md', '# 甲', '2026-10-21T00:00:00Z'),
+    rec('web-2', 'a.md', '# 乙', '2026-10-23T00:00:00Z')
+  ]);
+  assert.equal((await editor._webRecentResolveImport('a.md', '# 甲')).documentId, 'web-1');
+  editor._confirm = () => true;
+  assert.equal((await editor._webRecentResolveImport('a.md', '# 丙')).documentId, 'web-2');
+});
+
+test('清理旧重复：同名同内容且无批注的旧记录被删，有批注或已固定的保留', async () => {
+  const editor = makeEditor();
+  editor.pinnedDocumentIds = new Set(['web-pinned']);
+  editor.sourceRef.current.value = '';
+  editor.fileName = '未命名.md';
+  await seedRecords(editor, [
+    rec('web-a', 'S.md', '# s', '2026-10-21T00:00:00Z'),
+    rec('web-b', 'S.md', '# s', '2026-10-22T00:00:00Z'),
+    rec('web-c', 'S.md', '# s', '2026-10-23T00:00:00Z'),
+    rec('web-noted', 'S.md', '# s', '2026-10-20T00:00:00Z', [{ id: 'c' }]),
+    rec('web-pinned', 'S.md', '# s', '2026-10-19T00:00:00Z'),
+    rec('web-other', 'S.md', '# 不同', '2026-10-18T00:00:00Z')
+  ]);
+  await editor._initWebRecent();
+  const ids = editor._webRecentList.map((d: any) => d.documentId).sort();
+  assert.deepEqual(ids, ['web-c', 'web-noted', 'web-other', 'web-pinned']);
+});

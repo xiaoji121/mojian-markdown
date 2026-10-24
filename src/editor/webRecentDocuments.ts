@@ -125,6 +125,10 @@ export class WebRecentMethods {
       this.activeDocumentId = saved.webDocumentId;
     }
     await this._webRecentReload();
+    try { await this._webRecentDedupe(); await this._webRecentReload(); } catch {}
+    if (this.activeDocumentId) {
+      try { this._webRecentImported = (await this._webRecentStore().get(this.activeDocumentId))?.importedContent; } catch {}
+    }
     // 旧版只存单篇草稿：首次加载时把它登记成列表里的第一篇。
     this._webRecentTouch();
     await this._webRecentFlush();
@@ -148,7 +152,12 @@ export class WebRecentMethods {
     if (!shouldRecordWebDocument(content, this.fileName)) return;
     if (!this.activeDocumentId && this._webRecentDetachedContent === content) return;
     this._webRecentDetachedContent = undefined;
-    if (!this.activeDocumentId) this.activeDocumentId = newWebDocumentId();
+    if (!this.activeDocumentId) {
+      this.activeDocumentId = newWebDocumentId();
+      // 新记录只有刚导入时才带「导入内容」；新建空白稿等不沿用上一篇的。
+      if (!this._webRecentImportPending) this._webRecentImported = undefined;
+    }
+    this._webRecentImportPending = false;
     const pending = this._webRecentPending;
     if (pending && pending.documentId !== this.activeDocumentId) void this._webRecentFlush();
     this._webRecentPending = {
@@ -156,6 +165,7 @@ export class WebRecentMethods {
       fileName: this.fileName || '未命名.md',
       content,
       comments: Array.isArray(this.comments) ? this.comments : [],
+      importedContent: typeof this._webRecentImported === 'string' ? this._webRecentImported : undefined,
       updatedAt: new Date().toISOString()
     };
     clearTimeout(this._webRecentT);
@@ -207,6 +217,7 @@ export class WebRecentMethods {
     this._resetEditingHistory?.();
     this.bridgeDocumentId = null;
     this.activeDocumentId = record.documentId;
+    this._webRecentImported = record.importedContent;
     this.comments = Array.isArray(record.comments) ? record.comments : [];
     this._setFileName(record.fileName || '未命名.md');
     this._renderComments?.();
@@ -239,6 +250,59 @@ export class WebRecentMethods {
     }
     this._setStatus?.(t('已从最近阅读删除 · {name}', { name: label }));
     await this._webRecentReload();
+  }
+
+  // 导入文件时认领最近阅读里的同名记录，避免同一篇越导越多。
+  // 网页拿不到文件完整路径（浏览器只给文件名、大小、修改时间），所以按文件名识别同一篇，
+  // 与桌面版 Reading Workspace 的同名认领一致。返回 null 表示新建记录。
+  // 判断哪边改过：记录里存了上次导入时的文件内容（importedContent）。
+  //   浏览器没改 → 用文件；文件没改 → 保留浏览器修改；两边都改 → 询问。
+  async _webRecentResolveImport(fileName, text) {
+    if (!this._webRecentDocs() || !fileName) return null;
+    let records;
+    try { records = await this._webRecentStore().getAll(); } catch { return null; }
+    const sameName = records.filter((r) => r.fileName === fileName)
+      .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
+    if (!sameName.length) return null;
+    const record = sameName.find((r) => r.content === text) || sameName[0];
+    const comments = Array.isArray(record.comments) ? record.comments : [];
+    const adopt = (content) => ({ documentId: record.documentId, content, comments, importedContent: text });
+    if (record.content === text) return adopt(text);
+    // 旧记录没有 importedContent，无法判断，按「浏览器改过」处理，宁可多问一句。
+    const browserEdited = typeof record.importedContent !== 'string' || record.content !== record.importedContent;
+    if (!browserEdited) return adopt(text);
+    if (text === record.importedContent) return adopt(record.content);
+    const useFile = this._webRecentConfirm(t('「{name}」在浏览器里改过，文件也有新的改动。\n确定：用导入的文件内容\n取消：保留浏览器里的版本', { name: fileName }));
+    return adopt(useFile ? text : record.content);
+  }
+
+  // 清理早先重复导入留下的记录：同名同内容、没有批注、未固定的只留最近一条。
+  async _webRecentDedupe() {
+    const store = this._webRecentStore();
+    const pinned = this._pinnedSet?.() || new Set();
+    const groups = new Map();
+    for (const r of await store.getAll()) {
+      const key = r.fileName + '\u0000' + r.content;
+      groups.set(key, [...(groups.get(key) || []), r]);
+    }
+    for (const group of groups.values()) {
+      const loose = group.filter((r) => !pinned.has(r.documentId)
+        && !(Array.isArray(r.comments) && r.comments.length) && r.documentId !== this.activeDocumentId)
+        .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
+      // 当前打开的就在这组里：它就是保留的那条；否则保留最近的一条。
+      const currentInGroup = group.some((r) => r.documentId === this.activeDocumentId);
+      for (const r of loose.slice(currentInGroup ? 0 : 1)) await store.delete(r.documentId);
+    }
+  }
+
+  // 把认领结果套到编辑器上（调用方随后负责渲染与保存）。
+  // 导入新记录时 adopted 为 null，同样记下这次导入的文件内容。
+  _webRecentApplyImport(adopted, text) {
+    this.activeDocumentId = adopted?.documentId || null;
+    this.comments = adopted ? adopted.comments : [];
+    this._webRecentImported = text;
+    this._webRecentImportPending = !adopted;
+    if (this.sourceRef?.current) this.sourceRef.current.value = adopted ? adopted.content : text;
   }
 
   // 换一篇（导入 / 新建 / 打开）前：当前这篇能完整留在最近阅读里，就不必弹「替换当前内容」。

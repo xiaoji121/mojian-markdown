@@ -88,18 +88,21 @@ export class MobileFileMethods {
         if(!/\.(md|markdown|txt)$/i.test(file.name))throw Error(t('请选择 Markdown 或文本文件'));
         const text=this._cleanOpenedMarkdown(await file.text());
         if(token!==this._mfImportToken||this._mfRoot.hidden)return;
-        this._mfProtect('import',()=>{
+        this._mfProtect('import',async()=>{
           if(key!==this._annotationDocumentKey()){this._mfFailure('当前文稿已改变，请重新选择文件',()=>this._mfImport());return;}
-          this._mfApplyImport(file.name,text);
+          // 同名文档认领最近阅读里的原记录，不再每导一次多一条。
+          const adopted=await this._webRecentResolveImport?.(file.name,text)??null;
+          this._mfApplyImport(file.name,text,adopted,true);
         });
       } catch(error) {if(token===this._mfImportToken&&!this._mfRoot.hidden)this._mfFailure('文件读取失败',()=>this._mfImport(),error.message);}
       finally {this._mfReading=false;}
     });input.click();
   }
-  _mfApplyImport(name,text) {
+  _mfApplyImport(name,text,adopted=null,fromFile=false) {
     const src=this.sourceRef.current;
     const previous={value:src.value,fileName:this.fileName,comments:this.comments,bridgeDocumentId:this.bridgeDocumentId,activeDocumentId:this.activeDocumentId};
     src.value=text;this._setFileName(name);this.comments=[];this.bridgeDocumentId=null;this.activeDocumentId=null;
+    if(fromFile)this._webRecentApplyImport?.(adopted,text);
     if(this._persist()===false){
       src.value=previous.value;this._setFileName(previous.fileName);this.comments=previous.comments;this.bridgeDocumentId=previous.bridgeDocumentId;this.activeDocumentId=previous.activeDocumentId;
       this._mfFailure('草稿保存失败 · 请保存到文件',()=>this._mfApplyImport(name,text));return false;

@@ -57,10 +57,12 @@ export class DesktopFileMethods {
       if (!file) return;
       const text = this._cleanOpenedMarkdown(await file.text());
       if (!await this._pcPrepareReplacement()) return;
+      const adopted = await this._webRecentResolveImport?.(file.name, text) ?? null;
       this._pcResetFileContext(); this._detachLocalFile();
       this.bridgeDocumentId = null; this.activeDocumentId = null;
       this.sourceRef.current.value = text; this._resetEditingHistory();
       this._setFileName(file.name); this.comments = [];
+      this._webRecentApplyImport?.(adopted, text);
       // Read succeeded before replacement; permission failure leaves the opened draft editable.
       if (handle) await this._attachLocalFile(handle,{requestWrite:true});
       await this._adoptBridgeDocument(file.name);
