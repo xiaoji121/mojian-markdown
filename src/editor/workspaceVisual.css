@@ -195,6 +195,10 @@ body.editor-active[data-theme='light'][data-paper='snow'] { --paper-bg: #fffefa;
   cursor: pointer;
 }
 .recent-reconnect-link:hover { color: var(--accent); }
+/* 手机与纯触屏设备跑不了本机 Agent Bridge，「重新连接」点了也没用，直接隐藏。 */
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .recent-document-list .recent-reconnect { display: none; }
+}
 .workspace-trial-mode {
   margin-bottom: 0 !important;
   font-weight: 600;

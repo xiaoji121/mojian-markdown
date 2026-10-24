@@ -56,14 +56,14 @@ test('顶栏仅保留导出菜单，保存与另存为可见，点击外部关�
   await expect(page.locator('.export-menu')).not.toHaveClass(/is-open/);
 });
 
-test('通过侧栏新建空白文档', async ({ page }) => {
+test('通过侧栏新建空白文档：旧内容留在最近阅读，无需确认替换', async ({ page }) => {
   await openEditor(page);
   await setSource(page, '# 旧内容');
 
   await page.getByRole('button', { name: '新建文档', exact: true }).click();
-  await page.getByRole('dialog', { name: '新建文稿？' }).getByRole('button', { name: '新建文稿', exact: true }).click();
-
   await expect(page.locator('.md-source')).toHaveValue('');
+  await expect(page.getByRole('dialog', { name: '新建文稿？' })).toHaveCount(0);
+  await expect(page.locator('.recent-document-item').filter({ hasText: '欢迎.md' })).toHaveCount(1);
   await expect(page.locator('.export-menu')).not.toHaveClass(/is-open/);
 });
 
