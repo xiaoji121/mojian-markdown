@@ -47,6 +47,8 @@ test('浏览器版最近阅读保留多篇，可切换、刷新后仍在、可�
   await expect(row(page, '甲.md')).toHaveCount(1);
   await expect(row(page, '乙.md')).toHaveCount(1);
   await expect(page.locator('.recent-document-list')).toContainText('最近阅读保存在此浏览器');
+  // 桌面浏览器仍保留「重新连接」，方便之后启动本地服务
+  await expect(page.locator('.recent-reconnect')).toBeVisible();
 
   page.once('dialog', dialog => dialog.accept());
   const group = page.locator('.recent-document-group').filter({ hasText: '乙.md' });
@@ -80,6 +82,9 @@ test.describe('手机触屏', () => {
 
     await page.locator('.document-toggle').first().click();
     await expect(row(page, '甲.md')).toHaveCount(1);
+    // 手机跑不了本地服务，不显示「重新连接」
+    await expect(page.locator('.recent-document-list')).toContainText('最近阅读保存在此浏览器');
+    await expect(page.locator('.recent-reconnect')).toBeHidden();
     const group = page.locator('.recent-document-group').filter({ hasText: '甲.md' });
     // 侧栏是滑入的底部面板：在同一帧里量，避免动画中两次测量错位
     const m = await group.evaluate((g) => {
