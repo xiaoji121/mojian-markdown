@@ -1,4 +1,4 @@
-import {test,expect,openEditor,setSource} from './fixtures';
+import {test,expect,openEditor,setSource,disableWebRecent} from './fixtures';
 
 const draft='# 合成测试文稿\n\n保留这段文字。';
 async function seed(page) {
@@ -6,7 +6,7 @@ async function seed(page) {
 }
 
 test('PC new confirmation cancels without losing source, annotation, selection or undo',async({page})=>{
-  await seed(page);await openEditor(page);await setSource(page,draft+'新增');
+  await disableWebRecent(page);await seed(page);await openEditor(page);await setSource(page,draft+'新增');
   await page.locator('.md-source').evaluate((n:HTMLTextAreaElement)=>n.setSelectionRange(3,7));
   await page.locator('.workspace-file-actions .primary').click();
   const dialog=page.getByRole('dialog',{name:'新建文稿？'});await expect(dialog).toBeVisible();
@@ -21,7 +21,7 @@ test('PC new confirmation cancels without losing source, annotation, selection o
 });
 
 test('PC opening a replacement can be cancelled after reading; repeated cancellation keeps original draft',async({page})=>{
-  await seed(page);
+  await disableWebRecent(page);await seed(page);
   await page.addInitScript(()=>{(window as any).showOpenFilePicker=async()=>[{name:'替换.md',getFile:async()=>({name:'替换.md',text:async()=>'# 新文稿',lastModified:1})}];});
   await openEditor(page);
   for(let i=0;i<2;i++){

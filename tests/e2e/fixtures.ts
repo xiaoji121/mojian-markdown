@@ -144,3 +144,17 @@ export async function openMobileSetting(page: Page, setting: string) {
   if (await back.isVisible()) await back.click();
   await page.locator(`[data-mobile-setting="${setting}"]`).click();
 }
+
+/**
+ * 让浏览器版「最近阅读」的 IndexedDB 不可用，用来覆盖存储失败时的回退路径
+ * （换文档前仍弹「替换当前内容」确认）。其它 IndexedDB 用途不受影响。
+ */
+export async function disableWebRecent(page: Page) {
+  await page.addInitScript(() => {
+    const open = indexedDB.open.bind(indexedDB);
+    indexedDB.open = ((name: string, version?: number) => {
+      if (name === 'mojian-web-recent') throw new DOMException('blocked for test', 'InvalidStateError');
+      return open(name, version);
+    }) as typeof indexedDB.open;
+  });
+}

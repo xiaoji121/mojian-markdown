@@ -241,6 +241,27 @@ export class WebRecentMethods {
     await this._webRecentReload();
   }
 
+  // 换一篇（导入 / 新建 / 打开）前：当前这篇能完整留在最近阅读里，就不必弹「替换当前内容」。
+  // 关联了本地文件且未写回、空正文却有批注这类最近阅读兜不住的情况，仍走原确认。
+  _webRecentKeepsCurrent() {
+    if (!this._webRecentDocs()) return false;
+    if ((this.fileHandle || this.localFilePath) && this.dirty) return false;
+    const content = this.sourceRef?.current?.value ?? '';
+    if (shouldRecordWebDocument(content, this.fileName)) return true;
+    return !(Array.isArray(this.comments) && this.comments.length);
+  }
+
+  // 立即把当前这篇写进 IndexedDB 并读回确认；只有确认落库才返回 true。
+  async _webRecentSaveCurrent() {
+    if (!this._webRecentKeepsCurrent()) return false;
+    if (!shouldRecordWebDocument(this.sourceRef?.current?.value ?? '', this.fileName)) return true;
+    this._persist?.(false);
+    await this._webRecentFlush();
+    const id = this.activeDocumentId;
+    if (this._webRecentBroken || !id) return false;
+    try { return !!(await this._webRecentStore().get(id)); } catch { return false; }
+  }
+
   _webRecentConfirm(message) {
     if (typeof this._confirm === 'function') return this._confirm(message);
     return typeof window === 'undefined' || !window.confirm || window.confirm(message);

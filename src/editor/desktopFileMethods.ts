@@ -10,8 +10,10 @@ export class DesktopFileMethods {
     return false;
   }
 
-  _pcConfirmReplacement(kind) {
-    if (!this._shouldConfirmLeave()) return Promise.resolve(true);
+  async _pcConfirmReplacement(kind) {
+    if (!this._shouldConfirmLeave()) return true;
+    // 浏览器版：当前这篇已完整存进最近阅读，换文档不会丢任何东西，无需再确认。
+    if (await this._webRecentSaveCurrent?.()) return true;
     return new Promise(resolve=>this._pcShowDialog({
       title:kind === 'new' ? '新建文稿？' : '打开另一篇文稿？',
       message:'当前正文、批注和文件关联将被替换。如需保留，请取消并先保存或导出备份。',

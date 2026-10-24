@@ -128,5 +128,15 @@
   .preview-toolbar-actions .tool-pill { padding-inline: 6px; }
 }
 @media (hover: none) {
-  .recent-document-actions { display: flex; position: static; height: auto; justify-content: flex-end; padding: 0 8px 6px; background: transparent; }
+  /* 触屏没有悬停：× ☆ 常显，但与文件名同一行，不另起一行把每条撑高一倍。
+     追问树等其余子项仍占满整行。 */
+  .recent-document-group { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .recent-document-group > :not(.recent-document-item, .recent-document-actions) { grid-column: 1 / -1; }
+  .recent-document-group > .recent-document-actions {
+    display: flex; position: static; height: auto; align-items: center; gap: 6px;
+    padding: 0 8px 0 2px; background: transparent; border-radius: 0 6px 6px 0;
+  }
+  .recent-document-group:has(> .recent-document-item.is-active) > .recent-document-actions { background: var(--accent-soft); }
+  .recent-document-group:has(> .recent-document-actions) > .recent-document-item { border-radius: 6px 0 0 6px; }
+  .recent-document-group > .recent-document-actions button { width: 32px; height: 32px; }
 }

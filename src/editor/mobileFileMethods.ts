@@ -42,6 +42,17 @@ export class MobileFileMethods {
   }
   _mfProtect(kind, proceed) {
     if(this._mfDraftBlocked())return;
+    // 当前这篇能完整留在最近阅读里：直接换，不再弹「替换当前内容」；落库失败才回到原确认。
+    if(this._webRecentKeepsCurrent?.()){
+      const previous=this.fileName;
+      void this._webRecentSaveCurrent().then(ok=>{
+        if(!ok){this._mfProtectSheet(kind,proceed);return;}
+        proceed();if(previous&&previous!==this.fileName)this._setStatus?.(t('上一篇已留在最近阅读 · {name}',{name:previous}));
+      });return;
+    }
+    this._mfProtectSheet(kind,proceed);
+  }
+  _mfProtectSheet(kind, proceed) {
     const sheet=this._mfShow(kind==='new'?'新建前，先留一份备份':'导入会替换当前内容');
     sheet.appendChild(this._maText('p',t('正文、批注、编辑历史和文件关联将被重置。取消会保留当前草稿。')));
     sheet.appendChild(this._maText('p',`${this.fileName} · ${this.comments.length} ${t('批注')}`,'mobile-file-card'));
@@ -58,9 +69,10 @@ export class MobileFileMethods {
     if(this._mfDraftBlocked())return;
     const sheet=this._mfShow('导入 Markdown',true);
     sheet.appendChild(this._maText('h3',t('把已有文字带进墨笺')));
-    sheet.appendChild(this._maText('p',t('选择 .md、.markdown 或 .txt 文件。先完整读取，再确认替换当前文稿。')));
+    sheet.appendChild(this._maText('p',t(this._webRecentKeepsCurrent?.()?'选择 .md、.markdown 或 .txt 文件。':'选择 .md、.markdown 或 .txt 文件。先完整读取，再确认替换当前文稿。')));
     sheet.appendChild(this._maButton('选择 Markdown 文件',()=>this._mfPick(),'data-mobile-file-pick'));
     sheet.appendChild(this._maText('p',t('导入仅作为浏览器草稿，不会写回手机原文件。')));
+    if(this._webRecentKeepsCurrent?.()){sheet.appendChild(this._maText('p',t('当前这篇会留在最近阅读里，导入后随时可以切回。'),'mobile-file-card'));return;}
     sheet.appendChild(this._maText('p',t('正文、批注、编辑历史和文件关联将被重置。取消会保留当前草稿。'),'mobile-file-card'));
     sheet.appendChild(this._maButton('先下载 ZIP 备份',()=>this._mfExport('backup',true),'data-mobile-file-backup'));
     sheet.appendChild(this._maText('p',t('ZIP 包含源文与已保存批注，暂不支持直接导入恢复。下载后请确认文件已保存。')));

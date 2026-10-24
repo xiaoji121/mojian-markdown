@@ -84,7 +84,7 @@
   .document-sidebar .document-sidebar-close { height: 44px; width: 44px; }
   .workspace-file-actions .abtn, .workspace-sidebar-footer .abtn { min-height: 44px; height: auto; }
   .workspace-document-search { min-height: 44px; }
-  .recent-document-item { min-height: 56px; }
+  .recent-document-item { min-height: 48px; }
   .app-shell > .outline-panel { position: fixed; top: auto; bottom: 0; left: 0; right: 0; width: 100% !important; max-width: none; height: min(72dvh, 640px); border-radius: 24px 24px 0 0; padding-bottom: env(safe-area-inset-bottom, 0px); box-shadow: 0 -12px 60px rgb(0 0 0 / .2); z-index: 115; }
   .outline-panel .panel-header { min-height: 56px; border-radius: 24px 24px 0 0; }
   .outline-panel .panel-close { min-height: 44px; min-width: 44px; }

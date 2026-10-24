@@ -1,4 +1,4 @@
-import {test,expect,openEditor,setSource} from './fixtures';
+import {test,expect,openEditor,setSource,disableWebRecent} from './fixtures';
 test.use({viewport:{width:390,height:844}});
 test('mobile formatting keeps selection and provides source replacement with disabled empty results',async({page})=>{
  await openEditor(page);await setSource(page,'# 阅读\n\n阅读两次');
@@ -13,8 +13,8 @@ test('mobile formatting keeps selection and provides source replacement with dis
  await page.locator('.search-replace-btn').last().click();await expect(page.locator('.md-source')).toHaveValue('# **阅览**\n\n阅览两次');
  await page.locator('.search-bar .search-close').click();await page.locator('[data-mobile-edit-done]').click();await expect(page.locator('.md-preview')).toBeVisible();
 });
-test('new and failed import preserve source and annotations until explicit confirmation',async({page})=>{
- await openEditor(page);await setSource(page,'# 保留当前稿');await page.locator('[data-mobile-edit-done]').click();
+test('without browser recent storage, new and failed import preserve source and annotations until explicit confirmation',async({page})=>{
+ await disableWebRecent(page);await openEditor(page);await setSource(page,'# 保留当前稿');await page.locator('[data-mobile-edit-done]').click();
  await page.locator('.document-toggle').first().click();await page.getByRole('button',{name:'新建文档',exact:true}).click();
  await expect(page.locator('.mobile-file-sheet')).toContainText('先留一份备份');await page.locator('[data-mobile-file-cancel]').last().click();
  await expect(page.locator('.md-source')).toHaveValue('# 保留当前稿');
@@ -40,8 +40,8 @@ for(const locale of ['zh-CN','zh-TW','en','ja'])test(`localized source search, r
  await page.locator('.mobile-file-sheet input').fill('renamed');await page.locator('[data-mobile-file-rename]').click();await expect(page.locator('.file-name').first()).toHaveText('renamed.md');
  await expect(page.locator('.md-source')).toHaveValue('# sample\n\nsample');await page.reload();await expect(page.locator('.md-source')).toHaveValue('# sample\n\nsample');
 });
-test('import cancellation and quota failure preserve annotations, source and undo history',async({page})=>{
- await page.addInitScript(()=>localStorage.setItem('md-editor-warm-v1',JSON.stringify({content:'# keep',fileName:'keep.md',comments:[{id:'mark1',type:'marker',quote:'keep',note:'kept',reply:''}]})));
+test('without browser recent storage, import cancellation and quota failure preserve annotations, source and undo history',async({page})=>{
+ await disableWebRecent(page);await page.addInitScript(()=>localStorage.setItem('md-editor-warm-v1',JSON.stringify({content:'# keep',fileName:'keep.md',comments:[{id:'mark1',type:'marker',quote:'keep',note:'kept',reply:''}]})));
  await page.goto('/#editor');await page.locator('.view-mode-option[data-mode="editor"]').click();await page.locator('.md-source').fill('# keep changed');
  await page.locator('[data-mobile-edit-done]').click();await page.locator('.document-toggle').first().click();await page.locator('.open-doc-btn').click();
  let chooser=page.waitForEvent('filechooser');await page.locator('[data-mobile-file-pick]').click();await(await chooser).setFiles({name:'new.md',mimeType:'text/markdown',buffer:Buffer.from('# new')});

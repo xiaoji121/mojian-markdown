@@ -177,3 +177,50 @@ test('刷新后按保存的 webDocumentId 找回同一篇，而不是新建一�
   assert.equal(reloaded.activeDocumentId, id);
   assert.equal(reloaded._webRecentList.length, 1);
 });
+
+test('当前这篇能存进最近阅读时，换文档无需确认替换', async () => {
+  const editor = makeEditor();
+  await editor._initWebRecent();
+  assert.equal(editor._webRecentKeepsCurrent(), true);
+  editor.sourceRef.current.value += '\n刚写的一句';
+  assert.equal(await editor._webRecentSaveCurrent(), true);
+  const saved = await editor._webRecentBackend.get(editor.activeDocumentId);
+  assert.match(saved.content, /刚写的一句/);
+});
+
+test('示例文档或空白稿没有可丢失的内容，同样无需确认', async () => {
+  const editor = makeEditor();
+  editor.sourceRef.current.value = '';
+  editor.fileName = '未命名.md';
+  await editor._initWebRecent();
+  assert.equal(editor._webRecentKeepsCurrent(), true);
+  assert.equal(await editor._webRecentSaveCurrent(), true);
+  assert.equal(editor._webRecentList.length, 0);
+});
+
+test('仍需确认：存储不可用、关联文件未写回、空正文带批注、刚从列表删除未改动', async () => {
+  const broken = makeEditor({ _webRecentBackend: { getAll: async () => { throw new Error('x'); } } });
+  await broken._initWebRecent();
+  assert.equal(broken._webRecentKeepsCurrent(), false);
+  assert.equal(await broken._webRecentSaveCurrent(), false);
+
+  const linked = makeEditor({ fileHandle: {}, dirty: true });
+  await linked._initWebRecent();
+  assert.equal(linked._webRecentKeepsCurrent(), false);
+
+  const orphanNotes = makeEditor({ comments: [{ id: 'c' }] });
+  orphanNotes.sourceRef.current.value = '';
+  await orphanNotes._initWebRecent();
+  assert.equal(orphanNotes._webRecentKeepsCurrent(), false);
+
+  const deleted = makeEditor({ _confirm: () => true });
+  await deleted._initWebRecent();
+  await deleted._deleteWebRecentDocument(deleted._webRecentList[0]);
+  assert.equal(await deleted._webRecentSaveCurrent(), false);
+});
+
+test('桌面版或连上本地服务时不接管确认流程', async () => {
+  const editor = makeEditor({ agentBridgeEnabled: true });
+  assert.equal(editor._webRecentKeepsCurrent(), false);
+  assert.equal(await editor._webRecentSaveCurrent(), false);
+});
