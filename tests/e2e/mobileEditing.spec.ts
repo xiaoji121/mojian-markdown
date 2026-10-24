@@ -1,4 +1,4 @@
-import {test,expect,openEditor,setSource,disableWebRecent} from './fixtures';
+import {test,expect,openEditor,setSource,disableWebRecent,ensureSourceVisible} from './fixtures';
 test.use({viewport:{width:390,height:844}});
 test('mobile formatting keeps selection and provides source replacement with disabled empty results',async({page})=>{
  await openEditor(page);await setSource(page,'# 阅读\n\n阅读两次');
@@ -32,7 +32,7 @@ for(const width of [360,390,719,720,721,759,760])test(`editing controls and keyb
 });
 for(const locale of ['zh-CN','zh-TW','en','ja'])test(`localized source search, regex and rename ${locale}`,async({page})=>{
  await page.addInitScript(locale=>localStorage.setItem('md-editor-warm-v1',JSON.stringify({locale,content:'# sample\n\nsample',fileName:'sample.md',comments:[]})),locale);
- await page.goto('/#editor');await page.locator('.view-mode-option[data-mode="editor"]').click();
+ await page.goto('/#editor');await ensureSourceVisible(page);
  await page.locator('[data-mobile-format-more]').click();await page.locator('[data-mobile-source-find]').click();
  await page.locator('.search-bar .search-input').first().fill('[');await page.locator('.search-opt').last().click();
  await expect(page.locator('.search-replace-btn').last()).toBeDisabled();await page.locator('.search-bar .search-close').click();
@@ -42,7 +42,7 @@ for(const locale of ['zh-CN','zh-TW','en','ja'])test(`localized source search, r
 });
 test('without browser recent storage, import cancellation and quota failure preserve annotations, source and undo history',async({page})=>{
  await disableWebRecent(page);await page.addInitScript(()=>localStorage.setItem('md-editor-warm-v1',JSON.stringify({content:'# keep',fileName:'keep.md',comments:[{id:'mark1',type:'marker',quote:'keep',note:'kept',reply:''}]})));
- await page.goto('/#editor');await page.locator('.view-mode-option[data-mode="editor"]').click();await page.locator('.md-source').fill('# keep changed');
+ await page.goto('/#editor');await ensureSourceVisible(page);await page.locator('.md-source').fill('# keep changed');
  await page.locator('[data-mobile-edit-done]').click();await page.locator('.document-toggle').first().click();await page.locator('.open-doc-btn').click();
  let chooser=page.waitForEvent('filechooser');await page.locator('[data-mobile-file-pick]').click();await(await chooser).setFiles({name:'new.md',mimeType:'text/markdown',buffer:Buffer.from('# new')});
  await expect(page.locator('[data-mobile-file-confirm]')).toBeVisible();await page.keyboard.press('Escape');await expect(page.locator('.md-source')).toHaveValue('# keep changed');

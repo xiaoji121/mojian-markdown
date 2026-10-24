@@ -14,15 +14,24 @@ export const test = base.extend({
 export { expect };
 
 /**
- * N-D 首登会强制预览态，源码区 `.md-source` 被 CSS 隐藏。
- * 测试若需读/写源码，在打开编辑器后调用本函数切回分屏（或编辑）并等待可见。
+ * N-D 首登与手机端都默认阅读态，源码区 `.md-source` 被 CSS 隐藏。
+ * 测试若需读/写源码，在打开编辑器后调用本函数切回分屏（手机为编辑）并等待可见。
  */
 export async function ensureSourceVisible(page: Page, timeout = 15_000) {
   const source = page.locator('.md-source');
   await expect(source).toBeAttached({ timeout });
   const mobileEdit = page.locator('.mobile-reading-nav button').last();
-  if (await mobileEdit.isVisible()) await mobileEdit.click();
-  await expect(page.locator('.view-mode-switcher')).toBeVisible({ timeout });
+  const switcher = page.locator('.view-mode-switcher');
+  // 手机默认进入阅读（切换器隐藏、只有底部阅读导航）；桌面默认分屏。等其中一种就绪。
+  await expect.poll(async () => (await source.isVisible()) || (await mobileEdit.isVisible())
+    || (await switcher.isVisible()), { timeout }).toBe(true);
+  if (await source.isVisible()) return;
+  if (await mobileEdit.isVisible()) {
+    await mobileEdit.click();
+    await expect(source).toBeVisible({ timeout });
+    return;
+  }
+  await expect(switcher).toBeVisible({ timeout });
 
   // N-D 首登会在 init 后异步切到预览；等源码可见或「阅读」已按下，再决定是否切回分屏。
   await expect.poll(async () => {

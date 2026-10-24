@@ -320,3 +320,44 @@ test('scroll direction hides toolbar on down and shows on up or top', () => {
   editor._syncReadingToolbarScroll();
   assert.equal(toolbar.classList._away, false);
 });
+
+function modeContext(viewMode: string, mobile: boolean) {
+  const classList = createClassList();
+  const ctx: any = {
+    viewMode,
+    splitRef: createRef({ classList }),
+    viewModeSwitcherRef: createRef({ querySelectorAll: () => [] }),
+    sourceRef: createRef(null),
+    _isMobileAnnotation: () => mobile,
+    renders: 0,
+    _renderPreview() { ctx.renders += 1; }
+  };
+  for (const name of ['_syncViewMode', 'setViewMode', '_mobileViewMode']) {
+    ctx[name] = (ViewMethods.prototype as any)[name];
+  }
+  return ctx;
+}
+
+test('手机端没有分屏：进入或缩窄到手机宽度时，分屏落到阅读', () => {
+  const ctx = modeContext('split', true);
+  ctx._syncViewMode();
+  assert.equal(ctx.viewMode, 'preview');
+  assert.equal(ctx.splitRef.current.classList.contains('preview-mode-active'), true);
+});
+
+test('手机端请求分屏（如查找替换）改为编辑；编辑与阅读照常', () => {
+  const ctx = modeContext('preview', true);
+  ctx.setViewMode('split');
+  assert.equal(ctx.viewMode, 'editor');
+  ctx.setViewMode('preview');
+  assert.equal(ctx.viewMode, 'preview');
+});
+
+test('桌面宽度保留三种模式', () => {
+  const ctx = modeContext('split', false);
+  ctx._syncViewMode();
+  assert.equal(ctx.viewMode, 'split');
+  ctx.setViewMode('editor');
+  ctx.setViewMode('split');
+  assert.equal(ctx.viewMode, 'split');
+});
