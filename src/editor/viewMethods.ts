@@ -17,9 +17,16 @@ function localImageSource(src) {
 }
 
 export class ViewMethods {
+  // 手机屏幕放不下分屏：只保留「编辑 / 阅读」。显式切到分屏（如查找替换）时落到编辑。
+  _mobileViewMode(mode) {
+    return mode === 'split' && this._isMobileAnnotation?.() ? 'editor' : mode;
+  }
+
   _syncViewMode() {
     const split = this.splitRef.current;
     if (!split) return;
+    // 刚进来或从桌面宽度缩到手机宽度时仍是分屏：默认落到阅读。
+    if (this.viewMode === 'split' && this._isMobileAnnotation?.()) this.viewMode = 'preview';
     split.classList.toggle('editor-mode-active', this.viewMode === 'editor');
     split.classList.toggle('preview-mode-active', this.viewMode === 'preview');
     this._syncReadingToolbarScroll?.();
@@ -33,6 +40,7 @@ export class ViewMethods {
 
   setViewMode(mode) {
     if (!['editor', 'split', 'preview'].includes(mode)) return;
+    mode = this._mobileViewMode(mode);
     if(mode!=='preview'&&this.viewMode==='preview'&&this._isMobileAnnotation?.()&&this._mfDraftBlocked?.())return;
     if (mode === 'editor' && this.appearanceOpen) this.toggleReadingAppearance(false);
     this.viewMode = mode;

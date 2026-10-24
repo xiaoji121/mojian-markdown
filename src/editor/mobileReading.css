@@ -36,6 +36,8 @@
   .app-header .export-menu-toggle { display: none !important; }
   .mobile-menu-toggle { align-items: center; justify-content: center; border: 0; color: var(--text-2); background: transparent; width: 44px; height: 44px; font-size: 24px; cursor: pointer; }
   .app-shell:has(.preview-mode-active) .app-header .view-mode-switcher { display: none; }
+  /* 手机只保留「编辑 / 阅读」两种模式 */
+  .view-mode-option[data-mode='split'] { display: none; }
   .app-shell:has(.preview-mode-active):not(:has(.preview-fullscreen-active)) { padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px)); }
   .mobile-reading-nav { position: fixed; bottom: 0; left: 0; right: 0; min-height: 52px; padding: 0 16px env(safe-area-inset-bottom, 0px); background: var(--bg); border-top: 1px solid var(--border-soft); z-index: 45; justify-content: space-around; }
   .app-shell:not(:has(.preview-mode-active)) .mobile-reading-nav,

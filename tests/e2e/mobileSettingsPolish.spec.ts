@@ -33,7 +33,8 @@ for (const locale of ['zh-CN','zh-TW','en','ja']) for (const theme of ['light','
   const content='# Reading 阅读 閱讀 読む\n\nA sample paragraph. 中文阅读。日本語の文章。\n\n'+ 'More text.\n\n'.repeat(30);
   await page.addInitScript(({locale,theme,content})=>{if(!localStorage.getItem('md-editor-warm-v1'))localStorage.setItem('md-editor-warm-v1',JSON.stringify({locale,theme,content,fileName:'sample.md',comments:[],readingFont:'source-serif-4'}));},{locale,theme,content});
   await page.goto('/#editor'); await expect(page.locator('.md-preview h1')).toBeVisible();
-  await page.locator('[data-mode="preview"]').click();
+  // 手机默认就在阅读模式
+  await expect(page.locator('.editor-main')).toHaveClass(/preview-mode-active/);
   await page.keyboard.press('Control+,');
   const panel=page.locator('.workspace-settings');
   await expect(page.locator('.mobile-settings-home')).toBeVisible();

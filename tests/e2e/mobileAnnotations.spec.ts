@@ -1,4 +1,4 @@
-import { test, expect, setSource, ensureSourceVisible } from './fixtures';
+import { test, expect, setSource } from './fixtures';
 const source = '# 阅读，让想法留下来\n\n我们读过很多文字，真正留下的，常常只是某个让人停顿的句子。\n\n' + '把停顿，变成自己的话。\n\n'.repeat(30);
 async function select(page, text = '常常只是某个让人停顿的句子。') {
  await page.locator('.md-preview').evaluate((el, text) => {
@@ -22,11 +22,11 @@ test('mobile new idea stays a draft until Save, discard preserves source and sav
  await page.locator('[data-mobile-save]').click();await expect(page.locator('.mobile-annotation-card')).toHaveCount(1);
  await page.locator('[data-mobile-edit]').click();await page.locator('[data-mobile-note]').fill('放弃的修改');await page.keyboard.press('Escape');await page.locator('[data-mobile-confirm="discard"]').click();
  await expect(page.locator('.mobile-annotation-card')).toContainText('我的草稿');await expect(page.locator('.md-source')).toHaveValue(source);
- page.once('dialog',d=>d.accept());await page.reload();await ensureSourceVisible(page);await page.locator('.view-mode-option[data-mode="preview"]').click();await page.locator('.mobile-reading-nav button').nth(1).click();await expect(page.locator('.mobile-annotation-card')).toContainText('我的草稿');
+ page.once('dialog',d=>d.accept());await page.reload();await expect(page.locator('.editor-main')).toHaveClass(/preview-mode-active/);await page.locator('.mobile-reading-nav button').nth(1).click();await expect(page.locator('.mobile-annotation-card')).toContainText('我的草稿');
 });
 test('mobile interrupted draft restores, reply saves explicitly, delete confirms',async({page})=>{
  await setup(page);await select(page);await page.locator('[data-sel-annotate="idea"]').click();await page.locator('[data-mobile-note]').fill('恢复我的想法');
- page.once('dialog',d=>d.accept());await page.reload();await ensureSourceVisible(page);await page.locator('.view-mode-option[data-mode="preview"]').click();await page.locator('.mobile-reading-nav button').nth(1).click();await page.locator('[data-mobile-resume]').click();await expect(page.locator('[data-mobile-note]')).toHaveValue('恢复我的想法');
+ page.once('dialog',d=>d.accept());await page.reload();await expect(page.locator('.editor-main')).toHaveClass(/preview-mode-active/);await page.locator('.mobile-reading-nav button').nth(1).click();await page.locator('[data-mobile-resume]').click();await expect(page.locator('[data-mobile-note]')).toHaveValue('恢复我的想法');
  await page.locator('[data-mobile-save]').click();await page.locator('[data-mobile-edit]').click();await page.locator('[data-mobile-reply]').fill('外部回答');await page.locator('[data-mobile-save]').click();
  await page.locator('.mobile-annotation-card-more summary').click();await page.locator('[data-mobile-delete]').click();await page.locator('[data-mobile-continue]').click();await expect(page.locator('.mobile-annotation-card')).toHaveCount(1);
  await page.locator('.mobile-annotation-card-more summary').click();await page.locator('[data-mobile-delete]').click();await page.locator('[data-mobile-confirm="delete"]').click();await expect(page.locator('.mobile-annotation-empty')).toBeVisible();
@@ -51,7 +51,7 @@ test('copy failure keeps selectable text and scopes; storage failure retains edi
  await page.evaluate(()=>{const native=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k==='md-editor-warm-v1')throw Error('test denial');return native.call(this,k,v);};});
  await page.locator('[data-mobile-save]').click();await expect(page.locator('.mobile-annotation-error')).toContainText('保存失败');await expect(page.locator('[data-mobile-note]')).toHaveValue('保存保护');
  // Reload resets the deliberate storage stub and restores the session draft.
- page.once('dialog',d=>d.accept());await page.reload();await ensureSourceVisible(page);await page.locator('.view-mode-option[data-mode="preview"]').click();await page.locator('.mobile-reading-nav button').nth(1).click();await page.locator('[data-mobile-resume]').click();await page.locator('[data-mobile-save]').click();
+ page.once('dialog',d=>d.accept());await page.reload();await expect(page.locator('.editor-main')).toHaveClass(/preview-mode-active/);await page.locator('.mobile-reading-nav button').nth(1).click();await page.locator('[data-mobile-resume]').click();await page.locator('[data-mobile-save]').click();
  await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{value:{writeText:async()=>{throw Error('denied');}}}));
  await page.locator('.mobile-annotation-card-more summary').click();await page.locator('.mobile-annotation-card-more').getByRole('button',{name:'复制',exact:true}).click();await expect(page.locator('.mobile-annotation-sheet [role="status"]')).toContainText('未能写入');await expect(page.locator('.mobile-annotation-copy-text')).toHaveValue(/保存保护/);
  await page.getByRole('button',{name:'复制完整内容',exact:true}).click();await expect(page.locator('.mobile-annotation-copy-text')).toHaveValue(new RegExp('阅读，让想法留下来'));
