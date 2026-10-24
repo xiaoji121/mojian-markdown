@@ -58,6 +58,22 @@ test('浏览器版最近阅读保留多篇，可切换、刷新后仍在、可�
   await expect(row(page, '甲.md')).toHaveCount(1);
 });
 
+test('重复导入同名文件沿用原记录，不再越导越多；文件更新时换成新内容', async ({ page }) => {
+  await openEditor(page);
+  await openSidebar(page);
+  await importMarkdown(page, '甲.md', '# 甲\n\n第一版');
+  await importMarkdown(page, '乙.md', '# 乙\n\n第二篇');
+  await importMarkdown(page, '甲.md', '# 甲\n\n第一版');
+  await expect(row(page, '甲.md')).toHaveCount(1);
+  await expect(row(page, '甲.md')).toHaveClass(/is-active/);
+
+  // 磁盘上的文件改过（修改时间晚于浏览器里的版本）：沿用原记录，内容换成文件里的
+  await importMarkdown(page, '甲.md', '# 甲\n\n第二版');
+  await expect(row(page, '甲.md')).toHaveCount(1);
+  await expect(page.locator('.md-preview')).toContainText('第二版');
+  await expect(page.locator('.recent-document-item')).toHaveCount(2);
+});
+
 test.describe('手机触屏', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
@@ -80,8 +96,12 @@ test.describe('手机触屏', () => {
     await mobileImport(page, '甲.md', '# 甲\n\n第一篇');
     await mobileImport(page, '乙.md', '# 乙\n\n第二篇');
 
+    // 再导入一次同名文件：沿用原记录，列表不多出一条
+    await mobileImport(page, '甲.md', '# 甲\n\n第一篇');
+
     await page.locator('.document-toggle').first().click();
     await expect(row(page, '甲.md')).toHaveCount(1);
+    await expect(row(page, '乙.md')).toHaveCount(1);
     // 手机跑不了本地服务，不显示「重新连接」
     await expect(page.locator('.recent-document-list')).toContainText('最近阅读保存在此浏览器');
     await expect(page.locator('.recent-reconnect')).toBeHidden();
